@@ -37,3 +37,5 @@ jobs:
           npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
           npx vercel build --prod --token=$VERCEL_TOKEN
           npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.VERCEL_TOKEN }}
