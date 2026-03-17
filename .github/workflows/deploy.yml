@@ -1,0 +1,43 @@
+name: Deploy with migrations
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Instalar Supabase CLI
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/install.sh | sh
+          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
+
+      # Verificar CLI
+      - name: Supabase version
+        run: supabase --version
+
+      # Login Supabase
+      - name: Supabase login
+        run: supabase login --token $SUPABASE_ACCESS_TOKEN
+
+      # Link al proyecto
+      - name: Link project
+        run: supabase link --project-ref $SUPABASE_PROJECT_REF
+
+      # Ejecutar migraciones
+      - name: Run migrations
+        run: supabase db push
+
+      # Deploy a Vercel
+      - name: Deploy to Vercel
+        run: |
+          npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          npx vercel build --prod --token=$VERCEL_TOKEN
+          npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
