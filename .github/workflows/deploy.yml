@@ -50,3 +50,28 @@ jobs:
           npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      # Notificación a Telegram al final
+      - name: Notify Telegram Success
+        if: success()
+        run: |
+          NOW=$(date +"%Y-%m-%d %H:%M:%S")
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="✅ *Global Computer* workflow terminó correctamente en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Notify Telegram Failure
+        if: failure()
+        run: |
+          NOW=$(date +"%Y-%m-%d %H:%M:%S")
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="❌ *Global Computer* workflow falló en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
