@@ -23,13 +23,13 @@ jobs:
       - name: Supabase version
         run: supabase --version
 
-      # Login Supabase
-      - name: Supabase login
-        run: supabase login --token $SUPABASE_ACCESS_TOKEN
-
-      # Link al proyecto
-      - name: Link project
-        run: supabase link --project-ref $SUPABASE_PROJECT_REF
+     - name: Run migrations
+       run: |
+         supabase link --project-ref $SUPABASE_PROJECT_REF
+         supabase db push
+       env:
+         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       # Ejecutar migraciones
       - name: Run migrations
