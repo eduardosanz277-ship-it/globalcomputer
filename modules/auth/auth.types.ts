@@ -1,4 +1,4 @@
-export type UserRole = "USER" | "BUSINESS" | "ADMIN";
+export type UserRole = "CLIENT" | "BUSINESS" | "ADMIN";
 
 export interface AuthCredentials {
   email: string;

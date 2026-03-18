@@ -17,7 +17,7 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
   return (data ?? []).map((row: any) => ({
     id: row.id as string,
     fullName: row.full_name ?? null,
-    role: (row.role as UserRole) ?? "USER",
+    role: (row.role as UserRole) ?? "CLIENT",
     createdAt: row.created_at,
   }));
 }

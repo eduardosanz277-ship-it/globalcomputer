@@ -22,7 +22,7 @@ export async function repoRegister(payload: RegisterPayload) {
     options: {
       data: {
         full_name: payload.fullName,
-        role: "USER",
+        role: "CLIENT",
       },
     },
   });
@@ -48,7 +48,7 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
   return {
     id: session.user.id,
     email: session.user.email ?? "",
-    role: (profile?.role as SessionUser["role"]) ?? "USER",
+    role: (profile?.role as SessionUser["role"]) ?? "CLIENT",
     fullName: profile?.full_name ?? session.user.user_metadata.full_name,
   };
 }

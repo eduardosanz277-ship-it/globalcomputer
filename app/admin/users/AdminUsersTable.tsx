@@ -1,5 +1,6 @@
 "use client";
 
+import type { UserRole } from "@/modules/auth/auth.types";
 import type { AdminUser } from "@/modules/admin/users/users.types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -30,9 +31,11 @@ const columns: ColumnDef<AdminUser>[] = [
   },
 ];
 
+const ROLES: UserRole[] = ["CLIENT", "BUSINESS", "ADMIN"];
+
 function RowActions({ user }: { user: AdminUser }) {
-  const { execute: setUser, isPending } = useServerAction(
-    (role: "USER" | "ADMIN") => updateUserRoleAction(user.id, role),
+  const { execute: setRole, isPending } = useServerAction(
+    (role: UserRole) => updateUserRoleAction(user.id, role),
     {
       successMessage: "Rol actualizado",
       errorMessage: "No se pudo actualizar el rol",
@@ -41,22 +44,17 @@ function RowActions({ user }: { user: AdminUser }) {
 
   return (
     <div className="flex gap-2">
-      <Button
-        size="sm"
-        variant={user.role === "USER" ? "default" : "outline"}
-        disabled={isPending}
-        onClick={() => setUser("USER")}
-      >
-        USER
-      </Button>
-      <Button
-        size="sm"
-        variant={user.role === "ADMIN" ? "default" : "outline"}
-        disabled={isPending}
-        onClick={() => setUser("ADMIN")}
-      >
-        ADMIN
-      </Button>
+      {ROLES.map((role) => (
+        <Button
+          key={role}
+          size="sm"
+          variant={user.role === role ? "default" : "outline"}
+          disabled={isPending}
+          onClick={() => setRole(role)}
+        >
+          {role}
+        </Button>
+      ))}
     </div>
   );
 }
