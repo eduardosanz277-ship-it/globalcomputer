@@ -2,13 +2,35 @@ name: Deploy with migrations
 
 on:
   push:
-    branches:
-      - develop
     tags:
       - 'v*'
 
 jobs:
+  check-tag-on-develop:
+    runs-on: ubuntu-latest
+    outputs:
+      on_develop: ${{ steps.check.outputs.on_develop }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Comprobar si el tag está en develop
+        id: check
+        run: |
+          git fetch origin develop
+          if git branch -r --contains ${{ github.sha }} | grep -q 'origin/develop'; then
+            echo "on_develop=true" >> $GITHUB_OUTPUT
+            echo "El tag ${{ github.ref_name }} está en develop. Se ejecutará el deploy."
+          else
+            echo "on_develop=false" >> $GITHUB_OUTPUT
+            echo "El tag ${{ github.ref_name }} no está en la rama develop. Deploy omitido."
+          fi
+
   deploy:
+    needs: check-tag-on-develop
+    if: needs.check-tag-on-develop.outputs.on_develop == 'true'
     runs-on: ubuntu-latest
 
     steps:
