@@ -290,28 +290,59 @@ async function seed() {
       createErr.status === 422;
 
     if (duplicate) {
-      console.log("[seed-admin] Email ya existe; usando RPC…");
-      await resetPasswordViaRpc();
+      const uid =
+        (await findUserIdByEmail(adminEmail)) ||
+        (await (async () => {
+          if (!adminProfilesErr || !isPostgrestPublicDenied(adminProfilesErr)) {
+            const { data: row } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("role", adminRole)
+              .limit(1)
+              .maybeSingle();
+            return row?.id ?? null;
+          }
+          return null;
+        })());
 
-      const { data: row } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("role", adminRole)
-        .limit(1)
-        .maybeSingle();
-
-      if (row?.id) {
-        await upsertProfile(row.id);
-        console.log("[seed-admin] OK (RPC tras duplicate)", {
-          userId: row.id,
-          email: adminEmail,
-        });
+      if (!uid) {
+        console.log(
+          "[seed-admin] Email ya existe pero no se pudo resolver userId; intentando RPC de password…"
+        );
+        await resetPasswordViaRpc();
+        console.warn(
+          "[seed-admin] RPC aplicada. Resuelve el usuario en Authentication → Users y sincroniza public.profiles si hace falta."
+        );
         return;
       }
 
-      console.warn(
-        "[seed-admin] RPC aplicado pero no hay fila en profiles (rol ADMIN). Ajusta public.profiles."
-      );
+      console.log("[seed-admin] Email ya existe; actualizando con Admin API (updateUserById)…");
+      const { error: updDupErr } = await supabase.auth.admin.updateUserById(uid, {
+        password: adminPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: adminFullName,
+          role: adminRole,
+        },
+      });
+
+      if (updDupErr) {
+        console.warn("[seed-admin] updateUserById tras duplicate falló; intentando RPC…", updDupErr);
+        await resetPasswordViaRpc();
+      }
+
+      try {
+        await upsertProfile(uid);
+      } catch (e) {
+        if (isPostgrestPublicDenied(e)) warnProfileSkipped(e);
+        else throw e;
+      }
+
+      console.log("[seed-admin] OK (email duplicado → updateUserById)", {
+        userId: uid,
+        email: adminEmail,
+        role: adminRole,
+      });
       return;
     }
   }
