@@ -178,9 +178,21 @@ async function seed() {
 
   if (adminProfilesErr) {
     console.warn("[seed-admin] profiles query error", adminProfilesErr);
+    if (isPostgrestPublicDenied(adminProfilesErr)) {
+      console.log(
+        "[seed-admin] PostgREST no puede leer public; resolviendo usuario por Admin API (listUsers)…"
+      );
+    }
   } else if (Array.isArray(adminProfiles) && adminProfiles.length > 0) {
     userId = adminProfiles[0]?.id ?? null;
     console.log("[seed-admin] resolved userId from profiles", { userId });
+  }
+
+  if (!userId && adminProfilesErr && isPostgrestPublicDenied(adminProfilesErr)) {
+    userId = await findUserIdByEmail(adminEmail);
+    if (userId) {
+      console.log("[seed-admin] resolved userId from Auth (email)", { userId });
+    }
   }
 
   // 2) Intentar actualizar password vía Admin API
