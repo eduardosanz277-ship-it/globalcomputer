@@ -39,21 +39,72 @@ npm run start  # servidor producción
 npm run lint   # linting
 ```
 
+## Migraciones SQL
+
+En `supabase/migrations/` hay migraciones numeradas (`20250117100000` … `20250117100004`) que definen el **esquema base** (perfiles, productos, comercio, reseñas/suscripciones, RLS y auth en `public`).
+
+**No** se incluyen migraciones que crearan o modificaran un **usuario admin por defecto** (seed/reset de admin en SQL); el admin se gestiona con el script opcional `pnpm run seed:admin` y la Admin API.
+
+Para aplicar el esquema en un proyecto Supabase vinculado:
+
+```bash
+supabase link --project-ref <TU_REF>
+supabase db push
+```
+
+Si tu base ya tenía aplicadas migraciones antiguas de admin, el historial en `supabase_migrations.schema_migrations` no se borra solo al quitar archivos del repo; en bases nuevas solo se aplicarán las migraciones que queden en la carpeta.
+
 ## Seed admin (opcional)
 
-Para asegurar un admin por defecto usando la **Admin API de Supabase** (recomendado):
+Para crear/actualizar el admin con la **Admin API** y sincronizar `public.profiles`:
 
-1. En `.env.local` agrega `SUPABASE_SERVICE_ROLE_KEY` (service role).
-2. Asegúrate de tener (o definir) estos valores:
-   - `ADMIN_EMAIL`
-   - `ADMIN_PASSWORD`
-   - `ADMIN_FULL_NAME`
-   - `ADMIN_ROLE`
+1. En `.env.local`: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_FULL_NAME`, `ADMIN_ROLE`.
 2. Ejecuta:
 
 ```bash
-node scripts/seed-admin.mjs
+pnpm run seed:admin
 ```
+
+Si la Admin API devuelve **User not found** para un usuario creado solo por SQL, el script intenta una RPC `seed_reset_auth_password_by_email` **solo si existe** en tu base. Si no la creaste, usa **Authentication → Users → Reset password** o vuelve a definir esa función en SQL.
+
+El login en `/auth/login` y `/admin/login` usa la **Server Action** `loginAction` (`signInWithPassword` en el servidor con `@supabase/ssr` + cookies). El middleware llama a `getUser()` para refrescar la sesión.
+
+### Auth: login falla aunque `auth.users` exista
+
+Para login por email/contraseña suele hacer falta una fila en **`auth.identities`** con `provider = 'email'` y datos coherentes con `auth.users`. Si el usuario solo existía en SQL, revisa identidades y campos `aud` / `role` / `raw_app_meta_data` en `auth.users` según la documentación de Supabase.
+
+Si el login sigue fallando, ejecuta **`pnpm run seed:admin`** o resetea la contraseña en el Dashboard.
+
+### Login sigue fallando
+
+1. **Aislar si es la app o las credenciales** (usa la misma URL y clave **anon/publishable** que en `.env.local`, no la service role):
+
+   ```bash
+   pnpm run test:auth
+   ```
+
+   - Si **falla aquí**, el problema es proyecto Supabase / contraseña / usuario (vuelve a `pnpm run seed:admin` o revisa *Authentication → Providers → Email*).
+   - Si **funciona aquí** pero no en el navegador: reinicia `pnpm dev`, borra cookies del sitio y comprueba que no haya dos variables de entorno distintas entre terminal y Next.
+
+2. Tras cambiar `.env.local`, **reinicia** el servidor de desarrollo.
+
+3. En SQL Editor (mismo proyecto), comprueba bloqueos:
+
+   ```sql
+   select email, banned_until, email_confirmed_at
+   from auth.users
+   where email = 'admin@globalcomputer.com';
+   ```
+
+### `POST .../auth/v1/token?grant_type=password` → 400 (Bad Request) en el navegador
+
+Si el login falla **solo en el navegador** pero **`pnpm run test:auth`** funciona, suele ser la **clave publishable** / entorno del cliente. El login usa **`loginAction`** (Server Action): la petición a Auth se hace **desde el servidor** (Node), igual que el script de prueba.
+
+Si **`test:auth`** devuelve **`invalid_credentials` / 400**, la contraseña **no coincide** con el hash en `auth.users` (no es un fallo de Next.js). En orden: (1) revisa `ADMIN_EMAIL` y `ADMIN_PASSWORD` en `.env.local` (caracteres `#` comentan el resto de la línea; usa comillas si hace falta); (2) `pnpm run seed:admin`; (3) vuelve a `pnpm run test:auth`; (4) si sigue igual, en el Dashboard **Authentication → Users** usa **Reset password** para ese usuario.
+
+### Dashboard: filtros por email / teléfono
+
+El panel indexa búsquedas por `auth.users` e `auth.identities`. Normaliza emails en minúsculas y alinea `identity_data` con el email del usuario si el filtro no encuentra la cuenta. **El filtro “Phone”** solo aplica si el usuario tiene teléfono.
 
 ## Despliegue en Vercel
 
