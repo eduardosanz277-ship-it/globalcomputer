@@ -3,12 +3,12 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
+import { loginAction } from "@/app/auth/login/actions";
+import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useServerAction } from "@/hooks/use-server-action";
-import { loginAction } from "./actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
@@ -23,13 +23,13 @@ export default function LoginPage() {
 
   const { execute, isPending } = useServerAction(loginAction, {
     successMessage: "Sesión iniciada",
-    errorMessage: "No se pudo iniciar sesión",
-    onSuccess: () => router.push("/dashboard"),
+    onSuccess: () => {
+      router.push("/dashboard");
+      router.refresh();
+    },
   });
 
-  const onSubmit = (values: LoginSchema) => {
-    execute(values);
-  };
+  const onSubmit = (values: LoginSchema) => execute(values);
 
   const errors = form.formState.errors;
 

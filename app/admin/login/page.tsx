@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
 import { loginAction } from "@/app/auth/login/actions";
-import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
 import { useServerAction } from "@/hooks/use-server-action";
+import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -25,9 +25,13 @@ export default function AdminLoginPage() {
 
   const { execute, isPending } = useServerAction(loginAction, {
     successMessage: "Sesión iniciada",
-    errorMessage: "No se pudo iniciar sesión",
-    onSuccess: () => router.push("/admin/users"),
+    onSuccess: () => {
+      router.push("/admin/users");
+      router.refresh();
+    },
   });
+
+  const onSubmit = (values: LoginSchema) => execute(values);
 
   const errors = form.formState.errors;
 
@@ -38,7 +42,7 @@ export default function AdminLoginPage() {
           <CardTitle>Acceso admin</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form form={form} onSubmit={(values) => execute(values)}>
+          <Form form={form} onSubmit={onSubmit}>
             <FormField
               name="email"
               label="Email"
