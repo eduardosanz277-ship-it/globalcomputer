@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   FieldValues,
   FormProvider,
+  useFormContext,
   UseFormReturn,
 } from "react-hook-form";
 import { cn } from "@/utils/cn";
@@ -45,10 +46,24 @@ interface FormFieldProps
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
   ({ name, label, error, type = "text", ...props }, ref) => {
+    const { register } = useFormContext();
+    const registration = register(name);
+    const { ref: registrationRef, ...rest } = registration;
+
     return (
       <div className="space-y-1">
         <Label htmlFor={name}>{label}</Label>
-        <Input id={name} name={name} type={type} ref={ref} {...props} />
+        <Input
+          id={name}
+          type={type}
+          {...props}
+          {...rest}
+          ref={(node) => {
+            registrationRef(node);
+            if (typeof ref === "function") ref(node);
+            else if (ref) ref.current = node;
+          }}
+        />
         {error ? (
           <p className="text-xs text-destructive mt-1">{error}</p>
         ) : null}
