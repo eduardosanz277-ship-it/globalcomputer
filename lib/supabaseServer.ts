@@ -27,6 +27,11 @@ export function createSupabaseServerClient() {
         }
       },
     },
+    cookieOptions: {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
   });
 }
 

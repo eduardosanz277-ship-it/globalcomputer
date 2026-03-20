@@ -6,12 +6,9 @@ const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
-export const createClient = (request: NextRequest) => {
-  // Respuesta base sin modificar
+export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request,
   });
 
   const supabase = createServerClient(supabaseUrl!, supabaseKey!, {
@@ -19,22 +16,32 @@ export const createClient = (request: NextRequest) => {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(
-        cookiesToSet: { name: string; value: string; options: CookieOptions }[]
-      ) {
+      setAll(cookiesToSet: {
+        name: string;
+        value: string;
+        options: CookieOptions;
+      }[]) {
+        // request.cookies en middleware solo acepta (name, value); las opciones van en la respuesta
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value)
         );
-
-        supabaseResponse = NextResponse.next({ request });
-
+        supabaseResponse = NextResponse.next({
+          request,
+        });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options)
         );
       },
     },
+    cookieOptions: {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
   });
 
-  return { supabase, supabaseResponse };
-};
+  // Refresca la sesión y propaga cookies; no insertar lógica entre createServerClient y getUser()
+  await supabase.auth.getUser();
 
+  return supabaseResponse;
+}
