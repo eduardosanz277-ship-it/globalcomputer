@@ -210,7 +210,15 @@ async function seed() {
     );
 
     if (!updErr) {
-      await upsertProfile(userId);
+      try {
+        await upsertProfile(userId);
+      } catch (e) {
+        if (isPostgrestPublicDenied(e)) {
+          warnProfileSkipped(e);
+        } else {
+          throw e;
+        }
+      }
       console.log("[seed-admin] OK (updateUserById)", {
         userId,
         email: adminEmail,
@@ -226,7 +234,12 @@ async function seed() {
         "[seed-admin] Admin API no encuentra el usuario; usando RPC de password…"
       );
       await resetPasswordViaRpc();
-      await upsertProfile(userId);
+      try {
+        await upsertProfile(userId);
+      } catch (e) {
+        if (isPostgrestPublicDenied(e)) warnProfileSkipped(e);
+        else throw e;
+      }
       console.log("[seed-admin] OK (RPC + profile)", {
         userId,
         email: adminEmail,
@@ -254,7 +267,12 @@ async function seed() {
 
   if (!createErr && created?.user?.id) {
     userId = created.user.id;
-    await upsertProfile(userId);
+    try {
+      await upsertProfile(userId);
+    } catch (e) {
+      if (isPostgrestPublicDenied(e)) warnProfileSkipped(e);
+      else throw e;
+    }
     console.log("[seed-admin] OK (createUser)", {
       userId,
       email: adminEmail,
