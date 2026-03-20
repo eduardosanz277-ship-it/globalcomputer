@@ -23,10 +23,19 @@ export function useServerAction<TArgs extends any[], TResult>(
           toast.success(options.successMessage);
         }
         options.onSuccess?.(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const fromApi =
+          error instanceof Error && error.message.trim()
+            ? error.message
+            : typeof error === "object" &&
+                error !== null &&
+                "message" in error &&
+                typeof (error as { message?: unknown }).message === "string"
+              ? (error as { message: string }).message
+              : null;
         const message =
-          options.errorMessage ||
-          error?.message ||
+          fromApi ??
+          options.errorMessage ??
           "Ha ocurrido un error inesperado";
         toast.error(message);
       }
