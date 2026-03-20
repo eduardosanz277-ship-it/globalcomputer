@@ -8,7 +8,13 @@ import {
 } from "./auth.repository";
 
 export async function loginService(payload: AuthCredentials) {
-  const parsed = loginSchema.safeParse(payload);
+  // Normalización defensiva para evitar errores por espacios/formatos
+  const normalized = {
+    email: payload.email.trim().toLowerCase(),
+    password: payload.password.trim(),
+  };
+
+  const parsed = loginSchema.safeParse(normalized);
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
