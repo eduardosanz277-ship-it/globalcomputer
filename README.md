@@ -39,6 +39,22 @@ npm run start  # servidor producción
 npm run lint   # linting
 ```
 
+## Seed admin (opcional)
+
+Para asegurar un admin por defecto usando la **Admin API de Supabase** (recomendado):
+
+1. En `.env.local` agrega `SUPABASE_SERVICE_ROLE_KEY` (service role).
+2. Asegúrate de tener (o definir) estos valores:
+   - `ADMIN_EMAIL`
+   - `ADMIN_PASSWORD`
+   - `ADMIN_FULL_NAME`
+   - `ADMIN_ROLE`
+2. Ejecuta:
+
+```bash
+node scripts/seed-admin.mjs
+```
+
 ## Despliegue en Vercel
 
 - Este proyecto está preparado para desplegarse directamente en **Vercel**:
