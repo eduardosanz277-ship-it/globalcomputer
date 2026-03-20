@@ -1,4 +1,4 @@
-name: Deploy with migrations
+name: Deploy (Supabase link + seed)
 
 on:
   push:
@@ -47,7 +47,7 @@ jobs:
       - name: Supabase version
         run: supabase --version
 
-      - name: Run migrations
+      - name: Supabase link y db push (migraciones en supabase/migrations)
         run: |
           supabase link --project-ref $SUPABASE_PROJECT_REF
           supabase db push
