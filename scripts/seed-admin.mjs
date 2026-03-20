@@ -102,6 +102,42 @@ async function resetPasswordViaRpc() {
   console.log("[seed-admin] password actualizado vía RPC");
 }
 
+/**
+ * Obtiene el id del usuario por email vía Admin API (no usa PostgREST / public).
+ * Útil cuando .from("profiles") falla con 42501 pero Auth sí responde.
+ */
+async function findUserIdByEmail(email) {
+  const target = email.toLowerCase();
+  let page = 1;
+  const perPage = 200;
+  const maxPages = 50;
+
+  while (page <= maxPages) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+    if (error) throw error;
+
+    const users = data?.users ?? [];
+    const found = users.find((u) => u.email?.toLowerCase() === target);
+    if (found?.id) return found.id;
+
+    if (users.length < perPage) break;
+    page += 1;
+  }
+
+  return null;
+}
+
+function isPostgrestPublicDenied(err) {
+  return (
+    err &&
+    (err.code === "42501" ||
+      String(err.message || "").includes("permission denied for schema public"))
+  );
+}
+
 async function upsertProfile(uid) {
   const { error: profileErr } = await supabase
     .from("profiles")
@@ -117,8 +153,21 @@ async function upsertProfile(uid) {
   if (profileErr) throw profileErr;
 }
 
+/**
+ * Si PostgREST no puede tocar public (42501), el admin ya puede tener contraseña vía Auth;
+ * avisamos cómo alinear public.profiles a mano.
+ */
+function warnProfileSkipped(profileErr) {
+  console.warn(
+    "[seed-admin] No se pudo upsert en public.profiles (PostgREST). " +
+      "La contraseña/metadata en Auth puede estar bien. Revisa en Dashboard → Authentication → Users, " +
+      "y si hace falta sincroniza public.profiles en SQL Editor.",
+    profileErr
+  );
+}
+
 async function seed() {
-  // 1) Resolver userId desde public.profiles (más robusto que listUsers)
+  // 1) Resolver userId: primero profiles (rápido); si PostgREST falla (p. ej. 42501), Admin API por email
   let userId = null;
 
   const { data: adminProfiles, error: adminProfilesErr } = await supabase
