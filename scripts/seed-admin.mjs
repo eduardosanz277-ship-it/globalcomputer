@@ -30,6 +30,25 @@ if (existsSync(envLocalPath)) dotenv.config({ path: envLocalPath });
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+/** Comprueba que la clave sea la service_role (evita 42501 "permission denied for schema public" si pegaste la anon). */
+function assertServiceRoleJwt(key) {
+  try {
+    const parts = String(key).split(".");
+    if (parts.length !== 3) return;
+    const json = Buffer.from(parts[1], "base64url").toString("utf8");
+    const payload = JSON.parse(json);
+    const role = payload.role;
+    if (role && role !== "service_role") {
+      throw new Error(
+        `SUPABASE_SERVICE_ROLE_KEY no es la clave service_role (JWT role="${role}"). ` +
+          `En Supabase: Settings → API → copia la clave secreta "service_role", no la "anon" / publishable.`
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("SUPABASE_SERVICE_ROLE_KEY")) throw e;
+  }
+}
+
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@globalcomputer.com").trim();
 const adminPassword = (process.env.ADMIN_PASSWORD || "Admin*2026!").trim();
 const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
@@ -38,6 +57,8 @@ const adminRole = (process.env.ADMIN_ROLE || "ADMIN").trim();
 if (!supabaseUrl) throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL en el entorno");
 if (!serviceRoleKey)
   throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY (service role) en el entorno");
+
+assertServiceRoleJwt(serviceRoleKey);
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
