@@ -50,6 +50,13 @@ const config: Config = {
           DEFAULT: "hsl(0 0% 100%)",
           foreground: "hsl(222.2 47.4% 11.2%)",
         },
+        /** Panel admin (marca roja) */
+        admin: {
+          DEFAULT: "hsl(0 72% 51%)",
+          foreground: "hsl(0 0% 100%)",
+          muted: "hsl(0 86% 97%)",
+          ring: "hsl(0 72% 51%)",
+        },
       },
       borderRadius: {
         lg: "0.5rem",
