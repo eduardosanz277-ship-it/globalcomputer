@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { canAccessAdminRoutes } from "@/modules/auth/auth.guards";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DataTable } from "@/components/ui/data-table";
@@ -14,7 +15,7 @@ type DemoItem = {
 };
 
 async function getDemoItems(): Promise<DemoItem[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("items")
     .select("id, name, status")
@@ -54,7 +55,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {user.role === "ADMIN" && (
+            {canAccessAdminRoutes(user.role) && (
               <Link href="/admin/users">
                 <Button variant="outline">Panel admin</Button>
               </Link>
