@@ -6,4 +6,3 @@ import { RegisterSchema } from "@/modules/auth/auth.schema";
 export async function registerAction(values: RegisterSchema) {
   await registerService(values);
 }
-

@@ -67,7 +67,7 @@ pnpm run seed:admin
 
 Si la Admin API devuelve **User not found** para un usuario creado solo por SQL, el script intenta una RPC `seed_reset_auth_password_by_email` **solo si existe** en tu base. Si no la creaste, usa **Authentication → Users → Reset password** o vuelve a definir esa función en SQL.
 
-El login en `/auth/login` y `/admin/login` usa la **Server Action** `loginAction` (`signInWithPassword` en el servidor con `@supabase/ssr` + cookies). El archivo raíz **`proxy.ts`** (Next.js 16+) delega en `supabase/middleware.ts` para refrescar la sesión con `getUser()`.
+El login en `/login` y `/admin/login` usa la **Server Action** `loginAction` (`signInWithPassword` en el servidor con `@supabase/ssr` + cookies). El archivo raíz **`proxy.ts`** (Next.js 16+) delega en `supabase/middleware.ts` para refrescar la sesión con `getUser()`.
 
 ### Auth: login falla aunque `auth.users` exista
 
@@ -124,9 +124,11 @@ No necesitas configuración extra: App Router, Server Actions y SSR funcionan de
 - `app/` → rutas y Server Actions
   - `app/layout.tsx` → layout raíz + `ToastContainer`
   - `app/page.tsx` → landing
-  - `app/auth/login` → login
-  - `app/auth/register` → registro
+  - `app/login` → login (ruta `/login`; `/auth/login` redirige aquí)
+  - `app/register` → registro (ruta `/register`; `/auth/register` redirige aquí)
   - `app/auth/logout` → endpoint POST logout
+  - Imágenes de **servicios** (Supabase Storage): ver `docs/supabase-storage-servicios.md` y migración `20250317120000_service_images_storage.sql`
+  - **Marcas y tipos por marca**: migración `20250317130000_brands_and_brand_types.sql` — tablas `brands` (nombre) y `brand_types` (`brand_id` + `name`); en `products` la FK es `brand_type_id` (antes `product_types` / `product_type_id`).
   - `app/dashboard` → dashboard protegido + tabla TanStack Table
 - `modules/` → lógica de negocio
   - `modules/auth/auth.schema.ts` → Zod schemas (login/registro)
@@ -209,17 +211,17 @@ using (auth.uid() = user_id);
 
 ## Flujo de autenticación
 
-- **Registro** (`/auth/register`)
+- **Registro** (`/register`)
   - Valida datos con Zod (`registerSchema`)
   - Usa `registerService` → `auth.repository` → `supabase.auth.signUp`
   - Se crea perfil en `profiles` mediante trigger/función en Supabase
-- **Login** (`/auth/login`)
+- **Login** (`/login`)
   - Valida datos con Zod (`loginSchema`)
   - Usa `loginService` → `repoLogin`
   - Hook `useServerAction` muestra toasts de éxito/error
 - **Dashboard** (`/dashboard`)
   - Server Component que llama `getCurrentUserService`
-  - Si no hay usuario, hace `redirect("/auth/login")`
+  - Si no hay usuario, hace `redirect("/login")`
   - Muestra rol y datos de ejemplo desde tabla `items` en una `DataTable`
 
 ## Roles `USER` y `ADMIN`

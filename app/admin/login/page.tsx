@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
-import { loginAction } from "@/app/auth/login/actions";
+import { loginAction } from "@/app/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
 
@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿Necesitas cuenta?{" "}
-            <Link href="/auth/register" className="underline">
+            <Link href="/register" className="underline">
               Regístrate
             </Link>
           </p>

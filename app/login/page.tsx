@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
-import { loginAction } from "@/app/auth/login/actions";
+import { loginAction } from "@/app/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿No tienes cuenta?{" "}
-            <Link href="/auth/register" className="underline">
+            <Link href="/register" className="underline">
               Regístrate
             </Link>
           </p>
@@ -69,4 +69,3 @@ export default function LoginPage() {
     </main>
   );
 }
-

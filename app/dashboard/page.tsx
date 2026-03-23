@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUserService();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const items = await getDemoItems();

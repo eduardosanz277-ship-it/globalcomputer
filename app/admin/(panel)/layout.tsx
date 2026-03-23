@@ -11,7 +11,7 @@ export default async function AdminPanelLayout({
   const user = await getCurrentUserService();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   if (!canAccessAdminRoutes(user.role)) {
