@@ -41,7 +41,7 @@ npm run lint   # linting
 
 ## Migraciones SQL
 
-En `supabase/migrations/` hay migraciones numeradas (`20250117100000` … `20250117100004`) que definen el **esquema base** (perfiles, productos, comercio, reseñas/suscripciones, RLS y auth en `public`).
+En `supabase/migrations/` hay migraciones numeradas (`20250117100000` … `20250117100005`) que definen el **esquema base** (perfiles, productos, comercio, reseñas/suscripciones, RLS, auth en `public` y **`20250117100005`**: permisos `GRANT` en el esquema `public` para evitar error **42501** *permission denied for schema public* con la API).
 
 **No** se incluyen migraciones que crearan o modificaran un **usuario admin por defecto** (seed/reset de admin en SQL); el admin se gestiona con el script opcional `pnpm run seed:admin` y la Admin API.
 
