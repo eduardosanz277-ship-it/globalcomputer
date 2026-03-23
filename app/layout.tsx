@@ -5,8 +5,11 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
-  title: "Next Supabase App",
-  description: "Next.js + Supabase + shadcn/ui + TanStack Table",
+  title: {
+    default: "Global Computer",
+    template: "%s | Global Computer",
+  },
+  description: "Videovigilancia, redes y tecnología para hogar y negocio.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
