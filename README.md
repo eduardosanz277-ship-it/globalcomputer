@@ -152,6 +152,7 @@ No necesitas configuración extra: App Router, Server Actions y SSR funcionan de
 - **`brands`**: `name` (único). Lectura pública; alta/edición/borrado solo **ADMIN** (`brands_all_admin`).
 - **`brand_types`**: `brand_id` → `brands`, `name` (único por marca). Lectura pública; gestión solo **ADMIN**.
 - **`products`**: columna **`brand_type_id`** referencia `brand_types` (sustituye el antiguo `product_type_id` / `product_types`).
+- Campo **`active`** (boolean, default `true`) en `brands`, `brand_types`, `product_characteristics_general` y `product_characteristics_specific`: migración `20250317140000_active_flags_catalog.sql` (ocultar en catálogo sin borrar).
 
 ### Tabla `profiles`
 
