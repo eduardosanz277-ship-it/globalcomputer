@@ -67,7 +67,7 @@ pnpm run seed:admin
 
 Si la Admin API devuelve **User not found** para un usuario creado solo por SQL, el script intenta una RPC `seed_reset_auth_password_by_email` **solo si existe** en tu base. Si no la creaste, usa **Authentication → Users → Reset password** o vuelve a definir esa función en SQL.
 
-El login en `/auth/login` y `/admin/login` usa la **Server Action** `loginAction` (`signInWithPassword` en el servidor con `@supabase/ssr` + cookies). El middleware llama a `getUser()` para refrescar la sesión.
+El login en `/auth/login` y `/admin/login` usa la **Server Action** `loginAction` (`signInWithPassword` en el servidor con `@supabase/ssr` + cookies). El archivo raíz **`proxy.ts`** (Next.js 16+) delega en `supabase/middleware.ts` para refrescar la sesión con `getUser()`.
 
 ### Auth: login falla aunque `auth.users` exista
 
