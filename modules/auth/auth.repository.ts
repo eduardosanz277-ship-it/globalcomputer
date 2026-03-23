@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { AuthCredentials, RegisterPayload, SessionUser } from "./auth.types";
 
 export async function repoLogin(credentials: AuthCredentials) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: credentials.email,
@@ -14,7 +14,7 @@ export async function repoLogin(credentials: AuthCredentials) {
 }
 
 export async function repoRegister(payload: RegisterPayload) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signUp({
     email: payload.email,
@@ -31,30 +31,53 @@ export async function repoRegister(payload: RegisterPayload) {
   return data;
 }
 
-export async function repoGetSessionUser(): Promise<SessionUser | null> {
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+function normalizeRole(
+  raw: string | undefined | null
+): SessionUser["role"] | null {
+  if (raw === "ADMIN" || raw === "BUSINESS" || raw === "CLIENT") return raw;
+  return null;
+}
 
-  if (!session?.user) return null;
+export async function repoGetSessionUser(): Promise<SessionUser | null> {
+  const supabase = await createSupabaseServerClient();
+
+  // getUser() valida el JWT en el servidor; getSession() puede estar desfasado en RSC.
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, role")
-    .eq("id", session.user.id)
-    .single();
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const fromProfile = normalizeRole(profile?.role ?? null);
+  const fromMeta = normalizeRole(
+    typeof user.user_metadata?.role === "string"
+      ? user.user_metadata.role
+      : null
+  );
+  const role: SessionUser["role"] =
+    fromProfile ?? fromMeta ?? "CLIENT";
 
   return {
-    id: session.user.id,
-    email: session.user.email ?? "",
-    role: (profile?.role as SessionUser["role"]) ?? "CLIENT",
-    fullName: profile?.full_name ?? session.user.user_metadata.full_name,
+    id: user.id,
+    email: user.email ?? "",
+    role,
+    fullName:
+      profile?.full_name ??
+      (typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null),
   };
 }
 
 export async function repoLogout() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
