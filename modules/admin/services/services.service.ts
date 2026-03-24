@@ -18,7 +18,7 @@ import type {
   ServiceUpdate,
 } from "./services.types";
 import { serviceFormSchema } from "./services.schema";
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -54,7 +54,7 @@ async function uploadServiceImages(
   primaryIndex: number
 ) {
   if (imageFiles.length === 0) return;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const baseSortOrder = await repoGetNextServiceImageSortOrder(serviceId);
   const uploaded: Array<{
     serviceId: string;
@@ -158,7 +158,7 @@ export async function updateServiceService(
       await repoDeleteServiceImagesByIds(id, removedImageIds ?? []);
 
       for (const ref of refs) {
-        const { error } = await (await createSupabaseServerClient()).storage
+        const { error } = await createSupabaseAdminClient().storage
           .from(ref.storageBucket)
           .remove([ref.storagePath]);
         if (error) {

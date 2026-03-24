@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   GeneralCharacteristic,
   GeneralCharacteristicInsert,
@@ -26,7 +26,7 @@ function mapRow(row: GeneralCharacteristicRow): GeneralCharacteristic {
 export async function repoListGeneralCharacteristics(): Promise<
   GeneralCharacteristic[]
 > {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("product_characteristics_general")
     .select("id, name, active, created_at, updated_at")
@@ -39,7 +39,7 @@ export async function repoListGeneralCharacteristics(): Promise<
 export async function repoCreateGeneralCharacteristic(
   payload: GeneralCharacteristicInsert
 ): Promise<GeneralCharacteristic> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("product_characteristics_general")
     .insert({
@@ -57,7 +57,7 @@ export async function repoUpdateGeneralCharacteristic(
   id: string,
   payload: GeneralCharacteristicUpdate
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("product_characteristics_general")
     .update({
@@ -70,7 +70,7 @@ export async function repoUpdateGeneralCharacteristic(
 }
 
 export async function repoDeleteGeneralCharacteristic(id: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("product_characteristics_general")
     .delete()

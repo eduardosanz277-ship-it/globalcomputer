@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   BrandType,
   BrandTypeInsert,
@@ -35,7 +35,7 @@ function mapRow(row: BrandTypeRow): BrandType {
 }
 
 export async function repoListBrandTypes(): Promise<BrandType[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("brand_types")
     .select(
@@ -55,7 +55,7 @@ export async function repoListBrandTypes(): Promise<BrandType[]> {
 export async function repoCreateBrandType(
   payload: BrandTypeInsert
 ): Promise<BrandType> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("brand_types")
     .insert({
@@ -74,7 +74,7 @@ export async function repoUpdateBrandType(
   id: string,
   payload: BrandTypeUpdate
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("brand_types")
     .update({
@@ -88,7 +88,7 @@ export async function repoUpdateBrandType(
 }
 
 export async function repoDeleteBrandType(id: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("brand_types").delete().eq("id", id);
 
   if (error) throw error;

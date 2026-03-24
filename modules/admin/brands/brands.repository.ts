@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { Brand, BrandInsert, BrandUpdate } from "./brands.types";
 
 type BrandRow = {
@@ -20,7 +20,7 @@ function mapRow(row: BrandRow): Brand {
 }
 
 export async function repoListBrands(): Promise<Brand[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("brands")
     .select("id, name, active, created_at, updated_at")
@@ -31,7 +31,7 @@ export async function repoListBrands(): Promise<Brand[]> {
 }
 
 export async function repoCreateBrand(payload: BrandInsert): Promise<Brand> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("brands")
     .insert({
@@ -49,7 +49,7 @@ export async function repoUpdateBrand(
   id: string,
   payload: BrandUpdate
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("brands")
     .update({
@@ -62,7 +62,7 @@ export async function repoUpdateBrand(
 }
 
 export async function repoDeleteBrand(id: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("brands").delete().eq("id", id);
 
   if (error) throw error;

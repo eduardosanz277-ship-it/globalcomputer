@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   Service,
   ServiceImage,
@@ -45,7 +45,7 @@ function mapRow(row: ServiceRow): Service {
 }
 
 export async function repoListServices(): Promise<Service[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("services")
     .select(
@@ -58,7 +58,7 @@ export async function repoListServices(): Promise<Service[]> {
 }
 
 export async function repoCreateService(payload: ServiceInsert): Promise<Service> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("services")
     .insert({
@@ -78,7 +78,7 @@ export async function repoUpdateService(
   id: string,
   payload: ServiceUpdate
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("services")
     .update({
@@ -91,7 +91,7 @@ export async function repoUpdateService(
 }
 
 export async function repoDeleteService(id: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("services").delete().eq("id", id);
 
   if (error) throw error;
@@ -108,7 +108,7 @@ export async function repoInsertServiceImages(
   }>
 ): Promise<void> {
   if (payload.length === 0) return;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("service_images").insert(
     payload.map((item) => ({
       service_id: item.serviceId,
@@ -123,7 +123,7 @@ export async function repoInsertServiceImages(
 }
 
 export async function repoUnsetPrimaryServiceImage(serviceId: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("service_images")
     .update({ is_primary: false })
@@ -135,7 +135,7 @@ export async function repoUnsetPrimaryServiceImage(serviceId: string): Promise<v
 export async function repoGetNextServiceImageSortOrder(
   serviceId: string
 ): Promise<number> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("service_images")
     .select("sort_order")
@@ -152,7 +152,7 @@ export async function repoUpdateServiceImagesMetadata(
   images: Array<{ id: string; order: number; isPrimary: boolean }>
 ): Promise<void> {
   if (images.length === 0) return;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const hasPrimary = images.some((img) => img.isPrimary);
   const normalized = hasPrimary
     ? images
@@ -188,7 +188,7 @@ export async function repoListServiceImageStorageRefsByIds(
   imageIds: string[]
 ): Promise<Array<{ storageBucket: string; storagePath: string }>> {
   if (imageIds.length === 0) return [];
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("service_images")
     .select("storage_bucket, storage_path")
@@ -208,7 +208,7 @@ export async function repoDeleteServiceImagesByIds(
   imageIds: string[]
 ): Promise<void> {
   if (imageIds.length === 0) return;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("service_images")
     .delete()

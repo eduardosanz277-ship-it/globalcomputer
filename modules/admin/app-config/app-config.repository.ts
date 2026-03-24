@@ -1,10 +1,10 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AppConfigKey } from "./app-config.types";
 
 type ConfigRow = { key: string; value: unknown };
 
 export async function repoGetAppConfigByKeys(keys: readonly string[]) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("app_config")
     .select("key, value")
@@ -17,7 +17,7 @@ export async function repoGetAppConfigByKeys(keys: readonly string[]) {
 export async function repoUpsertAppConfigEntries(
   entries: { key: AppConfigKey; value: unknown }[]
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("app_config").upsert(
     entries.map((e) => ({
       key: e.key,
