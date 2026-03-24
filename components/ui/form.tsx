@@ -15,6 +15,8 @@ interface FormProps<TFieldValues extends FieldValues> {
   form: UseFormReturn<TFieldValues>;
   onSubmit: (values: TFieldValues) => void | Promise<void>;
   className?: string;
+  /** p. ej. para asociar botones de envío fuera del `<form>` con `form={id}` */
+  id?: string;
   children: React.ReactNode;
 }
 
@@ -22,11 +24,13 @@ export function Form<TFieldValues extends FieldValues>({
   form,
   onSubmit,
   className,
+  id,
   children,
 }: FormProps<TFieldValues>) {
   return (
     <FormProvider {...form}>
       <form
+        id={id}
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-4", className)}
       >

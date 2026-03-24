@@ -63,6 +63,27 @@ const config: Config = {
         md: "0.375rem",
         sm: "0.25rem",
       },
+      keyframes: {
+        "slide-over-in": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "slide-over-out": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(100%)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+      },
+      animation: {
+        "slide-over-in":
+          "slide-over-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+        "slide-over-out":
+          "slide-over-out 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+        "fade-in": "fade-in 0.22s ease-out forwards",
+      },
     },
   },
   plugins: [],

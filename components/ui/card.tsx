@@ -10,7 +10,7 @@ export const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border border-border bg-card text-card-foreground shadow-sm",
+      "min-w-0 rounded-lg border border-border bg-card text-card-foreground shadow-sm",
       className
     )}
     {...props}
@@ -52,7 +52,7 @@ export const CardContent = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("p-4 space-y-4", className)} {...props} />
+  <div className={cn("min-w-0 space-y-4 p-4", className)} {...props} />
 );
 
 export const CardFooter = ({
