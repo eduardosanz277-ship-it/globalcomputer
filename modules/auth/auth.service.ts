@@ -2,14 +2,18 @@ import {
   emailOtpRequestSchema,
   emailOtpVerifySchema,
   loginSchema,
+  registerBusinessSchema,
   registerSchema,
+  type RegisterBusinessFormInput,
 } from "./auth.schema";
 import { AuthCredentials, RegisterPayload } from "./auth.types";
 import {
+  repoGetBusinessLoginBlockReason,
   repoGetSessionUser,
   repoLogin,
   repoLogout,
   repoRegister,
+  repoRegisterBusiness,
   repoSignInWithOtp,
   repoVerifyEmailOtp,
 } from "./auth.repository";
@@ -127,6 +131,26 @@ export async function registerService(payload: RegisterPayload) {
   }
 
   await repoRegister(parsed.data);
+  return { success: true };
+}
+
+export async function registerBusinessService(payload: RegisterBusinessFormInput) {
+  const parsed = registerBusinessSchema.safeParse({
+    businessName: payload.businessName,
+    phone: payload.phone ?? "",
+    email: payload.email.trim().toLowerCase(),
+    employerIdentificationNumber: payload.employerIdentificationNumber,
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
+  }
+
+  await repoRegisterBusiness({
+    businessName: parsed.data.businessName,
+    phone: parsed.data.phone,
+    email: parsed.data.email,
+    employerIdentificationNumber: parsed.data.employerIdentificationNumber,
+  });
   return { success: true };
 }
 
