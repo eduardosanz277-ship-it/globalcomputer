@@ -11,11 +11,11 @@ export default async function AdminPanelLayout({
   const user = await getCurrentUserService();
 
   if (!user) {
-    redirect("/login");
+    redirect("/admin/login");
   }
 
   if (!canAccessAdminRoutes(user.role)) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   return (

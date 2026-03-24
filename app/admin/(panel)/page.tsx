@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** El panel solo expone Usuarios en el menú; /admin redirige allí. */
+/** Entrada del panel admin: redirige al Home del panel. */
 export default function AdminIndexPage() {
-  redirect("/admin/users");
+  redirect("/admin/home");
 }

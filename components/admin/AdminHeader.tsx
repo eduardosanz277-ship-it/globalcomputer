@@ -104,7 +104,7 @@ export function AdminHeader({ user, onOpenMobileMenu }: Props) {
               <p className="truncate text-sm font-medium">{displayName}</p>
             </div>
             <Link
-              href="/dashboard"
+              href="/"
               className="block px-3 py-2 text-sm hover:bg-muted"
               role="menuitem"
               onClick={() => setOpen(false)}

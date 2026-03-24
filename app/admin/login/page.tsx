@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
-import { loginAction } from "@/app/login/actions";
+import { adminLoginAction } from "@/app/admin/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
 
@@ -23,10 +23,10 @@ export default function AdminLoginPage() {
     },
   });
 
-  const { execute, isPending } = useServerAction(loginAction, {
+  const { execute, isPending } = useServerAction(adminLoginAction, {
     successMessage: "Sesión iniciada",
     onSuccess: () => {
-      router.push("/admin/users");
+      router.push("/admin/home");
       router.refresh();
     },
   });
@@ -63,9 +63,9 @@ export default function AdminLoginPage() {
           </Form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            ¿Necesitas cuenta?{" "}
-            <Link href="/register" className="underline">
-              Regístrate
+            ¿Eres cliente o empresa?{" "}
+            <Link href="/login" className="underline">
+              Inicio de sesión con código
             </Link>
           </p>
         </CardContent>

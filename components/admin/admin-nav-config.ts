@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  House,
   Layers,
   ListChecks,
   ListTodo,
@@ -22,8 +23,8 @@ export type AdminNavItem = {
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+  { href: "/admin/home", label: "Home", icon: House },
   { href: "/admin/users", label: "Usuarios", icon: Users },
-  { href: "/admin/settings", label: "Configuración", icon: Settings },
   { href: "/admin/brands", label: "Marcas", icon: Tag },
   {
     href: "/admin/brand-types",
@@ -40,4 +41,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Características específicas",
     icon: ListTodo,
   },
+  { href: "/admin/settings", label: "Configuración", icon: Settings },
 ];
