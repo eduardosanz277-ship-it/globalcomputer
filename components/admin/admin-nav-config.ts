@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Settings, Users } from "lucide-react";
+import { Settings, Tag, Users } from "lucide-react";
 
 export type AdminNavSubItem = {
   href: string;
@@ -17,4 +17,5 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/users", label: "Usuarios", icon: Users },
   { href: "/admin/settings", label: "Configuración", icon: Settings },
+  { href: "/admin/brands", label: "Marcas", icon: Tag },
 ];
