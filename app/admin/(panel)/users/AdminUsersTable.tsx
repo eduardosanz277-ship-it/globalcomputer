@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import Select, { type StylesConfig } from "react-select";
 import { Eye, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,71 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { deleteUserAction } from "./actions";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { UserDetailDrawer } from "./UserDetailDrawer";
+import type { UserRole } from "@/modules/auth/auth.types";
+
+const ROLE_FILTER_OPTIONS = [
+  { value: "all" as const, label: "Todos" },
+  { value: "CLIENT" as const, label: "Cliente" },
+  { value: "BUSINESS" as const, label: "Comercio" },
+  { value: "ADMIN" as const, label: "Administrador" },
+] as const;
+
+type RoleFilter = (typeof ROLE_FILTER_OPTIONS)[number]["value"];
+
+const filterSelectStyles: StylesConfig<
+  (typeof ROLE_FILTER_OPTIONS)[number],
+  false
+> = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 40,
+    width: "100%",
+    minWidth: 0,
+    borderRadius: "0.5rem",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "hsl(214 32% 91% / 0.9)",
+    backgroundColor: "hsl(0 0% 100%)",
+    boxShadow: state.isFocused
+      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.3)"
+      : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    "&:hover": {
+      borderColor: "hsl(214 32% 91% / 0.9)",
+    },
+  }),
+  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
+  singleValue: (base) => ({
+    ...base,
+    color: "hsl(222.2 84% 4.9%)",
+    fontSize: "0.875rem",
+  }),
+  input: (base) => ({ ...base, margin: 0, padding: 0 }),
+  indicatorSeparator: () => ({ display: "none" }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: "hsl(215.4 16.3% 46.9%)",
+    padding: "0 8px",
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: "hsl(0 0% 100%)",
+    border: "1px solid hsl(214 32% 91% / 0.9)",
+    borderRadius: "0.5rem",
+    zIndex: 50,
+  }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: "0.875rem",
+    padding: "8px 12px",
+    backgroundColor: state.isSelected
+      ? "hsl(222.2 47.4% 11.2%)"
+      : state.isFocused
+        ? "hsl(210 40% 96.1%)"
+        : "hsl(0 0% 100%)",
+    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
+    cursor: "pointer",
+  }),
+};
 
 interface Props {
   users: AdminUser[];
@@ -55,11 +121,13 @@ function RowActions({
       html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
       icon: "warning",
       showCancelButton: true,
+      reverseButtons: true,
       focusCancel: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Eliminar",
       cancelButtonText: "Cancelar",
       confirmButtonColor: "hsl(0 72% 45%)",
       cancelButtonColor: "hsl(215 16% 47%)",
+      customClass: { popup: "swal-equal-width-buttons" },
     });
 
     if (!result.isConfirmed) return;
@@ -132,6 +200,16 @@ function RowActions({
 
 export function AdminUsersTable({ users, isLoading = false }: Props) {
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+
+  const filteredUsers = useMemo(() => {
+    if (roleFilter === "all") return users;
+    return users.filter((u) => u.role === (roleFilter as UserRole));
+  }, [users, roleFilter]);
+
+  const filterValue =
+    ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter) ??
+    ROLE_FILTER_OPTIONS[0];
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
@@ -165,7 +243,32 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <DataTable columns={columns} data={users} isLoading={isLoading} />
+      <div className="space-y-4">
+        <DataTable
+          columns={columns}
+          data={filteredUsers}
+          isLoading={isLoading}
+          searchPlaceholder="Buscar…"
+          toolbarFilters={
+            <div className="w-full min-w-0">
+              <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
+                instanceId="users-role-filter"
+                inputId="users-role-filter-input"
+                aria-label="Filtrar por rol"
+                isSearchable={false}
+                isClearable={false}
+                options={[...ROLE_FILTER_OPTIONS]}
+                value={filterValue}
+                onChange={(opt) => {
+                  if (opt) setRoleFilter(opt.value);
+                }}
+                styles={filterSelectStyles}
+                className="w-full"
+              />
+            </div>
+          }
+        />
+      </div>
       <UserDetailDrawer
         userId={detailUserId}
         onClose={() => setDetailUserId(null)}
