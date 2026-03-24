@@ -7,6 +7,8 @@ interface Options<TArgs extends any[], TResult> {
   successMessage?: string;
   errorMessage?: string;
   onSuccess?: (result: TResult) => void;
+  /** Se ejecuta siempre tras la acción (éxito o error), p. ej. `router.refresh()`. */
+  onSettled?: () => void;
 }
 
 export function useServerAction<TArgs extends any[], TResult>(
@@ -38,6 +40,8 @@ export function useServerAction<TArgs extends any[], TResult>(
           options.errorMessage ??
           "Ha ocurrido un error inesperado";
         toast.error(message);
+      } finally {
+        options.onSettled?.();
       }
     });
   };
