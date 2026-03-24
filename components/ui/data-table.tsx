@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -103,6 +103,10 @@ interface DataTableProps<TData, TValue> {
   defaultPageSize?: number;
   /** Texto del placeholder del buscador */
   searchPlaceholder?: string;
+  /** Filtros u otros controles a la derecha del buscador (misma fila en escritorio) */
+  toolbarFilters?: ReactNode;
+  /** Acciones alineadas a la derecha (ej. “Nueva …”) */
+  toolbarActions?: ReactNode;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
 }
@@ -126,6 +130,8 @@ export function DataTable<TData, TValue>({
   pageSizeOptions = [5, 10, 20, 50],
   defaultPageSize = 10,
   searchPlaceholder = "Buscar…",
+  toolbarFilters,
+  toolbarActions,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
@@ -181,45 +187,67 @@ export function DataTable<TData, TValue>({
   const firstHeaderGroup = table.getHeaderGroups()[0];
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="flex justify-end">
-        <div className="relative w-full max-w-sm">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            placeholder={searchPlaceholder}
-            value={String(globalFilter ?? "")}
-            onChange={(e) => table.setGlobalFilter(e.target.value)}
-            disabled={isLoading}
-            className={cn(
-              "h-10 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
-              "text-sm shadow-sm transition-[box-shadow,border-color]",
-              "placeholder:text-muted-foreground/70",
-              "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
-              isLoading && "cursor-not-allowed opacity-60"
-            )}
-            type="search"
-            autoComplete="off"
-            spellCheck={false}
-            enterKeyHint="search"
-            aria-label="Filtrar filas de la tabla"
-          />
+    <div className={cn("w-full min-w-0 space-y-4", className)}>
+      <div
+        className={cn(
+          "data-table-toolbar flex min-w-0 flex-col gap-3",
+          "min-[1301px]:flex-row min-[1301px]:items-center min-[1301px]:justify-between min-[1301px]:gap-4"
+        )}
+      >
+        <div
+          className={cn(
+            "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
+            "lg:flex-row lg:items-stretch lg:gap-3"
+          )}
+        >
+          <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              placeholder={searchPlaceholder}
+              value={String(globalFilter ?? "")}
+              onChange={(e) => table.setGlobalFilter(e.target.value)}
+              disabled={isLoading}
+              className={cn(
+                "h-10 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
+                "text-sm shadow-sm transition-[box-shadow,border-color]",
+                "placeholder:text-muted-foreground/70",
+                "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
+                isLoading && "cursor-not-allowed opacity-60"
+              )}
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="search"
+              aria-label="Filtrar filas de la tabla"
+            />
+          </div>
+          {toolbarFilters ? (
+            <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+              {toolbarFilters}
+            </div>
+          ) : null}
         </div>
+        {toolbarActions ? (
+          <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1301px]:flex-row min-[1301px]:w-auto min-[1301px]:items-center min-[1301px]:justify-end">
+            {toolbarActions}
+          </div>
+        ) : null}
       </div>
 
       <div
         className={cn(
-          "overflow-hidden rounded-xl border border-border/90 bg-card",
+          "min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card",
           "shadow-sm ring-1 ring-border/40"
         )}
         role="region"
         aria-label="Resultados de la tabla"
         aria-busy={isLoading}
       >
-        {/* Vista tabla: desktop */}
-        <div className="hidden overflow-x-auto md:block">
+        {/* Vista tabla: desktop / tablet (scroll horizontal si el área es estrecha) */}
+        <div className="hidden min-w-0 overflow-x-auto overscroll-x-contain md:block">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead className="sticky top-0 z-[1] border-b border-border bg-muted/90 backdrop-blur-sm">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -382,7 +410,7 @@ export function DataTable<TData, TValue>({
         className="border-t border-border/80 pt-4"
         aria-label="Paginación de la tabla"
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
           <p
             role="status"
             className="min-w-0 text-sm leading-relaxed text-muted-foreground"
@@ -415,7 +443,7 @@ export function DataTable<TData, TValue>({
             )}
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-6 sm:gap-y-3 lg:shrink-0">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-6 sm:gap-y-3 xl:shrink-0">
             <div
               className="flex items-center gap-2"
               role="group"

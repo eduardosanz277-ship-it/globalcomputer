@@ -60,7 +60,7 @@ export function AdminShell({ user, children }: Props) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <div className="min-h-0 w-full flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-10">
+        <div className="min-h-0 min-w-0 w-full flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-10">
           {children}
         </div>
       </div>
