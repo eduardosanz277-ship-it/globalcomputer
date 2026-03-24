@@ -1,8 +1,14 @@
 "use server";
 
-import { loginService } from "@/modules/auth/auth.service";
-import { LoginSchema } from "@/modules/auth/auth.schema";
+import {
+  sendLoginOtpService,
+  verifyLoginOtpService,
+} from "@/modules/auth/auth.service";
 
-export async function loginAction(values: LoginSchema) {
-  await loginService(values);
+export async function sendLoginOtpAction(email: string) {
+  await sendLoginOtpService(email);
+}
+
+export async function verifyLoginOtpAction(email: string, code: string) {
+  await verifyLoginOtpService(email, code);
 }

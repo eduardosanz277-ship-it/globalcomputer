@@ -13,6 +13,32 @@ export async function repoLogin(credentials: AuthCredentials) {
   return data;
 }
 
+/**
+ * Passwordless: envía enlace mágico y/o código según plantilla de email en Supabase.
+ * `emailRedirectTo` debe coincidir con URL permitidas del proyecto (Site URL / Redirect URLs).
+ */
+export async function repoSignInWithOtp(email: string, emailRedirectTo: string) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo,
+    },
+  });
+  if (error) throw error;
+}
+
+export async function repoVerifyEmailOtp(email: string, token: string) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error) throw error;
+}
+
 export async function repoRegister(payload: RegisterPayload) {
   const supabase = await createSupabaseServerClient();
 
