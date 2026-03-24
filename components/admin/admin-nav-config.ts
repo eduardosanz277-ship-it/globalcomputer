@@ -1,5 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { Layers, Settings, Tag, Users } from "lucide-react";
+import {
+  Layers,
+  ListChecks,
+  ListTodo,
+  Settings,
+  Tag,
+  Users,
+} from "lucide-react";
 
 export type AdminNavSubItem = {
   href: string;
@@ -22,5 +29,15 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/brand-types",
     label: "Tipos por marca",
     icon: Layers,
+  },
+  {
+    href: "/admin/general-characteristics",
+    label: "Características generales",
+    icon: ListChecks,
+  },
+  {
+    href: "/admin/specific-characteristics",
+    label: "Características específicas",
+    icon: ListTodo,
   },
 ];

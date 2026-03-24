@@ -143,10 +143,12 @@ export function BrandTypeFormDialog({
           options={brandOptions}
           placeholder="Selecciona una marca"
           isDisabled={isPending}
+          required
         />
         <FormField
           name="name"
           label="Nombre del tipo"
+          required
           disabled={isPending}
           error={errors.name?.message}
           autoComplete="off"

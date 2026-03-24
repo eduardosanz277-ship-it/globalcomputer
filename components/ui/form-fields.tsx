@@ -3,7 +3,7 @@
 import { Controller, useFormContext } from "react-hook-form";
 import type { FieldValues, Path } from "react-hook-form";
 import Select, { type StylesConfig } from "react-select";
-import { Label } from "./label";
+import { Label, RequiredMark } from "./label";
 import { Switch } from "./switch";
 import { cn } from "@/utils/cn";
 
@@ -110,6 +110,8 @@ type FormSelectFieldProps<TFieldValues extends FieldValues> = {
   isDisabled?: boolean;
   /** id para accesibilidad / react-select instanceId */
   instanceId: string;
+  /** Muestra * en la etiqueta (validación con zod). */
+  required?: boolean;
 };
 
 export function FormSelectField<TFieldValues extends FieldValues>({
@@ -119,6 +121,7 @@ export function FormSelectField<TFieldValues extends FieldValues>({
   placeholder,
   isDisabled,
   instanceId,
+  required: fieldRequired,
 }: FormSelectFieldProps<TFieldValues>) {
   const { control, formState } = useFormContext<TFieldValues>();
   const err = formState.errors[name as keyof typeof formState.errors];
@@ -129,7 +132,10 @@ export function FormSelectField<TFieldValues extends FieldValues>({
 
   return (
     <div className="space-y-1">
-      <Label htmlFor={`${instanceId}-input`}>{label}</Label>
+      <Label htmlFor={`${instanceId}-input`}>
+        {label}
+        {fieldRequired ? <RequiredMark /> : null}
+      </Label>
       <Controller
         name={name}
         control={control}

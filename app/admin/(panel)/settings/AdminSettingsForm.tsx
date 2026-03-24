@@ -7,7 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useServerAction } from "@/hooks/use-server-action";
 import { updateAppConfigAction } from "@/modules/admin/app-config/app-config.actions";
@@ -54,7 +54,10 @@ export function AdminSettingsForm({ initial }: Props) {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="supportEmail">Email</Label>
+              <Label htmlFor="supportEmail">
+                Email
+                <RequiredMark />
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -62,6 +65,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   type="email"
                   autoComplete="email"
                   className="pl-9"
+                  aria-required
                   {...form.register("supportEmail")}
                 />
               </div>
@@ -70,7 +74,10 @@ export function AdminSettingsForm({ initial }: Props) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supportPhone">Teléfono</Label>
+              <Label htmlFor="supportPhone">
+                Teléfono
+                <RequiredMark />
+              </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -78,6 +85,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   type="tel"
                   autoComplete="tel"
                   className="pl-9"
+                  aria-required
                   {...form.register("supportPhone")}
                 />
               </div>
@@ -131,7 +139,10 @@ export function AdminSettingsForm({ initial }: Props) {
                   !lowStockAlertsOn && "pointer-events-none opacity-50"
                 )}
               >
-                <Label htmlFor="lowStockThreshold">Umbral (límite)</Label>
+                <Label htmlFor="lowStockThreshold">
+                  Umbral (límite)
+                  <RequiredMark />
+                </Label>
                 <p className="text-sm text-muted-foreground">
                   Se alerta cuando la cantidad en stock sea menor o igual a este
                   número (solo si las alertas de stock bajo están activas).
@@ -142,6 +153,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   min={0}
                   step={1}
                   disabled={!lowStockAlertsOn || isPending}
+                  aria-required={lowStockAlertsOn}
                   {...form.register("lowStockThreshold", { valueAsNumber: true })}
                 />
                 {errors.lowStockThreshold && (

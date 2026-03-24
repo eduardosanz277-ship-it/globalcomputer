@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
-import type { Brand } from "@/modules/admin/brands/brands.types";
+import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Select, { type StylesConfig } from "react-select";
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,22 +17,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
-import { deleteBrandTypeAction } from "./actions";
-import { BrandTypeFormDialog } from "./BrandTypeFormDialog";
+import { deleteGeneralCharacteristicAction } from "./actions";
+import { GeneralCharacteristicFormDialog } from "./GeneralCharacteristicFormDialog";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activos" },
-  { value: "inactive" as const, label: "Inactivos" },
+  { value: "active" as const, label: "Activas" },
+  { value: "inactive" as const, label: "Inactivas" },
 ];
 
 type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
 
-type FilterOption = { value: string; label: string };
-
-const filterSelectStyles: StylesConfig<FilterOption, false> = {
+const filterSelectStyles: StylesConfig<
+  (typeof STATUS_FILTER_OPTIONS)[number],
+  false
+> = {
   control: (base, state) => ({
     ...base,
     minHeight: 40,
@@ -86,8 +86,7 @@ const filterSelectStyles: StylesConfig<FilterOption, false> = {
 };
 
 interface Props {
-  brands: Brand[];
-  brandTypes: BrandType[];
+  characteristics: GeneralCharacteristic[];
   isLoading?: boolean;
 }
 
@@ -95,22 +94,25 @@ function RowActions({
   row,
   onEdit,
 }: {
-  row: BrandType;
+  row: GeneralCharacteristic;
   onEdit: () => void;
 }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(deleteBrandTypeAction, {
-    successMessage: "Tipo eliminado",
-    errorMessage: "No se pudo eliminar el tipo",
-    onSuccess: () => {
-      router.refresh();
-    },
-  });
+  const { execute, isPending } = useServerAction(
+    deleteGeneralCharacteristicAction,
+    {
+      successMessage: "Característica eliminada",
+      errorMessage: "No se pudo eliminar la característica",
+      onSuccess: () => {
+        router.refresh();
+      },
+    }
+  );
 
   const handleDelete = async () => {
     const result = await Swal.fire({
-      title: "¿Eliminar tipo?",
-      html: `Vas a eliminar <strong>${row.name}</strong> (${row.brandName}). Si hay productos asociados, la operación no se permitirá.`,
+      title: "¿Eliminar característica?",
+      html: `Vas a eliminar <strong>${row.name}</strong>. Se borrarán también los valores específicos asociados si la base de datos lo permite; si hay productos vinculados, puede no permitirse.`,
       icon: "warning",
       showCancelButton: true,
       reverseButtons: true,
@@ -136,7 +138,7 @@ function RowActions({
             variant="outline"
             className="h-8 w-8 shrink-0"
             onClick={onEdit}
-            aria-label="Editar tipo"
+            aria-label="Editar característica"
           >
             <Pencil className="h-4 w-4" aria-hidden />
           </Button>
@@ -153,7 +155,7 @@ function RowActions({
             className="h-8 w-8 shrink-0"
             onClick={handleDelete}
             disabled={isPending}
-            aria-label="Eliminar tipo"
+            aria-label="Eliminar característica"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
@@ -166,49 +168,29 @@ function RowActions({
   );
 }
 
-export function AdminBrandTypesTable({
-  brands,
-  brandTypes,
+export function AdminGeneralCharacteristicsTable({
+  characteristics,
   isLoading = false,
 }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [brandFilter, setBrandFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<BrandType | null>(null);
-
-  const brandFilterOptions = useMemo<FilterOption[]>(
-    () => [
-      { value: "all", label: "Todas las marcas" },
-      ...brands.map((b) => ({ value: b.id, label: b.name })),
-    ],
-    [brands]
-  );
+  const [editing, setEditing] = useState<GeneralCharacteristic | null>(null);
 
   const filtered = useMemo(() => {
-    let rows = brandTypes;
-    if (statusFilter === "active") rows = rows.filter((r) => r.active);
-    else if (statusFilter === "inactive") rows = rows.filter((r) => !r.active);
-    if (brandFilter !== "all") {
-      rows = rows.filter((r) => r.brandId === brandFilter);
+    if (statusFilter === "all") return characteristics;
+    if (statusFilter === "active") {
+      return characteristics.filter((c) => c.active);
     }
-    return rows;
-  }, [brandTypes, statusFilter, brandFilter]);
+    return characteristics.filter((c) => !c.active);
+  }, [characteristics, statusFilter]);
 
-  const statusFilterValue =
+  const filterValue =
     STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
     STATUS_FILTER_OPTIONS[0];
 
-  const brandFilterValue =
-    brandFilterOptions.find((o) => o.value === brandFilter) ??
-    brandFilterOptions[0];
-
-  const columns = useMemo<ColumnDef<BrandType>[]>(
+  const columns = useMemo<ColumnDef<GeneralCharacteristic>[]>(
     () => [
-      {
-        accessorKey: "brandName",
-        header: "Marca",
-      },
-      { accessorKey: "name", header: "Tipo" },
+      { accessorKey: "name", header: "Nombre" },
       {
         accessorKey: "active",
         header: "Estado",
@@ -221,7 +203,7 @@ export function AdminBrandTypesTable({
                 : "bg-muted text-muted-foreground"
             )}
           >
-            {row.original.active ? "Activo" : "Inactivo"}
+            {row.original.active ? "Activa" : "Inactiva"}
           </span>
         ),
       },
@@ -256,82 +238,48 @@ export function AdminBrandTypesTable({
           columns={columns}
           data={filtered}
           isLoading={isLoading}
-          toolbarLayout="stacked"
           searchPlaceholder="Buscar…"
           toolbarFilters={
-            <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
-                <Select<FilterOption, false>
-                  instanceId="brand-types-brand-filter"
-                  inputId="brand-types-brand-filter-input"
-                  aria-label="Filtrar por marca"
-                  isSearchable={false}
-                  isClearable={false}
-                  options={brandFilterOptions}
-                  value={brandFilterValue}
-                  onChange={(opt) => {
-                    if (opt) setBrandFilter(opt.value);
-                  }}
-                  styles={filterSelectStyles}
-                  className="w-full"
-                />
-              </div>
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
-                <Select<FilterOption, false>
-                  instanceId="brand-types-status-filter"
-                  inputId="brand-types-status-filter-input"
-                  aria-label="Filtrar por estado"
-                  isSearchable={false}
-                  isClearable={false}
-                  options={STATUS_FILTER_OPTIONS}
-                  value={statusFilterValue}
-                  onChange={(opt) => {
-                    if (opt) setStatusFilter(opt.value as StatusFilter);
-                  }}
-                  styles={filterSelectStyles}
-                  className="w-full"
-                />
-              </div>
+            <div className="w-full min-w-0 min-[1301px]:max-w-[13rem]">
+              <Select<typeof STATUS_FILTER_OPTIONS[number], false>
+                instanceId="general-characteristics-status-filter"
+                inputId="general-characteristics-status-filter-input"
+                aria-label="Filtrar por estado"
+                isSearchable={false}
+                isClearable={false}
+                options={STATUS_FILTER_OPTIONS}
+                value={filterValue}
+                onChange={(opt) => {
+                  if (opt) setStatusFilter(opt.value);
+                }}
+                styles={filterSelectStyles}
+                className="w-full"
+              />
             </div>
           }
           toolbarActions={
             <Button
               type="button"
-              className="w-full shrink-0 min-[1331px]:w-auto"
+              className="w-full shrink-0 min-[1301px]:w-auto"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
               }}
-              disabled={brands.length === 0}
-              title={
-                brands.length === 0
-                  ? "Crea al menos una marca antes de añadir tipos"
-                  : undefined
-              }
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nuevo tipo
+              Nueva característica
             </Button>
           }
         />
-
-        {brands.length === 0 ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Layers className="h-4 w-4 shrink-0" aria-hidden />
-            No hay marcas todavía. Crea una marca en la sección Marcas para
-            poder definir tipos.
-          </p>
-        ) : null}
       </div>
 
-      <BrandTypeFormDialog
+      <GeneralCharacteristicFormDialog
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) setEditing(null);
         }}
-        brandType={editing}
-        brands={brands}
+        characteristic={editing}
       />
     </TooltipProvider>
   );

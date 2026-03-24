@@ -47,12 +47,14 @@ export default function AdminLoginPage() {
               name="email"
               label="Email"
               type="email"
+              required
               error={errors.email?.message}
             />
             <FormField
               name="password"
               label="Contraseña"
               type="password"
+              required
               error={errors.password?.message}
             />
             <Button type="submit" className="w-full" disabled={isPending}>

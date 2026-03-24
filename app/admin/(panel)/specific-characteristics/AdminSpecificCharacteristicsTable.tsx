@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
-import type { Brand } from "@/modules/admin/brands/brands.types";
+import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
+import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Select, { type StylesConfig } from "react-select";
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { ListChecks, Pencil, Plus, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +18,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
-import { deleteBrandTypeAction } from "./actions";
-import { BrandTypeFormDialog } from "./BrandTypeFormDialog";
+import { deleteSpecificCharacteristicAction } from "./actions";
+import { SpecificCharacteristicFormDialog } from "./SpecificCharacteristicFormDialog";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 
@@ -30,7 +30,6 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
-
 type FilterOption = { value: string; label: string };
 
 const filterSelectStyles: StylesConfig<FilterOption, false> = {
@@ -86,8 +85,8 @@ const filterSelectStyles: StylesConfig<FilterOption, false> = {
 };
 
 interface Props {
-  brands: Brand[];
-  brandTypes: BrandType[];
+  generalCharacteristics: GeneralCharacteristic[];
+  specificCharacteristics: SpecificCharacteristic[];
   isLoading?: boolean;
 }
 
@@ -95,22 +94,25 @@ function RowActions({
   row,
   onEdit,
 }: {
-  row: BrandType;
+  row: SpecificCharacteristic;
   onEdit: () => void;
 }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(deleteBrandTypeAction, {
-    successMessage: "Tipo eliminado",
-    errorMessage: "No se pudo eliminar el tipo",
-    onSuccess: () => {
-      router.refresh();
-    },
-  });
+  const { execute, isPending } = useServerAction(
+    deleteSpecificCharacteristicAction,
+    {
+      successMessage: "Característica específica eliminada",
+      errorMessage: "No se pudo eliminar la característica específica",
+      onSuccess: () => {
+        router.refresh();
+      },
+    }
+  );
 
   const handleDelete = async () => {
     const result = await Swal.fire({
-      title: "¿Eliminar tipo?",
-      html: `Vas a eliminar <strong>${row.name}</strong> (${row.brandName}). Si hay productos asociados, la operación no se permitirá.`,
+      title: "¿Eliminar característica específica?",
+      html: `Vas a eliminar <strong>${row.name}</strong> de <strong>${row.generalName}</strong>. Si hay productos asociados, la operación no se permitirá.`,
       icon: "warning",
       showCancelButton: true,
       reverseButtons: true,
@@ -136,7 +138,7 @@ function RowActions({
             variant="outline"
             className="h-8 w-8 shrink-0"
             onClick={onEdit}
-            aria-label="Editar tipo"
+            aria-label="Editar característica específica"
           >
             <Pencil className="h-4 w-4" aria-hidden />
           </Button>
@@ -153,7 +155,7 @@ function RowActions({
             className="h-8 w-8 shrink-0"
             onClick={handleDelete}
             disabled={isPending}
-            aria-label="Eliminar tipo"
+            aria-label="Eliminar característica específica"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
@@ -166,49 +168,47 @@ function RowActions({
   );
 }
 
-export function AdminBrandTypesTable({
-  brands,
-  brandTypes,
+export function AdminSpecificCharacteristicsTable({
+  generalCharacteristics,
+  specificCharacteristics,
   isLoading = false,
 }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [generalFilter, setGeneralFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<BrandType | null>(null);
+  const [editing, setEditing] = useState<SpecificCharacteristic | null>(null);
 
-  const brandFilterOptions = useMemo<FilterOption[]>(
+  const generalOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todas las marcas" },
-      ...brands.map((b) => ({ value: b.id, label: b.name })),
+      { value: "all", label: "Todas las características" },
+      ...generalCharacteristics.map((g) => ({ value: g.id, label: g.name })),
     ],
-    [brands]
+    [generalCharacteristics]
   );
 
   const filtered = useMemo(() => {
-    let rows = brandTypes;
+    let rows = specificCharacteristics;
     if (statusFilter === "active") rows = rows.filter((r) => r.active);
     else if (statusFilter === "inactive") rows = rows.filter((r) => !r.active);
-    if (brandFilter !== "all") {
-      rows = rows.filter((r) => r.brandId === brandFilter);
+
+    if (generalFilter !== "all") {
+      rows = rows.filter((r) => r.generalId === generalFilter);
     }
+
     return rows;
-  }, [brandTypes, statusFilter, brandFilter]);
+  }, [specificCharacteristics, statusFilter, generalFilter]);
 
   const statusFilterValue =
     STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
     STATUS_FILTER_OPTIONS[0];
 
-  const brandFilterValue =
-    brandFilterOptions.find((o) => o.value === brandFilter) ??
-    brandFilterOptions[0];
+  const generalFilterValue =
+    generalOptions.find((o) => o.value === generalFilter) ?? generalOptions[0];
 
-  const columns = useMemo<ColumnDef<BrandType>[]>(
+  const columns = useMemo<ColumnDef<SpecificCharacteristic>[]>(
     () => [
-      {
-        accessorKey: "brandName",
-        header: "Marca",
-      },
-      { accessorKey: "name", header: "Tipo" },
+      { accessorKey: "generalName", header: "Característica general" },
+      { accessorKey: "name", header: "Valor específico" },
       {
         accessorKey: "active",
         header: "Estado",
@@ -228,8 +228,7 @@ export function AdminBrandTypesTable({
       {
         accessorKey: "updatedAt",
         header: "Última actualización",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.updatedAt),
+        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.updatedAt),
       },
       {
         id: "actions",
@@ -257,29 +256,31 @@ export function AdminBrandTypesTable({
           data={filtered}
           isLoading={isLoading}
           toolbarLayout="stacked"
+          stackedToolbarOneRowMinPx={1455}
           searchPlaceholder="Buscar…"
           toolbarFilters={
             <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1455px]:max-w-[13rem] min-[1455px]:flex-none">
                 <Select<FilterOption, false>
-                  instanceId="brand-types-brand-filter"
-                  inputId="brand-types-brand-filter-input"
-                  aria-label="Filtrar por marca"
+                  instanceId="specific-characteristics-general-filter"
+                  inputId="specific-characteristics-general-filter-input"
+                  aria-label="Filtrar por característica general"
                   isSearchable={false}
                   isClearable={false}
-                  options={brandFilterOptions}
-                  value={brandFilterValue}
+                  options={generalOptions}
+                  value={generalFilterValue}
                   onChange={(opt) => {
-                    if (opt) setBrandFilter(opt.value);
+                    if (opt) setGeneralFilter(opt.value);
                   }}
                   styles={filterSelectStyles}
                   className="w-full"
                 />
               </div>
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
+
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1455px]:max-w-[13rem] min-[1455px]:flex-none">
                 <Select<FilterOption, false>
-                  instanceId="brand-types-status-filter"
-                  inputId="brand-types-status-filter-input"
+                  instanceId="specific-characteristics-status-filter"
+                  inputId="specific-characteristics-status-filter-input"
                   aria-label="Filtrar por estado"
                   isSearchable={false}
                   isClearable={false}
@@ -297,41 +298,41 @@ export function AdminBrandTypesTable({
           toolbarActions={
             <Button
               type="button"
-              className="w-full shrink-0 min-[1331px]:w-auto"
+              className="w-full shrink-0 min-[1455px]:w-auto"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
               }}
-              disabled={brands.length === 0}
+              disabled={generalCharacteristics.length === 0}
               title={
-                brands.length === 0
-                  ? "Crea al menos una marca antes de añadir tipos"
+                generalCharacteristics.length === 0
+                  ? "Crea al menos una característica general antes de añadir valores específicos"
                   : undefined
               }
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nuevo tipo
+              Nueva característica específica
             </Button>
           }
         />
 
-        {brands.length === 0 ? (
+        {generalCharacteristics.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Layers className="h-4 w-4 shrink-0" aria-hidden />
-            No hay marcas todavía. Crea una marca en la sección Marcas para
-            poder definir tipos.
+            <ListChecks className="h-4 w-4 shrink-0" aria-hidden />
+            No hay características generales todavía. Crea una en la sección
+            correspondiente para poder definir valores específicos.
           </p>
         ) : null}
       </div>
 
-      <BrandTypeFormDialog
+      <SpecificCharacteristicFormDialog
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) setEditing(null);
         }}
-        brandType={editing}
-        brands={brands}
+        specificCharacteristic={editing}
+        generalCharacteristics={generalCharacteristics}
       />
     </TooltipProvider>
   );

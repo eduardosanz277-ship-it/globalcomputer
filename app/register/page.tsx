@@ -48,18 +48,21 @@ export default function RegisterPage() {
             <FormField
               name="fullName"
               label="Nombre completo"
+              required
               error={errors.fullName?.message}
             />
             <FormField
               name="email"
               label="Email"
               type="email"
+              required
               error={errors.email?.message}
             />
             <FormField
               name="password"
               label="Contraseña"
               type="password"
+              required
               error={errors.password?.message}
             />
             <Button type="submit" className="w-full" disabled={isPending}>

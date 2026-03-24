@@ -1,44 +1,49 @@
 "use client";
 
-/** Ejemplo de SlideOver: formulario de marca (nombre + activa), RHF + zod + server actions. */
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  brandFormSchema,
-  type BrandFormValues,
-} from "@/modules/admin/brands/brands.schema";
-import type { Brand } from "@/modules/admin/brands/brands.types";
-import { createBrandAction, updateBrandAction } from "./actions";
+  generalCharacteristicFormSchema,
+  type GeneralCharacteristicFormValues,
+} from "@/modules/admin/general-characteristics/general-characteristics.schema";
+import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
+import {
+  createGeneralCharacteristicAction,
+  updateGeneralCharacteristicAction,
+} from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 
-const BRAND_FORM_ID = "brand-form-slide-over";
+const FORM_ID = "general-characteristic-form-slide-over";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Si null, modo crear */
-  brand: Brand | null;
+  characteristic: GeneralCharacteristic | null;
 };
 
-export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
+export function GeneralCharacteristicFormDialog({
+  open,
+  onOpenChange,
+  characteristic,
+}: Props) {
   const router = useRouter();
-  const form = useForm<BrandFormValues>({
-    resolver: zodResolver(brandFormSchema),
+  const form = useForm<GeneralCharacteristicFormValues>({
+    resolver: zodResolver(generalCharacteristicFormSchema),
     defaultValues: { name: "", active: true },
   });
 
   const errors = form.formState.errors;
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createBrandAction,
+    createGeneralCharacteristicAction,
     {
-      successMessage: "Marca creada",
+      successMessage: "Característica creada",
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -47,9 +52,9 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateBrandAction,
+    updateGeneralCharacteristicAction,
     {
-      successMessage: "Marca actualizada",
+      successMessage: "Característica actualizada",
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -61,16 +66,16 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    if (brand) {
-      form.reset({ name: brand.name, active: brand.active });
+    if (characteristic) {
+      form.reset({ name: characteristic.name, active: characteristic.active });
     } else {
       form.reset({ name: "", active: true });
     }
-  }, [open, brand, form]);
+  }, [open, characteristic, form]);
 
-  const onSubmit = (values: BrandFormValues) => {
-    if (brand) {
-      executeUpdate(brand.id, values);
+  const onSubmit = (values: GeneralCharacteristicFormValues) => {
+    if (characteristic) {
+      executeUpdate(characteristic.id, values);
     } else {
       executeCreate(values);
     }
@@ -80,8 +85,10 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
     <SlideOver
       open={open}
       onClose={() => onOpenChange(false)}
-      title={brand ? "Editar marca" : "Nueva marca"}
-      description="Define el nombre y si la marca se muestra en el catálogo público."
+      title={
+        characteristic ? "Editar característica" : "Nueva característica general"
+      }
+      description="Nombre único en el catálogo. Si está inactiva, no se ofrece al configurar productos."
       footer={
         <SlideOverFooter>
           <Button
@@ -92,14 +99,14 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
           >
             Cancelar
           </Button>
-          <Button type="submit" form={BRAND_FORM_ID} disabled={isPending}>
+          <Button type="submit" form={FORM_ID} disabled={isPending}>
             {isPending ? "Guardando…" : "Guardar"}
           </Button>
         </SlideOverFooter>
       }
     >
       <Form
-        id={BRAND_FORM_ID}
+        id={FORM_ID}
         form={form}
         onSubmit={onSubmit}
         className="space-y-3"
@@ -112,10 +119,10 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
           error={errors.name?.message}
           autoComplete="off"
         />
-        <FormSwitchField<BrandFormValues>
+        <FormSwitchField<GeneralCharacteristicFormValues>
           name="active"
-          label="Activa en catálogo"
-          description="Si está desactivada, la marca no se muestra en el catálogo público."
+          label="Activa"
+          description="Si está desactivada, no se muestra al asignar características a productos."
         />
       </Form>
     </SlideOver>

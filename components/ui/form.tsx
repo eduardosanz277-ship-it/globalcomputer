@@ -8,7 +8,7 @@ import {
   UseFormReturn,
 } from "react-hook-form";
 import { cn } from "@/utils/cn";
-import { Label } from "./label";
+import { Label, RequiredMark } from "./label";
 import { Input } from "./input";
 
 interface FormProps<TFieldValues extends FieldValues> {
@@ -41,27 +41,36 @@ export function Form<TFieldValues extends FieldValues>({
 }
 
 interface FormFieldProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "name"> {
   name: string;
   label: string;
   type?: string;
   error?: string;
+  /** Muestra * en la etiqueta y `aria-required` en el input (validación sigue siendo con zod). */
+  required?: boolean;
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ name, label, error, type = "text", ...props }, ref) => {
+  (
+    { name, label, error, type = "text", required: fieldRequired, ...props },
+    ref
+  ) => {
     const { register } = useFormContext();
     const registration = register(name);
     const { ref: registrationRef, ...rest } = registration;
 
     return (
       <div className="space-y-1">
-        <Label htmlFor={name}>{label}</Label>
+        <Label htmlFor={name}>
+          {label}
+          {fieldRequired ? <RequiredMark /> : null}
+        </Label>
         <Input
           id={name}
           type={type}
           {...props}
           {...rest}
+          aria-required={fieldRequired ? true : undefined}
           ref={(node) => {
             registrationRef(node);
             if (typeof ref === "function") ref(node);

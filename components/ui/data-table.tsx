@@ -112,6 +112,11 @@ interface DataTableProps<TData, TValue> {
    * Útil cuando hay varios filtros y se quiere orden vertical claro.
    */
   toolbarLayout?: "default" | "stacked";
+  /**
+   * Ancho mínimo (px) para que búsqueda, filtros y acciones queden en una sola fila
+   * con `toolbarLayout="stacked"`. Por defecto 1331.
+   */
+  stackedToolbarOneRowMinPx?: 1331 | 1455;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
 }
@@ -138,6 +143,7 @@ export function DataTable<TData, TValue>({
   toolbarFilters,
   toolbarActions,
   toolbarLayout = "default",
+  stackedToolbarOneRowMinPx = 1331,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
@@ -192,6 +198,25 @@ export function DataTable<TData, TValue>({
 
   const firstHeaderGroup = table.getHeaderGroups()[0];
 
+  const stackedWide =
+    stackedToolbarOneRowMinPx === 1455
+      ? {
+          toolbarRow:
+            "min-[1455px]:flex-row min-[1455px]:flex-nowrap min-[1455px]:items-center min-[1455px]:gap-3 min-[1455px]:justify-start",
+          search: "min-[1455px]:max-w-sm",
+          filters: "min-[1455px]:min-w-0 min-[1455px]:flex-1",
+          actions:
+            "min-[1455px]:ml-auto min-[1455px]:w-auto min-[1455px]:shrink-0 min-[1455px]:flex-row min-[1455px]:items-center",
+        }
+      : {
+          toolbarRow:
+            "min-[1331px]:flex-row min-[1331px]:flex-nowrap min-[1331px]:items-center min-[1331px]:gap-3 min-[1331px]:justify-start",
+          search: "min-[1331px]:max-w-sm",
+          filters: "min-[1331px]:min-w-0 min-[1331px]:flex-1",
+          actions:
+            "min-[1331px]:ml-auto min-[1331px]:w-auto min-[1331px]:shrink-0 min-[1331px]:flex-row min-[1331px]:items-center",
+        };
+
   const searchInput = (
     <>
       <Search
@@ -225,13 +250,13 @@ export function DataTable<TData, TValue>({
         <div
           className={cn(
             "data-table-toolbar data-table-toolbar--stacked flex min-w-0 flex-col gap-3",
-            "min-[1331px]:flex-row min-[1331px]:flex-nowrap min-[1331px]:items-center min-[1331px]:gap-3 min-[1331px]:justify-start"
+            stackedWide.toolbarRow
           )}
         >
           <div
             className={cn(
               "data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0",
-              "min-[1331px]:max-w-sm"
+              stackedWide.search
             )}
           >
             {searchInput}
@@ -240,7 +265,7 @@ export function DataTable<TData, TValue>({
             <div
               className={cn(
                 "data-table-toolbar__filters relative w-full min-w-0 max-w-full",
-                "min-[1331px]:min-w-0 min-[1331px]:flex-1"
+                stackedWide.filters
               )}
             >
               {toolbarFilters}
@@ -250,7 +275,7 @@ export function DataTable<TData, TValue>({
             <div
               className={cn(
                 "data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2",
-                "min-[1331px]:ml-auto min-[1331px]:w-auto min-[1331px]:shrink-0 min-[1331px]:flex-row min-[1331px]:items-center"
+                stackedWide.actions
               )}
             >
               {toolbarActions}
