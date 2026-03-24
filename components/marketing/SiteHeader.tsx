@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Camera, Menu, Search, ShoppingCart, User, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  ChevronDown,
+  LogOut,
+  Menu,
+  Search,
+  ShoppingCart,
+  User,
+  X,
+} from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import type { SessionUser } from "@/modules/auth/auth.types";
 
 const NAV = [
   { href: "#categorias", label: "Categorías" },
@@ -13,8 +23,39 @@ const NAV = [
   { href: "#ayuda", label: "Ayuda" },
 ];
 
-export function SiteHeader() {
+function roleLabel(role: SessionUser["role"]): string {
+  if (role === "ADMIN") return "Administrador";
+  if (role === "BUSINESS") return "Empresa";
+  return "Cliente";
+}
+
+type Props = {
+  user: SessionUser | null;
+};
+
+export function SiteHeader({ user }: Props) {
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRefMobile = useRef<HTMLDivElement>(null);
+  const accountRefDesktop = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const t = e.target as Node;
+      const inMobile =
+        accountRefMobile.current?.contains(t) ?? false;
+      const inDesktop =
+        accountRefDesktop.current?.contains(t) ?? false;
+      if (!inMobile && !inDesktop) setAccountOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayName =
+    user?.fullName?.trim() ||
+    user?.email?.split("@")[0] ||
+    "";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -47,16 +88,61 @@ export function SiteHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Link
-            href="/login"
-            aria-label="Cuenta"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "shrink-0 md:hidden"
-            )}
-          >
-            <User className="h-5 w-5" />
-          </Link>
+          {user ? (
+            <div className="relative shrink-0 md:hidden" ref={accountRefMobile}>
+              <button
+                type="button"
+                onClick={() => setAccountOpen((v) => !v)}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  "relative"
+                )}
+                aria-expanded={accountOpen}
+                aria-label="Mi cuenta"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+                  {(displayName || "U").slice(0, 1).toUpperCase()}
+                </span>
+              </button>
+              {accountOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-popover py-1 shadow-md">
+                  <div className="border-b border-border px-3 py-2">
+                    <p className="truncate text-sm font-medium">{displayName}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                  <Link
+                    href="/cuenta"
+                    className="block px-3 py-2 text-sm hover:bg-muted"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    Mi cuenta
+                  </Link>
+                  <form action="/auth/logout" method="post">
+                    <button
+                      type="submit"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Cerrar sesión
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              aria-label="Cuenta"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "shrink-0 md:hidden"
+              )}
+            >
+              <User className="h-5 w-5" />
+            </Link>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -71,15 +157,80 @@ export function SiteHeader() {
           </Button>
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link
-              href="/login"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-            >
-              Iniciar sesión
-            </Link>
-            <Link href="/register" className={cn(buttonVariants({ size: "sm" }))}>
-              Registrarse
-            </Link>
+            {user ? (
+              <div className="relative" ref={accountRefDesktop}>
+                <button
+                  type="button"
+                  onClick={() => setAccountOpen((v) => !v)}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "max-w-[220px] gap-2"
+                  )}
+                  aria-expanded={accountOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+                    {(displayName || "U").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-sm font-medium leading-tight">
+                      {displayName}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {roleLabel(user.role)}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-muted-foreground",
+                      accountOpen && "rotate-180"
+                    )}
+                  />
+                </button>
+                {accountOpen && (
+                  <div
+                    className="absolute right-0 top-full z-50 mt-1 min-w-[220px] rounded-lg border border-border bg-popover py-1 shadow-md"
+                    role="menu"
+                  >
+                    <div className="border-b border-border px-3 py-2">
+                      <p className="truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                    <Link
+                      href="/cuenta"
+                      className="block px-3 py-2 text-sm hover:bg-muted"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      Mi cuenta
+                    </Link>
+                    <form action="/auth/logout" method="post">
+                      <button
+                        type="submit"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                        role="menuitem"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Cerrar sesión
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                >
+                  Iniciar sesión
+                </Link>
+                <Link href="/register" className={cn(buttonVariants({ size: "sm" }))}>
+                  Registrarse
+                </Link>
+              </>
+            )}
           </div>
 
           <Button
@@ -117,7 +268,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <Link
-            href="/dashboard"
+            href={user ? "/cuenta" : "/login"}
             className="rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground md:ml-auto md:py-4"
             onClick={() => setOpen(false)}
           >
