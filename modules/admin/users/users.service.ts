@@ -2,7 +2,10 @@ import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AdminUserDetail } from "./users.types";
+import { sendBusinessApprovalEmail } from "@/lib/email/sendBusinessApprovalEmail";
 import {
+  repoApproveBusinessRegistration,
+  repoRejectBusinessRegistration,
   repoGetAllUsers,
   repoUpdateUserRole,
   repoDeleteAuthUser,
@@ -24,6 +27,76 @@ export async function updateUserRoleService(userId: string, role: UserRole) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
   await repoUpdateUserRole(userId, role);
+}
+
+export async function approveBusinessRegistrationService(userId: string) {
+  const current = await getCurrentUserService();
+  ensureAdmin(current?.role);
+
+  const admin = createSupabaseAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role, full_name, business_registration_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== "BUSINESS") {
+    throw new Error("Solo se pueden aprobar cuentas de tipo empresa.");
+  }
+  if (profile.business_registration_status === "approved") {
+    return { alreadyApproved: true as const };
+  }
+
+  await repoApproveBusinessRegistration(userId);
+
+  const { data: authData } = await admin.auth.admin.getUserById(userId);
+  const email = authData?.user?.email;
+  if (email) {
+    try {
+      const { sent } = await sendBusinessApprovalEmail(
+        email,
+        profile.full_name ?? "Tu negocio"
+      );
+      if (!sent) {
+        throw new Error(
+          "Falta RESEND_API_KEY o EMAIL_FROM; no se envió el correo de aviso."
+        );
+      }
+    } catch (e) {
+      const detail =
+        e instanceof Error
+          ? e.message
+          : "Error al contactar con el servicio de correo.";
+      throw new Error(
+        `La cuenta quedó aprobada en el sistema, pero el correo no se pudo enviar: ${detail}`
+      );
+    }
+  }
+
+  return { success: true as const };
+}
+
+/** Marca la solicitud como rechazada (pendiente, sin estado o aprobada). */
+export async function rejectBusinessRegistrationService(userId: string) {
+  const current = await getCurrentUserService();
+  ensureAdmin(current?.role);
+
+  const admin = createSupabaseAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role, business_registration_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== "BUSINESS") {
+    throw new Error("Solo se pueden rechazar solicitudes de tipo empresa.");
+  }
+  if (profile.business_registration_status === "rejected") {
+    throw new Error("Esta solicitud ya está rechazada.");
+  }
+
+  await repoRejectBusinessRegistration(userId);
+  return { success: true as const };
 }
 
 export async function deleteUserService(userId: string) {
