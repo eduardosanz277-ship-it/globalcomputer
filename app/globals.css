@@ -12,12 +12,12 @@ body {
 
 /* DataTable toolbar: 1024px–1300px — buscar + filtrar misma fila (50/50); acciones debajo a la derecha */
 @media (min-width: 1024px) and (max-width: 1300px) {
-  .data-table-toolbar {
+  .data-table-toolbar:not(.data-table-toolbar--stacked) {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .data-table-toolbar__main {
+  .data-table-toolbar:not(.data-table-toolbar--stacked) .data-table-toolbar__main {
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -25,14 +25,14 @@ body {
     width: 100%;
   }
 
-  .data-table-toolbar__search,
-  .data-table-toolbar__filters {
+  .data-table-toolbar:not(.data-table-toolbar--stacked) .data-table-toolbar__search,
+  .data-table-toolbar:not(.data-table-toolbar--stacked) .data-table-toolbar__filters {
     flex: 1 1 0;
     min-width: 0;
     max-width: none !important;
   }
 
-  .data-table-toolbar__actions {
+  .data-table-toolbar:not(.data-table-toolbar--stacked) .data-table-toolbar__actions {
     display: flex;
     flex-direction: column;
     width: 100%;

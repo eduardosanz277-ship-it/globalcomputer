@@ -107,6 +107,11 @@ interface DataTableProps<TData, TValue> {
   toolbarFilters?: ReactNode;
   /** Acciones alineadas a la derecha (ej. “Nueva …”) */
   toolbarActions?: ReactNode;
+  /**
+   * `stacked`: una fila buscar, otra filtros (p. ej. dos columnas), otra acciones.
+   * Útil cuando hay varios filtros y se quiere orden vertical claro.
+   */
+  toolbarLayout?: "default" | "stacked";
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
 }
@@ -132,6 +137,7 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Buscar…",
   toolbarFilters,
   toolbarActions,
+  toolbarLayout = "default",
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
@@ -186,56 +192,100 @@ export function DataTable<TData, TValue>({
 
   const firstHeaderGroup = table.getHeaderGroups()[0];
 
+  const searchInput = (
+    <>
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+      <Input
+        placeholder={searchPlaceholder}
+        value={String(globalFilter ?? "")}
+        onChange={(e) => table.setGlobalFilter(e.target.value)}
+        disabled={isLoading}
+        className={cn(
+          "h-10 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
+          "text-sm shadow-sm transition-[box-shadow,border-color]",
+          "placeholder:text-muted-foreground/70",
+          "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
+          isLoading && "cursor-not-allowed opacity-60"
+        )}
+        type="search"
+        autoComplete="off"
+        spellCheck={false}
+        enterKeyHint="search"
+        aria-label="Filtrar filas de la tabla"
+      />
+    </>
+  );
+
   return (
     <div className={cn("w-full min-w-0 space-y-4", className)}>
-      <div
-        className={cn(
-          "data-table-toolbar flex min-w-0 flex-col gap-3",
-          "min-[1301px]:flex-row min-[1301px]:items-center min-[1301px]:justify-between min-[1301px]:gap-4"
-        )}
-      >
+      {toolbarLayout === "stacked" ? (
         <div
           className={cn(
-            "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
-            "lg:flex-row lg:items-stretch lg:gap-3"
+            "data-table-toolbar data-table-toolbar--stacked flex min-w-0 flex-col gap-3",
+            "min-[1331px]:flex-row min-[1331px]:flex-nowrap min-[1331px]:items-center min-[1331px]:gap-3 min-[1331px]:justify-start"
           )}
         >
-          <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              placeholder={searchPlaceholder}
-              value={String(globalFilter ?? "")}
-              onChange={(e) => table.setGlobalFilter(e.target.value)}
-              disabled={isLoading}
-              className={cn(
-                "h-10 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
-                "text-sm shadow-sm transition-[box-shadow,border-color]",
-                "placeholder:text-muted-foreground/70",
-                "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
-                isLoading && "cursor-not-allowed opacity-60"
-              )}
-              type="search"
-              autoComplete="off"
-              spellCheck={false}
-              enterKeyHint="search"
-              aria-label="Filtrar filas de la tabla"
-            />
+          <div
+            className={cn(
+              "data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0",
+              "min-[1331px]:max-w-sm"
+            )}
+          >
+            {searchInput}
           </div>
           {toolbarFilters ? (
-            <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+            <div
+              className={cn(
+                "data-table-toolbar__filters relative w-full min-w-0 max-w-full",
+                "min-[1331px]:min-w-0 min-[1331px]:flex-1"
+              )}
+            >
               {toolbarFilters}
             </div>
           ) : null}
+          {toolbarActions ? (
+            <div
+              className={cn(
+                "data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2",
+                "min-[1331px]:ml-auto min-[1331px]:w-auto min-[1331px]:shrink-0 min-[1331px]:flex-row min-[1331px]:items-center"
+              )}
+            >
+              {toolbarActions}
+            </div>
+          ) : null}
         </div>
-        {toolbarActions ? (
-          <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1301px]:flex-row min-[1301px]:w-auto min-[1301px]:items-center min-[1301px]:justify-end">
-            {toolbarActions}
+      ) : (
+        <div
+          className={cn(
+            "data-table-toolbar flex min-w-0 flex-col gap-3",
+            "min-[1301px]:flex-row min-[1301px]:items-center min-[1301px]:justify-between min-[1301px]:gap-4"
+          )}
+        >
+          <div
+            className={cn(
+              "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
+              "lg:flex-row lg:items-stretch lg:gap-3"
+            )}
+          >
+            <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+              {searchInput}
+            </div>
+            {toolbarFilters ? (
+              <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+                {toolbarFilters}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+          {toolbarActions ? (
+            <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1301px]:flex-row min-[1301px]:w-auto min-[1301px]:items-center min-[1301px]:justify-end">
+              {toolbarActions}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div
         className={cn(
