@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Building2,
   House,
   BriefcaseBusiness,
   ListChecks,
@@ -26,6 +27,11 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/home", label: "Home", icon: House },
   { href: "/admin/users", label: "Usuarios", icon: Users },
+  {
+    href: "/admin/suscripciones-empresas",
+    label: "Suscripciones de Empresas",
+    icon: Building2,
+  },
   { href: "/admin/brands", label: "Marcas", icon: Tag },
   {
     href: "/admin/brand-types",

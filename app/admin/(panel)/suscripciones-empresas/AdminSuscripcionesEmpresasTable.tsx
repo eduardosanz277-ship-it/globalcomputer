@@ -1,15 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { AdminUser } from "@/modules/admin/users/users.types";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
-import Select, { type StylesConfig } from "react-select";
-import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import {
+  approveBusinessRegistrationAction,
+  deleteUserAction,
+  rejectBusinessRegistrationAction,
+} from "@/app/admin/(panel)/users/actions";
+import { UserDetailDrawer } from "@/app/admin/(panel)/users/UserDetailDrawer";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import {
   Tooltip,
   TooltipContent,
@@ -17,25 +15,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
-import {
-  approveBusinessRegistrationAction,
-  rejectBusinessRegistrationAction,
-  deleteUserAction,
-} from "./actions";
+import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
+import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { UserDetailDrawer } from "./UserDetailDrawer";
-import type { UserRole } from "@/modules/auth/auth.types";
+import type { ColumnDef } from "@tanstack/react-table";
+import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import Select, { type StylesConfig } from "react-select";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
-const ROLE_FILTER_OPTIONS = [
+const APPROVAL_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos" },
-  { value: "CLIENT" as const, label: "Cliente" },
-  { value: "BUSINESS" as const, label: "Empresa" },
+  { value: "pending" as const, label: "Pendiente" },
+  { value: "approved" as const, label: "Aprobada" },
+  { value: "rejected" as const, label: "Rechazada" },
 ] as const;
 
-type RoleFilter = (typeof ROLE_FILTER_OPTIONS)[number]["value"];
+type ApprovalFilter = (typeof APPROVAL_FILTER_OPTIONS)[number]["value"];
 
 const filterSelectStyles: StylesConfig<
-  (typeof ROLE_FILTER_OPTIONS)[number],
+  (typeof APPROVAL_FILTER_OPTIONS)[number],
   false
 > = {
   control: (base, state) => ({
@@ -89,24 +90,40 @@ const filterSelectStyles: StylesConfig<
   }),
 };
 
+function approvalLabel(
+  s: BusinessRegistrationStatus | null | undefined
+): string {
+  const v = s ?? "pending";
+  if (v === "pending") return "Pendiente";
+  if (v === "rejected") return "Rechazada";
+  return "Aprobada";
+}
+
+/** Fondo suave por estado de alta (null cuenta como pendiente). */
+function businessSubscriptionRowClassName(
+  row: AdminBusinessProfileRow
+): string {
+  const s = row.businessRegistrationStatus ?? "pending";
+  if (s === "pending") {
+    return "bg-amber-50/95 hover:bg-amber-100/85";
+  }
+  if (s === "rejected") {
+    return "bg-red-50/95 hover:bg-red-100/80";
+  }
+  return "bg-emerald-50/95 hover:bg-emerald-100/80";
+}
+
 interface Props {
-  users: AdminUser[];
-  /** Mientras carga (p. ej. Suspense): spinner en el cuerpo de la tabla */
+  rows: AdminBusinessProfileRow[];
   isLoading?: boolean;
 }
 
-function roleDisplayLabel(role: UserRole): string {
-  if (role === "BUSINESS") return "Empresa";
-  if (role === "CLIENT") return "Cliente";
-  return role;
-}
-
 function RowActions({
-  user,
+  row,
   onViewDetail,
   onDeleteSuccess,
 }: {
-  user: AdminUser;
+  row: AdminBusinessProfileRow;
   onViewDetail: () => void;
   onDeleteSuccess: () => void;
 }) {
@@ -135,14 +152,11 @@ function RowActions({
     onSettled: () => router.refresh(),
   });
 
-  const isAdminUser = user.role === "ADMIN";
-
   const handleDelete = async () => {
-    if (isAdminUser) return;
-    const label = user.fullName?.trim() || user.id;
+    const label = row.fullName?.trim() || row.email || row.id;
     const result = await Swal.fire({
-      title: "¿Eliminar usuario?",
-      html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
+      title: "¿Eliminar suscripción de empresa?",
+      html: `Vas a eliminar el usuario y perfil de <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
       icon: "warning",
       showCancelButton: true,
       reverseButtons: true,
@@ -155,27 +169,24 @@ function RowActions({
     });
 
     if (!result.isConfirmed) return;
-    execute(user.id);
+    execute(row.id);
   };
 
-  const deleteDisabled = isPending || isAdminUser;
-  const showApproveBusiness =
-    user.role === "BUSINESS" &&
-    (user.businessRegistrationStatus === "pending" ||
-      user.businessRegistrationStatus == null);
+  const showPendingActions =
+    row.businessRegistrationStatus === "pending" ||
+    row.businessRegistrationStatus == null;
 
-  const showRejectApprovedOnly =
-    user.role === "BUSINESS" &&
-    user.businessRegistrationStatus === "approved";
+  const showApprovedRejectOnly =
+    row.businessRegistrationStatus === "approved";
 
-  const handleRejectBusiness = async () => {
-    const label = user.fullName?.trim() || user.id;
-    const wasApproved = user.businessRegistrationStatus === "approved";
+  const handleReject = async () => {
+    const label = row.fullName?.trim() || row.email || row.id;
+    const wasApproved = row.businessRegistrationStatus === "approved";
     const result = await Swal.fire({
       title: "¿Rechazar solicitud?",
       html: wasApproved
-        ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa (aunque antes estuviera aprobada).`
-        : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>.`,
+        ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa.`
+        : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario no podrá iniciar sesión como empresa.`,
       icon: "warning",
       showCancelButton: true,
       reverseButtons: true,
@@ -187,11 +198,11 @@ function RowActions({
       customClass: { popup: "swal-equal-width-buttons" },
     });
     if (!result.isConfirmed) return;
-    rejectBusiness(user.id);
+    rejectBusiness(row.id);
   };
 
-  const handleApproveBusiness = async () => {
-    const label = user.fullName?.trim() || user.id;
+  const handleApprove = async () => {
+    const label = row.fullName?.trim() || row.email || row.id;
     const result = await Swal.fire({
       title: "¿Aprobar solicitud?",
       html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
@@ -206,14 +217,14 @@ function RowActions({
       customClass: { popup: "swal-equal-width-buttons" },
     });
     if (!result.isConfirmed) return;
-    approveBusiness(user.id);
+    approveBusiness(row.id);
   };
 
   const approvalBusy = approvingBusiness || rejectingBusiness;
 
   return (
     <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
-      {showApproveBusiness ? (
+      {showPendingActions ? (
         <>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -223,7 +234,7 @@ function RowActions({
                 variant="outline"
                 className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
                 disabled={approvalBusy}
-                onClick={handleRejectBusiness}
+                onClick={handleReject}
                 aria-label="Rechazar solicitud de empresa"
               >
                 <XCircle className="h-4 w-4" aria-hidden />
@@ -239,7 +250,7 @@ function RowActions({
                 variant="default"
                 className="h-8 w-8 shrink-0 bg-emerald-600 hover:bg-emerald-700"
                 disabled={approvalBusy}
-                onClick={handleApproveBusiness}
+                onClick={handleApprove}
                 aria-label="Aprobar empresa"
               >
                 <CheckCircle2 className="h-4 w-4" aria-hidden />
@@ -249,7 +260,7 @@ function RowActions({
           </Tooltip>
         </>
       ) : null}
-      {showRejectApprovedOnly ? (
+      {showApprovedRejectOnly ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -258,13 +269,13 @@ function RowActions({
               variant="outline"
               className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
               disabled={approvalBusy}
-              onClick={handleRejectBusiness}
+              onClick={handleReject}
               aria-label="Rechazar solicitud de empresa"
             >
               <XCircle className="h-4 w-4" aria-hidden />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Rechazar solicitud (estado rechazado)</TooltipContent>
+          <TooltipContent side="top">Rechazar solicitud</TooltipContent>
         </Tooltip>
       ) : null}
       <Tooltip>
@@ -280,74 +291,98 @@ function RowActions({
             <Eye className="h-4 w-4" aria-hidden />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">Ver detalles del usuario</TooltipContent>
+        <TooltipContent side="top">Ver detalles</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          {deleteDisabled ? (
-            <span className="inline-flex">
-              <Button
-                type="button"
-                size="icon"
-                variant="destructive"
-                className="h-8 w-8 shrink-0"
-                disabled
-                aria-label={
-                  isAdminUser
-                    ? "Eliminar no disponible (administrador)"
-                    : "Eliminando usuario"
-                }
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
-            </span>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              className="h-8 w-8 shrink-0"
-              onClick={handleDelete}
-              aria-label="Eliminar usuario"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="icon"
+            variant="destructive"
+            className="h-8 w-8 shrink-0"
+            disabled={isPending}
+            onClick={handleDelete}
+            aria-label="Eliminar suscripción de empresa"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="top">
-          {isAdminUser
-            ? "No se puede eliminar un usuario administrador"
-            : isPending
-              ? "Eliminando…"
-              : "Eliminar usuario"}
+          {isPending ? "Eliminando…" : "Eliminar empresa"}
         </TooltipContent>
       </Tooltip>
     </div>
   );
 }
 
-export function AdminUsersTable({ users, isLoading = false }: Props) {
+export function AdminSuscripcionesEmpresasTable({
+  rows,
+  isLoading = false,
+}: Props) {
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [approvalFilter, setApprovalFilter] =
+    useState<ApprovalFilter>("all");
 
-  const filteredUsers = useMemo(() => {
-    if (roleFilter === "all") return users;
-    return users.filter((u) => u.role === (roleFilter as UserRole));
-  }, [users, roleFilter]);
+  const filtered = useMemo(() => {
+    if (approvalFilter === "all") return rows;
+    return rows.filter((r) => {
+      const s = r.businessRegistrationStatus;
+      if (approvalFilter === "pending") {
+        return s === "pending" || s == null || s === undefined;
+      }
+      if (approvalFilter === "rejected") return s === "rejected";
+      if (approvalFilter === "approved") return s === "approved";
+      return true;
+    });
+  }, [rows, approvalFilter]);
 
   const filterValue =
-    ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter) ??
-    ROLE_FILTER_OPTIONS[0];
+    APPROVAL_FILTER_OPTIONS.find((o) => o.value === approvalFilter) ??
+    APPROVAL_FILTER_OPTIONS[0];
 
-  const columns = useMemo<ColumnDef<AdminUser>[]>(
+  const columns = useMemo<ColumnDef<AdminBusinessProfileRow>[]>(
     () => [
-      { accessorKey: "fullName", header: "Nombre" },
       {
-        id: "role",
-        accessorKey: "role",
-        header: "Rol",
-        cell: ({ row }) => roleDisplayLabel(row.original.role),
+        accessorKey: "fullName",
+        header: "Negocio",
+        cell: ({ row }) => (
+          <span className="font-medium">
+            {row.original.fullName?.trim() || "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {row.original.email ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "phone",
+        header: "Teléfono",
+        cell: ({ row }) => row.original.phone?.trim() || "—",
+      },
+      {
+        accessorKey: "employerIdentificationNumber",
+        header: "EIN",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">
+            {row.original.employerIdentificationNumber?.trim() || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "approval",
+        header: "Estado alta",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {approvalLabel(row.original.businessRegistrationStatus)}
+          </span>
+        ),
       },
       {
         accessorKey: "lastSignInAt",
@@ -356,12 +391,18 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
           formatDateDdMmYyyyHhMm(row.original.lastSignInAt),
       },
       {
+        accessorKey: "createdAt",
+        header: "Registro",
+        cell: ({ row }) =>
+          formatDateDdMmYyyyHhMm(row.original.createdAt),
+      },
+      {
         id: "actions",
         meta: { align: "right" },
         header: "Acciones",
         cell: ({ row }) => (
           <RowActions
-            user={row.original}
+            row={row.original}
             onViewDetail={() => setDetailUserId(row.original.id)}
             onDeleteSuccess={() => {
               setDetailUserId((current) =>
@@ -380,21 +421,22 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
       <div className="space-y-4">
         <DataTable
           columns={columns}
-          data={filteredUsers}
+          data={filtered}
           isLoading={isLoading}
-          searchPlaceholder="Buscar…"
+          getRowClassName={businessSubscriptionRowClassName}
+          searchPlaceholder="Buscar suscripción negocio, email, teléfono o EIN…"
           toolbarFilters={
-            <div className="w-full min-w-0">
-              <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
-                instanceId="users-role-filter"
-                inputId="users-role-filter-input"
-                aria-label="Filtrar por rol"
+            <div className="w-full min-w-0 max-w-xs">
+              <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
+                instanceId="suscripciones-empresas-approval-filter"
+                inputId="suscripciones-empresas-approval-filter-input"
+                aria-label="Filtrar por estado de alta"
                 isSearchable={false}
                 isClearable={false}
-                options={[...ROLE_FILTER_OPTIONS]}
+                options={[...APPROVAL_FILTER_OPTIONS]}
                 value={filterValue}
                 onChange={(opt) => {
-                  if (opt) setRoleFilter(opt.value);
+                  if (opt) setApprovalFilter(opt.value);
                 }}
                 styles={filterSelectStyles}
                 className="w-full"
@@ -402,6 +444,11 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
             </div>
           }
         />
+        {!isLoading && rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No hay suscripciones de empresa registradas todavía.
+          </p>
+        ) : null}
       </div>
       <UserDetailDrawer
         userId={detailUserId}

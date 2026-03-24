@@ -122,6 +122,8 @@ interface DataTableProps<TData, TValue> {
   tableClassName?: string;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
+  /** Clases por fila (p. ej. fondo según estado). Si no se pasa, se usa hover por defecto. */
+  getRowClassName?: (row: TData) => string | undefined;
 }
 
 /** Busca en los valores de las celdas; ignora columnas con id `actions`. */
@@ -150,6 +152,7 @@ export function DataTable<TData, TValue>({
   toolbarLayout = "default",
   tableClassName,
   isLoading = false,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
   const [globalFilter, setGlobalFilter] = useState("");
@@ -380,7 +383,11 @@ export function DataTable<TData, TValue>({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="transition-colors duration-150 hover:bg-muted/45"
+                    className={cn(
+                      "transition-colors duration-150",
+                      getRowClassName?.(row.original) ??
+                        "hover:bg-muted/45",
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
@@ -445,6 +452,7 @@ export function DataTable<TData, TValue>({
                     className={cn(
                       "overflow-hidden rounded-xl border border-border/90 bg-card",
                       "shadow-sm ring-1 ring-border/40",
+                      getRowClassName?.(row.original),
                     )}
                   >
                     <div className="divide-y divide-border/70">

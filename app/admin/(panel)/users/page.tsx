@@ -23,7 +23,8 @@ export default async function AdminUsersPage() {
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground">Usuarios</h1>
           <p className="text-sm text-muted-foreground">
-            Consulta detalles o elimina usuarios.
+            Clientes y comercios con registro aprobado. Las solicitudes pendientes
+            se gestionan en Empresas / Suscripciones.
           </p>
         </header>
 
