@@ -8,6 +8,7 @@ import {
   Truck,
 } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
+import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -50,10 +51,12 @@ const PLACEHOLDER_PRODUCTS = [
   { name: "Bullet 8MP Híbrida", price: "$229.99", badge: "Nuevo" },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getCurrentUserService();
+
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+      <SiteHeader user={user} />
 
       <main>
         {/* Hero */}

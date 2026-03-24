@@ -28,7 +28,7 @@ export default function RegisterPage() {
   const { execute, isPending } = useServerAction(registerAction, {
     successMessage: "Registro completado",
     errorMessage: "No se pudo registrar",
-    onSuccess: () => router.push("/dashboard"),
+    onSuccess: () => router.push("/"),
   });
 
   const errors = form.formState.errors;
