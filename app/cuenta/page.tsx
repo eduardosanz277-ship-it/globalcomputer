@@ -28,7 +28,9 @@ export default async function CuentaPage() {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, created_at, updated_at")
+    .select(
+      "full_name, role, created_at, updated_at, phone, employer_identification_number"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -73,7 +75,11 @@ export default async function CuentaPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <dl className="grid gap-3 sm:grid-cols-[140px_1fr] sm:gap-x-4">
-                <dt className="text-muted-foreground">Nombre</dt>
+                <dt className="text-muted-foreground">
+                  {(profile?.role ?? user.role) === "BUSINESS"
+                    ? "Nombre de negocio"
+                    : "Nombre"}
+                </dt>
                 <dd className="font-medium">
                   {profile?.full_name?.trim() ||
                     user.fullName?.trim() ||
@@ -87,6 +93,21 @@ export default async function CuentaPage() {
                 <dd className="font-medium">
                   {roleLabel(profile?.role ?? user.role)}
                 </dd>
+
+                {(profile?.role ?? user.role) === "BUSINESS" && (
+                  <>
+                    <dt className="text-muted-foreground">Teléfono</dt>
+                    <dd className="font-medium">
+                      {profile?.phone?.trim() || "—"}
+                    </dd>
+                    <dt className="text-muted-foreground">
+                      Employer Identification Number (EIN)
+                    </dt>
+                    <dd className="font-mono text-sm font-medium">
+                      {profile?.employer_identification_number?.trim() || "—"}
+                    </dd>
+                  </>
+                )}
 
                 <dt className="text-muted-foreground">Alta</dt>
                 <dd>{fmt(profile?.created_at)}</dd>

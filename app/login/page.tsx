@@ -168,9 +168,8 @@ function LoginPageContent() {
           )}
 
           <p className="text-center text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link href="/register" className="underline">
-              Regístrate
+            <Link href="/register/empresa" className="font-medium underline">
+              Regístrate como empresa
             </Link>
           </p>
         </CardContent>
