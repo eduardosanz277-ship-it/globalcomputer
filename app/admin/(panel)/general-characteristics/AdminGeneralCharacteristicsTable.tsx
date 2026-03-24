@@ -106,7 +106,7 @@ function RowActions({
       onSuccess: () => {
         router.refresh();
       },
-    }
+    },
   );
 
   const handleDelete = async () => {
@@ -200,7 +200,7 @@ export function AdminGeneralCharacteristicsTable({
               "inline-flex w-[7rem] shrink-0 items-center justify-center rounded-full px-2 py-1 text-center text-xs font-medium",
               row.original.active
                 ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             {row.original.active ? "Activa" : "Inactiva"}
@@ -210,8 +210,7 @@ export function AdminGeneralCharacteristicsTable({
       {
         accessorKey: "updatedAt",
         header: "Última actualización",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.updatedAt),
+        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.updatedAt),
       },
       {
         id: "actions",
@@ -228,7 +227,7 @@ export function AdminGeneralCharacteristicsTable({
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -240,8 +239,8 @@ export function AdminGeneralCharacteristicsTable({
           isLoading={isLoading}
           searchPlaceholder="Buscar…"
           toolbarFilters={
-            <div className="w-full min-w-0 min-[1301px]:max-w-[13rem]">
-              <Select<typeof STATUS_FILTER_OPTIONS[number], false>
+            <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+              <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
                 instanceId="general-characteristics-status-filter"
                 inputId="general-characteristics-status-filter-input"
                 aria-label="Filtrar por estado"
@@ -260,14 +259,14 @@ export function AdminGeneralCharacteristicsTable({
           toolbarActions={
             <Button
               type="button"
-              className="w-full shrink-0 min-[1301px]:w-auto"
+              className="w-full shrink-0 min-[1440px]:w-auto"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
               }}
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nueva característica
+              Nueva
             </Button>
           }
         />

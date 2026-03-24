@@ -91,13 +91,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-function RowActions({
-  row,
-  onEdit,
-}: {
-  row: BrandType;
-  onEdit: () => void;
-}) {
+function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
   const router = useRouter();
   const { execute, isPending } = useServerAction(deleteBrandTypeAction, {
     successMessage: "Tipo eliminado",
@@ -181,7 +175,7 @@ export function AdminBrandTypesTable({
       { value: "all", label: "Todas las marcas" },
       ...brands.map((b) => ({ value: b.id, label: b.name })),
     ],
-    [brands]
+    [brands],
   );
 
   const filtered = useMemo(() => {
@@ -218,7 +212,7 @@ export function AdminBrandTypesTable({
               "inline-flex w-[7rem] shrink-0 items-center justify-center rounded-full px-2 py-1 text-center text-xs font-medium",
               row.original.active
                 ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             {row.original.active ? "Activo" : "Inactivo"}
@@ -228,8 +222,7 @@ export function AdminBrandTypesTable({
       {
         accessorKey: "updatedAt",
         header: "Última actualización",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.updatedAt),
+        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.updatedAt),
       },
       {
         id: "actions",
@@ -246,7 +239,7 @@ export function AdminBrandTypesTable({
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -260,7 +253,7 @@ export function AdminBrandTypesTable({
           searchPlaceholder="Buscar…"
           toolbarFilters={
             <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
                 <Select<FilterOption, false>
                   instanceId="brand-types-brand-filter"
                   inputId="brand-types-brand-filter-input"
@@ -276,7 +269,7 @@ export function AdminBrandTypesTable({
                   className="w-full"
                 />
               </div>
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1331px]:max-w-[13rem] min-[1331px]:flex-none">
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
                 <Select<FilterOption, false>
                   instanceId="brand-types-status-filter"
                   inputId="brand-types-status-filter-input"
@@ -297,7 +290,7 @@ export function AdminBrandTypesTable({
           toolbarActions={
             <Button
               type="button"
-              className="w-full shrink-0 min-[1331px]:w-auto"
+              className="w-full shrink-0 min-[1440px]:w-auto"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
@@ -310,7 +303,7 @@ export function AdminBrandTypesTable({
               }
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nuevo tipo
+              Nuevo
             </Button>
           }
         />

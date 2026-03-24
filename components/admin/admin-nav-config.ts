@@ -1,10 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import {
   House,
-  Layers,
+  BriefcaseBusiness,
   ListChecks,
   ListTodo,
   Settings,
+  Shapes,
   Tag,
   Users,
 } from "lucide-react";
@@ -29,7 +30,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/brand-types",
     label: "Tipos por marca",
-    icon: Layers,
+    icon: Shapes,
   },
   {
     href: "/admin/general-characteristics",
@@ -42,4 +43,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: ListTodo,
   },
   { href: "/admin/settings", label: "Configuración", icon: Settings },
+  {
+    href: "/admin/services",
+    label: "Servicios",
+    icon: BriefcaseBusiness,
+  },
 ];

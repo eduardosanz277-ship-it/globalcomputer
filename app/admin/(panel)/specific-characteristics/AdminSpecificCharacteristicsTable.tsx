@@ -106,7 +106,7 @@ function RowActions({
       onSuccess: () => {
         router.refresh();
       },
-    }
+    },
   );
 
   const handleDelete = async () => {
@@ -183,7 +183,7 @@ export function AdminSpecificCharacteristicsTable({
       { value: "all", label: "Todas las características" },
       ...generalCharacteristics.map((g) => ({ value: g.id, label: g.name })),
     ],
-    [generalCharacteristics]
+    [generalCharacteristics],
   );
 
   const filtered = useMemo(() => {
@@ -218,7 +218,7 @@ export function AdminSpecificCharacteristicsTable({
               "inline-flex w-[7rem] shrink-0 items-center justify-center rounded-full px-2 py-1 text-center text-xs font-medium",
               row.original.active
                 ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             {row.original.active ? "Activo" : "Inactivo"}
@@ -245,7 +245,7 @@ export function AdminSpecificCharacteristicsTable({
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -256,11 +256,10 @@ export function AdminSpecificCharacteristicsTable({
           data={filtered}
           isLoading={isLoading}
           toolbarLayout="stacked"
-          stackedToolbarOneRowMinPx={1455}
           searchPlaceholder="Buscar…"
           toolbarFilters={
             <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1455px]:max-w-[13rem] min-[1455px]:flex-none">
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
                 <Select<FilterOption, false>
                   instanceId="specific-characteristics-general-filter"
                   inputId="specific-characteristics-general-filter-input"
@@ -277,7 +276,7 @@ export function AdminSpecificCharacteristicsTable({
                 />
               </div>
 
-              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1455px]:max-w-[13rem] min-[1455px]:flex-none">
+              <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
                 <Select<FilterOption, false>
                   instanceId="specific-characteristics-status-filter"
                   inputId="specific-characteristics-status-filter-input"
@@ -298,7 +297,7 @@ export function AdminSpecificCharacteristicsTable({
           toolbarActions={
             <Button
               type="button"
-              className="w-full shrink-0 min-[1455px]:w-auto"
+              className="w-full shrink-0 min-[1440px]:w-auto"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
@@ -311,7 +310,7 @@ export function AdminSpecificCharacteristicsTable({
               }
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nueva característica específica
+              Nueva
             </Button>
           }
         />

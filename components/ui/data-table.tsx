@@ -25,9 +25,14 @@ import { Input } from "./input";
 
 type PageSizeOption = { value: number; label: string };
 
-function cellAlignClasses(
-  meta: { align?: "left" | "right" | "center" } | undefined
-) {
+/** Meta opcional en `ColumnDef` para alinear celdas y añadir clases a `th`/`td`. */
+export type DataTableColumnMeta = {
+  align?: "left" | "right" | "center";
+  /** Se fusiona en `th` y `td` de la columna (p. ej. anchos responsivos). */
+  cellClassName?: string;
+};
+
+function cellAlignClasses(meta: DataTableColumnMeta | undefined) {
   const align = meta?.align;
   if (align === "right") {
     return "text-right whitespace-nowrap pl-8 md:pl-12 w-[1%] min-w-[8.5rem]";
@@ -110,20 +115,20 @@ interface DataTableProps<TData, TValue> {
   /**
    * `stacked`: una fila buscar, otra filtros (p. ej. dos columnas), otra acciones.
    * Útil cuando hay varios filtros y se quiere orden vertical claro.
+   * En ambos modos, búsqueda y acciones pasan a una sola fila desde `min-[1440px]`.
    */
   toolbarLayout?: "default" | "stacked";
-  /**
-   * Ancho mínimo (px) para que búsqueda, filtros y acciones queden en una sola fila
-   * con `toolbarLayout="stacked"`. Por defecto 1331.
-   */
-  stackedToolbarOneRowMinPx?: 1331 | 1455;
+  /** Clases extra del elemento `<table>` (p. ej. `table-fixed` para truncar columnas). */
+  tableClassName?: string;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
 }
 
 /** Busca en los valores de las celdas; ignora columnas con id `actions`. */
 const globalFilterFn: FilterFn<any> = (row, _columnId, filterValue) => {
-  const q = String(filterValue ?? "").trim().toLowerCase();
+  const q = String(filterValue ?? "")
+    .trim()
+    .toLowerCase();
   if (!q) return true;
   return row.getAllCells().some((cell) => {
     if (cell.column.id === "actions") return false;
@@ -143,7 +148,7 @@ export function DataTable<TData, TValue>({
   toolbarFilters,
   toolbarActions,
   toolbarLayout = "default",
-  stackedToolbarOneRowMinPx = 1331,
+  tableClassName,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
@@ -155,7 +160,7 @@ export function DataTable<TData, TValue>({
 
   const mergedPageSizeOptions = useMemo(() => {
     return [...new Set([...pageSizeOptions, defaultPageSize])].sort(
-      (a, b) => a - b
+      (a, b) => a - b,
     );
   }, [pageSizeOptions, defaultPageSize]);
 
@@ -165,7 +170,7 @@ export function DataTable<TData, TValue>({
         value: size,
         label: String(size),
       })),
-    [mergedPageSizeOptions]
+    [mergedPageSizeOptions],
   );
 
   const pageSizeValue =
@@ -192,30 +197,19 @@ export function DataTable<TData, TValue>({
   const pageCount = table.getPageCount();
   const totalPages = pageCount || 1;
   const { pageIndex, pageSize } = pagination;
-  const startRow =
-    filteredCount === 0 ? 0 : pageIndex * pageSize + 1;
+  const startRow = filteredCount === 0 ? 0 : pageIndex * pageSize + 1;
   const endRow = Math.min((pageIndex + 1) * pageSize, filteredCount);
 
   const firstHeaderGroup = table.getHeaderGroups()[0];
 
-  const stackedWide =
-    stackedToolbarOneRowMinPx === 1455
-      ? {
-          toolbarRow:
-            "min-[1455px]:flex-row min-[1455px]:flex-nowrap min-[1455px]:items-center min-[1455px]:gap-3 min-[1455px]:justify-start",
-          search: "min-[1455px]:max-w-sm",
-          filters: "min-[1455px]:min-w-0 min-[1455px]:flex-1",
-          actions:
-            "min-[1455px]:ml-auto min-[1455px]:w-auto min-[1455px]:shrink-0 min-[1455px]:flex-row min-[1455px]:items-center",
-        }
-      : {
-          toolbarRow:
-            "min-[1331px]:flex-row min-[1331px]:flex-nowrap min-[1331px]:items-center min-[1331px]:gap-3 min-[1331px]:justify-start",
-          search: "min-[1331px]:max-w-sm",
-          filters: "min-[1331px]:min-w-0 min-[1331px]:flex-1",
-          actions:
-            "min-[1331px]:ml-auto min-[1331px]:w-auto min-[1331px]:shrink-0 min-[1331px]:flex-row min-[1331px]:items-center",
-        };
+  const stackedWide = {
+    toolbarRow:
+      "min-[1440px]:flex-row min-[1440px]:flex-nowrap min-[1440px]:items-center min-[1440px]:gap-3 min-[1440px]:justify-start",
+    search: "min-[1440px]:max-w-sm",
+    filters: "min-[1440px]:min-w-0 min-[1440px]:flex-1",
+    actions:
+      "min-[1440px]:ml-auto min-[1440px]:w-auto min-[1440px]:shrink-0 min-[1440px]:flex-row min-[1440px]:items-center",
+  };
 
   const searchInput = (
     <>
@@ -233,7 +227,7 @@ export function DataTable<TData, TValue>({
           "text-sm shadow-sm transition-[box-shadow,border-color]",
           "placeholder:text-muted-foreground/70",
           "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
-          isLoading && "cursor-not-allowed opacity-60"
+          isLoading && "cursor-not-allowed opacity-60",
         )}
         type="search"
         autoComplete="off"
@@ -250,13 +244,13 @@ export function DataTable<TData, TValue>({
         <div
           className={cn(
             "data-table-toolbar data-table-toolbar--stacked flex min-w-0 flex-col gap-3",
-            stackedWide.toolbarRow
+            stackedWide.toolbarRow,
           )}
         >
           <div
             className={cn(
               "data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0",
-              stackedWide.search
+              stackedWide.search,
             )}
           >
             {searchInput}
@@ -265,7 +259,7 @@ export function DataTable<TData, TValue>({
             <div
               className={cn(
                 "data-table-toolbar__filters relative w-full min-w-0 max-w-full",
-                stackedWide.filters
+                stackedWide.filters,
               )}
             >
               {toolbarFilters}
@@ -275,7 +269,7 @@ export function DataTable<TData, TValue>({
             <div
               className={cn(
                 "data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2",
-                stackedWide.actions
+                stackedWide.actions,
               )}
             >
               {toolbarActions}
@@ -286,26 +280,26 @@ export function DataTable<TData, TValue>({
         <div
           className={cn(
             "data-table-toolbar flex min-w-0 flex-col gap-3",
-            "min-[1301px]:flex-row min-[1301px]:items-center min-[1301px]:justify-between min-[1301px]:gap-4"
+            "min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:justify-between min-[1440px]:gap-4",
           )}
         >
           <div
             className={cn(
               "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
-              "lg:flex-row lg:items-stretch lg:gap-3"
+              "min-[1440px]:flex-row min-[1440px]:items-stretch min-[1440px]:gap-3",
             )}
           >
-            <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+            <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 min-[1440px]:max-w-sm">
               {searchInput}
             </div>
             {toolbarFilters ? (
-              <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 lg:max-w-sm min-[1301px]:max-w-sm">
+              <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 min-[1440px]:max-w-sm">
                 {toolbarFilters}
               </div>
             ) : null}
           </div>
           {toolbarActions ? (
-            <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1301px]:flex-row min-[1301px]:w-auto min-[1301px]:items-center min-[1301px]:justify-end">
+            <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1440px]:flex-row min-[1440px]:w-auto min-[1440px]:items-center min-[1440px]:justify-end">
               {toolbarActions}
             </div>
           ) : null}
@@ -315,7 +309,7 @@ export function DataTable<TData, TValue>({
       <div
         className={cn(
           "min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card",
-          "shadow-sm ring-1 ring-border/40"
+          "shadow-sm ring-1 ring-border/40",
         )}
         role="region"
         aria-label="Resultados de la tabla"
@@ -323,7 +317,12 @@ export function DataTable<TData, TValue>({
       >
         {/* Vista tabla: desktop / tablet (scroll horizontal si el área es estrecha) */}
         <div className="hidden min-w-0 overflow-x-auto overscroll-x-contain md:block">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
+          <table
+            className={cn(
+              "w-full min-w-[640px] border-collapse text-sm",
+              tableClassName,
+            )}
+          >
             <thead className="sticky top-0 z-[1] border-b border-border bg-muted/90 backdrop-blur-sm">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -335,14 +334,23 @@ export function DataTable<TData, TValue>({
                         "whitespace-nowrap px-4 py-3",
                         "text-xs font-semibold uppercase tracking-wide text-muted-foreground",
                         "first:pl-5 last:pr-5",
-                        cellAlignClasses(header.column.columnDef.meta)
+                        cellAlignClasses(
+                          header.column.columnDef.meta as
+                            | DataTableColumnMeta
+                            | undefined,
+                        ),
+                        (
+                          header.column.columnDef.meta as
+                            | DataTableColumnMeta
+                            | undefined
+                        )?.cellClassName,
                       )}
                     >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -352,10 +360,7 @@ export function DataTable<TData, TValue>({
             <tbody className="divide-y divide-border/80 bg-card">
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-0"
-                  >
+                  <td colSpan={columns.length} className="px-4 py-0">
                     <div
                       className="flex min-h-[220px] flex-col items-center justify-center gap-3 py-12"
                       role="status"
@@ -365,7 +370,9 @@ export function DataTable<TData, TValue>({
                         className="h-9 w-9 animate-spin text-muted-foreground"
                         aria-hidden
                       />
-                      <span className="sr-only">Cargando datos de la tabla</span>
+                      <span className="sr-only">
+                        Cargando datos de la tabla
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -380,12 +387,21 @@ export function DataTable<TData, TValue>({
                         key={cell.id}
                         className={cn(
                           "px-4 py-3 align-middle text-foreground first:pl-5 last:pr-5",
-                          cellAlignClasses(cell.column.columnDef.meta)
+                          cellAlignClasses(
+                            cell.column.columnDef.meta as
+                              | DataTableColumnMeta
+                              | undefined,
+                          ),
+                          (
+                            cell.column.columnDef.meta as
+                              | DataTableColumnMeta
+                              | undefined
+                          )?.cellClassName,
                         )}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -428,13 +444,13 @@ export function DataTable<TData, TValue>({
                   <article
                     className={cn(
                       "overflow-hidden rounded-xl border border-border/90 bg-card",
-                      "shadow-sm ring-1 ring-border/40"
+                      "shadow-sm ring-1 ring-border/40",
                     )}
                   >
                     <div className="divide-y divide-border/70">
                       {row.getVisibleCells().map((cell) => {
                         const header = firstHeaderGroup?.headers.find(
-                          (h) => h.column.id === cell.column.id
+                          (h) => h.column.id === cell.column.id,
                         );
                         if (!header || header.isPlaceholder) return null;
                         const isActions = cell.column.id === "actions";
@@ -443,24 +459,24 @@ export function DataTable<TData, TValue>({
                             key={cell.id}
                             className={cn(
                               "flex flex-col gap-1 px-4 py-3 sm:px-5",
-                              isActions && "items-stretch"
+                              isActions && "items-stretch",
                             )}
                           >
                             <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
                               {flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                             </span>
                             <div
                               className={cn(
                                 "min-w-0 text-sm text-foreground",
-                                isActions && "flex justify-end pt-1"
+                                isActions && "flex justify-end pt-1",
                               )}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext()
+                                cell.getContext(),
                               )}
                             </div>
                           </div>
@@ -597,9 +613,7 @@ export function DataTable<TData, TValue>({
                 variant="outline"
                 size="icon"
                 className="min-h-9 min-w-9 shrink-0"
-                onClick={() =>
-                  table.setPageIndex(Math.max(0, pageCount - 1))
-                }
+                onClick={() => table.setPageIndex(Math.max(0, pageCount - 1))}
                 disabled={isLoading || !table.getCanNextPage()}
                 aria-label="Ir a la última página"
                 title="Última página"
