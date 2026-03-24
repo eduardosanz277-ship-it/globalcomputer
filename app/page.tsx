@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Headphones,
-  Package,
-  Shield,
-  Truck,
-} from "lucide-react";
+import { ArrowRight, Headphones, Package, Shield, Truck } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -16,7 +10,7 @@ import { cn } from "@/utils/cn";
 import { Input } from "@/components/ui/input";
 
 export const metadata: Metadata = {
-  title: "Global Computer | Videovigilancia y tecnología",
+  title: "Global Computers USA | Cámaras de Seguridad, Software y Tecnología",
   description:
     "Tienda online de seguridad, cámaras IP, grabadoras y kits. Envíos, garantía y soporte.",
 };
@@ -70,15 +64,15 @@ export default async function HomePage() {
               Protege lo que más importa, con la tecnología que mereces
             </h1>
             <p className="mt-4 max-w-xl text-lg text-white/80">
-              Cámaras, grabadoras y kits seleccionados. Envío rápido, garantía
-              y equipo humano para ayudarte a elegir bien.
+              Cámaras, grabadoras y kits seleccionados. Envío rápido, garantía y
+              equipo humano para ayudarte a elegir bien.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="#destacados"
                 className={cn(
                   buttonVariants({ size: "lg" }),
-                  "gap-2 bg-white text-slate-900 hover:bg-white/90"
+                  "gap-2 bg-white text-slate-900 hover:bg-white/90",
                 )}
               >
                 Ver destacados
@@ -88,7 +82,7 @@ export default async function HomePage() {
                 href="/register"
                 className={cn(
                   buttonVariants({ size: "lg", variant: "outline" }),
-                  "border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20"
+                  "border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20",
                 )}
               >
                 Crear cuenta
@@ -101,9 +95,21 @@ export default async function HomePage() {
         <section className="border-b border-border bg-muted/40">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">
             {[
-              { icon: Truck, t: "Envío a todo el país", s: "Seguimiento en tiempo real" },
-              { icon: Shield, t: "Garantía en equipos", s: "Marcas líderes del sector" },
-              { icon: Headphones, t: "Soporte especializado", s: "Lun–Vie horario extendido" },
+              {
+                icon: Truck,
+                t: "Envío a todo el país",
+                s: "Seguimiento en tiempo real",
+              },
+              {
+                icon: Shield,
+                t: "Garantía en equipos",
+                s: "Marcas líderes del sector",
+              },
+              {
+                icon: Headphones,
+                t: "Soporte especializado",
+                s: "Lun–Vie horario extendido",
+              },
             ].map(({ icon: Icon, t, s }) => (
               <div
                 key={t}
@@ -196,7 +202,12 @@ export default async function HomePage() {
                     <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
                       {p.price}
                     </p>
-                    <Button className="mt-4 w-full" size="sm" type="button" variant="secondary">
+                    <Button
+                      className="mt-4 w-full"
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
                       Añadir al carrito
                     </Button>
                   </div>
@@ -215,12 +226,16 @@ export default async function HomePage() {
                   ¿Proyecto grande o instalación en Miami?
                 </h2>
                 <p className="mt-2 max-w-xl text-muted-foreground">
-                  Cuéntanos qué necesitas y te respondemos con una propuesta clara.
+                  Cuéntanos qué necesitas y te respondemos con una propuesta
+                  clara.
                 </p>
               </div>
               <Link
                 href="#ayuda"
-                className={cn(buttonVariants({ size: "lg" }), "mt-6 shrink-0 lg:mt-0")}
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "mt-6 shrink-0 lg:mt-0",
+                )}
               >
                 Contactar
               </Link>

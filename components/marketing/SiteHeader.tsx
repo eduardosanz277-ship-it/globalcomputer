@@ -42,10 +42,8 @@ export function SiteHeader({ user }: Props) {
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const t = e.target as Node;
-      const inMobile =
-        accountRefMobile.current?.contains(t) ?? false;
-      const inDesktop =
-        accountRefDesktop.current?.contains(t) ?? false;
+      const inMobile = accountRefMobile.current?.contains(t) ?? false;
+      const inDesktop = accountRefDesktop.current?.contains(t) ?? false;
       if (!inMobile && !inDesktop) setAccountOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -53,9 +51,7 @@ export function SiteHeader({ user }: Props) {
   }, []);
 
   const displayName =
-    user?.fullName?.trim() ||
-    user?.email?.split("@")[0] ||
-    "";
+    user?.fullName?.trim() || user?.email?.split("@")[0] || "";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -67,7 +63,7 @@ export function SiteHeader({ user }: Props) {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Camera className="h-5 w-5" aria-hidden />
           </span>
-          <span className="hidden sm:inline">Global Computer</span>
+          <span className="hidden sm:inline">Global Computers USA</span>
         </Link>
 
         <div className="hidden min-w-0 flex-1 md:block md:max-w-md lg:max-w-lg">
@@ -95,7 +91,7 @@ export function SiteHeader({ user }: Props) {
                 onClick={() => setAccountOpen((v) => !v)}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "icon" }),
-                  "relative"
+                  "relative",
                 )}
                 aria-expanded={accountOpen}
                 aria-label="Mi cuenta"
@@ -107,7 +103,9 @@ export function SiteHeader({ user }: Props) {
               {accountOpen && (
                 <div className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-popover py-1 shadow-md">
                   <div className="border-b border-border px-3 py-2">
-                    <p className="truncate text-sm font-medium">{displayName}</p>
+                    <p className="truncate text-sm font-medium">
+                      {displayName}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {user.email}
                     </p>
@@ -137,7 +135,7 @@ export function SiteHeader({ user }: Props) {
               aria-label="Cuenta"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
-                "shrink-0 md:hidden"
+                "shrink-0 md:hidden",
               )}
             >
               <User className="h-5 w-5" />
@@ -164,7 +162,7 @@ export function SiteHeader({ user }: Props) {
                   onClick={() => setAccountOpen((v) => !v)}
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "max-w-[220px] gap-2"
+                    "max-w-[220px] gap-2",
                   )}
                   aria-expanded={accountOpen}
                   aria-haspopup="menu"
@@ -183,7 +181,7 @@ export function SiteHeader({ user }: Props) {
                   <ChevronDown
                     className={cn(
                       "h-4 w-4 shrink-0 text-muted-foreground",
-                      accountOpen && "rotate-180"
+                      accountOpen && "rotate-180",
                     )}
                   />
                 </button>
@@ -222,11 +220,16 @@ export function SiteHeader({ user }: Props) {
               <>
                 <Link
                   href="/login"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                  )}
                 >
                   Iniciar sesión
                 </Link>
-                <Link href="/register" className={cn(buttonVariants({ size: "sm" }))}>
+                <Link
+                  href="/register"
+                  className={cn(buttonVariants({ size: "sm" }))}
+                >
                   Registrarse
                 </Link>
               </>
@@ -250,7 +253,7 @@ export function SiteHeader({ user }: Props) {
       <div
         className={cn(
           "border-t border-border/60 bg-muted/30 md:border-0 md:bg-transparent",
-          !open && "hidden md:block"
+          !open && "hidden md:block",
         )}
       >
         <nav

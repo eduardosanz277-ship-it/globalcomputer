@@ -18,6 +18,10 @@ import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  adminServiceLikeInputClassName,
+  adminSlideOverSectionClassName,
+} from "@/components/admin/admin-form-classes";
 
 const FORM_ID = "general-characteristic-form-slide-over";
 
@@ -48,7 +52,7 @@ export function GeneralCharacteristicFormDialog({
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
@@ -59,7 +63,7 @@ export function GeneralCharacteristicFormDialog({
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const isPending = isCreating || isUpdating;
@@ -86,7 +90,9 @@ export function GeneralCharacteristicFormDialog({
       open={open}
       onClose={() => onOpenChange(false)}
       title={
-        characteristic ? "Editar característica" : "Nueva característica general"
+        characteristic
+          ? "Editar característica general"
+          : "Nueva característica general"
       }
       description="Nombre único en el catálogo. Si está inactiva, no se ofrece al configurar productos."
       footer={
@@ -105,25 +111,27 @@ export function GeneralCharacteristicFormDialog({
         </SlideOverFooter>
       }
     >
-      <Form
-        id={FORM_ID}
-        form={form}
-        onSubmit={onSubmit}
-        className="space-y-3"
-      >
-        <FormField
-          name="name"
-          label="Nombre"
-          required
-          disabled={isPending}
-          error={errors.name?.message}
-          autoComplete="off"
-        />
-        <FormSwitchField<GeneralCharacteristicFormValues>
-          name="active"
-          label="Activa"
-          description="Si está desactivada, no se muestra al asignar características a productos."
-        />
+      <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
+        <section className={adminSlideOverSectionClassName}>
+          <div className="space-y-4">
+            <FormField
+              name="name"
+              label="Nombre"
+              required
+              disabled={isPending}
+              error={errors.name?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<GeneralCharacteristicFormValues>
+                name="active"
+                label="Activa"
+                description="Si está desactivada, no se muestra al asignar características a productos."
+              />
+            </div>
+          </div>
+        </section>
       </Form>
     </SlideOver>
   );

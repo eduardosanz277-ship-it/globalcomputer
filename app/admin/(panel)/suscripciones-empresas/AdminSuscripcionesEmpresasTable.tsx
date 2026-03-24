@@ -91,7 +91,7 @@ const filterSelectStyles: StylesConfig<
 };
 
 function approvalLabel(
-  s: BusinessRegistrationStatus | null | undefined
+  s: BusinessRegistrationStatus | null | undefined,
 ): string {
   const v = s ?? "pending";
   if (v === "pending") return "Pendiente";
@@ -101,7 +101,7 @@ function approvalLabel(
 
 /** Fondo suave por estado de alta (null cuenta como pendiente). */
 function businessSubscriptionRowClassName(
-  row: AdminBusinessProfileRow
+  row: AdminBusinessProfileRow,
 ): string {
   const s = row.businessRegistrationStatus ?? "pending";
   if (s === "pending") {
@@ -176,8 +176,7 @@ function RowActions({
     row.businessRegistrationStatus === "pending" ||
     row.businessRegistrationStatus == null;
 
-  const showApprovedRejectOnly =
-    row.businessRegistrationStatus === "approved";
+  const showApprovedRejectOnly = row.businessRegistrationStatus === "approved";
 
   const handleReject = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
@@ -256,7 +255,9 @@ function RowActions({
                 <CheckCircle2 className="h-4 w-4" aria-hidden />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">Aprobar registro de empresa</TooltipContent>
+            <TooltipContent side="top">
+              Aprobar registro de empresa
+            </TooltipContent>
           </Tooltip>
         </>
       ) : null}
@@ -321,8 +322,7 @@ export function AdminSuscripcionesEmpresasTable({
   isLoading = false,
 }: Props) {
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
-  const [approvalFilter, setApprovalFilter] =
-    useState<ApprovalFilter>("all");
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("all");
 
   const filtered = useMemo(() => {
     if (approvalFilter === "all") return rows;
@@ -387,14 +387,12 @@ export function AdminSuscripcionesEmpresasTable({
       {
         accessorKey: "lastSignInAt",
         header: "Último acceso",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.lastSignInAt),
+        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.lastSignInAt),
       },
       {
         accessorKey: "createdAt",
         header: "Registro",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.createdAt),
+        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.createdAt),
       },
       {
         id: "actions",
@@ -406,14 +404,14 @@ export function AdminSuscripcionesEmpresasTable({
             onViewDetail={() => setDetailUserId(row.original.id)}
             onDeleteSuccess={() => {
               setDetailUserId((current) =>
-                current === row.original.id ? null : current
+                current === row.original.id ? null : current,
               );
             }}
           />
         ),
       },
     ],
-    []
+    [],
   );
 
   return (

@@ -28,10 +28,14 @@ export function FormSwitchField<TFieldValues extends FieldValues>({
   return (
     <div className="space-y-2">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-0.5">
-          <Label htmlFor={String(name)}>{label}</Label>
+        <div className="space-y-1">
+          <Label htmlFor={String(name)} className="text-sm font-medium">
+            {label}
+          </Label>
           {description ? (
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {description}
+            </p>
           ) : null}
         </div>
         <Controller
@@ -49,7 +53,9 @@ export function FormSwitchField<TFieldValues extends FieldValues>({
         />
       </div>
       {message ? (
-        <p className="text-xs text-destructive">{message}</p>
+        <p className="mt-1 text-sm text-destructive" role="alert">
+          {message}
+        </p>
       ) : null}
     </div>
   );
@@ -57,46 +63,62 @@ export function FormSwitchField<TFieldValues extends FieldValues>({
 
 export type SelectOption<T extends string = string> = { value: T; label: string };
 
+/** Alineado con `Input` / formulario de servicios: altura ~h-11, borde suave, anillo al foco. */
 const defaultSelectStyles: StylesConfig<SelectOption, false> = {
   control: (base, state) => ({
     ...base,
-    minHeight: 40,
-    borderColor: "hsl(214 32% 91%)",
-    backgroundColor: "hsl(0 0% 100%)",
+    minHeight: 44,
+    borderRadius: "0.5rem",
+    borderWidth: "1px",
+    borderColor: "hsl(214 32% 91% / 0.85)",
+    backgroundColor: "hsl(0 0% 100% / 0.85)",
     boxShadow: state.isFocused
-      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.2)"
-      : "none",
+      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.35)"
+      : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": { borderColor: "hsl(214 32% 91%)" },
   }),
-  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
+  valueContainer: (base) => ({ ...base, padding: "0 10px" }),
   singleValue: (base) => ({
     ...base,
     color: "hsl(222.2 84% 4.9%)",
     fontSize: "0.875rem",
+    lineHeight: 1.25,
   }),
   input: (base) => ({ ...base, margin: 0, padding: 0 }),
+  placeholder: (base) => ({
+    ...base,
+    color: "hsl(215.4 16.3% 46.9% / 0.75)",
+    fontSize: "0.875rem",
+  }),
   indicatorSeparator: () => ({ display: "none" }),
   dropdownIndicator: (base) => ({
     ...base,
     color: "hsl(215.4 16.3% 46.9%)",
-    padding: "0 8px",
+    padding: "0 10px",
   }),
   menu: (base) => ({
     ...base,
     backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91%)",
-    borderRadius: "0.375rem",
+    border: "1px solid hsl(214 32% 91% / 0.9)",
+    borderRadius: "0.5rem",
+    boxShadow:
+      "0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)",
     zIndex: 60,
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: "6px",
   }),
   option: (base, state) => ({
     ...base,
     fontSize: "0.875rem",
     padding: "8px 12px",
+    borderRadius: "0.375rem",
     backgroundColor: state.isSelected
       ? "hsl(222.2 47.4% 11.2%)"
       : state.isFocused
         ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
+        : "transparent",
     color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
     cursor: "pointer",
   }),
@@ -131,7 +153,7 @@ export function FormSelectField<TFieldValues extends FieldValues>({
       : "";
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <Label htmlFor={`${instanceId}-input`}>
         {label}
         {fieldRequired ? <RequiredMark /> : null}
@@ -161,7 +183,9 @@ export function FormSelectField<TFieldValues extends FieldValues>({
         }}
       />
       {message ? (
-        <p className="text-xs text-destructive">{message}</p>
+        <p className="mt-1 text-sm text-destructive" role="alert">
+          {message}
+        </p>
       ) : null}
     </div>
   );

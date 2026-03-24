@@ -1,6 +1,5 @@
 "use client";
 
-/** Ejemplo de SlideOver: formulario de marca (nombre + activa), RHF + zod + server actions. */
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +15,10 @@ import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  adminServiceLikeInputClassName,
+  adminSlideOverSectionClassName,
+} from "@/components/admin/admin-form-classes";
 
 const BRAND_FORM_ID = "brand-form-slide-over";
 
@@ -43,7 +46,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
@@ -54,7 +57,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const isPending = isCreating || isUpdating;
@@ -102,21 +105,28 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
         id={BRAND_FORM_ID}
         form={form}
         onSubmit={onSubmit}
-        className="space-y-3"
+        className="space-y-0"
       >
-        <FormField
-          name="name"
-          label="Nombre"
-          required
-          disabled={isPending}
-          error={errors.name?.message}
-          autoComplete="off"
-        />
-        <FormSwitchField<BrandFormValues>
-          name="active"
-          label="Activa en catálogo"
-          description="Si está desactivada, la marca no se muestra en el catálogo público."
-        />
+        <section className={adminSlideOverSectionClassName}>
+          <div className="space-y-4">
+            <FormField
+              name="name"
+              label="Nombre"
+              required
+              disabled={isPending}
+              error={errors.name?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<BrandFormValues>
+                name="active"
+                label="Activa en catálogo"
+                description="Si está desactivada, la marca no se muestra en el catálogo público."
+              />
+            </div>
+          </div>
+        </section>
       </Form>
     </SlideOver>
   );

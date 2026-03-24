@@ -16,6 +16,10 @@ import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  adminServiceLikeInputClassName,
+  adminSlideOverSectionClassName,
+} from "@/components/admin/admin-form-classes";
 
 const BRAND_TYPE_FORM_ID = "brand-type-form-slide-over";
 
@@ -134,30 +138,37 @@ export function BrandTypeFormDialog({
         id={BRAND_TYPE_FORM_ID}
         form={form}
         onSubmit={onSubmit}
-        className="space-y-3"
+        className="space-y-0"
       >
-        <FormSelectField<BrandTypeFormValues>
-          name="brandId"
-          label="Marca"
-          instanceId="brand-type-brand"
-          options={brandOptions}
-          placeholder="Selecciona una marca"
-          isDisabled={isPending}
-          required
-        />
-        <FormField
-          name="name"
-          label="Nombre del tipo"
-          required
-          disabled={isPending}
-          error={errors.name?.message}
-          autoComplete="off"
-        />
-        <FormSwitchField<BrandTypeFormValues>
-          name="active"
-          label="Activo en catálogo"
-          description="Si está desactivado, el tipo no se muestra para esa marca en el catálogo público."
-        />
+        <section className={adminSlideOverSectionClassName}>
+          <div className="space-y-4">
+            <FormSelectField<BrandTypeFormValues>
+              name="brandId"
+              label="Marca"
+              instanceId="brand-type-brand"
+              options={brandOptions}
+              placeholder="Selecciona una marca"
+              isDisabled={isPending}
+              required
+            />
+            <FormField
+              name="name"
+              label="Nombre del tipo"
+              required
+              disabled={isPending}
+              error={errors.name?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<BrandTypeFormValues>
+                name="active"
+                label="Activo en catálogo"
+                description="Si está desactivado, el tipo no se muestra para esa marca en el catálogo público."
+              />
+            </div>
+          </div>
+        </section>
       </Form>
     </SlideOver>
   );

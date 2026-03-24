@@ -3,7 +3,7 @@ name: Deploy (Supabase link + seed)
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   check-tag-on-develop:
@@ -97,7 +97,7 @@ jobs:
           NOW=$(date +"%Y-%m-%d %H:%M:%S")
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
           -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-          -d text="✅ *Global Computer* workflow terminó correctamente en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
+          -d text="✅ *Global Computers USA* workflow terminó correctamente en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
         shell: bash
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -109,7 +109,7 @@ jobs:
           NOW=$(date +"%Y-%m-%d %H:%M:%S")
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
           -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-          -d text="❌ *Global Computer* workflow falló en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
+          -d text="❌ *Global Computers USA* workflow falló en la rama *${GITHUB_REF_NAME}* a las ${NOW} (Run: ${GITHUB_RUN_ID})"
         shell: bash
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

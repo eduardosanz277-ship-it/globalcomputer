@@ -7,9 +7,12 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Global Computer</p>
+            <p className="text-sm font-semibold text-foreground">
+              Global Computers USA
+            </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Equipos de videovigilancia, redes y tecnología para hogar y negocio.
+              Equipos de videovigilancia, redes y tecnología para hogar y
+              negocio.
             </p>
           </div>
           <div>
@@ -66,7 +69,10 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-center text-xs text-muted-foreground sm:flex-row sm:text-left">
-          <p>© {new Date().getFullYear()} Global Computer. Todos los derechos reservados.</p>
+          <p>
+            © {new Date().getFullYear()} Global Computers USA. Todos los
+            derechos reservados. Creado por Veltrix Digital.
+          </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="#" className="hover:text-foreground">
               Privacidad

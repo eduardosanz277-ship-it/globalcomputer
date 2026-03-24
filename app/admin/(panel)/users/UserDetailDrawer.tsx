@@ -135,10 +135,13 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
       contentAriaLabel="Detalle del usuario"
       footer={
         <SlideOverFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
           {detail && detail.role === "BUSINESS" && userId ? (
             <div className="flex flex-wrap items-center gap-2">
-              {(detail.businessRegistrationStatus === "pending" ||
-                detail.businessRegistrationStatus == null) ? (
+              {detail.businessRegistrationStatus === "pending" ||
+              detail.businessRegistrationStatus == null ? (
                 <>
                   <Button
                     type="button"
@@ -172,9 +175,6 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
               ) : null}
             </div>
           ) : null}
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cerrar
-          </Button>
         </SlideOverFooter>
       }
     >
@@ -192,9 +192,7 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
         </div>
       ) : (
         <>
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {!error && detail ? (
             <dl className="grid gap-4 text-sm">
               <div>

@@ -40,14 +40,14 @@ export function AdminSidebar({
       for (const item of ADMIN_NAV_ITEMS) {
         if (item.children?.length) {
           const activeChild = item.children.some((c) =>
-            pathMatches(pathname, c.href)
+            pathMatches(pathname, c.href),
           );
           const activeParent = pathMatches(pathname, item.href);
           initial[item.href] = activeChild || activeParent;
         }
       }
       return initial;
-    }
+    },
   );
 
   const toggleSubmenu = (key: string) => {
@@ -63,19 +63,21 @@ export function AdminSidebar({
         "transition-[width,transform] duration-200 ease-out",
         "fixed inset-y-0 left-0 z-50 w-[260px] md:relative md:inset-auto md:z-auto md:translate-x-0",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        collapsed ? "md:w-[72px]" : "md:w-[260px]"
+        collapsed ? "md:w-[72px]" : "md:w-[260px]",
       )}
     >
       <div
         className={cn(
           "flex h-16 shrink-0 items-center gap-2 border-b border-border/60 px-3",
-          collapsedNav ? "justify-center px-2 md:justify-center" : "justify-between"
+          collapsedNav
+            ? "justify-center px-2 md:justify-center"
+            : "justify-between",
         )}
       >
         <div
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2",
-            collapsedNav && "justify-center"
+            collapsedNav && "justify-center",
           )}
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-admin text-white">
@@ -83,7 +85,7 @@ export function AdminSidebar({
           </div>
           {!collapsedNav && (
             <span className="truncate text-sm font-semibold text-foreground">
-              Global Computer
+              Global Computers USA
             </span>
           )}
         </div>
@@ -107,7 +109,7 @@ export function AdminSidebar({
               (hasChildren &&
                 item.children!.some((c) => pathMatches(pathname, c.href)));
             const submenuOpen = hasChildren
-              ? openSubmenus[item.href] ?? false
+              ? (openSubmenus[item.href] ?? false)
               : false;
 
             return (
@@ -120,7 +122,7 @@ export function AdminSidebar({
                       "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       parentActive
                         ? "bg-admin-muted text-admin"
-                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
                     )}
                     title={item.label}
                   >
@@ -135,7 +137,7 @@ export function AdminSidebar({
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
                         parentActive
                           ? "bg-admin-muted text-admin"
-                          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
                       )}
                     >
                       <Icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -143,7 +145,7 @@ export function AdminSidebar({
                       <ChevronDown
                         className={cn(
                           "h-4 w-4 shrink-0 transition-transform",
-                          submenuOpen && "rotate-180"
+                          submenuOpen && "rotate-180",
                         )}
                       />
                     </button>
@@ -160,7 +162,7 @@ export function AdminSidebar({
                                   "block rounded-md px-2 py-1.5 text-sm transition-colors",
                                   subActive
                                     ? "bg-admin-muted font-medium text-admin"
-                                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                                 )}
                               >
                                 {sub.label}
@@ -180,7 +182,7 @@ export function AdminSidebar({
                       pathMatches(pathname, item.href)
                         ? "bg-admin-muted text-admin"
                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-                      collapsedNav && "justify-center px-0"
+                      collapsedNav && "justify-center px-0",
                     )}
                     title={collapsedNav ? item.label : undefined}
                   >

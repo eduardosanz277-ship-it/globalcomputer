@@ -154,7 +154,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
           if (!text) {
             return (
               <span className="block min-w-0 max-w-full truncate italic text-muted-foreground/80">
-                Sin descripción
+                —
               </span>
             );
           }

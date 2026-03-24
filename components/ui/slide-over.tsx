@@ -50,8 +50,6 @@ export function SlideOver({
   panelClassName,
   contentAriaLabel,
 }: SlideOverProps) {
-  const titleId = React.useId();
-  const descriptionId = React.useId();
   const hasDescription = Boolean(description?.trim());
 
   return (
@@ -65,8 +63,6 @@ export function SlideOver({
       <DialogPrimitive.Portal>
         <SlideOverOverlay />
         <DialogPrimitive.Content
-          aria-labelledby={titleId}
-          aria-describedby={descriptionId}
           className={cn(
             "fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col outline-none",
             "border-l border-border/70 bg-background shadow-[0_25px_50px_-12px_rgba(15,23,42,0.18)]",
@@ -90,14 +86,10 @@ export function SlideOver({
               </Button>
             </DialogPrimitive.Close>
             <div className="min-w-0 space-y-1 pr-11">
-              <DialogPrimitive.Title
-                id={titleId}
-                className="text-lg font-semibold tracking-tight text-foreground"
-              >
+              <DialogPrimitive.Title className="text-lg font-semibold tracking-tight text-foreground">
                 {title}
               </DialogPrimitive.Title>
               <DialogPrimitive.Description
-                id={descriptionId}
                 className={cn(
                   "text-sm leading-relaxed text-muted-foreground",
                   !hasDescription && "sr-only"

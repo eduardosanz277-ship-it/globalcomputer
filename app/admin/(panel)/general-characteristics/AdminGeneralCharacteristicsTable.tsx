@@ -138,7 +138,7 @@ function RowActions({
             variant="outline"
             className="h-8 w-8 shrink-0"
             onClick={onEdit}
-            aria-label="Editar característica"
+            aria-label="Editar característica general"
           >
             <Pencil className="h-4 w-4" aria-hidden />
           </Button>

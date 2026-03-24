@@ -19,6 +19,10 @@ import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  adminServiceLikeInputClassName,
+  adminSlideOverSectionClassName,
+} from "@/components/admin/admin-form-classes";
 
 const FORM_ID = "specific-characteristic-form-slide-over";
 
@@ -71,7 +75,7 @@ export function SpecificCharacteristicFormDialog({
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
@@ -82,7 +86,7 @@ export function SpecificCharacteristicFormDialog({
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const isPending = isCreating || isUpdating;
@@ -134,34 +138,46 @@ export function SpecificCharacteristicFormDialog({
         </SlideOverFooter>
       }
     >
-      <Form
-        id={FORM_ID}
-        form={form}
-        onSubmit={onSubmit}
-        className="space-y-3"
-      >
-        <FormSelectField<SpecificCharacteristicFormValues>
-          name="generalId"
-          label="Característica general"
-          instanceId="specific-characteristic-general"
-          options={generalOptions}
-          placeholder="Selecciona una característica general"
-          isDisabled={isPending}
-          required
-        />
-        <FormField
-          name="name"
-          label="Nombre del valor específico"
-          required
-          disabled={isPending}
-          error={errors.name?.message}
-          autoComplete="off"
-        />
-        <FormSwitchField<SpecificCharacteristicFormValues>
-          name="active"
-          label="Activo"
-          description="Si está desactivado, el valor específico no se ofrece al configurar productos."
-        />
+      <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
+        <section className={adminSlideOverSectionClassName}>
+          {/* <header className="flex items-center gap-2">
+            <ListChecks
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <h2 className="text-sm font-semibold tracking-wide text-foreground">
+              Información del valor
+            </h2>
+          </header> */}
+
+          <div className="space-y-4">
+            <FormSelectField<SpecificCharacteristicFormValues>
+              name="generalId"
+              label="Característica general"
+              instanceId="specific-characteristic-general"
+              options={generalOptions}
+              placeholder="Selecciona una característica general"
+              isDisabled={isPending}
+              required
+            />
+            <FormField
+              name="name"
+              label="Nombre de la característica específica"
+              required
+              disabled={isPending}
+              error={errors.name?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<SpecificCharacteristicFormValues>
+                name="active"
+                label="Activo"
+                description="Si está desactivado, el valor específico no se ofrece al configurar productos."
+              />
+            </div>
+          </div>
+        </section>
       </Form>
     </SlideOver>
   );

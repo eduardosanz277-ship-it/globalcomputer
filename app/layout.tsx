@@ -6,10 +6,10 @@ import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Global Computer",
-    template: "%s | Global Computer",
+    default: "Global Computers USA",
+    template: "%s | Global Computers USA",
   },
-  description: "Videovigilancia, redes y tecnología para hogar y negocio.",
+  description: "Cámaras de Seguridad, Software y Tecnología",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -22,4 +22,3 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-

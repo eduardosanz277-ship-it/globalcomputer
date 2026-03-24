@@ -60,7 +60,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const { ref: registrationRef, ...rest } = registration;
 
     return (
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label htmlFor={name}>
           {label}
           {fieldRequired ? <RequiredMark /> : null}
@@ -78,7 +78,9 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           }}
         />
         {error ? (
-          <p className="text-xs text-destructive mt-1">{error}</p>
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {error}
+          </p>
         ) : null}
       </div>
     );

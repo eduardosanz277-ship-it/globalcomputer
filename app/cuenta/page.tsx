@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 
@@ -29,7 +35,7 @@ export default async function CuentaPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, role, created_at, updated_at, phone, employer_identification_number"
+      "full_name, role, created_at, updated_at, phone, employer_identification_number",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -54,9 +60,11 @@ export default async function CuentaPage() {
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Mi cuenta</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Mi cuenta
+              </h1>
               <p className="text-sm text-muted-foreground">
-                Datos de tu perfil en Global Computer
+                Datos de tu perfil en Global Computers USA
               </p>
             </div>
             <form action="/auth/logout" method="post" className="shrink-0">
@@ -81,9 +89,7 @@ export default async function CuentaPage() {
                     : "Nombre"}
                 </dt>
                 <dd className="font-medium">
-                  {profile?.full_name?.trim() ||
-                    user.fullName?.trim() ||
-                    "—"}
+                  {profile?.full_name?.trim() || user.fullName?.trim() || "—"}
                 </dd>
 
                 <dt className="text-muted-foreground">Email</dt>
