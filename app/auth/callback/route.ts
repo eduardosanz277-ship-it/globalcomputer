@@ -41,6 +41,15 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=admin`);
   }
 
+  if (user?.role === "BUSINESS") {
+    const s = user.businessRegistrationStatus ?? "pending";
+    if (s !== "approved") {
+      await logoutService();
+      const err = s === "rejected" ? "rejected_business" : "pending_business";
+      return NextResponse.redirect(`${origin}/login?error=${err}`);
+    }
+  }
+
   await syncProfileAfterLoginService();
 
   return NextResponse.redirect(`${origin}${nextPath}`);

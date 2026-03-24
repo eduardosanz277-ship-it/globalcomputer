@@ -98,6 +98,18 @@ export async function sendLoginOtpService(rawEmail: string) {
     throw new Error(parsed.error.issues[0]?.message ?? "Email inválido");
   }
 
+  const blockReason = await repoGetBusinessLoginBlockReason(parsed.data.email);
+  if (blockReason === "pending") {
+    throw new Error(
+      "Tu cuenta de empresa está pendiente de aprobación por un administrador. Te avisaremos por correo cuando puedas iniciar sesión."
+    );
+  }
+  if (blockReason === "rejected") {
+    throw new Error(
+      "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información."
+    );
+  }
+
   const redirectTo = `${getAppBaseUrl()}/auth/callback`;
   await repoSignInWithOtp(parsed.data.email, redirectTo);
 }
@@ -119,6 +131,21 @@ export async function verifyLoginOtpService(rawEmail: string, rawCode: string) {
     throw new Error(
       "Las cuentas de administrador deben iniciar sesión en /admin/login."
     );
+  }
+
+  if (user?.role === "BUSINESS") {
+    const s = user.businessRegistrationStatus ?? "pending";
+    if (s !== "approved") {
+      await repoLogout();
+      if (s === "rejected") {
+        throw new Error(
+          "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información."
+        );
+      }
+      throw new Error(
+        "Tu cuenta de empresa está pendiente de aprobación por un administrador."
+      );
+    }
   }
 
   await syncProfileAfterLoginService();

@@ -25,6 +25,10 @@ const loginErrorMessages: Record<string, string> = {
     "Las cuentas de administrador deben iniciar sesión en Acceso admin.",
   auth:
     "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
+  pending_business:
+    "Tu cuenta de empresa está pendiente de aprobación. Te avisaremos por correo cuando puedas entrar.",
+  rejected_business:
+    "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
 };
 
 function LoginPageContent() {

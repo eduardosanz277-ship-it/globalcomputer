@@ -203,7 +203,7 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, business_registration_status")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -216,6 +216,12 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
   const role: SessionUser["role"] =
     fromProfile ?? fromMeta ?? "CLIENT";
 
+  const brs = profile?.business_registration_status;
+  const businessRegistrationStatus =
+    brs === "pending" || brs === "approved" || brs === "rejected"
+      ? brs
+      : null;
+
   return {
     id: user.id,
     email: user.email ?? "",
@@ -225,7 +231,23 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
       (typeof user.user_metadata?.full_name === "string"
         ? user.user_metadata.full_name
         : null),
+    businessRegistrationStatus,
   };
+}
+
+export async function repoGetBusinessLoginBlockReason(
+  email: string
+): Promise<"pending" | "rejected" | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("business_login_block_reason", {
+    check_email: email.trim().toLowerCase(),
+  });
+  if (error) {
+    console.error("business_login_block_reason:", error.message);
+    return null;
+  }
+  if (data === "pending" || data === "rejected") return data;
+  return null;
 }
 
 export async function repoLogout() {
