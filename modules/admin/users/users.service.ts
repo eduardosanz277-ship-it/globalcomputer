@@ -141,7 +141,9 @@ export async function getUserDetailService(
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("full_name, role, created_at")
+    .select(
+      "full_name, role, created_at, phone, business_registration_status, employer_identification_number"
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -156,12 +158,20 @@ export async function getUserDetailService(
       ? (user.user_metadata.role as UserRole)
       : undefined;
 
+  const role = roleFromProfile ?? roleFromMeta ?? "CLIENT";
+  const brs = profile?.business_registration_status;
+  const businessRegistrationStatus =
+    brs === "pending" || brs === "approved" || brs === "rejected" ? brs : null;
+
   return {
     id: user.id,
     email: user.email ?? null,
-    phone: user.phone ?? null,
+    phone: profile?.phone ?? user.phone ?? null,
     fullName: profile?.full_name ?? fromMeta,
-    role: roleFromProfile ?? roleFromMeta ?? "CLIENT",
+    role,
+    businessRegistrationStatus,
+    employerIdentificationNumber:
+      profile?.employer_identification_number ?? null,
     createdAt: profile?.created_at ?? user.created_at ?? null,
     lastSignInAt: user.last_sign_in_at ?? null,
     emailConfirmedAt: user.email_confirmed_at ?? null,

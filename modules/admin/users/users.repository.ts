@@ -1,14 +1,17 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AdminUser } from "./users.types";
 import type { UserRole } from "@/modules/auth/auth.types";
 
 export async function repoGetAllUsers(): Promise<AdminUser[]> {
-  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
 
-  const { data, error } = await supabase
+  /** Clientes completos; comercios solo con registro aprobado (no admin ni empresas pendientes). */
+  const { data, error } = await admin
     .from("profiles")
-    .select("id, full_name, role, created_at")
+    .select("id, full_name, role, created_at, business_registration_status")
+    .or(
+      "role.eq.CLIENT,and(role.eq.BUSINESS,business_registration_status.eq.approved)"
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -16,7 +19,6 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
   }
 
   const lastSignInById = new Map<string, string | null>();
-  const admin = createSupabaseAdminClient();
   let page = 1;
   const perPage = 1000;
   const maxPages = 50;
@@ -34,24 +36,74 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
     page += 1;
   }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id as string,
-    fullName: row.full_name ?? null,
-    role: (row.role as UserRole) ?? "CLIENT",
-    createdAt: row.created_at,
-    lastSignInAt: lastSignInById.get(row.id as string) ?? null,
-  }));
+  return (data ?? []).map((row: any) => {
+    const brs = row.business_registration_status;
+    const businessRegistrationStatus =
+      brs === "pending" || brs === "approved" || brs === "rejected"
+        ? brs
+        : null;
+    return {
+      id: row.id as string,
+      fullName: row.full_name ?? null,
+      role: (row.role as UserRole) ?? "CLIENT",
+      businessRegistrationStatus,
+      createdAt: row.created_at,
+      lastSignInAt: lastSignInById.get(row.id as string) ?? null,
+    };
+  });
 }
 
 export async function repoUpdateUserRole(userId: string, role: UserRole) {
-  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("profiles")
     .update({ role })
     .eq("id", userId);
 
   if (error) throw error;
+}
+
+export async function repoApproveBusinessRegistration(userId: string) {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .update({
+      business_registration_status: "approved",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .eq("role", "BUSINESS")
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error(
+      "No se pudo marcar la solicitud como aprobada (no se actualizó ningún perfil empresa). Revisa que el usuario exista y tenga rol empresa."
+    );
+  }
+}
+
+export async function repoRejectBusinessRegistration(userId: string) {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .update({
+      business_registration_status: "rejected",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .eq("role", "BUSINESS")
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error(
+      "No se pudo rechazar la solicitud (no se actualizó ningún perfil empresa)."
+    );
+  }
 }
 
 /** Elimina el usuario en Auth (y normalmente el perfil en cascada). Requiere service role. */
