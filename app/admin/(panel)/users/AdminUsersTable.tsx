@@ -8,6 +8,10 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Select, { type StylesConfig } from "react-select";
 import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
+import {
+  adminTableDateCell,
+  adminTableOptionalString,
+} from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +26,6 @@ import {
   rejectBusinessRegistrationAction,
   deleteUserAction,
 } from "./actions";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import type { UserRole } from "@/modules/auth/auth.types";
 
@@ -342,7 +345,14 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
-      { accessorKey: "fullName", header: "Nombre" },
+      {
+        accessorKey: "fullName",
+        header: "Nombre",
+        cell: ({ row }) =>
+          adminTableOptionalString(row.original.fullName, {
+            classNameWhenPresent: "font-medium text-foreground",
+          }),
+      },
       {
         id: "role",
         accessorKey: "role",
@@ -352,8 +362,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
       {
         accessorKey: "lastSignInAt",
         header: "Último acceso",
-        cell: ({ row }) =>
-          formatDateDdMmYyyyHhMm(row.original.lastSignInAt),
+        cell: ({ row }) => adminTableDateCell(row.original.lastSignInAt),
       },
       {
         id: "actions",

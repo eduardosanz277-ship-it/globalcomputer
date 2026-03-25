@@ -9,6 +9,10 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Select, { type StylesConfig } from "react-select";
 import { ListChecks, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  adminTableDateCell,
+  adminTableOptionalString,
+} from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +24,6 @@ import {
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteSpecificCharacteristicAction } from "./actions";
 import { SpecificCharacteristicFormDialog } from "./SpecificCharacteristicFormDialog";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 
 const STATUS_FILTER_OPTIONS = [
@@ -207,8 +210,16 @@ export function AdminSpecificCharacteristicsTable({
 
   const columns = useMemo<ColumnDef<SpecificCharacteristic>[]>(
     () => [
-      { accessorKey: "generalName", header: "Característica general" },
-      { accessorKey: "name", header: "Valor específico" },
+      {
+        accessorKey: "generalName",
+        header: "Característica general",
+        cell: ({ row }) => adminTableOptionalString(row.original.generalName),
+      },
+      {
+        accessorKey: "name",
+        header: "Valor específico",
+        cell: ({ row }) => adminTableOptionalString(row.original.name),
+      },
       {
         accessorKey: "active",
         header: "Estado",
@@ -228,7 +239,7 @@ export function AdminSpecificCharacteristicsTable({
       {
         accessorKey: "updatedAt",
         header: "Última actualización",
-        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.updatedAt),
+        cell: ({ row }) => adminTableDateCell(row.original.updatedAt),
       },
       {
         id: "actions",

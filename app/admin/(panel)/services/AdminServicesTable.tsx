@@ -19,7 +19,10 @@ import {
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteServiceAction } from "./actions";
 import { ServiceFormDialog } from "./ServiceFormDialog";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import {
+  AdminTableEmptyEmDash,
+  adminTableDateCell,
+} from "@/components/admin/admin-table-empty";
 
 interface Props {
   services: Service[];
@@ -152,11 +155,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         cell: ({ row }) => {
           const text = row.original.description?.trim();
           if (!text) {
-            return (
-              <span className="block min-w-0 max-w-full truncate italic text-muted-foreground/80">
-                —
-              </span>
-            );
+            return <AdminTableEmptyEmDash block />;
           }
           return (
             <span className="block min-w-0 max-w-full truncate">{text}</span>
@@ -169,7 +168,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         meta: {
           cellClassName: "w-[22%] min-w-0 whitespace-nowrap overflow-hidden",
         },
-        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.updatedAt),
+        cell: ({ row }) => adminTableDateCell(row.original.updatedAt),
       },
       {
         id: "actions",

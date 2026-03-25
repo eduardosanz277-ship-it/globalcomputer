@@ -6,6 +6,11 @@ import {
   rejectBusinessRegistrationAction,
 } from "@/app/admin/(panel)/users/actions";
 import { UserDetailDrawer } from "@/app/admin/(panel)/users/UserDetailDrawer";
+import {
+  AdminTableEmptyEmDash,
+  adminTableDateCell,
+  adminTableOptionalString,
+} from "@/components/admin/admin-table-empty";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -17,7 +22,6 @@ import {
 import { useServerAction } from "@/hooks/use-server-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -346,34 +350,37 @@ export function AdminSuscripcionesEmpresasTable({
       {
         accessorKey: "fullName",
         header: "Negocio",
-        cell: ({ row }) => (
-          <span className="font-medium">
-            {row.original.fullName?.trim() || "—"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const v = row.original.fullName?.trim();
+          if (!v) return <AdminTableEmptyEmDash />;
+          return <span className="font-medium">{v}</span>;
+        },
       },
       {
         accessorKey: "email",
         header: "Email",
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">
-            {row.original.email ?? "—"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const v = row.original.email?.trim();
+          if (!v) return <AdminTableEmptyEmDash />;
+          return <span className="text-muted-foreground">{v}</span>;
+        },
       },
       {
         accessorKey: "phone",
         header: "Teléfono",
-        cell: ({ row }) => row.original.phone?.trim() || "—",
+        cell: ({ row }) =>
+          adminTableOptionalString(row.original.phone, {
+            classNameWhenPresent: "text-foreground",
+          }),
       },
       {
         accessorKey: "employerIdentificationNumber",
         header: "EIN",
-        cell: ({ row }) => (
-          <span className="font-mono text-xs">
-            {row.original.employerIdentificationNumber?.trim() || "—"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const v = row.original.employerIdentificationNumber?.trim();
+          if (!v) return <AdminTableEmptyEmDash />;
+          return <span className="font-mono text-xs">{v}</span>;
+        },
       },
       {
         id: "approval",
@@ -387,12 +394,12 @@ export function AdminSuscripcionesEmpresasTable({
       {
         accessorKey: "lastSignInAt",
         header: "Último acceso",
-        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.lastSignInAt),
+        cell: ({ row }) => adminTableDateCell(row.original.lastSignInAt),
       },
       {
         accessorKey: "createdAt",
         header: "Registro",
-        cell: ({ row }) => formatDateDdMmYyyyHhMm(row.original.createdAt),
+        cell: ({ row }) => adminTableDateCell(row.original.createdAt),
       },
       {
         id: "actions",
