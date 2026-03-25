@@ -18,7 +18,8 @@ import {
   type FilterFn,
   type SortingState,
 } from "@tanstack/react-table";
-import Select, { type StylesConfig } from "react-select";
+import Select from "react-select";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,6 +41,20 @@ export type DataTableColumnMeta = {
   cellClassName?: string;
 };
 
+/**
+ * Ids de columna cuya primera celda (datos) en vista **card** (`md:hidden`) comparte fila
+ * con el menú de acciones, igual que la tabla de Usuarios (etiqueta + ⋮ arriba; valor debajo).
+ */
+const CARD_PRIMARY_COLUMN_IDS = new Set([
+  "user",
+  "business",
+  "brand",
+  "type",
+  "name",
+  "specific",
+  "service",
+]);
+
 function cellAlignClasses(meta: DataTableColumnMeta | undefined) {
   const align = meta?.align;
   if (align === "right") {
@@ -50,61 +65,6 @@ function cellAlignClasses(meta: DataTableColumnMeta | undefined) {
   }
   return "text-left";
 }
-
-const pageSizeSelectStyles: StylesConfig<PageSizeOption, false> = {
-  control: (base, state) => ({
-    ...base,
-    minHeight: 28,
-    minWidth: 62,
-    borderColor: "hsl(214 32% 91%)",
-    backgroundColor: "hsl(0 0% 100%)",
-    boxShadow: state.isFocused
-      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.2)"
-      : "none",
-    "&:hover": { borderColor: "hsl(214 32% 91%)" },
-  }),
-  valueContainer: (base) => ({ ...base, padding: "0 6px" }),
-  singleValue: (base) => ({
-    ...base,
-    color: "hsl(222.2 84% 4.9%)",
-    fontSize: "0.75rem",
-    lineHeight: 1.2,
-  }),
-  input: (base) => ({ ...base, margin: 0, padding: 0 }),
-  indicatorSeparator: () => ({ display: "none" }),
-  dropdownIndicator: (base) => ({
-    ...base,
-    color: "hsl(215.4 16.3% 46.9%)",
-    padding: "0 4px",
-    "& svg": { height: 14, width: 14 },
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91%)",
-    borderRadius: "0.25rem",
-    boxShadow:
-      "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-    zIndex: 50,
-  }),
-  option: (base, state) => ({
-    ...base,
-    fontSize: "0.75rem",
-    padding: "4px 8px",
-    backgroundColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
-      : state.isFocused
-        ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
-    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: state.isSelected
-        ? "hsl(222.2 47.4% 11.2%)"
-        : "hsl(210 40% 96.1%)",
-    },
-  }),
-};
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -503,11 +463,11 @@ export function DataTable<TData, TValue>({
                       const bodyCells = visibleCells.filter(
                         (c) => c.column.id !== "actions",
                       );
-                      const userCell = bodyCells.find(
-                        (c) => c.column.id === "user",
+                      const primaryCell = bodyCells.find((c) =>
+                        CARD_PRIMARY_COLUMN_IDS.has(c.column.id),
                       );
                       const restBodyCells = bodyCells.filter(
-                        (c) => c.column.id !== "user",
+                        (c) => c.column.id !== primaryCell?.column.id,
                       );
 
                       const renderFieldRow = (cell: (typeof bodyCells)[0]) => {
@@ -536,18 +496,18 @@ export function DataTable<TData, TValue>({
                         );
                       };
 
-                      if (actionCell && userCell) {
-                        const userHeader = firstHeaderGroup?.headers.find(
-                          (h) => h.column.id === userCell.column.id,
+                      if (actionCell && primaryCell) {
+                        const primaryHeader = firstHeaderGroup?.headers.find(
+                          (h) => h.column.id === primaryCell.column.id,
                         );
                         return (
                           <>
                             <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-5">
                               <span className="min-w-0 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                                {userHeader && !userHeader.isPlaceholder
+                                {primaryHeader && !primaryHeader.isPlaceholder
                                   ? flexRender(
-                                      userHeader.column.columnDef.header,
-                                      userHeader.getContext(),
+                                      primaryHeader.column.columnDef.header,
+                                      primaryHeader.getContext(),
                                     )
                                   : null}
                               </span>
@@ -562,8 +522,8 @@ export function DataTable<TData, TValue>({
                               <div className="px-4 pb-3 pt-1 sm:px-5">
                                 <div className="min-w-0 text-sm text-foreground">
                                   {flexRender(
-                                    userCell.column.columnDef.cell,
-                                    userCell.getContext(),
+                                    primaryCell.column.columnDef.cell,
+                                    primaryCell.getContext(),
                                   )}
                                 </div>
                               </div>
@@ -669,11 +629,8 @@ export function DataTable<TData, TValue>({
                 onChange={(opt) => {
                   if (opt) table.setPageSize(opt.value);
                 }}
-                styles={pageSizeSelectStyles}
+                styles={appSelectStyles}
                 className="min-w-[62px] shrink-0"
-                classNames={{
-                  control: () => "!min-h-7",
-                }}
               />
             </div>
 

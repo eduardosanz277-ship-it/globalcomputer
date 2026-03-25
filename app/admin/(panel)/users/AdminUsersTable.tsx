@@ -9,11 +9,13 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
-import type { Column, ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import Select, { type StylesConfig } from "react-select";
+import Select from "react-select";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -27,15 +29,7 @@ import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { cn } from "@/utils/cn";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  MoreVertical,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { Eye, MoreVertical, Trash2, XCircle } from "lucide-react";
 
 const ROLE_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los roles" },
@@ -44,82 +38,6 @@ const ROLE_FILTER_OPTIONS = [
 ] as const;
 
 type RoleFilter = (typeof ROLE_FILTER_OPTIONS)[number]["value"];
-
-const filterSelectStyles: StylesConfig<
-  (typeof ROLE_FILTER_OPTIONS)[number],
-  false
-> = {
-  control: (base, state) => ({
-    ...base,
-    minHeight: 40,
-    width: "100%",
-    minWidth: 0,
-    borderRadius: "0.5rem",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor:
-      state.isFocused || state.menuIsOpen
-        ? "hsl(222.2 84% 56.3% / 0.55)"
-        : "hsl(214 32% 91% / 0.9)",
-    backgroundColor: "hsl(0 0% 100%)",
-    boxShadow:
-      state.isFocused || state.menuIsOpen
-        ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.22)"
-        : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-    "&:hover": {
-      borderColor:
-        state.isFocused || state.menuIsOpen
-          ? "hsl(222.2 84% 56.3% / 0.55)"
-          : "hsl(214 32% 91% / 0.9)",
-    },
-  }),
-  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
-  singleValue: (base) => ({
-    ...base,
-    color: "hsl(222.2 84% 4.9%)",
-    fontSize: "0.875rem",
-  }),
-  input: (base) => ({ ...base, margin: 0, padding: 0 }),
-  indicatorSeparator: () => ({ display: "none" }),
-  dropdownIndicator: (base) => ({
-    ...base,
-    color: "hsl(215.4 16.3% 46.9%)",
-    padding: "0 8px",
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91% / 0.9)",
-    borderRadius: "0.5rem",
-    zIndex: 50,
-    overflow: "hidden",
-  }),
-  menuList: (base) => ({
-    ...base,
-    padding: "2px",
-  }),
-  option: (base, state) => ({
-    ...base,
-    fontSize: "0.875rem",
-    padding: "6px 10px",
-    borderRadius: "0.375rem",
-    marginBottom: "1px",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
-      : state.isFocused
-        ? "hsl(214 32% 91% / 0.95)"
-        : "transparent",
-    backgroundColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
-      : state.isFocused
-        ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
-    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
-    cursor: "pointer",
-  }),
-};
 
 interface Props {
   users: AdminUser[];
@@ -143,73 +61,6 @@ function lastSignInTimestampMs(u: AdminUser): number | null {
   if (raw == null) return null;
   const t = new Date(raw).getTime();
   return Number.isNaN(t) ? null : t;
-}
-
-function SortableHeader({
-  column,
-  label,
-  ariaLabelIdle,
-  ariaLabelAsc,
-  ariaLabelDesc,
-}: {
-  column: Column<AdminUser, unknown>;
-  label: string;
-  ariaLabelIdle: string;
-  ariaLabelAsc: string;
-  ariaLabelDesc: string;
-}) {
-  const sorted = column.getIsSorted();
-  const ariaLabel =
-    sorted === "asc"
-      ? ariaLabelAsc
-      : sorted === "desc"
-        ? ariaLabelDesc
-        : ariaLabelIdle;
-  return (
-    <>
-      {/* Vista lista en cards (md:hidden en DataTable): sin control de ordenar */}
-      <span className="md:hidden">{label}</span>
-      <button
-        type="button"
-        className={cn(
-          "hidden max-w-full items-center gap-1.5 rounded-md px-0.5 py-0.5 -mx-0.5 md:inline-flex",
-          "text-xs font-medium uppercase tracking-wide text-muted-foreground",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-        )}
-        onClick={() => column.toggleSorting()}
-        aria-label={ariaLabel}
-        aria-sort={
-          sorted === "asc"
-            ? "ascending"
-            : sorted === "desc"
-              ? "descending"
-              : "none"
-        }
-      >
-        {label}
-        <span
-          className="inline-flex h-4 w-4 shrink-0 text-muted-foreground/80"
-          aria-hidden
-        >
-          {sorted === "asc" ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : sorted === "desc" ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="h-4 w-4 opacity-70" />
-          )}
-        </span>
-      </button>
-    </>
-  );
-}
-
-function userInitial(user: AdminUser): string {
-  const name = user.fullName?.trim();
-  if (name) return name.slice(0, 1).toUpperCase();
-  const em = user.email?.trim();
-  if (em) return em.slice(0, 1).toUpperCase();
-  return "?";
 }
 
 function roleBadgeClass(role: UserRole): string {
@@ -493,25 +344,17 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
           const name = userDisplayName(u);
           const email = u.email?.trim();
           return (
-            <div className="flex min-w-0 items-start gap-3">
-              <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
-                aria-hidden
-              >
-                {userInitial(u)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-semibold text-foreground">
-                  {name}
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-foreground">
+                {name}
+              </p>
+              {email ? (
+                <p className="truncate text-sm text-muted-foreground">
+                  {email}
                 </p>
-                {email ? (
-                  <p className="truncate text-sm text-muted-foreground">
-                    {email}
-                  </p>
-                ) : (
-                  <AdminTableEmptyEmDash className="text-sm" />
-                )}
-              </div>
+              ) : (
+                <AdminTableEmptyEmDash className="text-sm" />
+              )}
             </div>
           );
         },
@@ -617,7 +460,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
               onChange={(opt) => {
                 if (opt) setRoleFilter(opt.value);
               }}
-              styles={filterSelectStyles}
+              styles={appSelectStyles}
               className="w-full"
             />
           </div>

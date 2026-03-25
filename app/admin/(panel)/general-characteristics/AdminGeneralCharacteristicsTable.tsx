@@ -6,24 +6,19 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import Select, { type StylesConfig } from "react-select";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import {
-  adminTableDateCell,
-  adminTableOptionalString,
-} from "@/components/admin/admin-table-empty";
+import Select from "react-select";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
+import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
+import { Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteGeneralCharacteristicAction } from "./actions";
 import { GeneralCharacteristicFormDialog } from "./GeneralCharacteristicFormDialog";
 import { cn } from "@/utils/cn";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
@@ -33,64 +28,14 @@ const STATUS_FILTER_OPTIONS = [
 
 type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
 
-const filterSelectStyles: StylesConfig<
-  (typeof STATUS_FILTER_OPTIONS)[number],
-  false
-> = {
-  control: (base, state) => ({
-    ...base,
-    minHeight: 40,
-    width: "100%",
-    minWidth: 0,
-    borderRadius: "0.5rem",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: "hsl(214 32% 91% / 0.9)",
-    backgroundColor: "hsl(0 0% 100%)",
-    boxShadow: state.isFocused
-      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.3)"
-      : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-    "&:hover": {
-      borderColor: "hsl(214 32% 91% / 0.9)",
-    },
-  }),
-  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
-  singleValue: (base) => ({
-    ...base,
-    color: "hsl(222.2 84% 4.9%)",
-    fontSize: "0.875rem",
-  }),
-  input: (base) => ({ ...base, margin: 0, padding: 0 }),
-  indicatorSeparator: () => ({ display: "none" }),
-  dropdownIndicator: (base) => ({
-    ...base,
-    color: "hsl(215.4 16.3% 46.9%)",
-    padding: "0 8px",
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91% / 0.9)",
-    borderRadius: "0.5rem",
-    zIndex: 50,
-  }),
-  option: (base, state) => ({
-    ...base,
-    fontSize: "0.875rem",
-    padding: "8px 12px",
-    backgroundColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
-      : state.isFocused
-        ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
-    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
-    cursor: "pointer",
-  }),
-};
-
 interface Props {
   characteristics: GeneralCharacteristic[];
   isLoading?: boolean;
+}
+
+function updatedAtSortMs(row: GeneralCharacteristic): number {
+  const t = new Date(row.updatedAt).getTime();
+  return Number.isNaN(t) ? 0 : t;
 }
 
 function RowActions({
@@ -132,42 +77,11 @@ function RowActions({
   };
 
   return (
-    <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className="h-8 w-8 shrink-0"
-            onClick={onEdit}
-            aria-label="Editar característica general"
-          >
-            <Pencil className="h-4 w-4" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Editar</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            className="h-8 w-8 shrink-0"
-            onClick={handleDelete}
-            disabled={isPending}
-            aria-label="Eliminar característica"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {isPending ? "Eliminando…" : "Eliminar"}
-        </TooltipContent>
-      </Tooltip>
-    </div>
+    <AdminEditDeleteRowMenu
+      onEdit={onEdit}
+      onDelete={() => void handleDelete()}
+      isDeleting={isPending}
+    />
   );
 }
 
@@ -194,20 +108,59 @@ export function AdminGeneralCharacteristicsTable({
   const columns = useMemo<ColumnDef<GeneralCharacteristic>[]>(
     () => [
       {
-        accessorKey: "name",
-        header: "Nombre",
-        cell: ({ row }) => adminTableOptionalString(row.original.name),
+        id: "name",
+        accessorFn: (row) => row.name,
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          rowA.original.name.localeCompare(rowB.original.name, "es", {
+            sensitivity: "base",
+          }),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Nombre"
+            ariaLabelIdle="Ordenar por nombre"
+            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
+            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+          />
+        ),
+        meta: {
+          cellClassName:
+            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+        },
+        cell: ({ row }) => {
+          const name = row.original.name.trim();
+          return (
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-foreground">
+                {name || "—"}
+              </p>
+            </div>
+          );
+        },
       },
       {
+        id: "active",
         accessorKey: "active",
-        header: "Estado",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          Number(rowB.original.active) - Number(rowA.original.active),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Estado"
+            ariaLabelIdle="Ordenar por estado"
+            ariaLabelAsc="Inactivas primero. Clic para invertir"
+            ariaLabelDesc="Activas primero. Clic para quitar orden"
+          />
+        ),
         cell: ({ row }) => (
           <span
             className={cn(
-              "inline-flex w-[7rem] shrink-0 items-center justify-center rounded-full px-2 py-1 text-center text-xs font-medium",
+              "inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
               row.original.active
-                ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
-                : "bg-muted text-muted-foreground",
+                ? "border border-emerald-200/90 bg-emerald-50 text-emerald-800 dark:text-emerald-200"
+                : "border border-slate-200/90 bg-slate-100 text-slate-700",
             )}
           >
             {row.original.active ? "Activa" : "Inactiva"}
@@ -215,14 +168,45 @@ export function AdminGeneralCharacteristicsTable({
         ),
       },
       {
+        id: "updatedAt",
         accessorKey: "updatedAt",
-        header: "Última actualización",
-        cell: ({ row }) => adminTableDateCell(row.original.updatedAt),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Última actualización"
+            ariaLabelIdle="Ordenar por última actualización"
+            ariaLabelAsc="Más antiguo primero. Clic para invertir"
+            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => {
+          const raw = row.original.updatedAt;
+          const relative = formatRelativeLastAccess(raw);
+          if (relative == null) {
+            return (
+              <span className="text-sm text-muted-foreground">
+                {formatDateDdMmYyyyHhMm(raw)}
+              </span>
+            );
+          }
+          const absolute = formatDateDdMmYyyyHhMm(raw);
+          return (
+            <span
+              className="text-sm text-muted-foreground"
+              title={absolute || undefined}
+            >
+              {relative}
+            </span>
+          );
+        },
       },
       {
         id: "actions",
-        meta: { align: "right" },
-        header: "Acciones",
+        meta: { align: "right", cellClassName: "w-[4.5rem]" },
+        header: () => <span className="sr-only">Acciones</span>,
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -238,46 +222,52 @@ export function AdminGeneralCharacteristicsTable({
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="space-y-4">
-        <DataTable
-          columns={columns}
-          data={filtered}
-          isLoading={isLoading}
-          searchPlaceholder="Buscar…"
-          toolbarFilters={
-            <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
-              <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
-                instanceId="general-characteristics-status-filter"
-                inputId="general-characteristics-status-filter-input"
-                aria-label="Filtrar por estado"
-                isSearchable={false}
-                isClearable={false}
-                options={STATUS_FILTER_OPTIONS}
-                value={filterValue}
-                onChange={(opt) => {
-                  if (opt) setStatusFilter(opt.value);
-                }}
-                styles={filterSelectStyles}
-                className="w-full"
-              />
-            </div>
-          }
-          toolbarActions={
-            <Button
-              type="button"
-              className="w-full shrink-0 min-[1440px]:w-auto"
-              onClick={() => {
-                setEditing(null);
-                setDialogOpen(true);
+    <div className="space-y-4">
+      <DataTable
+        columns={columns}
+        data={filtered}
+        isLoading={isLoading}
+        enableSorting
+        searchPlaceholder="Buscar por nombre…"
+        tableHeadCellClassName="!font-medium"
+        tableBodyCellClassName="py-4"
+        paginationButtonVariant="ghost"
+        paginationClassName="border-border/50"
+        getRowClassName={() =>
+          "hover:bg-muted/50 transition-colors duration-150"
+        }
+        toolbarFilters={
+          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+            <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+              instanceId="general-characteristics-status-filter"
+              inputId="general-characteristics-status-filter-input"
+              aria-label="Filtrar por estado"
+              isSearchable={false}
+              isClearable={false}
+              options={STATUS_FILTER_OPTIONS}
+              value={filterValue}
+              onChange={(opt) => {
+                if (opt) setStatusFilter(opt.value);
               }}
-            >
-              <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Nueva
-            </Button>
-          }
-        />
-      </div>
+              styles={appSelectStyles}
+              className="w-full"
+            />
+          </div>
+        }
+        toolbarActions={
+          <Button
+            type="button"
+            className="w-full shrink-0 min-[1440px]:w-auto"
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" aria-hidden />
+            Nueva
+          </Button>
+        }
+      />
 
       <GeneralCharacteristicFormDialog
         open={dialogOpen}
@@ -287,6 +277,6 @@ export function AdminGeneralCharacteristicsTable({
         }}
         characteristic={editing}
       />
-    </TooltipProvider>
+    </div>
   );
 }

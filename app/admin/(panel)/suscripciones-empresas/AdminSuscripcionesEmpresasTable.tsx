@@ -13,86 +13,45 @@ import {
 } from "@/components/admin/admin-table-empty";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
-import type { ColumnDef } from "@tanstack/react-table";
-import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
+import type { Column, ColumnDef } from "@tanstack/react-table";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { cn } from "@/utils/cn";
+import {
+  ArrowUpDown,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  MoreVertical,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import Select, { type StylesConfig } from "react-select";
+import { createPortal } from "react-dom";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Select from "react-select";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
 const APPROVAL_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos" },
+  { value: "all" as const, label: "Todos los estados" },
   { value: "pending" as const, label: "Pendiente" },
   { value: "approved" as const, label: "Aprobada" },
   { value: "rejected" as const, label: "Rechazada" },
 ] as const;
 
 type ApprovalFilter = (typeof APPROVAL_FILTER_OPTIONS)[number]["value"];
-
-const filterSelectStyles: StylesConfig<
-  (typeof APPROVAL_FILTER_OPTIONS)[number],
-  false
-> = {
-  control: (base, state) => ({
-    ...base,
-    minHeight: 40,
-    width: "100%",
-    minWidth: 0,
-    borderRadius: "0.5rem",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: "hsl(214 32% 91% / 0.9)",
-    backgroundColor: "hsl(0 0% 100%)",
-    boxShadow: state.isFocused
-      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.3)"
-      : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-    "&:hover": {
-      borderColor: "hsl(214 32% 91% / 0.9)",
-    },
-  }),
-  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
-  singleValue: (base) => ({
-    ...base,
-    color: "hsl(222.2 84% 4.9%)",
-    fontSize: "0.875rem",
-  }),
-  input: (base) => ({ ...base, margin: 0, padding: 0 }),
-  indicatorSeparator: () => ({ display: "none" }),
-  dropdownIndicator: (base) => ({
-    ...base,
-    color: "hsl(215.4 16.3% 46.9%)",
-    padding: "0 8px",
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91% / 0.9)",
-    borderRadius: "0.5rem",
-    zIndex: 50,
-  }),
-  option: (base, state) => ({
-    ...base,
-    fontSize: "0.875rem",
-    padding: "8px 12px",
-    backgroundColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
-      : state.isFocused
-        ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
-    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
-    cursor: "pointer",
-  }),
-};
 
 function approvalLabel(
   s: BusinessRegistrationStatus | null | undefined,
@@ -101,6 +60,54 @@ function approvalLabel(
   if (v === "pending") return "Pendiente";
   if (v === "rejected") return "Rechazada";
   return "Aprobada";
+}
+
+function approvalBadgeClass(
+  s: BusinessRegistrationStatus | null | undefined,
+): string {
+  const v = s ?? "pending";
+  if (v === "pending") {
+    return "border border-amber-200/90 bg-amber-50 text-amber-900";
+  }
+  if (v === "rejected") {
+    return "border border-red-200/90 bg-red-50 text-red-800";
+  }
+  return "border border-emerald-200/90 bg-emerald-50 text-emerald-900";
+}
+
+function businessDisplayName(row: AdminBusinessProfileRow): string {
+  return row.fullName?.trim() || row.email?.trim() || "Sin nombre";
+}
+
+function businessSortValue(row: AdminBusinessProfileRow): string {
+  return `${row.fullName ?? ""} ${row.email ?? ""}`
+    .trim()
+    .toLowerCase();
+}
+
+function lastSignInTimestampMs(
+  row: AdminBusinessProfileRow,
+): number | null {
+  const raw = row.lastSignInAt;
+  if (raw == null) return null;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+function createdAtTimestampMs(row: AdminBusinessProfileRow): number | null {
+  const raw = row.createdAt;
+  if (raw == null) return null;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+function approvalStatusSortValue(
+  s: BusinessRegistrationStatus | null | undefined,
+): number {
+  const v = s ?? "pending";
+  if (v === "pending") return 0;
+  if (v === "approved") return 1;
+  return 2;
 }
 
 /** Fondo suave por estado de alta (null cuenta como pendiente). */
@@ -117,12 +124,73 @@ function businessSubscriptionRowClassName(
   return "bg-emerald-50/95 hover:bg-emerald-100/80";
 }
 
+function SortableHeader({
+  column,
+  label,
+  ariaLabelIdle,
+  ariaLabelAsc,
+  ariaLabelDesc,
+}: {
+  column: Column<AdminBusinessProfileRow, unknown>;
+  label: string;
+  ariaLabelIdle: string;
+  ariaLabelAsc: string;
+  ariaLabelDesc: string;
+}) {
+  const sorted = column.getIsSorted();
+  const ariaLabel =
+    sorted === "asc"
+      ? ariaLabelAsc
+      : sorted === "desc"
+        ? ariaLabelDesc
+        : ariaLabelIdle;
+  return (
+    <>
+      <span className="md:hidden">{label}</span>
+      <button
+        type="button"
+        className={cn(
+          "hidden max-w-full items-center gap-1.5 rounded-md px-0.5 py-0.5 -mx-0.5 md:inline-flex",
+          "text-xs font-medium uppercase tracking-wide text-muted-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        )}
+        onClick={() => column.toggleSorting()}
+        aria-label={ariaLabel}
+        aria-sort={
+          sorted === "asc"
+            ? "ascending"
+            : sorted === "desc"
+              ? "descending"
+              : "none"
+        }
+      >
+        {label}
+        <span
+          className="inline-flex h-4 w-4 shrink-0 text-muted-foreground/80"
+          aria-hidden
+        >
+          {sorted === "asc" ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : sorted === "desc" ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="h-4 w-4 opacity-70" />
+          )}
+        </span>
+      </button>
+    </>
+  );
+}
+
+const MENU_MIN_WIDTH_PX = 208; // 13rem
+
 interface Props {
   rows: AdminBusinessProfileRow[];
   isLoading?: boolean;
 }
 
-function RowActions({
+/** Mismo patrón que `UsersRowActionsMenu`: botón ⋮ + menú en portal. */
+function SuscripcionesRowActionsMenu({
   row,
   onViewDetail,
   onDeleteSuccess,
@@ -132,12 +200,24 @@ function RowActions({
   onDeleteSuccess: () => void;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
   const { execute: approveBusiness, isPending: approvingBusiness } =
     useServerAction(approveBusinessRegistrationAction, {
       successMessage:
         "Empresa aprobada. Se ha enviado un correo de notificación.",
       errorMessage: "No se pudo aprobar la empresa",
-      onSuccess: () => onDeleteSuccess(),
+      onSuccess: () => {
+        onDeleteSuccess();
+        setOpen(false);
+      },
       onSettled: () => router.refresh(),
     });
 
@@ -145,16 +225,72 @@ function RowActions({
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: "Solicitud de empresa rechazada.",
       errorMessage: "No se pudo rechazar la solicitud",
-      onSuccess: () => onDeleteSuccess(),
+      onSuccess: () => {
+        onDeleteSuccess();
+        setOpen(false);
+      },
       onSettled: () => router.refresh(),
     });
 
-  const { execute, isPending } = useServerAction(deleteUserAction, {
-    successMessage: "Usuario eliminado",
-    errorMessage: "No se pudo eliminar el usuario",
-    onSuccess: () => onDeleteSuccess(),
-    onSettled: () => router.refresh(),
-  });
+  const { execute: deleteUser, isPending: deletingUser } = useServerAction(
+    deleteUserAction,
+    {
+      successMessage: "Usuario eliminado",
+      errorMessage: "No se pudo eliminar el usuario",
+      onSuccess: () => {
+        onDeleteSuccess();
+        setOpen(false);
+      },
+      onSettled: () => router.refresh(),
+    },
+  );
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const update = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const left = Math.max(8, r.right - MENU_MIN_WIDTH_PX);
+      setMenuPos({ top: r.bottom + 4, left });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || menuRef.current?.contains(t)) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDoc);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDoc);
+    };
+  }, [open]);
+
+  const showPendingActions =
+    row.businessRegistrationStatus === "pending" ||
+    row.businessRegistrationStatus == null;
+
+  const showApprovedRejectOnly = row.businessRegistrationStatus === "approved";
 
   const handleDelete = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
@@ -173,14 +309,8 @@ function RowActions({
     });
 
     if (!result.isConfirmed) return;
-    execute(row.id);
+    deleteUser(row.id);
   };
-
-  const showPendingActions =
-    row.businessRegistrationStatus === "pending" ||
-    row.businessRegistrationStatus == null;
-
-  const showApprovedRejectOnly = row.businessRegistrationStatus === "approved";
 
   const handleReject = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
@@ -223,100 +353,117 @@ function RowActions({
     approveBusiness(row.id);
   };
 
-  const approvalBusy = approvingBusiness || rejectingBusiness;
+  const busy = approvingBusiness || rejectingBusiness || deletingUser;
+
+  const menuContent =
+    open && menuPos ? (
+      <div
+        ref={menuRef}
+        className="fixed z-[100] min-w-[13rem] overflow-hidden rounded-lg border border-border/80 bg-popover py-1 shadow-lg ring-1 ring-black/5"
+        style={{ top: menuPos.top, left: menuPos.left }}
+        role="menu"
+      >
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
+          onClick={() => {
+            onViewDetail();
+            setOpen(false);
+          }}
+        >
+          <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          Ver detalles
+        </button>
+
+        {showPendingActions ? (
+          <>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
+              disabled={busy}
+              onClick={() => {
+                void handleApprove();
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+              Aprobar registro
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              disabled={busy}
+              onClick={() => {
+                void handleReject();
+              }}
+            >
+              <XCircle className="h-4 w-4 shrink-0" aria-hidden />
+              Rechazar solicitud
+            </button>
+          </>
+        ) : null}
+
+        {showApprovedRejectOnly ? (
+          <>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              disabled={busy}
+              onClick={() => {
+                void handleReject();
+              }}
+            >
+              <XCircle className="h-4 w-4 shrink-0" aria-hidden />
+              Rechazar solicitud
+            </button>
+          </>
+        ) : null}
+
+        <div className="my-1 h-px bg-border/70" role="separator" />
+        <button
+          type="button"
+          role="menuitem"
+          className={cn(
+            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition",
+            busy
+              ? "cursor-not-allowed text-muted-foreground/60"
+              : "text-destructive hover:bg-destructive/10",
+          )}
+          disabled={busy}
+          onClick={() => {
+            void handleDelete();
+          }}
+        >
+          <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+          {deletingUser ? "Eliminando…" : "Eliminar"}
+        </button>
+      </div>
+    ) : null;
 
   return (
-    <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
-      {showPendingActions ? (
-        <>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
-                disabled={approvalBusy}
-                onClick={handleReject}
-                aria-label="Rechazar solicitud de empresa"
-              >
-                <XCircle className="h-4 w-4" aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Rechazar solicitud</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="default"
-                className="h-8 w-8 shrink-0 bg-emerald-600 hover:bg-emerald-700"
-                disabled={approvalBusy}
-                onClick={handleApprove}
-                aria-label="Aprobar empresa"
-              >
-                <CheckCircle2 className="h-4 w-4" aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              Aprobar registro de empresa
-            </TooltipContent>
-          </Tooltip>
-        </>
-      ) : null}
-      {showApprovedRejectOnly ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
-              disabled={approvalBusy}
-              onClick={handleReject}
-              aria-label="Rechazar solicitud de empresa"
-            >
-              <XCircle className="h-4 w-4" aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">Rechazar solicitud</TooltipContent>
-        </Tooltip>
-      ) : null}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className="h-8 w-8 shrink-0"
-            onClick={onViewDetail}
-            aria-label="Ver detalles"
-          >
-            <Eye className="h-4 w-4" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Ver detalles</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            className="h-8 w-8 shrink-0"
-            disabled={isPending}
-            onClick={handleDelete}
-            aria-label="Eliminar suscripción de empresa"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {isPending ? "Eliminando…" : "Eliminar empresa"}
-        </TooltipContent>
-      </Tooltip>
+    <div className="relative flex justify-end" ref={wrapRef}>
+      <Button
+        ref={triggerRef}
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground md:rounded-md md:border md:border-border/80 md:bg-background md:hover:bg-muted/60"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Abrir menú de acciones"
+        disabled={busy}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreVertical className="h-4 w-4" aria-hidden />
+      </Button>
+      {typeof document !== "undefined" && menuContent
+        ? createPortal(menuContent, document.body)
+        : null}
     </div>
   );
 }
@@ -348,21 +495,47 @@ export function AdminSuscripcionesEmpresasTable({
   const columns = useMemo<ColumnDef<AdminBusinessProfileRow>[]>(
     () => [
       {
-        accessorKey: "fullName",
-        header: "Negocio",
-        cell: ({ row }) => {
-          const v = row.original.fullName?.trim();
-          if (!v) return <AdminTableEmptyEmDash />;
-          return <span className="font-medium">{v}</span>;
+        id: "business",
+        accessorFn: (row) =>
+          `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          businessSortValue(rowA.original).localeCompare(
+            businessSortValue(rowB.original),
+            "es",
+            { sensitivity: "base" },
+          ),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Empresa"
+            ariaLabelIdle="Ordenar por empresa"
+            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
+            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+          />
+        ),
+        meta: {
+          cellClassName:
+            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
         },
-      },
-      {
-        accessorKey: "email",
-        header: "Email",
         cell: ({ row }) => {
-          const v = row.original.email?.trim();
-          if (!v) return <AdminTableEmptyEmDash />;
-          return <span className="text-muted-foreground">{v}</span>;
+          const r = row.original;
+          const name = businessDisplayName(r);
+          const email = r.email?.trim();
+          return (
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-foreground">
+                {name}
+              </p>
+              {email ? (
+                <p className="truncate text-sm text-muted-foreground">
+                  {email}
+                </p>
+              ) : (
+                <AdminTableEmptyEmDash className="text-sm" />
+              )}
+            </div>
+          );
         },
       },
       {
@@ -384,29 +557,101 @@ export function AdminSuscripcionesEmpresasTable({
       },
       {
         id: "approval",
-        header: "Estado alta",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          approvalStatusSortValue(rowA.original.businessRegistrationStatus) -
+          approvalStatusSortValue(rowB.original.businessRegistrationStatus),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Estado alta"
+            ariaLabelIdle="Ordenar por estado de alta"
+            ariaLabelAsc="Pendiente primero. Clic para invertir"
+            ariaLabelDesc="Rechazada primero. Clic para quitar orden"
+          />
+        ),
         cell: ({ row }) => (
-          <span className="text-muted-foreground">
+          <span
+            className={cn(
+              "inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
+              approvalBadgeClass(row.original.businessRegistrationStatus),
+            )}
+          >
             {approvalLabel(row.original.businessRegistrationStatus)}
           </span>
         ),
       },
       {
+        id: "lastSignInAt",
         accessorKey: "lastSignInAt",
-        header: "Último acceso",
-        cell: ({ row }) => adminTableDateCell(row.original.lastSignInAt),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => {
+          const a = lastSignInTimestampMs(rowA.original);
+          const b = lastSignInTimestampMs(rowB.original);
+          if (a == null && b == null) return 0;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          return a - b;
+        },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Último acceso"
+            ariaLabelIdle="Ordenar por último acceso"
+            ariaLabelAsc="Más antiguo primero. Clic para invertir"
+            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => {
+          const raw = row.original.lastSignInAt;
+          const relative = formatRelativeLastAccess(raw);
+          if (relative == null) {
+            return <AdminTableEmptyEmDash />;
+          }
+          const absolute = raw ? formatDateDdMmYyyyHhMm(raw) : "";
+          return (
+            <span
+              className="text-sm text-muted-foreground"
+              title={absolute || undefined}
+            >
+              {relative}
+            </span>
+          );
+        },
       },
       {
+        id: "createdAt",
         accessorKey: "createdAt",
-        header: "Registro",
-        cell: ({ row }) => adminTableDateCell(row.original.createdAt),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => {
+          const a = createdAtTimestampMs(rowA.original);
+          const b = createdAtTimestampMs(rowB.original);
+          if (a == null && b == null) return 0;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          return a - b;
+        },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Registro"
+            ariaLabelIdle="Ordenar por fecha de registro"
+            ariaLabelAsc="Más antiguo primero. Clic para invertir"
+            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {adminTableDateCell(row.original.createdAt)}
+          </span>
+        ),
       },
       {
         id: "actions",
-        meta: { align: "right" },
-        header: "Acciones",
+        meta: { align: "right", cellClassName: "w-[4.5rem]" },
+        header: () => <span className="sr-only">Acciones</span>,
         cell: ({ row }) => (
-          <RowActions
+          <SuscripcionesRowActionsMenu
             row={row.original}
             onViewDetail={() => setDetailUserId(row.original.id)}
             onDeleteSuccess={() => {
@@ -422,43 +667,46 @@ export function AdminSuscripcionesEmpresasTable({
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="space-y-4">
-        <DataTable
-          columns={columns}
-          data={filtered}
-          isLoading={isLoading}
-          getRowClassName={businessSubscriptionRowClassName}
-          searchPlaceholder="Buscar suscripción negocio, email, teléfono o EIN…"
-          toolbarFilters={
-            <div className="w-full min-w-0 max-w-xs">
-              <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
-                instanceId="suscripciones-empresas-approval-filter"
-                inputId="suscripciones-empresas-approval-filter-input"
-                aria-label="Filtrar por estado de alta"
-                isSearchable={false}
-                isClearable={false}
-                options={[...APPROVAL_FILTER_OPTIONS]}
-                value={filterValue}
-                onChange={(opt) => {
-                  if (opt) setApprovalFilter(opt.value);
-                }}
-                styles={filterSelectStyles}
-                className="w-full"
-              />
-            </div>
-          }
-        />
-        {!isLoading && rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No hay suscripciones de empresa registradas todavía.
-          </p>
-        ) : null}
-      </div>
+    <div className="space-y-4">
+      <DataTable
+        columns={columns}
+        data={filtered}
+        isLoading={isLoading}
+        enableSorting
+        searchPlaceholder="Buscar por negocio, email, teléfono o EIN…"
+        tableHeadCellClassName="!font-medium"
+        tableBodyCellClassName="py-4"
+        paginationButtonVariant="ghost"
+        paginationClassName="border-border/50"
+        getRowClassName={(row) =>
+          cn(
+            businessSubscriptionRowClassName(row),
+            "transition-colors duration-150",
+          )
+        }
+        toolbarFilters={
+          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+            <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
+              instanceId="suscripciones-empresas-approval-filter"
+              inputId="suscripciones-empresas-approval-filter-input"
+              aria-label="Filtrar por estado de alta"
+              isSearchable={false}
+              isClearable={false}
+              options={[...APPROVAL_FILTER_OPTIONS]}
+              value={filterValue}
+              onChange={(opt) => {
+                if (opt) setApprovalFilter(opt.value);
+              }}
+              styles={appSelectStyles}
+              className="w-full"
+            />
+          </div>
+        }
+      />
       <UserDetailDrawer
         userId={detailUserId}
         onClose={() => setDetailUserId(null)}
       />
-    </TooltipProvider>
+    </div>
   );
 }
