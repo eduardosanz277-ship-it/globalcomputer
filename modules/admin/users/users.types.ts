@@ -2,6 +2,8 @@ import type { BusinessRegistrationStatus, UserRole } from "@/modules/auth/auth.t
 
 export interface AdminUser {
   id: string;
+  /** Desde auth.users (listado admin). */
+  email: string | null;
   fullName: string | null;
   role: UserRole;
   /** Solo empresas; null si no aplica. */

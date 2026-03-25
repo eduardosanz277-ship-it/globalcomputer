@@ -1,36 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { Column, ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Select, { type StylesConfig } from "react-select";
-import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
-import {
-  adminTableDateCell,
-  adminTableOptionalString,
-} from "@/components/admin/admin-table-empty";
+import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
 import {
-  approveBusinessRegistrationAction,
   rejectBusinessRegistrationAction,
   deleteUserAction,
 } from "./actions";
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import type { UserRole } from "@/modules/auth/auth.types";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { cn } from "@/utils/cn";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  MoreVertical,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 
 const ROLE_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos" },
+  { value: "all" as const, label: "Todos los roles" },
   { value: "CLIENT" as const, label: "Cliente" },
   { value: "BUSINESS" as const, label: "Empresa" },
 ] as const;
@@ -49,13 +57,20 @@ const filterSelectStyles: StylesConfig<
     borderRadius: "0.5rem",
     borderWidth: "1px",
     borderStyle: "solid",
-    borderColor: "hsl(214 32% 91% / 0.9)",
+    borderColor:
+      state.isFocused || state.menuIsOpen
+        ? "hsl(222.2 84% 56.3% / 0.55)"
+        : "hsl(214 32% 91% / 0.9)",
     backgroundColor: "hsl(0 0% 100%)",
-    boxShadow: state.isFocused
-      ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.3)"
-      : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    boxShadow:
+      state.isFocused || state.menuIsOpen
+        ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.22)"
+        : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      borderColor: "hsl(214 32% 91% / 0.9)",
+      borderColor:
+        state.isFocused || state.menuIsOpen
+          ? "hsl(222.2 84% 56.3% / 0.55)"
+          : "hsl(214 32% 91% / 0.9)",
     },
   }),
   valueContainer: (base) => ({ ...base, padding: "0 8px" }),
@@ -77,11 +92,25 @@ const filterSelectStyles: StylesConfig<
     border: "1px solid hsl(214 32% 91% / 0.9)",
     borderRadius: "0.5rem",
     zIndex: 50,
+    overflow: "hidden",
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: "2px",
   }),
   option: (base, state) => ({
     ...base,
     fontSize: "0.875rem",
-    padding: "8px 12px",
+    padding: "6px 10px",
+    borderRadius: "0.375rem",
+    marginBottom: "1px",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: state.isSelected
+      ? "hsl(222.2 47.4% 11.2%)"
+      : state.isFocused
+        ? "hsl(214 32% 91% / 0.95)"
+        : "transparent",
     backgroundColor: state.isSelected
       ? "hsl(222.2 47.4% 11.2%)"
       : state.isFocused
@@ -94,17 +123,115 @@ const filterSelectStyles: StylesConfig<
 
 interface Props {
   users: AdminUser[];
-  /** Mientras carga (p. ej. Suspense): spinner en el cuerpo de la tabla */
   isLoading?: boolean;
 }
 
-function roleDisplayLabel(role: UserRole): string {
+function userDisplayName(user: AdminUser): string {
+  return user.fullName?.trim() || user.email?.trim() || "Sin nombre";
+}
+
+/** Valor estable para ordenar la columna Usuario (nombre + email, locale es). */
+function userSortValue(u: AdminUser): string {
+  return `${u.fullName ?? ""} ${u.email ?? ""}`
+    .trim()
+    .toLowerCase();
+}
+
+/** Timestamp en ms para ordenar por último acceso; null = sin dato (queda al final). */
+function lastSignInTimestampMs(u: AdminUser): number | null {
+  const raw = u.lastSignInAt;
+  if (raw == null) return null;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+function SortableHeader({
+  column,
+  label,
+  ariaLabelIdle,
+  ariaLabelAsc,
+  ariaLabelDesc,
+}: {
+  column: Column<AdminUser, unknown>;
+  label: string;
+  ariaLabelIdle: string;
+  ariaLabelAsc: string;
+  ariaLabelDesc: string;
+}) {
+  const sorted = column.getIsSorted();
+  const ariaLabel =
+    sorted === "asc"
+      ? ariaLabelAsc
+      : sorted === "desc"
+        ? ariaLabelDesc
+        : ariaLabelIdle;
+  return (
+    <>
+      {/* Vista lista en cards (md:hidden en DataTable): sin control de ordenar */}
+      <span className="md:hidden">{label}</span>
+      <button
+        type="button"
+        className={cn(
+          "hidden max-w-full items-center gap-1.5 rounded-md px-0.5 py-0.5 -mx-0.5 md:inline-flex",
+          "text-xs font-medium uppercase tracking-wide text-muted-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        )}
+        onClick={() => column.toggleSorting()}
+        aria-label={ariaLabel}
+        aria-sort={
+          sorted === "asc"
+            ? "ascending"
+            : sorted === "desc"
+              ? "descending"
+              : "none"
+        }
+      >
+        {label}
+        <span
+          className="inline-flex h-4 w-4 shrink-0 text-muted-foreground/80"
+          aria-hidden
+        >
+          {sorted === "asc" ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : sorted === "desc" ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="h-4 w-4 opacity-70" />
+          )}
+        </span>
+      </button>
+    </>
+  );
+}
+
+function userInitial(user: AdminUser): string {
+  const name = user.fullName?.trim();
+  if (name) return name.slice(0, 1).toUpperCase();
+  const em = user.email?.trim();
+  if (em) return em.slice(0, 1).toUpperCase();
+  return "?";
+}
+
+function roleBadgeClass(role: UserRole): string {
+  if (role === "BUSINESS") {
+    return "border border-blue-200/90 bg-blue-50 text-blue-800";
+  }
+  if (role === "CLIENT") {
+    return "border border-slate-200/90 bg-slate-100 text-slate-700";
+  }
+  return "border border-violet-200/90 bg-violet-50 text-violet-800";
+}
+
+function roleLabel(role: UserRole): string {
   if (role === "BUSINESS") return "Empresa";
   if (role === "CLIENT") return "Cliente";
+  if (role === "ADMIN") return "Administrador";
   return role;
 }
 
-function RowActions({
+const MENU_MIN_WIDTH_PX = 208; // 13rem
+
+function UsersRowActionsMenu({
   user,
   onViewDetail,
   onDeleteSuccess,
@@ -114,65 +241,90 @@ function RowActions({
   onDeleteSuccess: () => void;
 }) {
   const router = useRouter();
-  const { execute: approveBusiness, isPending: approvingBusiness } =
-    useServerAction(approveBusinessRegistrationAction, {
-      successMessage:
-        "Empresa aprobada. Se ha enviado un correo de notificación.",
-      errorMessage: "No se pudo aprobar la empresa",
-      onSuccess: () => onDeleteSuccess(),
-      onSettled: () => router.refresh(),
-    });
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   const { execute: rejectBusiness, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: "Solicitud de empresa rechazada.",
       errorMessage: "No se pudo rechazar la solicitud",
-      onSuccess: () => onDeleteSuccess(),
+      onSuccess: () => {
+        onDeleteSuccess();
+        setOpen(false);
+      },
       onSettled: () => router.refresh(),
     });
 
-  const { execute, isPending } = useServerAction(deleteUserAction, {
-    successMessage: "Usuario eliminado",
-    errorMessage: "No se pudo eliminar el usuario",
-    onSuccess: () => onDeleteSuccess(),
-    onSettled: () => router.refresh(),
-  });
-
-  const isAdminUser = user.role === "ADMIN";
-
-  const handleDelete = async () => {
-    if (isAdminUser) return;
-    const label = user.fullName?.trim() || user.id;
-    const result = await Swal.fire({
-      title: "¿Eliminar usuario?",
-      html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
-      confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+  const { execute: deleteUser, isPending: deletingUser } =
+    useServerAction(deleteUserAction, {
+      successMessage: "Usuario eliminado",
+      errorMessage: "No se pudo eliminar el usuario",
+      onSuccess: () => {
+        onDeleteSuccess();
+        setOpen(false);
+      },
+      onSettled: () => router.refresh(),
     });
 
-    if (!result.isConfirmed) return;
-    execute(user.id);
-  };
-
-  const deleteDisabled = isPending || isAdminUser;
-  const showApproveBusiness =
+  const isAdminUser = user.role === "ADMIN";
+  const showReject =
     user.role === "BUSINESS" &&
-    (user.businessRegistrationStatus === "pending" ||
+    (user.businessRegistrationStatus === "approved" ||
+      user.businessRegistrationStatus === "pending" ||
       user.businessRegistrationStatus == null);
 
-  const showRejectApprovedOnly =
-    user.role === "BUSINESS" &&
-    user.businessRegistrationStatus === "approved";
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const update = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const left = Math.max(8, r.right - MENU_MIN_WIDTH_PX);
+      setMenuPos({ top: r.bottom + 4, left });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
 
-  const handleRejectBusiness = async () => {
-    const label = user.fullName?.trim() || user.id;
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (
+        wrapRef.current?.contains(t) ||
+        menuRef.current?.contains(t)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDoc);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDoc);
+    };
+  }, [open]);
+
+  const handleReject = async () => {
+    const label = user.fullName?.trim() || user.email || user.id;
     const wasApproved = user.businessRegistrationStatus === "approved";
     const result = await Swal.fire({
       title: "¿Rechazar solicitud?",
@@ -193,139 +345,106 @@ function RowActions({
     rejectBusiness(user.id);
   };
 
-  const handleApproveBusiness = async () => {
-    const label = user.fullName?.trim() || user.id;
+  const handleDelete = async () => {
+    if (isAdminUser) return;
+    const label = user.fullName?.trim() || user.email || user.id;
     const result = await Swal.fire({
-      title: "¿Aprobar solicitud?",
-      html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
-      icon: "question",
+      title: "¿Eliminar usuario?",
+      html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
+      icon: "warning",
       showCancelButton: true,
       reverseButtons: true,
       focusCancel: true,
-      confirmButtonText: "Aprobar",
+      confirmButtonText: "Eliminar",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(142 76% 32%)",
+      confirmButtonColor: "hsl(0 72% 45%)",
       cancelButtonColor: "hsl(215 16% 47%)",
       customClass: { popup: "swal-equal-width-buttons" },
     });
     if (!result.isConfirmed) return;
-    approveBusiness(user.id);
+    deleteUser(user.id);
   };
 
-  const approvalBusy = approvingBusiness || rejectingBusiness;
+  const busy = rejectingBusiness || deletingUser;
+
+  const menuContent =
+    open && menuPos ? (
+      <div
+        ref={menuRef}
+        className="fixed z-[100] min-w-[13rem] overflow-hidden rounded-lg border border-border/80 bg-popover py-1 shadow-lg ring-1 ring-black/5"
+        style={{ top: menuPos.top, left: menuPos.left }}
+        role="menu"
+      >
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
+          onClick={() => {
+            onViewDetail();
+            setOpen(false);
+          }}
+        >
+          <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          Ver detalles
+        </button>
+        {showReject ? (
+          <>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              disabled={busy}
+              onClick={() => {
+                void handleReject();
+              }}
+            >
+              <XCircle className="h-4 w-4 shrink-0" aria-hidden />
+              Rechazar solicitud
+            </button>
+          </>
+        ) : null}
+        <div className="my-1 h-px bg-border/70" role="separator" />
+        <button
+          type="button"
+          role="menuitem"
+          className={cn(
+            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition",
+            isAdminUser || busy
+              ? "cursor-not-allowed text-muted-foreground/60"
+              : "text-destructive hover:bg-destructive/10",
+          )}
+          disabled={isAdminUser || busy}
+          onClick={() => {
+            if (isAdminUser) return;
+            void handleDelete();
+          }}
+        >
+          <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+          {deletingUser ? "Eliminando…" : "Eliminar"}
+        </button>
+      </div>
+    ) : null;
 
   return (
-    <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
-      {showApproveBusiness ? (
-        <>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
-                disabled={approvalBusy}
-                onClick={handleRejectBusiness}
-                aria-label="Rechazar solicitud de empresa"
-              >
-                <XCircle className="h-4 w-4" aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Rechazar solicitud</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="default"
-                className="h-8 w-8 shrink-0 bg-emerald-600 hover:bg-emerald-700"
-                disabled={approvalBusy}
-                onClick={handleApproveBusiness}
-                aria-label="Aprobar empresa"
-              >
-                <CheckCircle2 className="h-4 w-4" aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Aprobar registro de empresa</TooltipContent>
-          </Tooltip>
-        </>
-      ) : null}
-      {showRejectApprovedOnly ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 shrink-0 border-destructive/60 text-destructive hover:bg-destructive/10"
-              disabled={approvalBusy}
-              onClick={handleRejectBusiness}
-              aria-label="Rechazar solicitud de empresa"
-            >
-              <XCircle className="h-4 w-4" aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">Rechazar solicitud (estado rechazado)</TooltipContent>
-        </Tooltip>
-      ) : null}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className="h-8 w-8 shrink-0"
-            onClick={onViewDetail}
-            aria-label="Ver detalles"
-          >
-            <Eye className="h-4 w-4" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Ver detalles del usuario</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {deleteDisabled ? (
-            <span className="inline-flex">
-              <Button
-                type="button"
-                size="icon"
-                variant="destructive"
-                className="h-8 w-8 shrink-0"
-                disabled
-                aria-label={
-                  isAdminUser
-                    ? "Eliminar no disponible (administrador)"
-                    : "Eliminando usuario"
-                }
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
-            </span>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              className="h-8 w-8 shrink-0"
-              onClick={handleDelete}
-              aria-label="Eliminar usuario"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          )}
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {isAdminUser
-            ? "No se puede eliminar un usuario administrador"
-            : isPending
-              ? "Eliminando…"
-              : "Eliminar usuario"}
-        </TooltipContent>
-      </Tooltip>
+    <div className="relative flex justify-end" ref={wrapRef}>
+      <Button
+        ref={triggerRef}
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground md:rounded-md md:border md:border-border/80 md:bg-background md:hover:bg-muted/60"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Abrir menú de acciones"
+        disabled={busy}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreVertical className="h-4 w-4" aria-hidden />
+      </Button>
+      {typeof document !== "undefined" && menuContent
+        ? createPortal(menuContent, document.body)
+        : null}
     </div>
   );
 }
@@ -346,76 +465,168 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
       {
-        accessorKey: "fullName",
-        header: "Nombre",
-        cell: ({ row }) =>
-          adminTableOptionalString(row.original.fullName, {
-            classNameWhenPresent: "font-medium text-foreground",
-          }),
+        id: "user",
+        accessorFn: (row) =>
+          `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          userSortValue(rowA.original).localeCompare(
+            userSortValue(rowB.original),
+            "es",
+            { sensitivity: "base" },
+          ),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Usuario"
+            ariaLabelIdle="Ordenar por usuario"
+            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
+            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+          />
+        ),
+        meta: {
+          cellClassName:
+            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+        },
+        cell: ({ row }) => {
+          const u = row.original;
+          const name = userDisplayName(u);
+          const email = u.email?.trim();
+          return (
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
+                aria-hidden
+              >
+                {userInitial(u)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-foreground">
+                  {name}
+                </p>
+                {email ? (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {email}
+                  </p>
+                ) : (
+                  <AdminTableEmptyEmDash className="text-sm" />
+                )}
+              </div>
+            </div>
+          );
+        },
       },
       {
         id: "role",
         accessorKey: "role",
         header: "Rol",
-        cell: ({ row }) => roleDisplayLabel(row.original.role),
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
+              roleBadgeClass(row.original.role),
+            )}
+          >
+            {roleLabel(row.original.role)}
+          </span>
+        ),
       },
       {
+        id: "lastSignInAt",
         accessorKey: "lastSignInAt",
-        header: "Último acceso",
-        cell: ({ row }) => adminTableDateCell(row.original.lastSignInAt),
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => {
+          const a = lastSignInTimestampMs(rowA.original);
+          const b = lastSignInTimestampMs(rowB.original);
+          if (a == null && b == null) return 0;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          return a - b;
+        },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Último acceso"
+            ariaLabelIdle="Ordenar por último acceso"
+            ariaLabelAsc="Más antiguo primero. Clic para invertir"
+            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => {
+          const raw = row.original.lastSignInAt;
+          const relative = formatRelativeLastAccess(raw);
+          if (relative == null) {
+            return <AdminTableEmptyEmDash />;
+          }
+          const absolute = raw ? formatDateDdMmYyyyHhMm(raw) : "";
+          return (
+            <span
+              className="text-sm text-muted-foreground"
+              title={absolute || undefined}
+            >
+              {relative}
+            </span>
+          );
+        },
       },
       {
         id: "actions",
-        meta: { align: "right" },
-        header: "Acciones",
+        meta: { align: "right", cellClassName: "w-[4.5rem]" },
+        header: () => <span className="sr-only">Acciones</span>,
         cell: ({ row }) => (
-          <RowActions
+          <UsersRowActionsMenu
             user={row.original}
             onViewDetail={() => setDetailUserId(row.original.id)}
             onDeleteSuccess={() => {
               setDetailUserId((current) =>
-                current === row.original.id ? null : current
+                current === row.original.id ? null : current,
               );
             }}
           />
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="space-y-4">
-        <DataTable
-          columns={columns}
-          data={filteredUsers}
-          isLoading={isLoading}
-          searchPlaceholder="Buscar…"
-          toolbarFilters={
-            <div className="w-full min-w-0">
-              <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
-                instanceId="users-role-filter"
-                inputId="users-role-filter-input"
-                aria-label="Filtrar por rol"
-                isSearchable={false}
-                isClearable={false}
-                options={[...ROLE_FILTER_OPTIONS]}
-                value={filterValue}
-                onChange={(opt) => {
-                  if (opt) setRoleFilter(opt.value);
-                }}
-                styles={filterSelectStyles}
-                className="w-full"
-              />
-            </div>
-          }
-        />
-      </div>
+    <div className="space-y-4">
+      <DataTable
+        columns={columns}
+        data={filteredUsers}
+        isLoading={isLoading}
+        enableSorting
+        searchPlaceholder="Buscar por nombre o email…"
+        tableHeadCellClassName="!font-medium"
+        tableBodyCellClassName="py-4"
+        paginationButtonVariant="ghost"
+        paginationClassName="border-border/50"
+        getRowClassName={() =>
+          "hover:bg-muted/50 transition-colors duration-150"
+        }
+        toolbarFilters={
+          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+            <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
+              instanceId="users-role-filter"
+              inputId="users-role-filter-input"
+              aria-label="Filtrar por rol"
+              isSearchable={false}
+              isClearable={false}
+              options={[...ROLE_FILTER_OPTIONS]}
+              value={filterValue}
+              onChange={(opt) => {
+                if (opt) setRoleFilter(opt.value);
+              }}
+              styles={filterSelectStyles}
+              className="w-full"
+            />
+          </div>
+        }
+      />
       <UserDetailDrawer
         userId={detailUserId}
         onClose={() => setDetailUserId(null)}
       />
-    </TooltipProvider>
+    </div>
   );
 }

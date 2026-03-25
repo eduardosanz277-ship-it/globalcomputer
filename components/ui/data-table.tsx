@@ -1,14 +1,22 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
+import {
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
   type FilterFn,
+  type SortingState,
 } from "@tanstack/react-table";
 import Select, { type StylesConfig } from "react-select";
 import {
@@ -122,6 +130,19 @@ interface DataTableProps<TData, TValue> {
   tableClassName?: string;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
   isLoading?: boolean;
+  /** Clases extra en cada `th` (p. ej. `font-medium`). */
+  tableHeadCellClassName?: string;
+  /** Clases extra en cada `td` del cuerpo (p. ej. `py-4`). */
+  tableBodyCellClassName?: string;
+  /** Clases del bloque de paginación inferior. */
+  paginationClassName?: string;
+  /** Variante de los botones de página (por defecto `outline`). */
+  paginationButtonVariant?: "outline" | "ghost";
+  /**
+   * Activa ordenación de columnas (`getSortedRowModel`).
+   * Las columnas ordenables deben marcar `enableSorting: true`; el resto hereda `enableSorting: false`.
+   */
+  enableSorting?: boolean;
   /** Clases por fila (p. ej. fondo según estado). Si no se pasa, se usa hover por defecto. */
   getRowClassName?: (row: TData) => string | undefined;
 }
@@ -152,10 +173,16 @@ export function DataTable<TData, TValue>({
   toolbarLayout = "default",
   tableClassName,
   isLoading = false,
+  tableHeadCellClassName,
+  tableBodyCellClassName,
+  paginationClassName,
+  paginationButtonVariant = "outline",
+  enableSorting = false,
   getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
   const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: defaultPageSize,
@@ -184,14 +211,25 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data: isLoading ? [] : data,
     columns,
+    defaultColumn: enableSorting ? { enableSorting: false } : undefined,
     state: {
       globalFilter,
       pagination,
+      ...(enableSorting ? { sorting } : {}),
     },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    ...(enableSorting
+      ? {
+          onSortingChange: (updater: SetStateAction<SortingState>) => {
+            setSorting(updater);
+            setPagination((p) => ({ ...p, pageIndex: 0 }));
+          },
+        }
+      : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
     getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn,
   });
@@ -336,6 +374,7 @@ export function DataTable<TData, TValue>({
                       className={cn(
                         "whitespace-nowrap px-4 py-3",
                         "text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                        tableHeadCellClassName,
                         "first:pl-5 last:pr-5",
                         cellAlignClasses(
                           header.column.columnDef.meta as
@@ -394,6 +433,7 @@ export function DataTable<TData, TValue>({
                         key={cell.id}
                         className={cn(
                           "px-4 py-3 align-middle text-foreground first:pl-5 last:pr-5",
+                          tableBodyCellClassName,
                           cellAlignClasses(
                             cell.column.columnDef.meta as
                               | DataTableColumnMeta
@@ -455,20 +495,30 @@ export function DataTable<TData, TValue>({
                       getRowClassName?.(row.original),
                     )}
                   >
-                    <div className="divide-y divide-border/70">
-                      {row.getVisibleCells().map((cell) => {
+                    {(() => {
+                      const visibleCells = row.getVisibleCells();
+                      const actionCell = visibleCells.find(
+                        (c) => c.column.id === "actions",
+                      );
+                      const bodyCells = visibleCells.filter(
+                        (c) => c.column.id !== "actions",
+                      );
+                      const userCell = bodyCells.find(
+                        (c) => c.column.id === "user",
+                      );
+                      const restBodyCells = bodyCells.filter(
+                        (c) => c.column.id !== "user",
+                      );
+
+                      const renderFieldRow = (cell: (typeof bodyCells)[0]) => {
                         const header = firstHeaderGroup?.headers.find(
                           (h) => h.column.id === cell.column.id,
                         );
                         if (!header || header.isPlaceholder) return null;
-                        const isActions = cell.column.id === "actions";
                         return (
                           <div
                             key={cell.id}
-                            className={cn(
-                              "flex flex-col gap-1 px-4 py-3 sm:px-5",
-                              isActions && "items-stretch",
-                            )}
+                            className="flex flex-col gap-1 px-4 py-3 sm:px-5"
                           >
                             <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
                               {flexRender(
@@ -476,12 +526,7 @@ export function DataTable<TData, TValue>({
                                 header.getContext(),
                               )}
                             </span>
-                            <div
-                              className={cn(
-                                "min-w-0 text-sm text-foreground",
-                                isActions && "flex justify-end pt-1",
-                              )}
-                            >
+                            <div className="min-w-0 text-sm text-foreground">
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext(),
@@ -489,8 +534,65 @@ export function DataTable<TData, TValue>({
                             </div>
                           </div>
                         );
-                      })}
-                    </div>
+                      };
+
+                      if (actionCell && userCell) {
+                        const userHeader = firstHeaderGroup?.headers.find(
+                          (h) => h.column.id === userCell.column.id,
+                        );
+                        return (
+                          <>
+                            <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-5">
+                              <span className="min-w-0 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {userHeader && !userHeader.isPlaceholder
+                                  ? flexRender(
+                                      userHeader.column.columnDef.header,
+                                      userHeader.getContext(),
+                                    )
+                                  : null}
+                              </span>
+                              <div className="shrink-0">
+                                {flexRender(
+                                  actionCell.column.columnDef.cell,
+                                  actionCell.getContext(),
+                                )}
+                              </div>
+                            </div>
+                            <div className="divide-y divide-border/70">
+                              <div className="px-4 pb-3 pt-1 sm:px-5">
+                                <div className="min-w-0 text-sm text-foreground">
+                                  {flexRender(
+                                    userCell.column.columnDef.cell,
+                                    userCell.getContext(),
+                                  )}
+                                </div>
+                              </div>
+                              {restBodyCells.map((cell) =>
+                                renderFieldRow(cell),
+                              )}
+                            </div>
+                          </>
+                        );
+                      }
+
+                      return (
+                        <>
+                          {actionCell ? (
+                            <div className="flex items-start justify-end border-b border-border/70 px-3 py-2 sm:px-4">
+                              <div className="flex min-w-0 justify-end">
+                                {flexRender(
+                                  actionCell.column.columnDef.cell,
+                                  actionCell.getContext(),
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="divide-y divide-border/70">
+                            {bodyCells.map((cell) => renderFieldRow(cell))}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </article>
                 </li>
               ))}
@@ -506,7 +608,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       <nav
-        className="border-t border-border/80 pt-4"
+        className={cn("border-t border-border/80 pt-4", paginationClassName)}
         aria-label="Paginación de la tabla"
       >
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
@@ -582,9 +684,9 @@ export function DataTable<TData, TValue>({
             >
               <Button
                 type="button"
-                variant="outline"
+                variant={paginationButtonVariant}
                 size="icon"
-                className="min-h-9 min-w-9 shrink-0"
+                className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.setPageIndex(0)}
                 disabled={isLoading || !table.getCanPreviousPage()}
                 aria-label="Ir a la primera página"
@@ -594,9 +696,9 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant={paginationButtonVariant}
                 size="icon"
-                className="min-h-9 min-w-9 shrink-0"
+                className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.previousPage()}
                 disabled={isLoading || !table.getCanPreviousPage()}
                 aria-label="Página anterior"
@@ -606,9 +708,9 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant={paginationButtonVariant}
                 size="icon"
-                className="min-h-9 min-w-9 shrink-0"
+                className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.nextPage()}
                 disabled={isLoading || !table.getCanNextPage()}
                 aria-label="Página siguiente"
@@ -618,9 +720,9 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant={paginationButtonVariant}
                 size="icon"
-                className="min-h-9 min-w-9 shrink-0"
+                className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.setPageIndex(Math.max(0, pageCount - 1))}
                 disabled={isLoading || !table.getCanNextPage()}
                 aria-label="Ir a la última página"

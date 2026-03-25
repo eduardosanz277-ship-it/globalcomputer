@@ -19,6 +19,7 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
   }
 
   const lastSignInById = new Map<string, string | null>();
+  const emailById = new Map<string, string | null>();
   let page = 1;
   const perPage = 1000;
   const maxPages = 50;
@@ -31,6 +32,7 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
     const users = listData?.users ?? [];
     for (const u of users) {
       lastSignInById.set(u.id, u.last_sign_in_at ?? null);
+      emailById.set(u.id, u.email ?? null);
     }
     if (users.length < perPage) break;
     page += 1;
@@ -44,6 +46,7 @@ export async function repoGetAllUsers(): Promise<AdminUser[]> {
         : null;
     return {
       id: row.id as string,
+      email: emailById.get(row.id as string) ?? null,
       fullName: row.full_name ?? null,
       role: (row.role as UserRole) ?? "CLIENT",
       businessRegistrationStatus,
