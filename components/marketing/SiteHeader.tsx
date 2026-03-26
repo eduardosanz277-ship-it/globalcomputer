@@ -270,13 +270,6 @@ export function SiteHeader({ user }: Props) {
               {item.label}
             </Link>
           ))}
-          <Link
-            href={user ? "/cuenta" : "/login"}
-            className="rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground md:ml-auto md:py-4"
-            onClick={() => setOpen(false)}
-          >
-            Mi cuenta
-          </Link>
         </nav>
       </div>
     </header>
