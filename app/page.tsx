@@ -526,17 +526,18 @@ export default async function HomePage() {
         </section>
 
         {/* Newsletter */}
-        <section className="border-t border-border bg-muted/30 py-12">
+        <section className="border-t border-border bg-slate-50/60 py-14 sm:py-16">
           <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-            <h2 className="text-lg font-semibold">Newsletter</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ofertas y novedades. Sin spam.
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Newsletter
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <h2 className="mt-2 text-lg font-bold sm:text-xl">Ofertas y novedades</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Sin spam. Cancela cuando quieras.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-2">
               <Input
                 type="email"
                 placeholder="tu@email.com"
-                className="h-11 sm:max-w-xs"
+                className="h-11 border-border/80 bg-background sm:max-w-xs"
                 aria-label="Correo para newsletter"
               />
               <Button type="button" className="h-11 sm:w-auto">
