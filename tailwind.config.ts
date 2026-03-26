@@ -19,12 +19,12 @@ const config: Config = {
       colors: {
         border: "hsl(214 32% 91%)",
         input: "hsl(214 32% 91%)",
-        ring: "hsl(222.2 84% 56.3%)",
+        ring: "hsl(217 91% 60%)",
         background: "hsl(210 40% 98%)",
         foreground: "hsl(222.2 84% 4.9%)",
         primary: {
-          DEFAULT: "hsl(222.2 47.4% 11.2%)",
-          foreground: "hsl(210 40% 98%)",
+          DEFAULT: "hsl(217 91% 60%)",
+          foreground: "hsl(0 0% 100%)",
         },
         secondary: {
           DEFAULT: "hsl(210 40% 96.1%)",
@@ -52,10 +52,10 @@ const config: Config = {
         },
         /** Panel admin (marca roja) */
         admin: {
-          DEFAULT: "hsl(0 72% 51%)",
+          DEFAULT: "hsl(217 91% 60%)",
           foreground: "hsl(0 0% 100%)",
-          muted: "hsl(0 86% 97%)",
-          ring: "hsl(0 72% 51%)",
+          muted: "hsl(221 100% 95%)",
+          ring: "hsl(217 91% 60%)",
         },
       },
       borderRadius: {
