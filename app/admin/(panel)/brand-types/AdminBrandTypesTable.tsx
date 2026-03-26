@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { Brand } from "@/modules/admin/brands/brands.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -21,6 +21,7 @@ import { BrandTypeFormDialog } from "./BrandTypeFormDialog";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { BrandTypeProfileCard } from "@/components/dashboard/brand-type-profile-card";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
@@ -216,7 +217,7 @@ export function AdminBrandTypesTable({
           const relative = formatRelativeLastAccess(raw);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm font-medium text-foreground">
                 {formatDateDdMmYyyyHhMm(raw)}
               </span>
             );
@@ -224,7 +225,7 @@ export function AdminBrandTypesTable({
           const absolute = formatDateDdMmYyyyHhMm(raw);
           return (
             <span
-              className="text-sm text-muted-foreground"
+              className="text-sm font-medium text-foreground"
               title={absolute || undefined}
             >
               {relative}
@@ -250,6 +251,33 @@ export function AdminBrandTypesTable({
     [],
   );
 
+  const renderMobileRow = useCallback(
+    (row: Row<BrandType>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <BrandTypeProfileCard
+            name={r.name}
+            brandName={r.brandName}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
+
   return (
     <div className="space-y-4">
       <DataTable
@@ -266,6 +294,7 @@ export function AdminBrandTypesTable({
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
             <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">

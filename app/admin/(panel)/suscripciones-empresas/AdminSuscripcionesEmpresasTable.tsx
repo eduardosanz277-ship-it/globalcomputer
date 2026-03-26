@@ -16,7 +16,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { useServerAction } from "@/hooks/use-server-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
-import type { Column, ColumnDef } from "@tanstack/react-table";
+import type { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { cn } from "@/utils/cn";
@@ -33,6 +33,7 @@ import {
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -43,6 +44,7 @@ import Select from "react-select";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { BusinessProfileCard } from "@/components/dashboard/business-profile-card";
 
 const APPROVAL_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
@@ -85,6 +87,23 @@ function businessSortValue(row: AdminBusinessProfileRow): string {
     .toLowerCase();
 }
 
+function businessInitial(row: AdminBusinessProfileRow): string {
+  const name = row.fullName?.trim();
+  if (name) return name.slice(0, 1).toUpperCase();
+  const em = row.email?.trim();
+  if (em) return em.slice(0, 1).toUpperCase();
+  return "?";
+}
+
+/** Aprobada → azul suave; pendiente/rechazada → gris suave. */
+function businessAvatarClass(row: AdminBusinessProfileRow): string {
+  const s = row.businessRegistrationStatus ?? "pending";
+  if (s === "approved") {
+    return "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60";
+  }
+  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
+}
+
 function lastSignInTimestampMs(
   row: AdminBusinessProfileRow,
 ): number | null {
@@ -110,18 +129,35 @@ function approvalStatusSortValue(
   return 2;
 }
 
-/** Fondo suave por estado de alta (null cuenta como pendiente). */
+/**
+ * Estado suave en filas de la tabla.
+ * Mantiene el fondo neutro como las otras tablas (hover muted),
+ * y marca el estado con una barrita (2px) a la izquierda.
+ */
 function businessSubscriptionRowClassName(
   row: AdminBusinessProfileRow,
 ): string {
   const s = row.businessRegistrationStatus ?? "pending";
+  const base = "hover:bg-muted/50 transition-colors duration-150";
+
+  // 2px barrita a la izquierda (suave) usando `box-shadow inset`.
+  // rgba(..., 0.35) para que sea sutil.
   if (s === "pending") {
-    return "bg-amber-50/95 hover:bg-amber-100/85";
+    return cn(
+      base,
+      "shadow-[inset_2px_0_0_rgba(245,158,11,0.35)]",
+    );
   }
   if (s === "rejected") {
-    return "bg-red-50/95 hover:bg-red-100/80";
+    return cn(
+      base,
+      "shadow-[inset_2px_0_0_rgba(239,68,68,0.35)]",
+    );
   }
-  return "bg-emerald-50/95 hover:bg-emerald-100/80";
+  return cn(
+    base,
+    "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]",
+  );
 }
 
 function SortableHeader({
@@ -394,7 +430,7 @@ function SuscripcionesRowActionsMenu({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
                 void handleReject();
@@ -412,7 +448,7 @@ function SuscripcionesRowActionsMenu({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
                 void handleReject();
@@ -492,6 +528,37 @@ export function AdminSuscripcionesEmpresasTable({
     APPROVAL_FILTER_OPTIONS.find((o) => o.value === approvalFilter) ??
     APPROVAL_FILTER_OPTIONS[0];
 
+  const renderMobileRow = useCallback(
+    (row: Row<AdminBusinessProfileRow>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <BusinessProfileCard
+            email={r.email ?? ""}
+            fullName={r.fullName}
+            businessRegistrationStatus={r.businessRegistrationStatus}
+            lastSignInAt={r.lastSignInAt}
+            phone={r.phone}
+            employerIdentificationNumber={r.employerIdentificationNumber}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <SuscripcionesRowActionsMenu
+                row={r}
+                onViewDetail={() => setDetailUserId(r.id)}
+                onDeleteSuccess={() => {
+                  setDetailUserId((current) =>
+                    current === r.id ? null : current,
+                  );
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
+
   const columns = useMemo<ColumnDef<AdminBusinessProfileRow>[]>(
     () => [
       {
@@ -523,17 +590,28 @@ export function AdminSuscripcionesEmpresasTable({
           const name = businessDisplayName(r);
           const email = r.email?.trim();
           return (
-            <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-foreground">
-                {name}
-              </p>
-              {email ? (
-                <p className="truncate text-sm text-muted-foreground">
-                  {email}
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                  businessAvatarClass(r),
+                )}
+                aria-hidden
+              >
+                {businessInitial(r)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-foreground">
+                  {name}
                 </p>
-              ) : (
-                <AdminTableEmptyEmDash className="text-sm" />
-              )}
+                {email ? (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {email}
+                  </p>
+                ) : (
+                  <AdminTableEmptyEmDash className="text-sm" />
+                )}
+              </div>
             </div>
           );
         },
@@ -581,6 +659,7 @@ export function AdminSuscripcionesEmpresasTable({
           </span>
         ),
       },
+      /*
       {
         id: "lastSignInAt",
         accessorKey: "lastSignInAt",
@@ -619,6 +698,7 @@ export function AdminSuscripcionesEmpresasTable({
           );
         },
       },
+      */
       {
         id: "createdAt",
         accessorKey: "createdAt",
@@ -679,11 +759,9 @@ export function AdminSuscripcionesEmpresasTable({
         paginationButtonVariant="ghost"
         paginationClassName="border-border/50"
         getRowClassName={(row) =>
-          cn(
-            businessSubscriptionRowClassName(row),
-            "transition-colors duration-150",
-          )
+          businessSubscriptionRowClassName(row)
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
             <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
@@ -706,6 +784,7 @@ export function AdminSuscripcionesEmpresasTable({
       <UserDetailDrawer
         userId={detailUserId}
         onClose={() => setDetailUserId(null)}
+        subscriptionContext
       />
     </div>
   );

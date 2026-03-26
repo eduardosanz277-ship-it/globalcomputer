@@ -19,6 +19,11 @@ import { useServerAction } from "@/hooks/use-server-action";
 type Props = {
   userId: string | null;
   onClose: () => void;
+  /**
+   * Panel Suscripciones (empresas): textos del slide-over y campos acordes al contexto
+   * (sin badge de rol ni último acceso en el detalle).
+   */
+  subscriptionContext?: boolean;
 };
 
 function businessStatusText(d: AdminUserDetail): string {
@@ -43,7 +48,9 @@ function roleBadgeClass(role: AdminUserDetail["role"]): string {
   return "border border-slate-200 bg-slate-100 text-slate-700";
 }
 
-function businessBadgeClass(status: AdminUserDetail["businessRegistrationStatus"]): string {
+function businessBadgeClass(
+  status: AdminUserDetail["businessRegistrationStatus"],
+): string {
   if (status === "approved") {
     return "border border-emerald-200 bg-emerald-50 text-emerald-700";
   }
@@ -94,6 +101,7 @@ function UserDetailContent({
   onApprove,
   showRejectButton,
   showApproveButton,
+  subscriptionContext,
 }: {
   user: AdminUserDetail;
   approvalBusy: boolean;
@@ -101,19 +109,25 @@ function UserDetailContent({
   onApprove: () => void;
   showRejectButton: boolean;
   showApproveButton: boolean;
+  subscriptionContext: boolean;
 }) {
   const businessStatus = businessStatusText(user);
   const isBusiness = user.role === "BUSINESS";
   const isClient = user.role === "CLIENT";
   const showCompanyStatusBadge = isBusiness;
   const showEinField = isBusiness;
-  const showPhone =
-    isBusiness || isClient || user.role === "ADMIN";
-  const detailSectionTitle = isClient
-    ? "Información de contacto"
-    : isBusiness
-      ? "Información del negocio"
-      : "Información de la cuenta";
+  const showPhone = isBusiness || isClient || user.role === "ADMIN";
+  const detailSectionTitle = subscriptionContext
+    ? isBusiness
+      ? "Datos de la empresa y la solicitud de alta"
+      : isClient
+        ? "Información de contacto"
+        : "Información de la cuenta"
+    : isClient
+      ? "Información de contacto"
+      : isBusiness
+        ? "Información del negocio"
+        : "Información de la cuenta";
   const hasActions = showRejectButton || showApproveButton;
 
   return (
@@ -130,11 +144,23 @@ function UserDetailContent({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${roleBadgeClass(user.role)}`}
-            >
-              Rol: {roleLabel(user.role)}
-            </span>
+            {subscriptionContext ? (
+              <>
+                {/* Oculto en Suscripciones: badge de rol
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${roleBadgeClass(user.role)}`}
+                >
+                  Rol: {roleLabel(user.role)}
+                </span>
+                */}
+              </>
+            ) : (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${roleBadgeClass(user.role)}`}
+              >
+                Rol: {roleLabel(user.role)}
+              </span>
+            )}
             {showCompanyStatusBadge ? (
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${businessBadgeClass(user.businessRegistrationStatus)}`}
@@ -165,7 +191,7 @@ function UserDetailContent({
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                  className="border-rose-200/90 text-rose-600/90 hover:bg-rose-50/90 dark:border-rose-900/45 dark:text-rose-400/90 dark:hover:bg-rose-950/35"
                   disabled={approvalBusy}
                   onClick={onReject}
                 >
@@ -195,19 +221,40 @@ function UserDetailContent({
               icon={<Hash className="h-4 w-4" aria-hidden />}
             />
           ) : null}
-          <DetailField
-            label="Último acceso"
-            value={
-              user.lastSignInAt ? formatDateDdMmYyyyHhMm(user.lastSignInAt) : null
-            }
-          />
+          {subscriptionContext ? (
+            <>
+              {/* Oculto en Suscripciones: último acceso
+              <DetailField
+                label="Último acceso"
+                value={
+                  user.lastSignInAt
+                    ? formatDateDdMmYyyyHhMm(user.lastSignInAt)
+                    : null
+                }
+              />
+              */}
+            </>
+          ) : (
+            <DetailField
+              label="Último acceso"
+              value={
+                user.lastSignInAt
+                  ? formatDateDdMmYyyyHhMm(user.lastSignInAt)
+                  : null
+              }
+            />
+          )}
         </div>
       </section>
     </div>
   );
 }
 
-export function UserDetailDrawer({ userId, onClose }: Props) {
+export function UserDetailDrawer({
+  userId,
+  onClose,
+  subscriptionContext = false,
+}: Props) {
   const router = useRouter();
   const open = userId !== null;
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
@@ -315,13 +362,23 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
       detail?.businessRegistrationStatus == null ||
       detail?.businessRegistrationStatus === "approved");
 
+  const slideTitle = subscriptionContext
+    ? "Detalles de la suscripción"
+    : "Detalles del usuario";
+  const slideDescription = subscriptionContext
+    ? "Empresa, contacto y estado de la solicitud de alta a la plataforma."
+    : "Datos del perfil y de la sesión.";
+  const slideAriaLabel = subscriptionContext
+    ? "Detalle de la suscripción"
+    : "Detalle del usuario";
+
   return (
     <SlideOver
       open={open}
       onClose={onClose}
-      title="Detalle de usuario"
-      description="Datos del perfil y de la sesión."
-      contentAriaLabel="Detalle del usuario"
+      title={slideTitle}
+      description={slideDescription}
+      contentAriaLabel={slideAriaLabel}
     >
       {loading ? (
         <div
@@ -346,6 +403,7 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
               onApprove={handleApproveClick}
               showRejectButton={showRejectButton}
               showApproveButton={showApproveButton}
+              subscriptionContext={subscriptionContext}
             />
           ) : null}
         </>

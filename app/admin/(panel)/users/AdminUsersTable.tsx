@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -9,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -29,6 +30,7 @@ import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { cn } from "@/utils/cn";
+import { UserProfileCard } from "@/components/dashboard/user-profile-card";
 import { Eye, MoreVertical, Trash2, XCircle } from "lucide-react";
 
 const ROLE_FILTER_OPTIONS = [
@@ -53,6 +55,22 @@ function userSortValue(u: AdminUser): string {
   return `${u.fullName ?? ""} ${u.email ?? ""}`
     .trim()
     .toLowerCase();
+}
+
+function userInitial(u: AdminUser): string {
+  const name = u.fullName?.trim();
+  if (name) return name.slice(0, 1).toUpperCase();
+  const em = u.email?.trim();
+  if (em) return em.slice(0, 1).toUpperCase();
+  return "?";
+}
+
+/** Empresa → azul suave; resto → gris suave. */
+function userAvatarClass(u: AdminUser): string {
+  if (u.role === "BUSINESS") {
+    return "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60";
+  }
+  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
 }
 
 /** Timestamp en ms para ordenar por último acceso; null = sin dato (queda al final). */
@@ -244,7 +262,7 @@ function UsersRowActionsMenu({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
                 void handleReject();
@@ -313,6 +331,32 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
     ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter) ??
     ROLE_FILTER_OPTIONS[0];
 
+  const renderMobileRow = useCallback((row: Row<AdminUser>) => {
+    const u = row.original;
+    return (
+      <li key={row.id}>
+        <UserProfileCard
+          email={u.email ?? ""}
+          fullName={u.fullName}
+          role={u.role}
+          lastSignInAt={u.lastSignInAt}
+          className="hover:bg-muted/50 transition-colors duration-150"
+          actions={
+            <UsersRowActionsMenu
+              user={u}
+              onViewDetail={() => setDetailUserId(u.id)}
+              onDeleteSuccess={() => {
+                setDetailUserId((current) =>
+                  current === u.id ? null : current,
+                );
+              }}
+            />
+          }
+        />
+      </li>
+    );
+  }, []);
+
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
       {
@@ -344,17 +388,28 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
           const name = userDisplayName(u);
           const email = u.email?.trim();
           return (
-            <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-foreground">
-                {name}
-              </p>
-              {email ? (
-                <p className="truncate text-sm text-muted-foreground">
-                  {email}
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                  userAvatarClass(u),
+                )}
+                aria-hidden
+              >
+                {userInitial(u)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-foreground">
+                  {name}
                 </p>
-              ) : (
-                <AdminTableEmptyEmDash className="text-sm" />
-              )}
+                {email ? (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {email}
+                  </p>
+                ) : (
+                  <AdminTableEmptyEmDash className="text-sm" />
+                )}
+              </div>
             </div>
           );
         },
@@ -447,6 +502,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
             <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>

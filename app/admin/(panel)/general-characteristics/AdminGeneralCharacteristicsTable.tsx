@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -19,6 +19,7 @@ import { GeneralCharacteristicFormDialog } from "./GeneralCharacteristicFormDial
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { GeneralCharacteristicProfileCard } from "@/components/dashboard/general-characteristic-profile-card";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
@@ -221,6 +222,32 @@ export function AdminGeneralCharacteristicsTable({
     [],
   );
 
+  const renderMobileRow = useCallback(
+    (row: Row<GeneralCharacteristic>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <GeneralCharacteristicProfileCard
+            name={r.name}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
+
   return (
     <div className="space-y-4">
       <DataTable
@@ -236,6 +263,7 @@ export function AdminGeneralCharacteristicsTable({
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
             <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Service } from "@/modules/admin/services/services.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
@@ -18,6 +18,7 @@ import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { ServiceProfileCard } from "@/components/dashboard/service-profile-card";
 
 interface Props {
   services: Service[];
@@ -75,6 +76,33 @@ function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
 export function AdminServicesTable({ services, isLoading = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+
+  const renderMobileRow = useCallback(
+    (row: Row<Service>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <ServiceProfileCard
+            name={r.name}
+            imageUrl={r.imageUrl}
+            description={r.description}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
 
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
@@ -208,6 +236,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarActions={
           <Button
             type="button"

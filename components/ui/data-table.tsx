@@ -16,6 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
   type FilterFn,
+  type Row,
   type SortingState,
 } from "@tanstack/react-table";
 import Select from "react-select";
@@ -105,6 +106,11 @@ interface DataTableProps<TData, TValue> {
   enableSorting?: boolean;
   /** Clases por fila (p. ej. fondo según estado). Si no se pasa, se usa hover por defecto. */
   getRowClassName?: (row: TData) => string | undefined;
+  /**
+   * Si se define, sustituye el `<article>` por fila en vista móvil (`md:hidden`).
+   * Debe devolver el `<li>` completo (con `key`). Útil para tarjetas personalizadas (p. ej. `UserProfileCard`).
+   */
+  renderMobileRow?: (row: Row<TData>) => ReactNode;
 }
 
 /** Busca en los valores de las celdas; ignora columnas con id `actions`. */
@@ -139,6 +145,7 @@ export function DataTable<TData, TValue>({
   paginationButtonVariant = "outline",
   enableSorting = false,
   getRowClassName,
+  renderMobileRow,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
   const [globalFilter, setGlobalFilter] = useState("");
@@ -446,17 +453,20 @@ export function DataTable<TData, TValue>({
             </div>
           ) : table.getRowModel().rows.length ? (
             <ul className="space-y-3 p-3 sm:p-4">
-              {table.getRowModel().rows.map((row) => (
-                <li key={row.id}>
-                  <article
-                    className={cn(
-                      "overflow-hidden rounded-xl border border-border/90 bg-card",
-                      "shadow-sm ring-1 ring-border/40",
-                      getRowClassName?.(row.original),
-                    )}
-                  >
-                    {(() => {
-                      const visibleCells = row.getVisibleCells();
+              {table.getRowModel().rows.map((row) =>
+                renderMobileRow ? (
+                  renderMobileRow(row)
+                ) : (
+                  <li key={row.id}>
+                    <article
+                      className={cn(
+                        "overflow-hidden rounded-xl border border-border/90 bg-card",
+                        "shadow-sm ring-1 ring-border/40",
+                        getRowClassName?.(row.original),
+                      )}
+                    >
+                      {(() => {
+                        const visibleCells = row.getVisibleCells();
                       const actionCell = visibleCells.find(
                         (c) => c.column.id === "actions",
                       );
@@ -555,7 +565,8 @@ export function DataTable<TData, TValue>({
                     })()}
                   </article>
                 </li>
-              ))}
+                ),
+              )}
             </ul>
           ) : (
             <div className="px-4 py-14 text-center text-sm text-muted-foreground">

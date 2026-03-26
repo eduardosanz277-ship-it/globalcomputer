@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -21,6 +21,7 @@ import { SpecificCharacteristicFormDialog } from "./SpecificCharacteristicFormDi
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { SpecificCharacteristicProfileCard } from "@/components/dashboard/specific-characteristic-profile-card";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los estados" },
@@ -260,6 +261,33 @@ export function AdminSpecificCharacteristicsTable({
     [],
   );
 
+  const renderMobileRow = useCallback(
+    (row: Row<SpecificCharacteristic>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <SpecificCharacteristicProfileCard
+            name={r.name}
+            generalName={r.generalName}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
+
   return (
     <div className="space-y-4">
       <DataTable
@@ -276,6 +304,7 @@ export function AdminSpecificCharacteristicsTable({
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
             <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">

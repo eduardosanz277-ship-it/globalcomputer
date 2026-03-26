@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Brand } from "@/modules/admin/brands/brands.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteBrandAction } from "./actions";
 import { BrandFormDialog } from "./BrandFormDialog";
+import { BrandProfileCard } from "@/components/dashboard/brand-profile-card";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -90,6 +91,32 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
   const filterValue =
     STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
     STATUS_FILTER_OPTIONS[0];
+
+  const renderMobileRow = useCallback(
+    (row: Row<Brand>) => {
+      const b = row.original;
+      return (
+        <li key={row.id}>
+          <BrandProfileCard
+            name={b.name}
+            active={b.active}
+            updatedAt={b.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                brand={b}
+                onEdit={() => {
+                  setEditing(b);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [],
+  );
 
   const columns = useMemo<ColumnDef<Brand>[]>(
     () => [
@@ -222,6 +249,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
             <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
