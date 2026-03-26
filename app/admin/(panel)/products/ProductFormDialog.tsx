@@ -21,7 +21,7 @@ import {
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
-import { FormSelectField } from "@/components/ui/form-fields";
+import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +74,7 @@ export function ProductFormDialog({
       price: 0,
       discountBusinessPct: 0,
       discountClient: 0,
+      active: true,
       manualPdfUrl: "",
       brandId: "",
       brandTypeId: "",
@@ -121,6 +122,7 @@ export function ProductFormDialog({
         price: product.price,
         discountBusinessPct: product.discountBusinessPct,
         discountClient: product.discountClient,
+        active: product.active,
         manualPdfUrl: product.manualPdfUrl ?? "",
         brandId: product.brandId,
         brandTypeId: product.brandTypeId,
@@ -141,6 +143,7 @@ export function ProductFormDialog({
         price: 0,
         discountBusinessPct: 0,
         discountClient: 0,
+        active: true,
         manualPdfUrl: "",
         brandId: "",
         brandTypeId: "",
@@ -469,6 +472,14 @@ function ProductFormBody({
             className={adminServiceLikeInputClassName}
             min={0}
             max={100}
+          />
+        </div>
+
+        <div className="border-t border-border/50 pt-4">
+          <FormSwitchField<ProductFormValues>
+            name="active"
+            label="Activa en catálogo"
+            description="Si está desactivado, el producto no se mostrará en el catálogo público."
           />
         </div>
       </section>

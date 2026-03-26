@@ -15,6 +15,7 @@ type ProductRow = {
   description: string | null;
   stock: number;
   price: number;
+  active: boolean;
   discount_business_pct: number;
   discount_client: number;
   manual_pdf_url: string | null;
@@ -122,6 +123,7 @@ function mapRow(row: ProductRow): Product {
     description: row.description,
     stock: row.stock,
     price: row.price,
+    active: row.active,
     discountBusinessPct: row.discount_business_pct,
     discountClient: row.discount_client,
     manualPdfUrl: row.manual_pdf_url,
@@ -138,7 +140,7 @@ function mapRow(row: ProductRow): Product {
 }
 
 const PRODUCT_SELECT =
-  "id, sku, name, description, stock, price, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, created_at, updated_at, brands(name), brand_types(name), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
+  "id, sku, name, description, stock, price, active, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, created_at, updated_at, brands(name), brand_types(name), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
 
 export async function repoListProducts(): Promise<Product[]> {
   const supabase = createSupabaseAdminClient();
@@ -161,6 +163,7 @@ export async function repoCreateProduct(payload: ProductInsert): Promise<Product
       description: payload.description || null,
       stock: payload.stock,
       price: payload.price,
+      active: payload.active,
       discount_business_pct: payload.discountBusinessPct,
       discount_client: payload.discountClient,
       manual_pdf_url: payload.manualPdfUrl || null,
@@ -187,6 +190,7 @@ export async function repoUpdateProduct(
       description: payload.description || null,
       stock: payload.stock,
       price: payload.price,
+      active: payload.active,
       discount_business_pct: payload.discountBusinessPct,
       discount_client: payload.discountClient,
       manual_pdf_url: payload.manualPdfUrl || null,

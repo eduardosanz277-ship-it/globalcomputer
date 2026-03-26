@@ -24,6 +24,7 @@ export type Product = {
   discountBusinessPct: number;
   discountClient: number;
   manualPdfUrl: string | null;
+  active: boolean;
   brandId: string;
   brandName: string;
   brandTypeId: string;
@@ -44,6 +45,7 @@ export type ProductInsert = {
   discountBusinessPct: number;
   discountClient: number;
   manualPdfUrl: string;
+  active: boolean;
   brandId: string;
   brandTypeId: string;
 };
