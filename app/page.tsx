@@ -188,47 +188,57 @@ export default async function HomePage() {
         {/* Featured products */}
         <section
           id="destacados"
-          className="scroll-mt-20 border-y border-border bg-muted/25 py-14 sm:py-20"
+          className="scroll-mt-20 border-y border-border bg-slate-50/80 py-16 sm:py-24"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                  Destacados de la semana
-                </h2>
-                <p className="mt-2 text-muted-foreground">
-                  Ejemplos de maquetado — conecta aquí tu catálogo real
-                </p>
-              </div>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <HomeSectionHeading
+                align="left"
+                eyebrow="Selección"
+                title="Destacados de la semana"
+                description="Ejemplos de maquetado — conecta aquí tu catálogo real."
+                className="sm:max-w-xl"
+              />
               <Link
                 href="#categorias"
-                className={cn(buttonVariants({ variant: "outline" }))}
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "shrink-0 border-primary/25 bg-background hover:bg-primary/5",
+                )}
               >
                 Ver todo el catálogo
               </Link>
             </div>
 
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {PLACEHOLDER_PRODUCTS.map((p) => (
                 <article
                   key={p.name}
-                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-border/40 transition hover:shadow-md"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm ring-1 ring-border/30 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/60" />
-                  <div className="p-4">
-                    {p.badge && (
-                      <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/80">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(217_91%_60%/0.12),transparent_50%)]" />
+                    <div className="absolute bottom-3 left-3 right-3 flex h-14 items-end justify-between rounded-lg border border-white/60 bg-white/80 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500 shadow-sm backdrop-blur-sm">
+                      <span>Vista previa</span>
+                      <Package className="h-4 w-4 text-primary" aria-hidden />
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    {p.badge ? (
+                      <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                         {p.badge}
                       </span>
+                    ) : (
+                      <span className="h-5" aria-hidden />
                     )}
                     <h3 className="mt-2 font-semibold leading-snug text-foreground">
                       {p.name}
                     </h3>
-                    <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
+                    <p className="mt-2 text-lg font-bold tabular-nums text-foreground">
                       {p.price}
                     </p>
                     <Button
-                      className="mt-4 w-full"
+                      className="mt-5 w-full"
                       size="sm"
                       type="button"
                       variant="secondary"
