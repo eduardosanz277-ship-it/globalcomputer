@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "./button";
+import { EmptyState } from "./empty-state";
 import { Input } from "./input";
 
 type PageSizeOption = { value: number; label: string };
@@ -391,8 +392,7 @@ export function DataTable<TData, TValue>({
                     key={row.id}
                     className={cn(
                       "transition-colors duration-150",
-                      getRowClassName?.(row.original) ??
-                        "hover:bg-muted/45",
+                      getRowClassName?.(row.original) ?? "hover:bg-muted/45",
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -423,13 +423,17 @@ export function DataTable<TData, TValue>({
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-14 text-center text-sm text-muted-foreground"
-                  >
-                    {data.length === 0
-                      ? "Sin datos"
-                      : "Sin coincidencias con la búsqueda."}
+                  <td colSpan={columns.length} className="px-4 py-0">
+                    <EmptyState
+                      variant={
+                        data.length === 0 ? "no-data" : "no-match"
+                      }
+                      title={
+                        data.length === 0
+                          ? "No hay datos disponibles."
+                          : "Sin coincidencias con la búsqueda."
+                      }
+                    />
                   </td>
                 </tr>
               )}
@@ -467,112 +471,119 @@ export function DataTable<TData, TValue>({
                     >
                       {(() => {
                         const visibleCells = row.getVisibleCells();
-                      const actionCell = visibleCells.find(
-                        (c) => c.column.id === "actions",
-                      );
-                      const bodyCells = visibleCells.filter(
-                        (c) => c.column.id !== "actions",
-                      );
-                      const primaryCell = bodyCells.find((c) =>
-                        CARD_PRIMARY_COLUMN_IDS.has(c.column.id),
-                      );
-                      const restBodyCells = bodyCells.filter(
-                        (c) => c.column.id !== primaryCell?.column.id,
-                      );
+                        const actionCell = visibleCells.find(
+                          (c) => c.column.id === "actions",
+                        );
+                        const bodyCells = visibleCells.filter(
+                          (c) => c.column.id !== "actions",
+                        );
+                        const primaryCell = bodyCells.find((c) =>
+                          CARD_PRIMARY_COLUMN_IDS.has(c.column.id),
+                        );
+                        const restBodyCells = bodyCells.filter(
+                          (c) => c.column.id !== primaryCell?.column.id,
+                        );
 
-                      const renderFieldRow = (cell: (typeof bodyCells)[0]) => {
-                        const header = firstHeaderGroup?.headers.find(
-                          (h) => h.column.id === cell.column.id,
-                        );
-                        if (!header || header.isPlaceholder) return null;
-                        return (
-                          <div
-                            key={cell.id}
-                            className="flex flex-col gap-1 px-4 py-3 sm:px-5"
-                          >
-                            <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                            </span>
-                            <div className="min-w-0 text-sm text-foreground">
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </div>
-                          </div>
-                        );
-                      };
-
-                      if (actionCell && primaryCell) {
-                        const primaryHeader = firstHeaderGroup?.headers.find(
-                          (h) => h.column.id === primaryCell.column.id,
-                        );
-                        return (
-                          <>
-                            <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-5">
-                              <span className="min-w-0 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                                {primaryHeader && !primaryHeader.isPlaceholder
-                                  ? flexRender(
-                                      primaryHeader.column.columnDef.header,
-                                      primaryHeader.getContext(),
-                                    )
-                                  : null}
-                              </span>
-                              <div className="shrink-0">
+                        const renderFieldRow = (
+                          cell: (typeof bodyCells)[0],
+                        ) => {
+                          const header = firstHeaderGroup?.headers.find(
+                            (h) => h.column.id === cell.column.id,
+                          );
+                          if (!header || header.isPlaceholder) return null;
+                          return (
+                            <div
+                              key={cell.id}
+                              className="flex flex-col gap-1 px-4 py-3 sm:px-5"
+                            >
+                              <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
                                 {flexRender(
-                                  actionCell.column.columnDef.cell,
-                                  actionCell.getContext(),
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                              </span>
+                              <div className="min-w-0 text-sm text-foreground">
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
                                 )}
                               </div>
                             </div>
-                            <div className="divide-y divide-border/70">
-                              <div className="px-4 pb-3 pt-1 sm:px-5">
-                                <div className="min-w-0 text-sm text-foreground">
+                          );
+                        };
+
+                        if (actionCell && primaryCell) {
+                          const primaryHeader = firstHeaderGroup?.headers.find(
+                            (h) => h.column.id === primaryCell.column.id,
+                          );
+                          return (
+                            <>
+                              <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-5">
+                                <span className="min-w-0 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {primaryHeader && !primaryHeader.isPlaceholder
+                                    ? flexRender(
+                                        primaryHeader.column.columnDef.header,
+                                        primaryHeader.getContext(),
+                                      )
+                                    : null}
+                                </span>
+                                <div className="shrink-0">
                                   {flexRender(
-                                    primaryCell.column.columnDef.cell,
-                                    primaryCell.getContext(),
+                                    actionCell.column.columnDef.cell,
+                                    actionCell.getContext(),
                                   )}
                                 </div>
                               </div>
-                              {restBodyCells.map((cell) =>
-                                renderFieldRow(cell),
-                              )}
+                              <div className="divide-y divide-border/70">
+                                <div className="px-4 pb-3 pt-1 sm:px-5">
+                                  <div className="min-w-0 text-sm text-foreground">
+                                    {flexRender(
+                                      primaryCell.column.columnDef.cell,
+                                      primaryCell.getContext(),
+                                    )}
+                                  </div>
+                                </div>
+                                {restBodyCells.map((cell) =>
+                                  renderFieldRow(cell),
+                                )}
+                              </div>
+                            </>
+                          );
+                        }
+
+                        return (
+                          <>
+                            {actionCell ? (
+                              <div className="flex items-start justify-end border-b border-border/70 px-3 py-2 sm:px-4">
+                                <div className="flex min-w-0 justify-end">
+                                  {flexRender(
+                                    actionCell.column.columnDef.cell,
+                                    actionCell.getContext(),
+                                  )}
+                                </div>
+                              </div>
+                            ) : null}
+                            <div className="divide-y divide-border/70">
+                              {bodyCells.map((cell) => renderFieldRow(cell))}
                             </div>
                           </>
                         );
-                      }
-
-                      return (
-                        <>
-                          {actionCell ? (
-                            <div className="flex items-start justify-end border-b border-border/70 px-3 py-2 sm:px-4">
-                              <div className="flex min-w-0 justify-end">
-                                {flexRender(
-                                  actionCell.column.columnDef.cell,
-                                  actionCell.getContext(),
-                                )}
-                              </div>
-                            </div>
-                          ) : null}
-                          <div className="divide-y divide-border/70">
-                            {bodyCells.map((cell) => renderFieldRow(cell))}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </article>
-                </li>
+                      })()}
+                    </article>
+                  </li>
                 ),
               )}
             </ul>
           ) : (
-            <div className="px-4 py-14 text-center text-sm text-muted-foreground">
-              {data.length === 0
-                ? "Sin datos"
-                : "Sin coincidencias con la búsqueda."}
+            <div className="px-4 py-0">
+              <EmptyState
+                variant={data.length === 0 ? "no-data" : "no-match"}
+                title={
+                  data.length === 0
+                    ? "No hay datos disponibles."
+                    : "Sin coincidencias con la búsqueda."
+                }
+              />
             </div>
           )}
         </div>

@@ -538,6 +538,7 @@ export function AdminSuscripcionesEmpresasTable({
             fullName={r.fullName}
             businessRegistrationStatus={r.businessRegistrationStatus}
             lastSignInAt={r.lastSignInAt}
+            createdAt={r.createdAt}
             phone={r.phone}
             employerIdentificationNumber={r.employerIdentificationNumber}
             className="hover:bg-muted/50 transition-colors duration-150"

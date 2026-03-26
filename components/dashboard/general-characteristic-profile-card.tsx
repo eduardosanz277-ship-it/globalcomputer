@@ -65,7 +65,7 @@ export function GeneralCharacteristicProfileCard({
         <div className="space-y-1 border-t border-border/60 pt-4">
           <p className="text-sm text-muted-foreground">Última actualización</p>
           <p
-            className="text-sm font-medium text-foreground"
+            className="text-sm text-foreground"
             title={absolute || undefined}
           >
             {relative != null ? relative : absolute}

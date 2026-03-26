@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Eye, MoreVertical, Pencil, Trash2 } from "lucide-react";
 
 const MENU_MIN_WIDTH_PX = 208; // 13rem — mismo ancho que `UsersRowActionsMenu`
 
@@ -11,11 +11,13 @@ const MENU_MIN_WIDTH_PX = 208; // 13rem — mismo ancho que `UsersRowActionsMenu
  * Menú ⋮ con Editar y Eliminar, mismo patrón visual que las acciones de la tabla de Usuarios.
  */
 export function AdminEditDeleteRowMenu({
+  onView,
   onEdit,
   onDelete,
   isDeleting,
   deletingLabel = "Eliminando…",
 }: {
+  onView?: () => void;
   onEdit: () => void;
   onDelete: () => void | Promise<void>;
   isDeleting: boolean;
@@ -81,6 +83,27 @@ export function AdminEditDeleteRowMenu({
         style={{ top: menuPos.top, left: menuPos.left }}
         role="menu"
       >
+        {onView ? (
+          <>
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
+              disabled={busy}
+              onClick={() => {
+                onView();
+                setOpen(false);
+              }}
+            >
+              <Eye
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              Ver detalles
+            </button>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+          </>
+        ) : null}
         <button
           type="button"
           role="menuitem"

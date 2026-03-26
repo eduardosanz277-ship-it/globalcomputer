@@ -16,18 +16,17 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: "2mb",
+      bodySizeLimit: "20mb",
     },
   },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**.supabase.co',
+        protocol: "https",
+        hostname: "**.supabase.co",
       },
     ],
   },
 };
 
 export default nextConfig;
-

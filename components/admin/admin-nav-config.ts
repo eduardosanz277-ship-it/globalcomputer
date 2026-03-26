@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   ListChecks,
   ListTodo,
+  Package,
   Settings,
   Shapes,
   Tag,
@@ -47,6 +48,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Servicios",
     icon: BriefcaseBusiness,
   },
+  { href: "/admin/products", label: "Productos", icon: Package },
   { href: "/admin/users", label: "Usuarios", icon: Users },
   {
     href: "/admin/suscripciones-empresas",

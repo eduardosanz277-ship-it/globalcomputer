@@ -28,7 +28,6 @@ import {
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { cn } from "@/utils/cn";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
 import { Eye, MoreVertical, Trash2, XCircle } from "lucide-react";
@@ -452,18 +451,12 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         ),
         cell: ({ row }) => {
           const raw = row.original.lastSignInAt;
-          const relative = formatRelativeLastAccess(raw);
-          if (relative == null) {
+          if (!raw) {
             return <AdminTableEmptyEmDash />;
           }
-          const absolute = raw ? formatDateDdMmYyyyHhMm(raw) : "";
+          const absolute = formatDateDdMmYyyyHhMm(raw);
           return (
-            <span
-              className="text-sm text-muted-foreground"
-              title={absolute || undefined}
-            >
-              {relative}
-            </span>
+            <span className="text-sm text-muted-foreground">{absolute}</span>
           );
         },
       },

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { cn } from "@/utils/cn";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 
 export type UserProfileCardProps = {
   email: string;
@@ -70,7 +70,7 @@ export function UserProfileCard({
   const title = name || em;
   const showEmailLine = Boolean(name && em);
 
-  const relative = formatRelativeLastAccess(lastSignInAt ?? null);
+  const exactDate = lastSignInAt ? formatDateDdMmYyyyHhMm(lastSignInAt) : null;
 
   return (
     <div
@@ -130,9 +130,9 @@ export function UserProfileCard({
 
         <div className="space-y-1 border-t border-border/60 pt-4">
           <p className="text-sm text-muted-foreground">Último acceso</p>
-          <p className="text-sm font-medium leading-snug text-foreground">
-            {relative != null ? (
-              relative
+          <p className="text-sm leading-snug text-foreground">
+            {exactDate != null ? (
+              exactDate
             ) : (
               <span className="font-normal text-muted-foreground/70">—</span>
             )}

@@ -19,6 +19,12 @@ import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ServiceProfileCard } from "@/components/dashboard/service-profile-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   services: Service[];
@@ -185,21 +191,32 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
           const relative = formatRelativeLastAccess(raw);
+          const absolute = formatDateDdMmYyyyHhMm(raw);
           if (relative == null) {
             return (
               <span className="text-sm text-muted-foreground">
-                {formatDateDdMmYyyyHhMm(raw)}
+                {absolute}
               </span>
             );
           }
-          const absolute = formatDateDdMmYyyyHhMm(raw);
           return (
-            <span
-              className="text-sm text-muted-foreground"
-              title={absolute || undefined}
-            >
-              {relative}
-            </span>
+            <TooltipProvider delayDuration={120}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help text-sm text-muted-foreground">
+                    {relative}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
+                >
+                  <span className="block font-medium">Última actualización</span>
+                  <span className="mt-0.5 block text-muted-foreground">{absolute}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         },
       },

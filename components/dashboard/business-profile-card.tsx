@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import { cn } from "@/utils/cn";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 
 export type BusinessProfileCardProps = {
   email: string;
@@ -11,6 +11,7 @@ export type BusinessProfileCardProps = {
   businessRegistrationStatus: BusinessRegistrationStatus | null | undefined;
   /** ISO string o `null` / ausente si no hay dato */
   lastSignInAt?: string | null;
+  createdAt?: string | null;
   phone?: string | null;
   employerIdentificationNumber?: string | null;
   className?: string;
@@ -81,6 +82,7 @@ export function BusinessProfileCard({
   fullName,
   businessRegistrationStatus,
   lastSignInAt,
+  createdAt,
   phone,
   employerIdentificationNumber,
   className,
@@ -178,6 +180,13 @@ export function BusinessProfileCard({
               {employerIdentificationNumber?.trim()
                 ? employerIdentificationNumber
                 : "—"}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Fecha de registro</p>
+            <p className="text-sm leading-snug text-foreground">
+              {createdAt ? formatDateDdMmYyyyHhMm(createdAt) : "—"}
             </p>
           </div>
         </div>
