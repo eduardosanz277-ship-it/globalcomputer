@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Headphones, Package, Shield, Truck } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Headphones,
+  Package,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Truck,
+  Wrench,
+} from "lucide-react";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -45,6 +56,12 @@ const PLACEHOLDER_PRODUCTS = [
   { name: "Bullet 8MP Híbrida", price: "$229.99", badge: "Nuevo" },
 ];
 
+const HERO_STATS = [
+  { label: "Envío nacional", value: "Seguimiento" },
+  { label: "Soporte", value: "Lun–Vie" },
+  { label: "Garantía", value: "Equipos" },
+];
+
 export default async function HomePage() {
   const user = await getCurrentUserService();
 
@@ -52,107 +69,115 @@ export default async function HomePage() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader user={user} />
 
-      <main>
+      <main className="overflow-x-hidden">
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
-          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-            <p className="text-sm font-medium uppercase tracking-wider text-white/70">
-              Videovigilancia profesional
-            </p>
-            <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              Protege lo que más importa, con la tecnología que mereces
-            </h1>
-            <p className="mt-4 max-w-xl text-lg text-white/80">
-              Cámaras, grabadoras y kits seleccionados. Envío rápido, garantía y
-              equipo humano para ayudarte a elegir bien.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="#destacados"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "gap-2 bg-white text-slate-900 hover:bg-white/90",
-                )}
-              >
-                Ver destacados
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/register"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "outline" }),
-                  "border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20",
-                )}
-              >
-                Crear cuenta
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Trust strip */}
-        <section className="border-b border-border bg-muted/40">
-          <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">
-            {[
-              {
-                icon: Truck,
-                t: "Envío a todo el país",
-                s: "Seguimiento en tiempo real",
-              },
-              {
-                icon: Shield,
-                t: "Garantía en equipos",
-                s: "Marcas líderes del sector",
-              },
-              {
-                icon: Headphones,
-                t: "Soporte especializado",
-                s: "Lun–Vie horario extendido",
-              },
-            ].map(({ icon: Icon, t, s }) => (
-              <div
-                key={t}
-                className="flex gap-4 rounded-xl border border-border/60 bg-background p-4 shadow-sm"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" aria-hidden />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{t}</p>
-                  <p className="text-sm text-muted-foreground">{s}</p>
+        <section className="relative border-b border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.35]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_70%_-10%,hsl(217_91%_60%/0.35),transparent_55%)]" />
+          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
+            <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200/90 sm:text-sm">
+                  Videovigilancia profesional
+                </p>
+                <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl lg:leading-[1.1]">
+                  Protege lo que más importa, con la tecnología que mereces
+                </h1>
+                <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-white/75 sm:text-lg">
+                  Cámaras, grabadoras y kits seleccionados. Envío rápido, garantía y
+                  equipo humano para ayudarte a elegir bien.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href="#destacados"
+                    className={cn(
+                      buttonVariants({ size: "lg" }),
+                      "gap-2 bg-white text-slate-900 shadow-lg shadow-blue-950/40 hover:bg-white/90",
+                    )}
+                  >
+                    Ver destacados
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/register"
+                    className={cn(
+                      buttonVariants({ size: "lg", variant: "outline" }),
+                      "border-white/25 bg-white/5 text-white backdrop-blur hover:bg-white/15",
+                    )}
+                  >
+                    Crear cuenta
+                  </Link>
                 </div>
               </div>
-            ))}
+
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-blue-400/10 blur-2xl lg:-inset-6" />
+                <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/[0.07] p-6 shadow-2xl shadow-blue-950/50 backdrop-blur-md sm:p-8">
+                  <p className="text-sm font-medium text-white/90">
+                    Por qué comprar con nosotros
+                  </p>
+                  <ul className="mt-6 space-y-4">
+                    {HERO_STATS.map((row) => (
+                      <li
+                        key={row.label}
+                        className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 last:border-0 last:pb-0"
+                      >
+                        <span className="text-sm text-white/65">{row.label}</span>
+                        <span className="text-sm font-semibold tabular-nums text-white">
+                          {row.value}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="#categorias"
+                    className={cn(
+                      buttonVariants({ variant: "secondary", size: "sm" }),
+                      "mt-6 w-full gap-2 bg-white/95 text-slate-900 hover:bg-white",
+                    )}
+                  >
+                    Explorar categorías
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Categories */}
-        <section id="categorias" className="scroll-mt-20 py-14 sm:py-20">
+        <section id="categorias" className="scroll-mt-20 bg-background py-16 sm:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Compra por categoría
-              </h2>
-              <p className="mt-2 text-muted-foreground">
-                Encuentra rápido lo que necesitas para tu instalación
-              </p>
-            </div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <HomeSectionHeading
+              eyebrow="Catálogo"
+              title="Compra por categoría"
+              description="Encuentra rápido lo que necesitas para tu instalación."
+            />
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {CATEGORIES.map((c) => (
                 <Link
                   key={c.title}
                   href={c.href}
-                  className="group rounded-2xl border border-border bg-card p-6 shadow-sm ring-1 ring-border/40 transition hover:border-primary/30 hover:shadow-md"
+                  className="group flex min-h-[180px] flex-col rounded-2xl border border-border/80 bg-card p-6 shadow-sm ring-1 ring-border/30 transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
                 >
-                  <Package className="h-8 w-8 text-primary" aria-hidden />
-                  <h3 className="mt-4 font-semibold text-foreground group-hover:text-primary">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary/15">
+                    <Package className="h-5 w-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-5 font-semibold leading-snug text-foreground group-hover:text-primary">
                     {c.title}
                   </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{c.desc}</p>
-                  <span className="mt-3 inline-flex items-center text-sm font-medium text-primary">
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {c.desc}
+                  </p>
+                  <span className="mt-4 inline-flex items-center text-sm font-medium text-primary">
                     Explorar
-                    <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-0.5" />
+                    <ArrowRight className="ml-1.5 h-4 w-4 transition group-hover:translate-x-0.5" />
                   </span>
                 </Link>
               ))}
