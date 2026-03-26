@@ -43,6 +43,7 @@ export const productFormSchema = z.object({
   price: moneySchema,
   discountBusinessPct: percentSchema,
   discountClient: percentSchema,
+  active: z.boolean(),
   manualPdfUrl: z
     .string()
     .max(2000, "URL demasiado larga")
