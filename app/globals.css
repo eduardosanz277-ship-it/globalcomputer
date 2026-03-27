@@ -40,36 +40,256 @@ body {
   }
 }
 
-/* SweetAlert2: botones Cancelar/Eliminar con el mismo ancho (escritorio/tablet) */
-.swal2-popup.swal-equal-width-buttons .swal2-cancel,
-.swal2-popup.swal-equal-width-buttons .swal2-confirm {
-  min-width: 140px;
-  white-space: nowrap;
+/* —— SweetAlert2: modal de confirmación estilo SaaS (ver `utils/swal-saas.ts`) —— */
+/* Mismo overlay que `SlideOver`: `bg-black/45` + entrada tipo `animate-fade-in` (0.22s ease-out) */
+:root {
+  --swal2-backdrop: rgba(0, 0, 0, 0.45);
+  --swal2-backdrop-transition: background-color 0.22s ease-out;
 }
 
-/* Móvil: columna, ancho completo, orden Cancelar → Eliminar, botones más bajos */
+.swal2-container.swal-saas-show-backdrop,
+.swal2-container.swal2-backdrop-show {
+  background: var(--swal2-backdrop) !important;
+}
+
+.swal2-popup.swal-saas-modal {
+  width: 100%;
+  max-width: 420px;
+  min-width: min(100%, 360px);
+  padding: 1.75rem 1.75rem 1.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.06),
+    0 24px 48px -12px rgba(0, 0, 0, 0.08);
+  font-family: inherit;
+}
+
+.swal-saas-title {
+  padding: 0 0 0.25rem !important;
+  margin: 0 0 0.5rem !important;
+  font-size: 1.0625rem !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  letter-spacing: -0.01em;
+  color: #111827 !important;
+}
+
+.swal-saas-html {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.9375rem !important;
+  font-weight: 400 !important;
+  line-height: 1.55 !important;
+  color: #4b5563 !important;
+  text-align: left !important;
+}
+
+.swal-saas-html strong {
+  font-weight: 600;
+  color: #374151;
+}
+
+.swal2-popup.swal-saas-modal .swal2-icon.swal-saas-icon-host {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  border: none !important;
+  background: transparent !important;
+}
+
+.swal-saas-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.swal-saas-icon-wrap--warning {
+  color: #f59e0b;
+}
+
+.swal-saas-icon-wrap--positive {
+  color: #059669;
+}
+
+.swal2-popup.swal-saas-modal .swal2-actions.swal-saas-actions {
+  margin: 1.5rem 0 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.swal-saas-btn {
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    filter 0.15s ease;
+  width: auto !important;
+  min-height: 2.25rem;
+}
+
+.swal-saas-btn--destructive {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border: 1px solid transparent !important;
+}
+
+.swal-saas-btn--destructive:hover {
+  background: #dc2626 !important;
+  filter: brightness(1.02);
+}
+
+.swal-saas-btn--destructive:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.swal-saas-btn--positive {
+  background: #059669 !important;
+  color: #fff !important;
+  border: 1px solid transparent !important;
+}
+
+.swal-saas-btn--positive:hover {
+  background: #047857 !important;
+  filter: brightness(1.02);
+}
+
+.swal-saas-btn--positive:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+.swal-saas-btn--cancel {
+  background: transparent !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.swal-saas-btn--cancel:hover {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+.swal-saas-btn--cancel:focus-visible {
+  outline: 2px solid #9ca3af;
+  outline-offset: 2px;
+}
+
+/* Mismo botón confirmar: spinner + texto (ver `utils/swal-saas.ts`, sin loader nativo de Swal) */
+.swal2-popup.swal-saas-modal .swal2-confirm.swal-saas-confirm-loading {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: wait !important;
+  pointer-events: none;
+}
+
+.swal2-popup.swal-saas-modal .swal2-confirm.swal-saas-confirm-loading:hover {
+  filter: none !important;
+}
+
+/* Lucide Loader2 (loader-circle): mismo tamaño y giro que `animate-spin` en botones Guardar */
+.swal-saas-lucide-loader {
+  display: block;
+  flex-shrink: 0;
+  animation: swal-saas-spin 1s linear infinite;
+}
+
+@keyframes swal-saas-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes swal-saas-popup-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes swal-saas-popup-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes swal-saas-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes swal-saas-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.swal2-popup.swal-saas-show-popup {
+  animation: swal-saas-popup-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.swal2-popup.swal-saas-hide-popup {
+  animation: swal-saas-popup-out 0.16s ease-in forwards;
+}
+
+body.swal2-shown .swal2-container.swal-saas-show-backdrop {
+  animation: swal-saas-backdrop-in 0.22s ease-out both;
+}
+
+body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
+  animation: swal-saas-backdrop-out 0.15s ease-in forwards;
+}
+
 @media (max-width: 639px) {
-  .swal2-popup.swal-equal-width-buttons .swal2-actions {
-    flex-direction: column;
-    width: 100%;
-    max-width: 100%;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-    box-sizing: border-box;
+  .swal2-popup.swal-saas-modal {
+    padding: 1.5rem 1.25rem 1.25rem;
+    margin: 0.75rem;
+    min-width: 0;
   }
 
-  .swal2-popup.swal-equal-width-buttons .swal2-cancel,
-  .swal2-popup.swal-equal-width-buttons .swal2-confirm {
+  .swal2-popup.swal-saas-modal .swal2-actions.swal-saas-actions {
+    flex-direction: column;
     width: 100%;
-    min-width: 0;
-    margin: 0 !important;
-    padding: 0.45rem 0.75rem;
-    min-height: 2.25rem;
-    font-size: 0.875rem;
-    line-height: 1.25;
-    box-sizing: border-box;
+  }
+
+  .swal-saas-btn {
+    width: 100% !important;
+    justify-content: center;
   }
 }
 

@@ -4,10 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { Plus } from "lucide-react";
@@ -53,7 +52,7 @@ function RowActions({
   onEdit: () => void;
 }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(
+  const { executeAsync, isPending } = useServerAction(
     deleteGeneralCharacteristicAction,
     {
       successMessage: "Característica eliminada",
@@ -65,22 +64,14 @@ function RowActions({
   );
 
   const handleDelete = async () => {
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar característica?",
       html: `Vas a eliminar <strong>${row.name}</strong>. Se borrarán también los valores específicos asociados si la base de datos lo permite; si hay productos vinculados, puede no permitirse.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => executeAsync(row.id),
     });
-
-    if (!result.isConfirmed) return;
-    execute(row.id);
   };
 
   return (
@@ -282,7 +273,7 @@ export function AdminGeneralCharacteristicsTable({
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
             <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
               instanceId="general-characteristics-status-filter"
               inputId="general-characteristics-status-filter-input"
@@ -294,7 +285,7 @@ export function AdminGeneralCharacteristicsTable({
               onChange={(opt) => {
                 if (opt) setStatusFilter(opt.value);
               }}
-              styles={appSelectStyles}
+              styles={appToolbarSelectStyles}
               className="w-full"
             />
           </div>
@@ -302,7 +293,7 @@ export function AdminGeneralCharacteristicsTable({
         toolbarActions={
           <Button
             type="button"
-            className="w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

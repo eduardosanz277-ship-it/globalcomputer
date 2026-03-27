@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
@@ -57,9 +57,15 @@ export default function AdminLoginPage() {
               required
               error={errors.password?.message}
             />
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Entrando..." : "Entrar al panel"}
-            </Button>
+            <ButtonPending
+              type="submit"
+              className="w-full"
+              pending={isPending}
+              pendingLabel="Entrando…"
+              skipMinWidth
+            >
+              Entrar al panel
+            </ButtonPending>
           </Form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">

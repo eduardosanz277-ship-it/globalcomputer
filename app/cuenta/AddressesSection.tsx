@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { ArrowRight, Trash2 } from "lucide-react";
+import { ArrowRight, Loader2, Trash2 } from "lucide-react";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,26 +44,24 @@ export function AddressesSection({ addresses }: Props) {
     },
   });
 
-  const {
-    execute: addAddress,
-    isPending: addingAddress,
-  } = useServerAction(addAddressAction, {
-    successMessage: "Dirección agregada",
-    errorMessage: "No se pudo guardar la dirección",
-    onSettled: () => {
-      router.refresh();
-      setShowForm(false);
+  const { execute: addAddress, isPending: addingAddress } = useServerAction(
+    addAddressAction,
+    {
+      successMessage: "Dirección agregada",
+      errorMessage: "No se pudo guardar la dirección",
+      onSettled: () => {
+        router.refresh();
+        setShowForm(false);
+      },
     },
-  });
+  );
 
-  const {
-    execute: deleteAddress,
-    isPending: deletingAddress,
-  } = useServerAction(deleteAddressAction, {
-    successMessage: "Dirección eliminada",
-    errorMessage: "No se pudo eliminar la dirección",
-    onSettled: () => router.refresh(),
-  });
+  const { execute: deleteAddress, isPending: deletingAddress } =
+    useServerAction(deleteAddressAction, {
+      successMessage: "Dirección eliminada",
+      errorMessage: "No se pudo eliminar la dirección",
+      onSettled: () => router.refresh(),
+    });
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Eliminar esta dirección?")) return;
@@ -159,9 +157,26 @@ export function AddressesSection({ addresses }: Props) {
               <FormField name="postalCode" label="Código postal" />
               <FormField name="country" label="País" />
             </div>
-            <Button type="submit" disabled={addingAddress} className="w-auto px-6">
-              <ArrowRight className="mr-2 h-4 w-4" aria-hidden />
-              {addingAddress ? "Guardando…" : "Guardar dirección"}
+            <Button
+              type="submit"
+              disabled={addingAddress}
+              aria-busy={addingAddress}
+              className="w-auto min-w-[12rem] px-6"
+            >
+              {addingAddress ? (
+                <>
+                  <Loader2
+                    className="mr-2 h-4 w-4 shrink-0 animate-spin"
+                    aria-hidden
+                  />
+                  Guardando dirección
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="mr-2 h-4 w-4" aria-hidden />
+                  Guardar dirección
+                </>
+              )}
             </Button>
           </Form>
         )}

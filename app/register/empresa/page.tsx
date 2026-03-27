@@ -1,7 +1,7 @@
 "use client";
 
 import { registerBusinessAction } from "@/app/register/empresa/actions";
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import {
   Card,
   CardContent,
@@ -82,9 +82,15 @@ export default function RegisterEmpresaPage() {
               placeholder="p. ej. 12-3456789"
               error={errors.employerIdentificationNumber?.message}
             />
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Creando cuenta..." : "Crear cuenta de empresa"}
-            </Button>
+            <ButtonPending
+              type="submit"
+              className="w-full"
+              pending={isPending}
+              pendingLabel="Creando cuenta…"
+              skipMinWidth
+            >
+              Crear cuenta de empresa
+            </ButtonPending>
           </Form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">

@@ -8,13 +8,13 @@ import type { SpecificCharacteristic } from "@/modules/admin/specific-characteri
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
-import { ImageOff, Plus } from "lucide-react";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
+import { ImageOff, Plus, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Select from "react-select";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteProductAction } from "./actions";
 import { ProductFormDialog } from "./ProductFormDialog";
@@ -54,6 +54,12 @@ function stockBadgeClass(stock: number): string {
   return stock <= 0
     ? "inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700"
     : "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700";
+}
+
+function activeBadgeClass(active: boolean): string {
+  return active
+    ? "inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+    : "inline-flex items-center rounded-full border border-slate-200/90 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700";
 }
 
 function discountBadgeClass(kind: "business" | "client"): string {
@@ -96,43 +102,35 @@ export function AdminProductsTable({
   isLoading = false,
 }: Props) {
   const router = useRouter();
+  const [globalFilter, setGlobalFilter] = useState<string>("");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [brandTypeFilter, setBrandTypeFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [viewing, setViewing] = useState<Product | null>(null);
-  const { execute: executeDelete, isPending: isDeleting } = useServerAction(
-    deleteProductAction,
-    {
+  const { executeAsync: executeDeleteAsync, isPending: isDeleting } =
+    useServerAction(deleteProductAction, {
       successMessage: "Producto eliminado",
       errorMessage: "No se pudo eliminar el producto",
       onSuccess: () => {
         router.refresh();
         setViewing(null);
       },
-    },
-  );
+    });
 
   const handleDeleteProduct = useCallback(
     async (product: Product) => {
-      const result = await Swal.fire({
+      await swalSaasConfirmAsync({
         title: "¿Eliminar producto?",
         html: `Vas a eliminar <strong>${product.name}</strong> (SKU: <strong>${product.sku}</strong>).`,
-        icon: "warning",
-        showCancelButton: true,
-        reverseButtons: true,
-        focusCancel: true,
         confirmButtonText: "Eliminar",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "hsl(0 72% 45%)",
-        cancelButtonColor: "hsl(215 16% 47%)",
-        customClass: { popup: "swal-equal-width-buttons" },
+        variant: "destructive",
+        iconType: "warning",
+        preConfirm: () => executeDeleteAsync(product.id),
       });
-
-      if (!result.isConfirmed) return;
-      executeDelete(product.id);
     },
-    [executeDelete],
+    [executeDeleteAsync],
   );
 
   const brandFilterOptions = useMemo<FilterOption[]>(
@@ -148,9 +146,12 @@ export function AdminProductsTable({
       const matchesBrand = brandFilter === "all" || p.brandId === brandFilter;
       const matchesBrandType =
         brandTypeFilter === "all" || p.brandTypeId === brandTypeFilter;
-      return matchesBrand && matchesBrandType;
+      const matchesActive =
+        activeFilter === "all" ||
+        (activeFilter === "active" ? p.active : !p.active);
+      return matchesBrand && matchesBrandType && matchesActive;
     });
-  }, [products, brandFilter, brandTypeFilter]);
+  }, [products, brandFilter, brandTypeFilter, activeFilter]);
 
   const brandFilterValue =
     brandFilterOptions.find((o) => o.value === brandFilter) ??
@@ -170,6 +171,19 @@ export function AdminProductsTable({
     brandTypeFilterOptions.find((o) => o.value === brandTypeFilter) ??
     brandTypeFilterOptions[0];
 
+  const activeFilterOptions = useMemo<FilterOption[]>(
+    () => [
+      { value: "all", label: "Todos los estados" },
+      { value: "active", label: "Activos" },
+      { value: "inactive", label: "Inactivos" },
+    ],
+    [],
+  );
+
+  const activeFilterValue =
+    activeFilterOptions.find((o) => o.value === activeFilter) ??
+    activeFilterOptions[0];
+
   const renderMobileRow = useCallback((row: Row<Product>) => {
     const p = row.original;
     return (
@@ -182,6 +196,7 @@ export function AdminProductsTable({
           brandTypeName={p.brandTypeName}
           price={p.price}
           stock={p.stock}
+          active={p.active}
           updatedAt={p.updatedAt}
           className="hover:bg-muted/50 transition-colors duration-150"
           actions={
@@ -221,7 +236,7 @@ export function AdminProductsTable({
         ),
         meta: {
           cellClassName:
-            "min-w-0 max-w-[min(42rem,85vw)] md:max-w-[min(28rem,50vw)]",
+            "min-w-0 max-w-[min(28rem,65vw)] md:max-w-[min(20rem,38vw)]",
         },
         cell: ({ row }) => {
           const p = row.original;
@@ -267,6 +282,7 @@ export function AdminProductsTable({
         accessorKey: "stock",
         enableSorting: true,
         sortingFn: (rowA, rowB) => rowA.original.stock - rowB.original.stock,
+        meta: { cellClassName: "w-[7.5rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -285,9 +301,32 @@ export function AdminProductsTable({
         ),
       },
       {
+        id: "active",
+        accessorKey: "active",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          Number(rowA.original.active) - Number(rowB.original.active),
+        meta: { cellClassName: "w-[7.5rem]" },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Estado"
+            ariaLabelIdle="Ordenar por estado"
+            ariaLabelAsc="Inactivos primero. Clic para invertir"
+            ariaLabelDesc="Activos primero. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className={activeBadgeClass(row.original.active)}>
+            {row.original.active ? "Activo" : "Inactivo"}
+          </span>
+        ),
+      },
+      {
         accessorKey: "price",
         enableSorting: true,
         sortingFn: (rowA, rowB) => rowA.original.price - rowB.original.price,
+        meta: { cellClassName: "w-[7.5rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -306,6 +345,7 @@ export function AdminProductsTable({
       {
         id: "discounts",
         accessorFn: (row) => `${row.discountBusinessPct} ${row.discountClient}`,
+        meta: { cellClassName: "w-[10rem]" },
         header: "Descuentos",
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
@@ -324,6 +364,7 @@ export function AdminProductsTable({
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
+        meta: { cellClassName: "w-[10rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -389,63 +430,90 @@ export function AdminProductsTable({
 
   return (
     <div className="space-y-4">
-      <DataTable
-        columns={columns}
-        data={filteredProducts}
-        isLoading={isLoading}
-        enableSorting
-        searchPlaceholder="Buscar por SKU, nombre, marca o descripción…"
-        tableHeadCellClassName="!font-medium"
-        tableBodyCellClassName="py-2.5"
-        paginationButtonVariant="ghost"
-        paginationClassName="border-border/50"
-        getRowClassName={() =>
-          "hover:bg-muted/50 transition-colors duration-150"
-        }
-        renderMobileRow={renderMobileRow}
-        toolbarFilters={
-          <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
-            <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
-              <Select<FilterOption, false>
-                instanceId="products-brand-filter"
-                inputId="products-brand-filter-input"
-                aria-label="Filtrar por marca"
-                isSearchable={false}
-                isClearable={false}
-                options={brandFilterOptions}
-                value={brandFilterValue}
-                onChange={(opt) => {
-                  if (opt) {
-                    setBrandFilter(opt.value);
-                    setBrandTypeFilter("all");
-                  }
-                }}
-                styles={appSelectStyles}
-                className="w-full"
-              />
-            </div>
-            <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[14rem] min-[1440px]:flex-none">
-              <Select<FilterOption, false>
-                instanceId="products-brand-type-filter"
-                inputId="products-brand-type-filter-input"
-                aria-label="Filtrar por tipo por marca"
-                isSearchable={false}
-                isClearable={false}
-                options={brandTypeFilterOptions}
-                value={brandTypeFilterValue}
-                onChange={(opt) => {
-                  if (opt) setBrandTypeFilter(opt.value);
-                }}
-                styles={appSelectStyles}
-                className="w-full"
-              />
-            </div>
+      {/* Toolbar custom con layout responsivo:
+          < 1024px  → columna: buscar / selects / Nuevo
+          1024–1520px → fila 1: buscar + Nuevo · fila 2: selects
+          > 1520px  → fila única: buscar / selects / Nuevo */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center min-[1521px]:flex-nowrap min-[1521px]:gap-3">
+        {/* Buscador */}
+        <div className="relative flex w-full items-center lg:flex-1 min-[1521px]:flex-none min-[1521px]:max-w-sm">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            placeholder="Buscar por SKU, nombre, marca o descripción…"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            disabled={isLoading}
+            className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Filtrar filas de la tabla"
+          />
+        </div>
+
+        {/* Selects – 1024-1520px: segunda fila completa; > 1520px: espacio central */}
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:items-center lg:max-[1520px]:order-3 lg:max-[1520px]:basis-full min-[1521px]:flex-1 min-[1521px]:min-w-0">
+          <div className="min-w-0 flex-1">
+            <Select<FilterOption, false>
+              instanceId="products-brand-filter"
+              inputId="products-brand-filter-input"
+              aria-label="Filtrar por marca"
+              isSearchable={false}
+              isClearable={false}
+              options={brandFilterOptions}
+              value={brandFilterValue}
+              onChange={(opt) => {
+                if (opt) {
+                  setBrandFilter(opt.value);
+                  setBrandTypeFilter("all");
+                }
+              }}
+              styles={appToolbarSelectStyles}
+              className="w-full"
+            />
           </div>
-        }
-        toolbarActions={
+          <div className="min-w-0 flex-1">
+            <Select<FilterOption, false>
+              instanceId="products-brand-type-filter"
+              inputId="products-brand-type-filter-input"
+              aria-label="Filtrar por tipo por marca"
+              isSearchable={false}
+              isClearable={false}
+              options={brandTypeFilterOptions}
+              value={brandTypeFilterValue}
+              onChange={(opt) => {
+                if (opt) setBrandTypeFilter(opt.value);
+              }}
+              styles={appToolbarSelectStyles}
+              className="w-full"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <Select<FilterOption, false>
+              instanceId="products-active-filter"
+              inputId="products-active-filter-input"
+              aria-label="Filtrar por estado de producto"
+              isSearchable={false}
+              isClearable={false}
+              options={activeFilterOptions}
+              value={activeFilterValue}
+              onChange={(opt) => {
+                if (opt) setActiveFilter(opt.value);
+              }}
+              styles={appToolbarSelectStyles}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        {/* Botón Nuevo – 1024-1520px: primera fila derecha; > 1520px: extremo derecho */}
+        <div className="flex w-full items-center lg:max-[1520px]:order-2 lg:max-[1520px]:w-auto lg:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
           <Button
             type="button"
-            className="w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full lg:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -454,7 +522,25 @@ export function AdminProductsTable({
             <Plus className="mr-2 h-4 w-4" aria-hidden />
             Nuevo
           </Button>
+        </div>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filteredProducts}
+        isLoading={isLoading}
+        enableSorting
+        hideToolbar
+        externalGlobalFilter={globalFilter}
+        onExternalGlobalFilterChange={setGlobalFilter}
+        tableHeadCellClassName="!font-medium"
+        tableBodyCellClassName="py-2.5"
+        paginationButtonVariant="ghost"
+        paginationClassName="border-border/50"
+        getRowClassName={() =>
+          "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
       />
 
       <ProductFormDialog

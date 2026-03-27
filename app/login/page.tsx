@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Suspense, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -117,9 +117,15 @@ function LoginPageContent() {
                 required
                 error={emailErrors.email?.message}
               />
-              <Button type="submit" className="mt-4 w-full" disabled={sending}>
-                {sending ? "Enviando..." : "Enviar enlace y código"}
-              </Button>
+              <ButtonPending
+                type="submit"
+                className="mt-4 w-full"
+                pending={sending}
+                pendingLabel="Enviando…"
+                skipMinWidth
+              >
+                Enviar enlace y código
+              </ButtonPending>
             </Form>
           ) : (
             <>
@@ -156,13 +162,15 @@ function LoginPageContent() {
                     <p className="text-sm text-destructive">{codeErrors.code.message}</p>
                   )}
                 </div>
-                <Button
+                <ButtonPending
                   type="submit"
                   className="mt-4 w-full"
-                  disabled={verifying}
+                  pending={verifying}
+                  pendingLabel="Verificando…"
+                  skipMinWidth
                 >
-                  {verifying ? "Verificando..." : "Entrar"}
-                </Button>
+                  Entrar
+                </ButtonPending>
               </Form>
             </>
           )}

@@ -41,9 +41,8 @@ import {
   useState,
 } from "react";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { BusinessProfileCard } from "@/components/dashboard/business-profile-card";
 
 const APPROVAL_FILTER_OPTIONS = [
@@ -245,7 +244,7 @@ function SuscripcionesRowActionsMenu({
     left: number;
   } | null>(null);
 
-  const { execute: approveBusiness, isPending: approvingBusiness } =
+  const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
     useServerAction(approveBusinessRegistrationAction, {
       successMessage:
         "Empresa aprobada. Se ha enviado un correo de notificación.",
@@ -257,7 +256,7 @@ function SuscripcionesRowActionsMenu({
       onSettled: () => router.refresh(),
     });
 
-  const { execute: rejectBusiness, isPending: rejectingBusiness } =
+  const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: "Solicitud de empresa rechazada.",
       errorMessage: "No se pudo rechazar la solicitud",
@@ -268,9 +267,8 @@ function SuscripcionesRowActionsMenu({
       onSettled: () => router.refresh(),
     });
 
-  const { execute: deleteUser, isPending: deletingUser } = useServerAction(
-    deleteUserAction,
-    {
+  const { executeAsync: deleteUserAsync, isPending: deletingUser } =
+    useServerAction(deleteUserAction, {
       successMessage: "Usuario eliminado",
       errorMessage: "No se pudo eliminar el usuario",
       onSuccess: () => {
@@ -278,8 +276,7 @@ function SuscripcionesRowActionsMenu({
         setOpen(false);
       },
       onSettled: () => router.refresh(),
-    },
-  );
+    });
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) {
@@ -330,63 +327,41 @@ function SuscripcionesRowActionsMenu({
 
   const handleDelete = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar suscripción de empresa?",
       html: `Vas a eliminar el usuario y perfil de <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => deleteUserAsync(row.id),
     });
-
-    if (!result.isConfirmed) return;
-    deleteUser(row.id);
   };
 
   const handleReject = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
     const wasApproved = row.businessRegistrationStatus === "approved";
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Rechazar solicitud?",
       html: wasApproved
         ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa.`
         : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario no podrá iniciar sesión como empresa.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Rechazar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => rejectBusinessAsync(row.id),
     });
-    if (!result.isConfirmed) return;
-    rejectBusiness(row.id);
   };
 
   const handleApprove = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Aprobar solicitud?",
       html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
-      icon: "question",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Aprobar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(142 76% 32%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "positive",
+      iconType: "question",
+      preConfirm: () => approveBusinessAsync(row.id),
     });
-    if (!result.isConfirmed) return;
-    approveBusiness(row.id);
   };
 
   const busy = approvingBusiness || rejectingBusiness || deletingUser;
@@ -764,7 +739,7 @@ export function AdminSuscripcionesEmpresasTable({
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
             <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
               instanceId="suscripciones-empresas-approval-filter"
               inputId="suscripciones-empresas-approval-filter-input"
@@ -776,7 +751,7 @@ export function AdminSuscripcionesEmpresasTable({
               onChange={(opt) => {
                 if (opt) setApprovalFilter(opt.value);
               }}
-              styles={appSelectStyles}
+              styles={appToolbarSelectStyles}
               className="w-full"
             />
           </div>

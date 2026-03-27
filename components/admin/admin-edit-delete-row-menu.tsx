@@ -128,6 +128,7 @@ export function AdminEditDeleteRowMenu({
           }
           disabled={busy}
           onClick={() => {
+            setOpen(false);
             void onDelete();
           }}
         >

@@ -7,7 +7,7 @@ import {
   type RegisterSchema,
 } from "@/modules/auth/auth.schema";
 import { Form, FormField } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useServerAction } from "@/hooks/use-server-action";
@@ -65,9 +65,15 @@ export default function RegisterPage() {
               required
               error={errors.password?.message}
             />
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Creando cuenta..." : "Crear cuenta"}
-            </Button>
+            <ButtonPending
+              type="submit"
+              className="w-full"
+              pending={isPending}
+              pendingLabel="Creando cuenta…"
+              skipMinWidth
+            >
+              Crear cuenta
+            </ButtonPending>
           </Form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">

@@ -82,3 +82,39 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
     cursor: "pointer",
   }),
 };
+
+/**
+ * Altura del control alineada con `Button` por defecto (`h-9`, 36px):
+ * buscador, filtros y acciones en barras de herramientas de tablas.
+ */
+export const appToolbarSelectStyles: StylesConfig<
+  any,
+  false,
+  GroupBase<any>
+> = {
+  ...appSelectStyles,
+  control: (base, state) => ({
+    ...(typeof appSelectStyles.control === "function"
+      ? appSelectStyles.control(base, state)
+      : base),
+    minHeight: 36,
+    height: 36,
+    alignItems: "center",
+  }),
+  valueContainer: (base, props) => ({
+    ...(typeof appSelectStyles.valueContainer === "function"
+      ? appSelectStyles.valueContainer(base, props)
+      : base),
+    alignItems: "center",
+  }),
+  dropdownIndicator: (base, props) => ({
+    ...(typeof appSelectStyles.dropdownIndicator === "function"
+      ? appSelectStyles.dropdownIndicator(base, props)
+      : base),
+    alignSelf: "stretch",
+    display: "flex",
+    alignItems: "center",
+    paddingTop: 0,
+    paddingBottom: 0,
+  }),
+};

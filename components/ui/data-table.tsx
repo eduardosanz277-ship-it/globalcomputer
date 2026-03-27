@@ -20,7 +20,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import {
   ChevronLeft,
   ChevronRight,
@@ -88,6 +88,16 @@ interface DataTableProps<TData, TValue> {
    * En ambos modos, búsqueda y acciones pasan a una sola fila desde `min-[1440px]`.
    */
   toolbarLayout?: "default" | "stacked";
+  /**
+   * Cuando se provee, el DataTable usa este valor como filtro global en lugar del
+   * estado interno. El toolbar integrado (buscador) se oculta automáticamente para
+   * que el padre pueda renderizar su propio campo de búsqueda.
+   */
+  externalGlobalFilter?: string;
+  /** Llamado cuando cambia el filtro global (solo relevante con `externalGlobalFilter`). */
+  onExternalGlobalFilterChange?: (value: string) => void;
+  /** Si es `true`, suprime completamente el toolbar integrado (útil con toolbar custom). */
+  hideToolbar?: boolean;
   /** Clases extra del elemento `<table>` (p. ej. `table-fixed` para truncar columnas). */
   tableClassName?: string;
   /** Muestra un spinner en el cuerpo de la tabla y deshabilita filtros/paginación */
@@ -138,6 +148,9 @@ export function DataTable<TData, TValue>({
   toolbarFilters,
   toolbarActions,
   toolbarLayout = "default",
+  externalGlobalFilter,
+  onExternalGlobalFilterChange,
+  hideToolbar = false,
   tableClassName,
   isLoading = false,
   tableHeadCellClassName,
@@ -149,7 +162,15 @@ export function DataTable<TData, TValue>({
   renderMobileRow,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
+  const globalFilter =
+    externalGlobalFilter !== undefined
+      ? externalGlobalFilter
+      : internalGlobalFilter;
+  const setGlobalFilter = (value: string) => {
+    if (externalGlobalFilter === undefined) setInternalGlobalFilter(value);
+    onExternalGlobalFilterChange?.(value);
+  };
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -232,7 +253,7 @@ export function DataTable<TData, TValue>({
         onChange={(e) => table.setGlobalFilter(e.target.value)}
         disabled={isLoading}
         className={cn(
-          "h-10 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
+          "h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
           "text-sm shadow-sm transition-[box-shadow,border-color]",
           "placeholder:text-muted-foreground/70",
           "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
@@ -249,7 +270,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("w-full min-w-0 space-y-4", className)}>
-      {toolbarLayout === "stacked" ? (
+      {!hideToolbar && toolbarLayout === "stacked" ? (
         <div
           className={cn(
             "data-table-toolbar data-table-toolbar--stacked flex min-w-0 flex-col gap-3",
@@ -258,7 +279,7 @@ export function DataTable<TData, TValue>({
         >
           <div
             className={cn(
-              "data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0",
+              "data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center",
               stackedWide.search,
             )}
           >
@@ -267,7 +288,7 @@ export function DataTable<TData, TValue>({
           {toolbarFilters ? (
             <div
               className={cn(
-                "data-table-toolbar__filters relative w-full min-w-0 max-w-full",
+                "data-table-toolbar__filters relative flex w-full min-w-0 max-w-full items-center",
                 stackedWide.filters,
               )}
             >
@@ -285,7 +306,7 @@ export function DataTable<TData, TValue>({
             </div>
           ) : null}
         </div>
-      ) : (
+      ) : !hideToolbar ? (
         <div
           className={cn(
             "data-table-toolbar flex min-w-0 flex-col gap-3",
@@ -295,14 +316,14 @@ export function DataTable<TData, TValue>({
           <div
             className={cn(
               "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
-              "min-[1440px]:flex-row min-[1440px]:items-stretch min-[1440px]:gap-3",
+              "min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:gap-3",
             )}
           >
-            <div className="data-table-toolbar__search relative w-full min-w-0 max-w-full shrink-0 min-[1440px]:max-w-sm">
+            <div className="data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center min-[1440px]:max-w-sm">
               {searchInput}
             </div>
             {toolbarFilters ? (
-              <div className="data-table-toolbar__filters relative w-full min-w-0 max-w-full shrink-0 min-[1440px]:max-w-sm">
+              <div className="data-table-toolbar__filters relative flex w-full min-w-0 max-w-full shrink-0 items-center min-[1440px]:max-w-sm">
                 {toolbarFilters}
               </div>
             ) : null}
@@ -313,7 +334,7 @@ export function DataTable<TData, TValue>({
             </div>
           ) : null}
         </div>
-      )}
+      ) : null}
 
       <div
         className={cn(
@@ -651,7 +672,7 @@ export function DataTable<TData, TValue>({
                 onChange={(opt) => {
                   if (opt) table.setPageSize(opt.value);
                 }}
-                styles={appSelectStyles}
+                styles={appToolbarSelectStyles}
                 className="min-w-[62px] shrink-0"
               />
             </div>

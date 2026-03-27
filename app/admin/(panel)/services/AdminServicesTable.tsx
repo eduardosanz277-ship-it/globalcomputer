@@ -5,8 +5,7 @@ import type { Service } from "@/modules/admin/services/services.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -43,7 +42,7 @@ function updatedAtSortMs(row: Service): number {
 
 function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(deleteServiceAction, {
+  const { executeAsync, isPending } = useServerAction(deleteServiceAction, {
     successMessage: "Servicio eliminado",
     errorMessage: "No se pudo eliminar el servicio",
     onSuccess: () => {
@@ -52,22 +51,14 @@ function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
   });
 
   const handleDelete = async () => {
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar servicio?",
       html: `Vas a eliminar <strong>${row.name}</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => executeAsync(row.id),
     });
-
-    if (!result.isConfirmed) return;
-    execute(row.id);
   };
 
   return (
@@ -257,7 +248,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

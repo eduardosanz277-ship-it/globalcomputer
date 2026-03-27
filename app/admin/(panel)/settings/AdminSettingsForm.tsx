@@ -4,8 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Phone } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ButtonPending } from "@/components/ui/button-pending";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -70,7 +76,9 @@ export function AdminSettingsForm({ initial }: Props) {
                 />
               </div>
               {errors.supportEmail && (
-                <p className="text-sm text-destructive">{errors.supportEmail.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.supportEmail.message}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -90,7 +98,9 @@ export function AdminSettingsForm({ initial }: Props) {
                 />
               </div>
               {errors.supportPhone && (
-                <p className="text-sm text-destructive">{errors.supportPhone.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.supportPhone.message}
+                </p>
               )}
             </div>
           </CardContent>
@@ -100,8 +110,8 @@ export function AdminSettingsForm({ initial }: Props) {
           <CardHeader>
             <CardTitle>Stock bajo</CardTitle>
             <CardDescription>
-              Activa o desactiva las alertas por inventario bajo; si están activas,
-              define el umbral.
+              Activa o desactiva las alertas por inventario bajo; si están
+              activas, define el umbral.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
@@ -115,8 +125,8 @@ export function AdminSettingsForm({ initial }: Props) {
                     Alertas de stock bajo
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Activa para recibir avisos cuando el inventario esté por debajo
-                    del umbral.
+                    Activa para recibir avisos cuando el inventario esté por
+                    debajo del umbral.
                   </p>
                 </div>
                 <Controller
@@ -136,7 +146,7 @@ export function AdminSettingsForm({ initial }: Props) {
               <div
                 className={cn(
                   "space-y-2 transition-opacity",
-                  !lowStockAlertsOn && "pointer-events-none opacity-50"
+                  !lowStockAlertsOn && "pointer-events-none opacity-50",
                 )}
               >
                 <Label htmlFor="lowStockThreshold">
@@ -154,7 +164,9 @@ export function AdminSettingsForm({ initial }: Props) {
                   step={1}
                   disabled={!lowStockAlertsOn || isPending}
                   aria-required={lowStockAlertsOn}
-                  {...form.register("lowStockThreshold", { valueAsNumber: true })}
+                  {...form.register("lowStockThreshold", {
+                    valueAsNumber: true,
+                  })}
                 />
                 {errors.lowStockThreshold && (
                   <p className="text-sm text-destructive">
@@ -168,9 +180,13 @@ export function AdminSettingsForm({ initial }: Props) {
       </div>
 
       <div className="flex w-full justify-end">
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Guardando..." : "Guardar cambios"}
-        </Button>
+        <ButtonPending
+          type="submit"
+          pending={isPending}
+          pendingLabel="Guardando cambios"
+        >
+          Guardar cambios
+        </ButtonPending>
       </div>
     </form>
   );

@@ -46,6 +46,12 @@ function stockBadgeClass(stock: number): string {
     : "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700";
 }
 
+function activeBadgeClass(active: boolean): string {
+  return active
+    ? "inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+    : "inline-flex items-center rounded-full border border-slate-200/90 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700";
+}
+
 export function ProductDetailDrawer({
   product,
   onClose,
@@ -144,13 +150,26 @@ export function ProductDetailDrawer({
               </p>
             </div>
             <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">Stock</p>
-              <div className="mt-2">
-                <span className={stockBadgeClass(product.stock)}>
-                  {product.stock <= 0
-                    ? "Sin stock"
-                    : `${product.stock} en stock`}
-                </span>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Stock</p>
+                  <div className="mt-2">
+                    <span className={stockBadgeClass(product.stock)}>
+                      {product.stock <= 0
+                        ? "Sin stock"
+                        : `${product.stock} en stock`}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Estado</p>
+                  <div className="mt-2">
+                    <span className={activeBadgeClass(product.active)}>
+                      {product.active ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

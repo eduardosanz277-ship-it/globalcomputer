@@ -5,10 +5,9 @@ import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
@@ -58,7 +57,7 @@ function updatedAtSortMs(row: BrandType): number {
 
 function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(deleteBrandTypeAction, {
+  const { executeAsync, isPending } = useServerAction(deleteBrandTypeAction, {
     successMessage: "Tipo eliminado",
     errorMessage: "No se pudo eliminar el tipo",
     onSuccess: () => {
@@ -67,22 +66,14 @@ function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
   });
 
   const handleDelete = async () => {
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar tipo?",
       html: `Vas a eliminar <strong>${row.name}</strong> (${row.brandName}). Si hay productos asociados, la operación no se permitirá.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => executeAsync(row.id),
     });
-
-    if (!result.isConfirmed) return;
-    execute(row.id);
   };
 
   return (
@@ -313,7 +304,7 @@ export function AdminBrandTypesTable({
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:gap-2">
+          <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-row lg:flex-nowrap lg:items-center lg:gap-2">
             <div className="min-w-0 w-full lg:flex-1 lg:min-w-0 min-[1440px]:max-w-[13rem] min-[1440px]:flex-none">
               <Select<FilterOption, false>
                 instanceId="brand-types-brand-filter"
@@ -326,7 +317,7 @@ export function AdminBrandTypesTable({
                 onChange={(opt) => {
                   if (opt) setBrandFilter(opt.value);
                 }}
-                styles={appSelectStyles}
+                styles={appToolbarSelectStyles}
                 className="w-full"
               />
             </div>
@@ -342,7 +333,7 @@ export function AdminBrandTypesTable({
                 onChange={(opt) => {
                   if (opt) setStatusFilter(opt.value as StatusFilter);
                 }}
-                styles={appSelectStyles}
+                styles={appToolbarSelectStyles}
                 className="w-full"
               />
             </div>
@@ -351,7 +342,7 @@ export function AdminBrandTypesTable({
         toolbarActions={
           <Button
             type="button"
-            className="w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

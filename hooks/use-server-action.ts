@@ -13,39 +13,49 @@ interface Options<TArgs extends any[], TResult> {
 
 export function useServerAction<TArgs extends any[], TResult>(
   action: (...args: TArgs) => Promise<TResult>,
-  options: Options<TArgs, TResult> = {}
+  options: Options<TArgs, TResult> = {},
 ) {
   const [isPending, startTransition] = useTransition();
 
-  const execute = (...args: TArgs) => {
-    startTransition(async () => {
-      try {
-        const result = await action(...args);
-        if (options.successMessage) {
-          toast.success(options.successMessage);
-        }
-        options.onSuccess?.(result);
-      } catch (error: unknown) {
-        const fromApi =
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : typeof error === "object" &&
-                error !== null &&
-                "message" in error &&
-                typeof (error as { message?: unknown }).message === "string"
-              ? (error as { message: string }).message
-              : null;
-        const message =
-          fromApi ??
-          options.errorMessage ??
-          "Ha ocurrido un error inesperado";
-        toast.error(message);
-      } finally {
-        options.onSettled?.();
+  const runAction = async (...args: TArgs): Promise<TResult> => {
+    try {
+      const result = await action(...args);
+      if (options.successMessage) {
+        toast.success(options.successMessage);
       }
+      options.onSuccess?.(result);
+      return result;
+    } catch (error: unknown) {
+      const fromApi =
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : typeof error === "object" &&
+              error !== null &&
+              "message" in error &&
+              typeof (error as { message?: unknown }).message === "string"
+            ? (error as { message: string }).message
+            : null;
+      const message =
+        fromApi ??
+        options.errorMessage ??
+        "Ha ocurrido un error inesperado";
+      toast.error(message);
+      throw error;
+    } finally {
+      options.onSettled?.();
+    }
+  };
+
+  const execute = (...args: TArgs) => {
+    startTransition(() => {
+      void runAction(...args).catch(() => {
+        /* error ya mostrado en runAction */
+      });
     });
   };
 
-  return { execute, isPending };
-}
+  /** Igual que `execute` pero devuelve la promesa (p. ej. SweetAlert `preConfirm`). */
+  const executeAsync = (...args: TArgs) => runAction(...args);
 
+  return { execute, executeAsync, isPending };
+}

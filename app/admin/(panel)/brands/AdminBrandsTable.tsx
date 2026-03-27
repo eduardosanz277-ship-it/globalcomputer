@@ -4,10 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { Plus } from "lucide-react";
@@ -47,7 +46,7 @@ function updatedAtSortMs(b: Brand): number {
 
 function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
   const router = useRouter();
-  const { execute, isPending } = useServerAction(deleteBrandAction, {
+  const { executeAsync, isPending } = useServerAction(deleteBrandAction, {
     successMessage: "Marca eliminada",
     errorMessage: "No se pudo eliminar la marca",
     onSuccess: () => {
@@ -56,22 +55,14 @@ function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
   });
 
   const handleDelete = async () => {
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar marca?",
       html: `Vas a eliminar <strong>${brand.name}</strong>. Si hay productos asociados, la operación no se permitirá.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => executeAsync(brand.id),
     });
-
-    if (!result.isConfirmed) return;
-    execute(brand.id);
   };
 
   return (
@@ -268,7 +259,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
             <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
               instanceId="brands-status-filter"
               inputId="brands-status-filter-input"
@@ -280,7 +271,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
               onChange={(opt) => {
                 if (opt) setStatusFilter(opt.value);
               }}
-              styles={appSelectStyles}
+              styles={appToolbarSelectStyles}
               className="w-full"
             />
           </div>
@@ -288,7 +279,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

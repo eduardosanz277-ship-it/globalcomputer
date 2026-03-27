@@ -12,10 +12,9 @@ import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import Select from "react-select";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
@@ -118,7 +117,7 @@ function UsersRowActionsMenu({
     left: number;
   } | null>(null);
 
-  const { execute: rejectBusiness, isPending: rejectingBusiness } =
+  const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: "Solicitud de empresa rechazada.",
       errorMessage: "No se pudo rechazar la solicitud",
@@ -129,7 +128,7 @@ function UsersRowActionsMenu({
       onSettled: () => router.refresh(),
     });
 
-  const { execute: deleteUser, isPending: deletingUser } =
+  const { executeAsync: deleteUserAsync, isPending: deletingUser } =
     useServerAction(deleteUserAction, {
       successMessage: "Usuario eliminado",
       errorMessage: "No se pudo eliminar el usuario",
@@ -194,43 +193,29 @@ function UsersRowActionsMenu({
   const handleReject = async () => {
     const label = user.fullName?.trim() || user.email || user.id;
     const wasApproved = user.businessRegistrationStatus === "approved";
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Rechazar solicitud?",
       html: wasApproved
         ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa (aunque antes estuviera aprobada).`
         : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Rechazar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => rejectBusinessAsync(user.id),
     });
-    if (!result.isConfirmed) return;
-    rejectBusiness(user.id);
   };
 
   const handleDelete = async () => {
     if (isAdminUser) return;
     const label = user.fullName?.trim() || user.email || user.id;
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Eliminar usuario?",
       html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => deleteUserAsync(user.id),
     });
-    if (!result.isConfirmed) return;
-    deleteUser(user.id);
   };
 
   const busy = rejectingBusiness || deletingUser;
@@ -497,7 +482,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="w-full min-w-0 min-[1440px]:max-w-[13rem]">
+          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
             <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
               instanceId="users-role-filter"
               inputId="users-role-filter-input"
@@ -509,7 +494,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
               onChange={(opt) => {
                 if (opt) setRoleFilter(opt.value);
               }}
-              styles={appSelectStyles}
+              styles={appToolbarSelectStyles}
               className="w-full"
             />
           </div>

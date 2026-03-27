@@ -14,6 +14,7 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   adminServiceLikeInputClassName,
@@ -95,9 +96,14 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
           >
             Cancelar
           </Button>
-          <Button type="submit" form={BRAND_FORM_ID} disabled={isPending}>
-            {isPending ? "Guardando…" : "Guardar"}
-          </Button>
+          <ButtonPending
+            type="submit"
+            form={BRAND_FORM_ID}
+            pending={isPending}
+            pendingLabel="Guardando"
+          >
+            Guardar
+          </ButtonPending>
         </SlideOverFooter>
       }
     >

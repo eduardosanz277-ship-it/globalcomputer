@@ -15,6 +15,7 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   adminServiceLikeInputClassName,
@@ -47,10 +48,7 @@ export function BrandTypeFormDialog({
 
   const brandOptions = useMemo(() => {
     const base = brands.map((b) => ({ value: b.id, label: b.name }));
-    if (
-      brandType &&
-      !base.some((o) => o.value === brandType.brandId)
-    ) {
+    if (brandType && !base.some((o) => o.value === brandType.brandId)) {
       return [
         { value: brandType.brandId, label: brandType.brandName },
         ...base,
@@ -128,9 +126,14 @@ export function BrandTypeFormDialog({
           >
             Cancelar
           </Button>
-          <Button type="submit" form={BRAND_TYPE_FORM_ID} disabled={isPending}>
-            {isPending ? "Guardando…" : "Guardar"}
-          </Button>
+          <ButtonPending
+            type="submit"
+            form={BRAND_TYPE_FORM_ID}
+            pending={isPending}
+            pendingLabel="Guardando"
+          >
+            Guardar
+          </ButtonPending>
         </SlideOverFooter>
       }
     >

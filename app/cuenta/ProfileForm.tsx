@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import {
   Card,
   CardContent,
@@ -66,7 +66,10 @@ export function ProfileForm({ initialName, email }: Props) {
               />
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium text-muted-foreground" htmlFor="account-email">
+              <label
+                className="text-sm font-medium text-muted-foreground"
+                htmlFor="account-email"
+              >
                 Email
               </label>
               <p
@@ -78,9 +81,15 @@ export function ProfileForm({ initialName, email }: Props) {
             </div>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button type="submit" disabled={isPending} className="w-auto px-6">
-              {isPending ? "Guardando…" : "Actualizar"}
-            </Button>
+            <ButtonPending
+              type="submit"
+              pending={isPending}
+              pendingLabel="Guardando"
+              skipMinWidth
+              className="w-auto px-6"
+            >
+              Guardar
+            </ButtonPending>
           </div>
         </Form>
       </CardContent>

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import type { AdminUserDetail } from "@/modules/admin/users/users.types";
 import {
   approveBusinessRegistrationAction,
@@ -261,7 +260,7 @@ export function UserDetailDrawer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { execute: approveBusiness, isPending: approvingBusiness } =
+  const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
     useServerAction(approveBusinessRegistrationAction, {
       successMessage:
         "Empresa aprobada. Se ha enviado un correo de notificación.",
@@ -270,7 +269,7 @@ export function UserDetailDrawer({
       onSettled: () => router.refresh(),
     });
 
-  const { execute: rejectBusiness, isPending: rejectingBusiness } =
+  const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: "Solicitud de empresa rechazada.",
       errorMessage: "No se pudo rechazar la solicitud",
@@ -310,43 +309,29 @@ export function UserDetailDrawer({
     if (!userId || !detail) return;
     const label = detail.fullName?.trim() || detail.email || userId;
     const wasApproved = detail.businessRegistrationStatus === "approved";
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Rechazar solicitud?",
       html: wasApproved
         ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa (aunque antes estuviera aprobada).`
         : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>.`,
-      icon: "warning",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Rechazar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(0 72% 45%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => rejectBusinessAsync(userId),
     });
-    if (!result.isConfirmed) return;
-    rejectBusiness(userId);
   };
 
   const handleApproveClick = async () => {
     if (!userId || !detail) return;
     const label = detail.fullName?.trim() || detail.email || userId;
-    const result = await Swal.fire({
+    await swalSaasConfirmAsync({
       title: "¿Aprobar solicitud?",
       html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
-      icon: "question",
-      showCancelButton: true,
-      reverseButtons: true,
-      focusCancel: true,
       confirmButtonText: "Aprobar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "hsl(142 76% 32%)",
-      cancelButtonColor: "hsl(215 16% 47%)",
-      customClass: { popup: "swal-equal-width-buttons" },
+      variant: "positive",
+      iconType: "question",
+      preConfirm: () => approveBusinessAsync(userId),
     });
-    if (!result.isConfirmed) return;
-    approveBusiness(userId);
   };
 
   const approvalBusy = approvingBusiness || rejectingBusiness;

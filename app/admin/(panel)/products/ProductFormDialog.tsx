@@ -23,6 +23,7 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
@@ -168,7 +169,14 @@ export function ProductFormDialog({
         label: `${t.brandName} \u00B7 ${t.name}`,
       }));
 
-    if (product && !base.some((item) => item.value === product.brandTypeId)) {
+    // Solo mostrar el tipo guardado como opción extra si sigue editando la misma
+    // marca; si el usuario cambió de marca, no inyectar el tipo anterior.
+    if (
+      product &&
+      watchedBrandId === product.brandId &&
+      product.brandTypeId &&
+      !base.some((item) => item.value === product.brandTypeId)
+    ) {
       base.unshift({
         value: product.brandTypeId,
         label: `${product.brandName} \u00B7 ${product.brandTypeName}`,
@@ -178,18 +186,23 @@ export function ProductFormDialog({
     return base;
   }, [brandTypes, watchedBrandId, product]);
 
-  // Si la marca seleccionada no tiene tipos, limpiamos la selección para evitar
-  // que se intente guardar un `brandTypeId` que ya no aplica.
+  // Si cambia la marca (o los tipos cargados), el `brandTypeId` debe seguir
+  // perteneciendo a esa marca; si no, se limpia para que el select coincida.
   useEffect(() => {
     if (!watchedBrandId) return;
-    if (brandTypeOptions.length === 0) {
+    const current = form.getValues("brandTypeId");
+    if (!current) return;
+    const validForBrand = brandTypes.some(
+      (t) => t.id === current && t.brandId === watchedBrandId,
+    );
+    if (!validForBrand) {
       form.setValue("brandTypeId", "", {
-        shouldDirty: false,
+        shouldDirty: true,
         shouldTouch: false,
         shouldValidate: true,
       });
     }
-  }, [watchedBrandId, brandTypeOptions.length, form]);
+  }, [watchedBrandId, brandTypes, form]);
 
   const specificOptions = useMemo(() => {
     const selectedIds = new Set(characteristics.map((c) => c.specificId));
@@ -292,9 +305,14 @@ export function ProductFormDialog({
           >
             Cancelar
           </Button>
-          <Button type="submit" form={PRODUCT_FORM_ID} disabled={isPending}>
-            {isPending ? "Guardando..." : "Guardar"}
-          </Button>
+          <ButtonPending
+            type="submit"
+            form={PRODUCT_FORM_ID}
+            pending={isPending}
+            pendingLabel="Guardando"
+          >
+            Guardar
+          </ButtonPending>
         </SlideOverFooter>
       }
       contentAriaLabel="Formulario de producto"
@@ -478,7 +496,7 @@ function ProductFormBody({
         <div className="border-t border-border/50 pt-4">
           <FormSwitchField<ProductFormValues>
             name="active"
-            label="Activa en catálogo"
+            label="Activo en catálogo"
             description="Si está desactivado, el producto no se mostrará en el catálogo público."
           />
         </div>

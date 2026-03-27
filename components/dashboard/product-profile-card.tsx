@@ -14,6 +14,7 @@ export type ProductProfileCardProps = {
   brandTypeName: string;
   price: number;
   stock: number;
+  active: boolean;
   updatedAt: string;
   className?: string;
   actions?: React.ReactNode;
@@ -33,6 +34,12 @@ function stockBadgeClass(stock: number): string {
     : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700";
 }
 
+function activeBadgeClass(active: boolean): string {
+  return active
+    ? "inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
+    : "inline-flex items-center rounded-full border border-slate-200/90 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700";
+}
+
 export function ProductProfileCard({
   name,
   sku,
@@ -41,6 +48,7 @@ export function ProductProfileCard({
   brandTypeName,
   price,
   stock,
+  active,
   updatedAt,
   className,
   actions,
@@ -99,6 +107,9 @@ export function ProductProfileCard({
               </p>
               <span className={stockBadgeClass(stock)}>
                 {stock <= 0 ? "Sin stock" : `Stock ${stock}`}
+              </span>
+              <span className={activeBadgeClass(active)}>
+                {active ? "Activo" : "Inactivo"}
               </span>
             </div>
           </div>

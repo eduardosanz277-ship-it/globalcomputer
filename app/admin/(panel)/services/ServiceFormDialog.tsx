@@ -2,9 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import type { Service } from "@/modules/admin/services/services.types";
-import { createServiceWithImageAction, updateServiceWithImageAction } from "./actions";
+import {
+  createServiceWithImageAction,
+  updateServiceWithImageAction,
+} from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   ServiceForm,
@@ -31,7 +35,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
@@ -42,7 +46,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
         onOpenChange(false);
         router.refresh();
       },
-    }
+    },
   );
 
   const isPending = isCreating || isUpdating;
@@ -55,9 +59,13 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     })) ?? [];
 
   const handleSubmit = (formData: ServiceFormSubmitData) => {
-    const orderedNewImages = [...formData.newImages].sort((a, b) => a.order - b.order);
+    const orderedNewImages = [...formData.newImages].sort(
+      (a, b) => a.order - b.order,
+    );
     const files = orderedNewImages.map((img) => img.file);
-    const primaryImageIndex = orderedNewImages.findIndex((img) => img.isPrimary);
+    const primaryImageIndex = orderedNewImages.findIndex(
+      (img) => img.isPrimary,
+    );
 
     if (service) {
       executeUpdate(
@@ -66,7 +74,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
         files,
         primaryImageIndex >= 0 ? primaryImageIndex : 0,
         formData.updatedExistingImages,
-        formData.removedImages
+        formData.removedImages,
       );
       return;
     }
@@ -74,7 +82,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     executeCreate(
       { name: formData.name, description: formData.description },
       files,
-      primaryImageIndex >= 0 ? primaryImageIndex : 0
+      primaryImageIndex >= 0 ? primaryImageIndex : 0,
     );
   };
 
@@ -94,9 +102,14 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
           >
             Cancelar
           </Button>
-          <Button type="submit" form={SERVICE_FORM_ID} disabled={isPending}>
-            {isPending ? "Guardando..." : "Guardar"}
-          </Button>
+          <ButtonPending
+            type="submit"
+            form={SERVICE_FORM_ID}
+            pending={isPending}
+            pendingLabel="Guardando"
+          >
+            Guardar
+          </ButtonPending>
         </SlideOverFooter>
       }
     >

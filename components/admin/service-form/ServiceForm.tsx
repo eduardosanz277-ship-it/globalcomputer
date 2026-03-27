@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
@@ -92,11 +93,16 @@ export function ServiceForm({
             aria-describedby={nameError ? "service-name-error" : undefined}
             className={cn(
               "h-11 rounded-lg border-border/80 bg-background/80 shadow-sm transition focus-visible:ring-2 focus-visible:ring-ring/35",
-              nameError && "border-destructive focus-visible:ring-destructive/30"
+              nameError &&
+                "border-destructive focus-visible:ring-destructive/30",
             )}
           />
           {nameError ? (
-            <p id="service-name-error" className="text-sm text-destructive" role="alert">
+            <p
+              id="service-name-error"
+              className="text-sm text-destructive"
+              role="alert"
+            >
               {nameError}
             </p>
           ) : null}
@@ -111,7 +117,7 @@ export function ServiceForm({
             placeholder="Describe brevemente el alcance del servicio"
             className={cn(
               "min-h-[120px] w-full rounded-lg border border-border/80 bg-background/80 px-3 py-2 text-sm shadow-sm outline-none transition",
-              "placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring/35"
+              "placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring/35",
             )}
           />
         </div>
@@ -123,7 +129,8 @@ export function ServiceForm({
             Imágenes
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Reordena por drag & drop, define una imagen principal y elimina las que no necesites.
+            Reordena por drag & drop, define una imagen principal y elimina las
+            que no necesites.
           </p>
         </header>
 
@@ -156,21 +163,16 @@ export function ServiceForm({
           >
             Cancelar
           </Button>
-          <Button
+          <ButtonPending
             type="submit"
-            disabled={isSubmitting}
+            pending={Boolean(isSubmitting)}
+            pendingLabel="Guardando"
+            skipMinWidth
             className="h-10 min-w-[140px] transition hover:-translate-y-[1px] active:translate-y-0"
             aria-label="Guardar servicio"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Guardando...
-              </>
-            ) : (
-              "Guardar"
-            )}
-          </Button>
+            Guardar
+          </ButtonPending>
         </footer>
       ) : null}
     </form>
