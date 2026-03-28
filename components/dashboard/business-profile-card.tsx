@@ -59,7 +59,7 @@ function businessAvatarClass(
   if (v === "approved") {
     return "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60";
   }
-  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
+  return "bg-muted text-muted-foreground ring-1 ring-border";
 }
 
 function businessLeftBarClass(

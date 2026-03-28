@@ -42,9 +42,9 @@ function roleLabel(role: AdminUserDetail["role"]): string {
 
 function roleBadgeClass(role: AdminUserDetail["role"]): string {
   if (role === "ADMIN") {
-    return "border border-blue-200 bg-blue-50 text-blue-700";
+    return "border border-secondary/35 bg-secondary/10 text-secondary";
   }
-  return "border border-slate-200 bg-slate-100 text-slate-700";
+  return "border border-border bg-muted text-muted-foreground";
 }
 
 function businessBadgeClass(

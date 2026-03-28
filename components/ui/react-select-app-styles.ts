@@ -1,5 +1,14 @@
 import type { GroupBase, StylesConfig } from "react-select";
 
+/** Alineado con `tailwind.config` (primary #357fd2, border, foreground, muted). */
+const border = "rgba(216, 216, 217, 0.95)";
+const primary = "#357fd2";
+const primaryRing = "rgba(53, 127, 210, 0.22)";
+const primaryBorder = "rgba(53, 127, 210, 0.55)";
+const foreground = "#2a2c30";
+const mutedFg = "rgba(110, 112, 115, 0.75)";
+const mutedBg = "#f0f0f1";
+
 /**
  * Estilo unificado para todos los `react-select` de la aplicación
  * (filtros en tablas admin, formularios, selector de filas por página, etc.).
@@ -15,43 +24,39 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
     borderWidth: "1px",
     borderStyle: "solid",
     borderColor:
-      state.isFocused || state.menuIsOpen
-        ? "hsl(222.2 84% 56.3% / 0.55)"
-        : "hsl(214 32% 91% / 0.9)",
-    backgroundColor: "hsl(0 0% 100%)",
+      state.isFocused || state.menuIsOpen ? primaryBorder : border,
+    backgroundColor: "#ffffff",
     boxShadow:
       state.isFocused || state.menuIsOpen
-        ? "0 0 0 2px hsl(222.2 84% 56.3% / 0.22)"
+        ? `0 0 0 2px ${primaryRing}`
         : "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
       borderColor:
-        state.isFocused || state.menuIsOpen
-          ? "hsl(222.2 84% 56.3% / 0.55)"
-          : "hsl(214 32% 91% / 0.9)",
+        state.isFocused || state.menuIsOpen ? primaryBorder : border,
     },
   }),
   valueContainer: (base) => ({ ...base, padding: "0 8px" }),
   singleValue: (base) => ({
     ...base,
-    color: "hsl(222.2 84% 4.9%)",
+    color: foreground,
     fontSize: "0.875rem",
   }),
   input: (base) => ({ ...base, margin: 0, padding: 0 }),
   placeholder: (base) => ({
     ...base,
-    color: "hsl(215.4 16.3% 46.9% / 0.75)",
+    color: mutedFg,
     fontSize: "0.875rem",
   }),
   indicatorSeparator: () => ({ display: "none" }),
   dropdownIndicator: (base) => ({
     ...base,
-    color: "hsl(215.4 16.3% 46.9%)",
+    color: "#6e7073",
     padding: "0 8px",
   }),
   menu: (base) => ({
     ...base,
-    backgroundColor: "hsl(0 0% 100%)",
-    border: "1px solid hsl(214 32% 91% / 0.9)",
+    backgroundColor: "#ffffff",
+    border: `1px solid ${border}`,
     borderRadius: "0.5rem",
     zIndex: 50,
     overflow: "hidden",
@@ -69,16 +74,16 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
     borderWidth: "1px",
     borderStyle: "solid",
     borderColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
+      ? primary
       : state.isFocused
-        ? "hsl(214 32% 91% / 0.95)"
+        ? border
         : "transparent",
     backgroundColor: state.isSelected
-      ? "hsl(222.2 47.4% 11.2%)"
+      ? primary
       : state.isFocused
-        ? "hsl(210 40% 96.1%)"
-        : "hsl(0 0% 100%)",
-    color: state.isSelected ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)",
+        ? mutedBg
+        : "#ffffff",
+    color: state.isSelected ? "#ffffff" : foreground,
     cursor: "pointer",
   }),
 };

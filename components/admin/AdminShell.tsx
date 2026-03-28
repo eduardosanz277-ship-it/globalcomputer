@@ -38,7 +38,7 @@ export function AdminShell({ user, children }: Props) {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen min-h-0 overflow-hidden bg-[hsl(210_40%_96%)]">
+    <div className="flex h-screen min-h-0 overflow-hidden bg-background">
       {mobileMenuOpen && (
         <button
           type="button"

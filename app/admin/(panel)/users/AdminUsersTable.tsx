@@ -63,12 +63,12 @@ function userInitial(u: AdminUser): string {
   return "?";
 }
 
-/** Empresa → azul suave; resto → gris suave. */
+/** Empresa → azul marca; resto → gris marca. */
 function userAvatarClass(u: AdminUser): string {
   if (u.role === "BUSINESS") {
-    return "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60";
+    return "bg-primary/15 text-primary ring-1 ring-primary/25";
   }
-  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
+  return "bg-muted text-muted-foreground ring-1 ring-border";
 }
 
 /** Timestamp en ms para ordenar por último acceso; null = sin dato (queda al final). */
@@ -81,12 +81,12 @@ function lastSignInTimestampMs(u: AdminUser): number | null {
 
 function roleBadgeClass(role: UserRole): string {
   if (role === "BUSINESS") {
-    return "border border-blue-200/90 bg-blue-50 text-blue-800";
+    return "border border-primary/25 bg-primary/10 text-primary";
   }
   if (role === "CLIENT") {
-    return "border border-slate-200/90 bg-slate-100 text-slate-700";
+    return "border border-border bg-muted text-muted-foreground";
   }
-  return "border border-violet-200/90 bg-violet-50 text-violet-800";
+  return "border border-secondary/35 bg-secondary/10 text-secondary";
 }
 
 function roleLabel(role: UserRole): string {

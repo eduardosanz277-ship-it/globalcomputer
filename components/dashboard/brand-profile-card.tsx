@@ -18,7 +18,7 @@ export type BrandProfileCardProps = {
 function statusBadgeClass(active: boolean): string {
   return active
     ? "border border-emerald-200/90 bg-emerald-50 text-emerald-800 dark:text-emerald-200"
-    : "border border-slate-200/90 bg-slate-100 text-slate-700";
+    : "border border-border bg-muted text-muted-foreground";
 }
 
 /**

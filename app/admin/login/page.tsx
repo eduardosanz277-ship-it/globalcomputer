@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { AppLogo } from "@/components/brand/AppLogo";
 import { ButtonPending } from "@/components/ui/button-pending";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
@@ -38,8 +39,13 @@ export default function AdminLoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Acceso admin</CardTitle>
+        <CardHeader className="pb-2 pt-8 text-center">
+          <div className="flex justify-center px-2">
+            <AppLogo
+              priority
+              className="h-[3.75rem] max-h-16 sm:h-[4.25rem] sm:max-h-[5rem]"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Form form={form} onSubmit={onSubmit}>

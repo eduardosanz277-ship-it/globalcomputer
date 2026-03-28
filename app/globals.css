@@ -10,6 +10,42 @@ body {
   @apply bg-background text-foreground antialiased;
 }
 
+::placeholder {
+  color: #aeaeae;
+}
+
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+/** Carruseles horizontales sin barra visible (accesible por gesto/teclado) */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/** Fondo con grano muy suave (tienda / hero) */
+.store-grain {
+  position: relative;
+}
+.store-grain::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob {
+    animation: none !important;
+  }
+}
+
 /* DataTable toolbar: 1024px–1300px — buscar + filtrar misma fila (50/50); acciones debajo a la derecha */
 @media (min-width: 1024px) and (max-width: 1300px) {
   .data-table-toolbar:not(.data-table-toolbar--stacked) {

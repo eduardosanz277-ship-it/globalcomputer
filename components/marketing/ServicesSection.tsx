@@ -76,7 +76,7 @@ export async function ServicesSection() {
   return (
     <section
       id="servicios"
-      className="scroll-mt-20 border-b border-border bg-slate-50/50 py-16 sm:py-24"
+      className="scroll-mt-32 border-b border-border bg-muted/40 py-16 sm:scroll-mt-36 sm:py-24"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
@@ -86,13 +86,14 @@ export async function ServicesSection() {
             title="Servicios para tu instalación"
             description="Instalación, mantenimiento y asesoría sin complicaciones — un extra de confianza."
             className="max-w-xl lg:max-w-lg"
+            titleClassName="text-3xl sm:text-4xl"
           />
           <div className="flex flex-wrap gap-3 lg:shrink-0">
             <Link
               href="#ayuda"
               className={cn(
                 buttonVariants({ variant: "default", size: "default" }),
-                "shadow-sm",
+                "rounded-xl shadow-sm",
               )}
             >
               Solicitar instalación
@@ -101,7 +102,7 @@ export async function ServicesSection() {
               href="#ayuda"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "border-primary/30 bg-background hover:bg-primary/5",
+                "rounded-xl border-primary/30 bg-background hover:bg-primary/5",
               )}
             >
               Hablar con asesor
@@ -115,14 +116,16 @@ export async function ServicesSection() {
             return (
               <div
                 key={s.id}
-                className="flex h-full flex-col rounded-2xl border border-border/80 bg-card p-6 shadow-sm ring-1 ring-border/30 transition hover:-translate-y-0.5 hover:shadow-md"
+                className="flex h-full flex-col rounded-3xl border border-border/60 bg-card p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-soft-lg"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold leading-snug text-foreground">{s.name}</h3>
+                    <h3 className="font-display text-lg font-semibold leading-snug text-foreground">
+                      {s.name}
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {clampText(s.description, 120)}
                     </p>

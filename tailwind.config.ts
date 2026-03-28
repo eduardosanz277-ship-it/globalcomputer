@@ -1,5 +1,12 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Marca:
+ * - Principal — Blue #357fd2 (primary, admin, focos)
+ * - Secundario — Gray orange #b19655 (acentos cálidos, botones secondary, badges admin)
+ * - Gray #6e7073 — texto muted; light gray #aeaeae — bordes / placeholders
+ * - Fondo página (`background`) — gris más oscuro que el blanco puro para dar relieve a cards
+ */
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -9,6 +16,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
+        roboto: ["var(--font-roboto)", "ui-sans-serif", "sans-serif"],
+      },
+      boxShadow: {
+        soft: "0 2px 24px -6px rgba(15, 23, 42, 0.07), 0 8px 28px -10px rgba(15, 23, 42, 0.06)",
+        "soft-lg": "0 12px 48px -12px rgba(15, 23, 42, 0.12)",
+      },
       container: {
         center: true,
         padding: "1rem",
@@ -17,45 +33,61 @@ const config: Config = {
         },
       },
       colors: {
-        border: "hsl(214 32% 91%)",
-        input: "hsl(214 32% 91%)",
-        ring: "hsl(217 91% 60%)",
-        background: "hsl(210 40% 98%)",
-        foreground: "hsl(222.2 84% 4.9%)",
+        border: "#d8d8d9",
+        input: "#d8d8d9",
+        ring: "#357fd2",
+        /** Lienzo general: gris neutro (no blanco puro) para contraste con card/popover */
+        background: "#e4e7ec",
+        foreground: "#2a2c30",
         primary: {
-          DEFAULT: "hsl(217 91% 60%)",
-          foreground: "hsl(0 0% 100%)",
+          DEFAULT: "#357fd2",
+          foreground: "#ffffff",
         },
+        /** Secundario oficial: gray orange #b19655 */
         secondary: {
-          DEFAULT: "hsl(210 40% 96.1%)",
-          foreground: "hsl(222.2 47.4% 11.2%)",
+          DEFAULT: "#b19655",
+          foreground: "#ffffff",
         },
         destructive: {
           DEFAULT: "hsl(0 72.8% 50.6%)",
           foreground: "hsl(210 40% 98%)",
         },
         muted: {
-          DEFAULT: "hsl(210 40% 96.1%)",
-          foreground: "hsl(215.4 16.3% 46.9%)",
+          DEFAULT: "#eef0f4",
+          foreground: "#6e7073",
         },
+        /** Superficies suaves (hover outline/ghost); texto alineado al secundario */
         accent: {
-          DEFAULT: "hsl(210 40% 96.1%)",
-          foreground: "hsl(222.2 47.4% 11.2%)",
+          DEFAULT: "#efe9df",
+          foreground: "#8a6d38",
         },
         popover: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(222.2 47.4% 11.2%)",
+          DEFAULT: "#ffffff",
+          foreground: "#2a2c30",
         },
         card: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(222.2 47.4% 11.2%)",
+          DEFAULT: "#ffffff",
+          foreground: "#2a2c30",
         },
-        /** Panel admin (marca roja) */
+        brand: {
+          gray: "#6e7073",
+          "gray-light": "#aeaeae",
+          /** Mismo hex que `secondary` (alias documentado) */
+          secondary: "#b19655",
+          /** Tono más oscuro solo si hace falta más contraste */
+          "secondary-dark": "#a3812f",
+          blue: "#357fd2",
+          hero: {
+            from: "#141820",
+            via: "#1c2430",
+            to: "#152a45",
+          },
+        },
         admin: {
-          DEFAULT: "hsl(217 91% 60%)",
-          foreground: "hsl(0 0% 100%)",
-          muted: "hsl(221 100% 95%)",
-          ring: "hsl(217 91% 60%)",
+          DEFAULT: "#357fd2",
+          foreground: "#ffffff",
+          muted: "#e8eef6",
+          ring: "#357fd2",
         },
       },
       borderRadius: {
@@ -76,6 +108,15 @@ const config: Config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        blob: {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(24px, -18px) scale(1.04)" },
+          "66%": { transform: "translate(-16px, 12px) scale(0.97)" },
+        },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "slide-over-in":
@@ -83,6 +124,8 @@ const config: Config = {
         "slide-over-out":
           "slide-over-out 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
         "fade-in": "fade-in 0.22s ease-out forwards",
+        blob: "blob 20s ease-in-out infinite",
+        "fade-up": "fade-up 0.6s ease-out forwards",
       },
     },
   },
@@ -90,4 +133,3 @@ const config: Config = {
 };
 
 export default config;
-

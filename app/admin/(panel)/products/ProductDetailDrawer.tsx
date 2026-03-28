@@ -196,7 +196,7 @@ export function ProductDetailDrawer({
                     />
                   </div>
                   {image.isPrimary ? (
-                    <span className="absolute left-2 top-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 ring-1 ring-blue-200/90">
+                    <span className="absolute left-2 top-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary ring-1 ring-primary/25">
                       Principal
                     </span>
                   ) : null}
@@ -215,7 +215,7 @@ export function ProductDetailDrawer({
                     className="object-cover"
                   />
                 </div>
-                <span className="absolute left-2 top-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 ring-1 ring-blue-200/90">
+                <span className="absolute left-2 top-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary ring-1 ring-primary/25">
                   Principal
                 </span>
               </article>
@@ -230,10 +230,10 @@ export function ProductDetailDrawer({
         <section className="rounded-xl border border-border/70 bg-card p-4">
           <h3 className="text-sm font-medium text-foreground">Descuentos</h3>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full border border-blue-200/90 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800">
+            <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
               Empresa {product.discountBusinessPct}%
             </span>
-            <span className="inline-flex items-center rounded-full border border-slate-200/90 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+            <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
               Cliente {product.discountClient}%
             </span>
           </div>

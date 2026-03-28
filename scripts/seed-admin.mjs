@@ -166,7 +166,66 @@ function warnProfileSkipped(profileErr) {
   );
 }
 
+/**
+ * Datos mínimos para el menú Security System (product_characteristics_*).
+ * Solo inserta si la tabla general está vacía (idempotente).
+ */
+async function seedNavigationCharacteristics() {
+  const { count, error: countErr } = await supabase
+    .from("product_characteristics_general")
+    .select("id", { count: "exact", head: true });
+
+  if (countErr) {
+    console.warn(
+      "[seed-admin] Omitiendo seed de características (no se pudo leer la tabla):",
+      countErr.message || countErr
+    );
+    return;
+  }
+  if ((count ?? 0) > 0) {
+    return;
+  }
+
+  const generals = [
+    { name: "Tipo de sistema", active: true },
+    { name: "Cobertura / alcance", active: true },
+  ];
+
+  const { data: insertedG, error: gErr } = await supabase
+    .from("product_characteristics_general")
+    .insert(generals)
+    .select("id, name");
+
+  if (gErr || !insertedG?.length) {
+    console.warn("[seed-admin] No se insertaron características generales:", gErr);
+    return;
+  }
+
+  const [g0, g1] = insertedG;
+  const specifics = [
+    { general_id: g0.id, name: "CCTV IP", active: true },
+    { general_id: g0.id, name: "Analógico", active: true },
+    { general_id: g1.id, name: "Interior", active: true },
+    { general_id: g1.id, name: "Exterior", active: true },
+  ];
+
+  const { error: sErr } = await supabase
+    .from("product_characteristics_specific")
+    .insert(specifics);
+
+  if (sErr) {
+    console.warn("[seed-admin] Características específicas no insertadas:", sErr);
+    return;
+  }
+
+  console.log("[seed-admin] Catálogo de características (Security System) sembrado.", {
+    generales: insertedG.map((r) => r.name),
+  });
+}
+
 async function seed() {
+  await seedNavigationCharacteristics();
+
   // 1) Resolver userId: primero profiles (rápido); si PostgREST falla (p. ej. 42501), Admin API por email
   let userId = null;
 

@@ -33,24 +33,22 @@ function roleLabel(role: UserRole): string {
 
 function roleBadgeClass(role: UserRole): string {
   if (role === "BUSINESS") {
-    return "border border-blue-200/90 bg-blue-50/95 text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200";
+    return "border border-primary/25 bg-primary/10 text-primary";
   }
   if (role === "CLIENT") {
-    return "border border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200";
+    return "border border-border bg-muted text-muted-foreground";
   }
-  return "border border-violet-200/90 bg-violet-50 text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-200";
+  return "border border-secondary/35 bg-secondary/10 text-secondary";
 }
 
 function roleAvatarClass(role: UserRole): string {
   if (role === "BUSINESS") {
-    // Misma paleta que `userAvatarClass` en la tabla de admin.
-    return "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60";
+    return "bg-primary/15 text-primary ring-1 ring-primary/25";
   }
   if (role === "CLIENT") {
-    return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
+    return "bg-muted text-muted-foreground ring-1 ring-border";
   }
-  // ADMIN u otros roles: mismo estilo que "resto" en la tabla.
-  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/60";
+  return "bg-secondary/15 text-secondary ring-1 ring-secondary/30";
 }
 
 /**

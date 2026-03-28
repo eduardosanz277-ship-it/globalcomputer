@@ -1,0 +1,112 @@
+import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import {
+  NavigationBrand,
+  NavigationBrandType,
+  NavigationCharacteristicGeneral,
+  NavigationData,
+  NavigationService,
+} from "./navigation.types";
+
+export async function getNavigationData(): Promise<NavigationData> {
+  const supabase = await getCatalogSupabase();
+
+  const [
+    generalResult,
+    specificResult,
+    brandsResult,
+    brandTypesResult,
+    servicesResult,
+  ] = await Promise.all([
+    supabase
+      .from("product_characteristics_general")
+      .select("id, name")
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("product_characteristics_specific")
+      .select("id, name, general_id")
+      .eq("active", true)
+      .order("name"),
+    supabase.from("brands").select("id, name").eq("active", true).order("name"),
+    supabase
+      .from("brand_types")
+      .select("id, name, brand_id")
+      .eq("active", true)
+      .order("name"),
+    supabase.from("services").select("id, name, description").order("name"),
+  ]);
+
+  if (generalResult.error) {
+    console.warn(
+      "Navigation: failed to load product_characteristics_general",
+      generalResult.error,
+    );
+  }
+  if (specificResult.error) {
+    console.warn(
+      "Navigation: failed to load product_characteristics_specific",
+      specificResult.error,
+    );
+  }
+  if (brandsResult.error) {
+    console.warn("Navigation: failed to load brands", brandsResult.error);
+  }
+  if (brandTypesResult.error) {
+    console.warn(
+      "Navigation: failed to load brand types",
+      brandTypesResult.error,
+    );
+  }
+  if (servicesResult.error) {
+    console.warn("Navigation: failed to load services", servicesResult.error);
+  }
+
+  const generalMap = new Map<string, NavigationCharacteristicGeneral>();
+  const generalRows = generalResult.data ?? [];
+  for (const row of generalRows) {
+    generalMap.set(row.id, {
+      id: row.id,
+      name: row.name,
+      specifics: [],
+    });
+  }
+
+  const specificRows = specificResult.data ?? [];
+  for (const row of specificRows) {
+    const general = generalMap.get(row.general_id);
+    if (general) {
+      general.specifics.push({ id: row.id, name: row.name });
+    }
+  }
+
+  const brandsMap = new Map<string, NavigationBrand>();
+  const brandsRows = brandsResult.data ?? [];
+  for (const row of brandsRows) {
+    brandsMap.set(row.id, {
+      id: row.id,
+      name: row.name,
+      brandTypes: [],
+    });
+  }
+
+  const brandTypeRows = brandTypesResult.data ?? [];
+  for (const row of brandTypeRows) {
+    const brand = brandsMap.get(row.brand_id);
+    if (brand) {
+      brand.brandTypes.push({ id: row.id, name: row.name });
+    }
+  }
+
+  const servicesRows = servicesResult.data ?? [];
+  const services: NavigationService[] = servicesRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+  }));
+
+  return {
+    characteristicsGeneral: Array.from(generalMap.values()),
+    brands: Array.from(brandsMap.values()),
+    services,
+  };
+}
