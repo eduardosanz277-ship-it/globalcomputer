@@ -55,6 +55,9 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
   }),
   menu: (base) => ({
     ...base,
+    /** Por defecto react-select usa ~8px (`menuGutter`); lo acercamos al control. */
+    marginTop: 5,
+    marginBottom: 5,
     backgroundColor: "#ffffff",
     border: `1px solid ${border}`,
     borderRadius: "0.5rem",
@@ -63,7 +66,7 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
   }),
   menuList: (base) => ({
     ...base,
-    padding: "2px",
+    padding: "1px 2px",
   }),
   option: (base, state) => ({
     ...base,

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 
 export const APP_LOGO_PATH = "/logos/logo.png";
@@ -18,7 +19,7 @@ export function AppLogo({ className, priority, variant = "default" }: AppLogoPro
     return (
       <Image
         src={APP_LOGO_PATH}
-        alt="Global Computers USA"
+        alt={SITE_BRAND_NAME}
         width={56}
         height={56}
         className={cn("h-14 w-14 object-contain", className)}
@@ -30,7 +31,7 @@ export function AppLogo({ className, priority, variant = "default" }: AppLogoPro
   return (
     <Image
       src={APP_LOGO_PATH}
-      alt="Global Computers USA"
+      alt={SITE_BRAND_NAME}
       width={360}
       height={90}
       className={cn(

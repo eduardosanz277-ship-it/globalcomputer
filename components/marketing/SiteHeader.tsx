@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -114,7 +115,7 @@ export function SiteHeader({ user }: Props) {
               className="h-[3.25rem] max-h-[3.75rem] shrink-0 sm:h-[4.5rem] sm:max-h-[4.75rem]"
             />
             <span className="min-w-0 truncate font-roboto text-base font-light leading-tight tracking-tight text-[#040b1f] sm:text-lg lg:text-xl">
-              {SITE_NAME}
+              {SITE_BRAND_NAME}
             </span>
           </Link>
         </div>

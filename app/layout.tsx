@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { DM_Sans, Outfit, Roboto } from "next/font/google";
-import { SiteHeader } from "@/components/marketing/SiteHeader";
-import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
+import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
@@ -52,9 +52,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <SiteHeader user={user} />
+        <ConditionalSiteHeader user={user} />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <ConditionalSiteFooter />
         <ToastContainer position="top-right" autoClose={3000} />
       </body>
     </html>

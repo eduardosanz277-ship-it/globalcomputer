@@ -85,7 +85,8 @@ interface DataTableProps<TData, TValue> {
   /**
    * `stacked`: una fila buscar, otra filtros (p. ej. dos columnas), otra acciones.
    * Útil cuando hay varios filtros y se quiere orden vertical claro.
-   * En ambos modos, búsqueda y acciones pasan a una sola fila desde `min-[1440px]`.
+   * En `default`, desde `min-[1440px]` el orden es: buscar → filtros → acciones (estas últimas al final).
+   * En `stacked`, búsqueda y bloques siguientes pasan a una fila desde `min-[1440px]`.
    */
   toolbarLayout?: "default" | "stacked";
   /**
@@ -241,6 +242,10 @@ export function DataTable<TData, TValue>({
       "min-[1440px]:ml-auto min-[1440px]:w-auto min-[1440px]:shrink-0 min-[1440px]:flex-row min-[1440px]:items-center",
   };
 
+  /** Solo buscar + acciones (sin filtros): desde tablet, misma fila que el buscador (p. ej. Servicios). */
+  const toolbarSearchActionsOnly =
+    toolbarLayout === "default" && Boolean(toolbarActions) && !toolbarFilters;
+
   const searchInput = (
     <>
       <Search
@@ -310,27 +315,55 @@ export function DataTable<TData, TValue>({
         <div
           className={cn(
             "data-table-toolbar flex min-w-0 flex-col gap-3",
-            "min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:justify-between min-[1440px]:gap-4",
+            toolbarSearchActionsOnly &&
+              "md:max-[1439px]:flex-row md:max-[1439px]:flex-nowrap md:max-[1439px]:items-center md:max-[1439px]:gap-3",
+            /* ≥1440px: [Buscar][filtros…][acciones al final]; el wrapper intermedio usa `contents` */
+            "min-[1440px]:flex-row min-[1440px]:flex-nowrap min-[1440px]:items-center min-[1440px]:gap-3",
           )}
         >
           <div
             className={cn(
-              "data-table-toolbar__main flex min-w-0 flex-1 flex-col gap-3",
-              "min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:gap-3",
+              "data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center",
+              toolbarSearchActionsOnly &&
+                "md:max-[1439px]:min-w-0 md:max-[1439px]:flex-1",
+              "min-[1440px]:max-w-sm min-[1440px]:shrink-0",
             )}
           >
-            <div className="data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center min-[1440px]:max-w-sm">
-              {searchInput}
-            </div>
-            {toolbarFilters ? (
-              <div className="data-table-toolbar__filters relative flex w-full min-w-0 max-w-full shrink-0 items-center min-[1440px]:max-w-sm">
-                {toolbarFilters}
-              </div>
-            ) : null}
+            {searchInput}
           </div>
-          {toolbarActions ? (
-            <div className="data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-end gap-2 min-[1440px]:flex-row min-[1440px]:w-auto min-[1440px]:items-center min-[1440px]:justify-end">
-              {toolbarActions}
+          {toolbarFilters || toolbarActions ? (
+            <div
+              className={cn(
+                "flex w-full min-w-0 flex-col gap-2",
+                toolbarSearchActionsOnly
+                  ? "md:max-[1439px]:w-auto md:max-[1439px]:shrink-0"
+                  : "md:max-[1439px]:flex-row md:max-[1439px]:items-center md:max-[1439px]:gap-3",
+                /* ≥1440px: los hijos (filtros, acciones) pasan al flex del toolbar */
+                "min-[1440px]:contents",
+              )}
+            >
+              {toolbarFilters ? (
+                <div
+                  className={cn(
+                    "data-table-toolbar__filters relative flex w-full min-w-0 max-w-full items-center",
+                    "md:max-[1439px]:min-w-0 md:max-[1439px]:flex-1",
+                    "min-[1440px]:w-auto min-[1440px]:max-w-none min-[1440px]:shrink-0",
+                  )}
+                >
+                  {toolbarFilters}
+                </div>
+              ) : null}
+              {toolbarActions ? (
+                <div
+                  className={cn(
+                    "data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2",
+                    "md:max-[1439px]:w-auto md:max-[1439px]:flex-row md:max-[1439px]:items-center md:max-[1439px]:justify-end",
+                    "min-[1440px]:ml-auto min-[1440px]:w-auto min-[1440px]:shrink-0 min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:justify-end",
+                  )}
+                >
+                  {toolbarActions}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

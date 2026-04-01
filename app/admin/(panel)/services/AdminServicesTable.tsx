@@ -248,7 +248,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 md:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

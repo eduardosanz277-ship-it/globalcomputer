@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
@@ -29,13 +30,16 @@ import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
-import { Eye, MoreVertical, Trash2, XCircle } from "lucide-react";
+import { Eye, FilterX, MoreVertical, Plus, Trash2, XCircle } from "lucide-react";
 
 const ROLE_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los roles" },
   { value: "CLIENT" as const, label: "Cliente" },
   { value: "BUSINESS" as const, label: "Empresa" },
 ] as const;
+
+/** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
+const ROLE_FILTER_WIDE_CH = ROLE_FILTER_OPTIONS[0].label.length + 7;
 
 type RoleFilter = (typeof ROLE_FILTER_OPTIONS)[number]["value"];
 
@@ -303,6 +307,7 @@ function UsersRowActionsMenu({
 }
 
 export function AdminUsersTable({ users, isLoading = false }: Props) {
+  const router = useRouter();
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
 
@@ -314,6 +319,10 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
   const filterValue =
     ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter) ??
     ROLE_FILTER_OPTIONS[0];
+
+  const clearRoleFilter = useCallback(() => {
+    setRoleFilter("all");
+  }, []);
 
   const renderMobileRow = useCallback((row: Row<AdminUser>) => {
     const u = row.original;
@@ -482,22 +491,57 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
-              instanceId="users-role-filter"
-              inputId="users-role-filter-input"
-              aria-label="Filtrar por rol"
-              isSearchable={false}
-              isClearable={false}
-              options={[...ROLE_FILTER_OPTIONS]}
-              value={filterValue}
-              onChange={(opt) => {
-                if (opt) setRoleFilter(opt.value);
-              }}
-              styles={appToolbarSelectStyles}
-              className="w-full"
-            />
+          <div className="flex w-full min-w-0 items-center gap-2">
+            <div
+              className={cn(
+                "min-w-0 flex-1",
+                "min-[1440px]:box-border min-[1440px]:w-[var(--users-role-filter-w)] min-[1440px]:min-w-[var(--users-role-filter-w)] min-[1440px]:max-w-[var(--users-role-filter-w)] min-[1440px]:flex-none min-[1440px]:shrink-0",
+              )}
+              style={
+                {
+                  ["--users-role-filter-w" as string]: `${ROLE_FILTER_WIDE_CH}ch`,
+                } as CSSProperties
+              }
+            >
+              <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
+                instanceId="users-role-filter"
+                inputId="users-role-filter-input"
+                aria-label="Filtrar por rol"
+                isSearchable={false}
+                isClearable={false}
+                options={[...ROLE_FILTER_OPTIONS]}
+                value={filterValue}
+                onChange={(opt) => {
+                  if (opt) setRoleFilter(opt.value);
+                }}
+                styles={appToolbarSelectStyles}
+                className="w-full min-w-0"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
+              disabled={isLoading || roleFilter === "all"}
+              onClick={clearRoleFilter}
+              title="Limpiar filtros"
+              aria-label="Limpiar filtro de rol"
+            >
+              <FilterX className="h-4 w-4" aria-hidden />
+            </Button>
           </div>
+        }
+        toolbarActions={
+          <Button
+            type="button"
+            className="h-9 w-full shrink-0 md:w-auto"
+            onClick={() => router.push("/admin/suscripciones-empresas")}
+            title="Gestionar solicitudes de registro de empresas"
+          >
+            <Plus className="mr-2 h-4 w-4" aria-hidden />
+            Nuevo
+          </Button>
         }
       />
       <UserDetailDrawer

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 import { ADMIN_NAV_ITEMS } from "./admin-nav-config";
 
@@ -61,14 +62,14 @@ export function AdminSidebar({
       className={cn(
         "flex h-full min-h-0 shrink-0 flex-col self-stretch border-r border-border/80 bg-white",
         "transition-[width,transform] duration-200 ease-out",
-        "fixed inset-y-0 left-0 z-50 w-[260px] md:relative md:inset-auto md:z-auto md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 w-[min(22rem,calc(100vw-1rem))] md:relative md:inset-auto md:z-auto md:translate-x-0",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         collapsed ? "md:w-[72px]" : "md:w-[260px]",
       )}
     >
       <div
         className={cn(
-          "flex min-h-[4rem] shrink-0 items-center gap-2 border-b border-border/60 px-3 py-2",
+          "flex min-h-[4rem] shrink-0 items-center gap-2 border-b border-border/60 px-3 py-0",
           collapsedNav
             ? "justify-center px-2 md:justify-center"
             : "justify-between",
@@ -81,13 +82,25 @@ export function AdminSidebar({
           )}
         >
           {collapsedNav ? (
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-white p-0.5">
-              <AppLogo variant="mark" />
-            </div>
+            <Link
+              href="/admin/home"
+              onClick={onCloseMobile}
+              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl p-0.5 transition-opacity hover:opacity-90"
+              title={SITE_BRAND_NAME}
+            >
+              <AppLogo variant="mark" className="h-12 w-12" />
+            </Link>
           ) : (
-            <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border/60 bg-white px-3 py-2">
-              <AppLogo className="h-12 max-h-14 w-full max-w-[260px] object-contain object-left sm:h-14 sm:max-h-16" />
-            </div>
+            <Link
+              href="/admin/home"
+              onClick={onCloseMobile}
+              className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-xl px-2.5 transition-opacity hover:opacity-90"
+            >
+              <AppLogo variant="mark" className="h-12 w-12 shrink-0" />
+              <span className="min-w-0 shrink font-roboto text-sm font-light leading-tight tracking-tight text-[#040b1f] sm:text-[0.95rem] max-md:whitespace-normal md:truncate">
+                {SITE_BRAND_NAME}
+              </span>
+            </Link>
           )}
         </div>
         <button

@@ -1,5 +1,4 @@
-import { SiteFooter } from "@/components/marketing/SiteFooter";
-import { SiteHeader } from "@/components/marketing/SiteHeader";
+import { AdminHeader } from "@/components/admin/AdminHeader";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { Metadata } from "next";
@@ -61,18 +60,30 @@ export default async function CuentaPage() {
     itemsCount: order.order_items?.length ?? 0,
   }));
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader user={user} />
+  const headerUser = {
+    fullName: profile?.full_name ?? user.fullName ?? "",
+    email: user.email,
+    role: user.role,
+  };
 
-      <main className="flex-1">
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <AdminHeader
+        user={headerUser}
+        variant="standalone"
+        brandHref="/"
+      />
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Mi cuenta</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Mi cuenta
+                </h1>
                 <p className="text-sm text-muted-foreground">
-                  Tu panel personal actualizado con tendencias actuales por sección.
+                  Tu panel personal actualizado con tendencias actuales por
+                  sección.
                 </p>
               </div>
             </div>
@@ -85,9 +96,7 @@ export default async function CuentaPage() {
             />
           </div>
         </div>
-      </main>
-
-      <SiteFooter />
+      </div>
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
 import Link from "next/link";
+import { AppLogo } from "@/components/brand/AppLogo";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 
 export type AdminHeaderUser = {
@@ -15,9 +17,23 @@ type Props = {
   user: AdminHeaderUser;
   /** Abre el drawer del menú (solo en vista móvil) */
   onOpenMobileMenu?: () => void;
+  /**
+   * `admin`: hamburguesa + marca solo en móvil (el sidebar lleva la marca en escritorio).
+   * `standalone`: marca siempre visible; sin botón de menú lateral.
+   */
+  variant?: "admin" | "standalone";
+  /** Destino del logo y nombre (p. ej. `/admin/home`, `/`) */
+  brandHref?: string;
 };
 
-export function AdminHeader({ user, onOpenMobileMenu }: Props) {
+export function AdminHeader({
+  user,
+  onOpenMobileMenu,
+  variant = "admin",
+  brandHref: brandHrefProp,
+}: Props) {
+  const brandHref =
+    brandHrefProp ?? (variant === "standalone" ? "/" : "/admin/home");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -46,7 +62,7 @@ export function AdminHeader({ user, onOpenMobileMenu }: Props) {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-white px-4 lg:px-6">
-      {onOpenMobileMenu && (
+      {variant === "admin" && onOpenMobileMenu && (
         <button
           type="button"
           className="-ml-1 rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground md:hidden"
@@ -57,7 +73,25 @@ export function AdminHeader({ user, onOpenMobileMenu }: Props) {
         </button>
       )}
 
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-4">
+      <Link
+        href={brandHref}
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2.5 py-0.5 transition-opacity hover:opacity-90",
+          variant === "admin" && "md:hidden",
+        )}
+      >
+        <AppLogo variant="mark" className="h-12 w-12 shrink-0" />
+        <span className="min-w-0 truncate font-roboto text-sm font-light leading-tight tracking-tight text-[#040b1f] sm:text-[0.95rem]">
+          {SITE_BRAND_NAME}
+        </span>
+      </Link>
+
+      <div
+        className={cn(
+          "flex min-w-0 items-center justify-end gap-4",
+          variant === "admin" && "md:ml-auto md:flex-1",
+        )}
+      >
       <button
         type="button"
         className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"

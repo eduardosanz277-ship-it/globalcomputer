@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -9,7 +14,7 @@ import Select from "react-select";
 import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
-import { Plus } from "lucide-react";
+import { FilterX, Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
@@ -31,6 +36,10 @@ const STATUS_FILTER_OPTIONS = [
   { value: "active" as const, label: "Activas" },
   { value: "inactive" as const, label: "Inactivas" },
 ];
+
+/** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
+const STATUS_FILTER_WIDE_CH =
+  STATUS_FILTER_OPTIONS[0].label.length + 7;
 
 type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
 
@@ -89,31 +98,32 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
     STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
     STATUS_FILTER_OPTIONS[0];
 
-  const renderMobileRow = useCallback(
-    (row: Row<Brand>) => {
-      const b = row.original;
-      return (
-        <li key={row.id}>
-          <BrandProfileCard
-            name={b.name}
-            active={b.active}
-            updatedAt={b.updatedAt}
-            className="hover:bg-muted/50 transition-colors duration-150"
-            actions={
-              <RowActions
-                brand={b}
-                onEdit={() => {
-                  setEditing(b);
-                  setDialogOpen(true);
-                }}
-              />
-            }
-          />
-        </li>
-      );
-    },
-    [],
-  );
+  const clearStatusFilter = useCallback(() => {
+    setStatusFilter("all");
+  }, []);
+
+  const renderMobileRow = useCallback((row: Row<Brand>) => {
+    const b = row.original;
+    return (
+      <li key={row.id}>
+        <BrandProfileCard
+          name={b.name}
+          active={b.active}
+          updatedAt={b.updatedAt}
+          className="hover:bg-muted/50 transition-colors duration-150"
+          actions={
+            <RowActions
+              brand={b}
+              onEdit={() => {
+                setEditing(b);
+                setDialogOpen(true);
+              }}
+            />
+          }
+        />
+      </li>
+    );
+  }, []);
 
   const columns = useMemo<ColumnDef<Brand>[]>(
     () => [
@@ -198,9 +208,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
           const absolute = formatDateDdMmYyyyHhMm(raw);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">
-                {absolute}
-              </span>
+              <span className="text-sm text-muted-foreground">{absolute}</span>
             );
           }
           return (
@@ -216,8 +224,12 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
                   align="start"
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
-                  <span className="block font-medium">Última actualización</span>
-                  <span className="mt-0.5 block text-muted-foreground">{absolute}</span>
+                  <span className="block font-medium">
+                    Última actualización
+                  </span>
+                  <span className="mt-0.5 block text-muted-foreground">
+                    {absolute}
+                  </span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -259,27 +271,52 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         }
         renderMobileRow={renderMobileRow}
         toolbarFilters={
-          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
-              instanceId="brands-status-filter"
-              inputId="brands-status-filter-input"
-              aria-label="Filtrar por estado"
-              isSearchable={false}
-              isClearable={false}
-              options={STATUS_FILTER_OPTIONS}
-              value={filterValue}
-              onChange={(opt) => {
-                if (opt) setStatusFilter(opt.value);
-              }}
-              styles={appToolbarSelectStyles}
-              className="w-full"
-            />
+          <div className="flex w-full min-w-0 items-center gap-2">
+            <div
+              className={cn(
+                "min-w-0 flex-1",
+                /* ≥1440px: ancho fijo según valor inicial; no encoge al elegir «Activas» / «Inactivas» */
+                "min-[1440px]:box-border min-[1440px]:w-[var(--brands-status-filter-w)] min-[1440px]:min-w-[var(--brands-status-filter-w)] min-[1440px]:max-w-[var(--brands-status-filter-w)] min-[1440px]:flex-none min-[1440px]:shrink-0",
+              )}
+              style={
+                {
+                  ["--brands-status-filter-w" as string]: `${STATUS_FILTER_WIDE_CH}ch`,
+                } as CSSProperties
+              }
+            >
+              <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+                instanceId="brands-status-filter"
+                inputId="brands-status-filter-input"
+                aria-label="Filtrar por estado"
+                isSearchable={false}
+                isClearable={false}
+                options={STATUS_FILTER_OPTIONS}
+                value={filterValue}
+                onChange={(opt) => {
+                  if (opt) setStatusFilter(opt.value);
+                }}
+                styles={appToolbarSelectStyles}
+                className="w-full min-w-0"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
+              disabled={isLoading || statusFilter === "all"}
+              onClick={clearStatusFilter}
+              title="Limpiar filtros"
+              aria-label="Limpiar filtro de estado"
+            >
+              <FilterX className="h-4 w-4" aria-hidden />
+            </Button>
           </div>
         }
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 min-[1440px]:w-auto"
+            className="h-9 w-full shrink-0 md:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

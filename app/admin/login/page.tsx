@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
               type="submit"
               className="w-full"
               pending={isPending}
-              pendingLabel="Entrando…"
+              pendingLabel="Entrando"
               skipMinWidth
             >
               Entrar al panel
@@ -85,4 +85,3 @@ export default function AdminLoginPage() {
     </main>
   );
 }
-
