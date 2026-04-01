@@ -6,6 +6,15 @@
   color-scheme: light;
 }
 
+/**
+ * Evita que el navegador “corrija” scrollY cuando cambia la altura del sticky header
+ * (colapsar/mostrar barra). Sin esto, al pasar secciones largas (p. ej. catálogo por marcas)
+ * el anchoring genera saltos y desincroniza el handler de scroll del header.
+ */
+html {
+  overflow-anchor: none;
+}
+
 body {
   @apply bg-background text-foreground antialiased;
 }

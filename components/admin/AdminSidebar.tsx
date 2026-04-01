@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
@@ -96,8 +91,11 @@ export function AdminSidebar({
               onClick={onCloseMobile}
               className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-xl px-2.5 transition-opacity hover:opacity-90"
             >
-              <AppLogo variant="mark" className="h-12 w-12 shrink-0" />
-              <span className="min-w-0 shrink font-roboto text-sm font-light leading-tight tracking-tight text-[#040b1f] sm:text-[0.95rem] max-md:whitespace-normal md:truncate">
+              <AppLogo
+                variant="mark"
+                className="h-9 w-9 shrink-0 md:h-12 md:w-12"
+              />
+              <span className="min-w-0 shrink truncate font-roboto text-sm font-light leading-tight tracking-tight text-[#040b1f] sm:text-[0.95rem] max-md:whitespace-normal md:truncate">
                 {SITE_BRAND_NAME}
               </span>
             </Link>
