@@ -32,8 +32,7 @@ import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
 const loginErrorMessages: Record<string, string> = {
   admin:
     "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
-  auth:
-    "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
+  auth: "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
   pending_business:
     "Tu cuenta de empresa está pendiente de aprobación. Te avisaremos por correo cuando puedas entrar.",
   rejected_business:
@@ -63,7 +62,11 @@ function LoginPageContent() {
   });
 
   const { execute: sendOtp, isPending: sending } = useServerAction(
-    sendLoginOtpAction,
+    async (email: string) => {
+      const res = await sendLoginOtpAction(email);
+      if (!res.ok) throw new Error(res.message);
+      return res;
+    },
     {
       successMessage:
         "Revisa tu correo: abre el enlace para entrar o usa el código de verificación.",
@@ -118,7 +121,7 @@ function LoginPageContent() {
             <AuthPrimaryButton
               type="submit"
               pending={sending}
-              pendingLabel="Enviando…"
+              pendingLabel="Enviando"
             >
               Continuar
             </AuthPrimaryButton>
@@ -127,17 +130,9 @@ function LoginPageContent() {
           <div className="space-y-5">
             <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
               <span className="text-muted-foreground">Código enviado a </span>
-              <span className="font-medium text-foreground">{emailForCode}</span>
-              <button
-                type="button"
-                className="ml-2 text-sm font-medium text-primary underline underline-offset-4"
-                onClick={() => {
-                  setStep("email");
-                  codeForm.reset({ code: "" });
-                }}
-              >
-                Cambiar correo
-              </button>
+              <span className="font-medium text-foreground">
+                {emailForCode}
+              </span>
             </div>
             <Form
               form={codeForm}
@@ -151,7 +146,8 @@ function LoginPageContent() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   placeholder="123456"
-                  maxLength={10}
+                  maxLength={6}
+                  required
                   aria-invalid={Boolean(codeErrors.code)}
                   {...codeForm.register("code")}
                 />
@@ -168,30 +164,47 @@ function LoginPageContent() {
               >
                 Entrar
               </AuthPrimaryButton>
+              <div className="text-center text-sm leading-relaxed text-muted-foreground">
+                <AuthInlineLinkRow>
+                  <span>¿No es tu correo?</span>
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+                    onClick={() => {
+                      setStep("email");
+                      codeForm.reset({ code: "" });
+                    }}
+                  >
+                    Cambiar correo
+                  </button>
+                </AuthInlineLinkRow>
+              </div>
             </Form>
           </div>
         )}
 
-        <AuthFooterLinks>
-          <AuthInlineLinkRow>
-            ¿Eres empresa?{" "}
-            <Link
-              href="/register/empresa"
-              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-            >
-              Crear cuenta empresarial
-            </Link>
-          </AuthInlineLinkRow>
-          <AuthInlineLinkRow>
-            ¿Administrador?{" "}
-            <Link
-              href="/admin/login"
-              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-            >
-              Acceso administrativo
-            </Link>
-          </AuthInlineLinkRow>
-        </AuthFooterLinks>
+        {step === "email" ? (
+          <AuthFooterLinks>
+            <AuthInlineLinkRow>
+              <span>¿Eres empresa?</span>
+              <Link
+                href="/register/empresa"
+                className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+              >
+                Crear cuenta empresarial
+              </Link>
+            </AuthInlineLinkRow>
+            <AuthInlineLinkRow>
+              <span>¿Administrador?</span>
+              <Link
+                href="/admin/login"
+                className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+              >
+                Acceso administrativo
+              </Link>
+            </AuthInlineLinkRow>
+          </AuthFooterLinks>
+        ) : null}
       </AuthCard>
     </AuthLayout>
   );

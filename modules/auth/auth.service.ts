@@ -25,6 +25,30 @@ function getAppBaseUrl(): string {
   );
 }
 
+/** Convierte errores de `signInWithOtp` (p. ej. límite de envío de email) en mensajes legibles. */
+function mapSignInWithOtpError(error: unknown): Error {
+  const obj = error && typeof error === "object" ? error : null;
+  const code =
+    obj && "code" in obj ? String((obj as { code?: unknown }).code ?? "") : "";
+  const status =
+    obj && "status" in obj ? Number((obj as { status?: unknown }).status) : NaN;
+
+  if (code === "over_email_send_rate_limit") {
+    return new Error(
+      "Se han enviado demasiados correos. Espera unos minutos antes de solicitar otro código.",
+    );
+  }
+  if (Number.isFinite(status) && status === 429) {
+    return new Error(
+      "Demasiadas solicitudes. Espera unos minutos e inténtalo de nuevo.",
+    );
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error(String(error));
+}
+
 /**
  * Tras login correcto (enlace, código o contraseña admin): actualiza `profiles`
  * con datos de `auth` (p. ej. nombre desde metadata) y `updated_at`.
@@ -111,7 +135,11 @@ export async function sendLoginOtpService(rawEmail: string) {
   }
 
   const redirectTo = `${getAppBaseUrl()}/auth/callback`;
-  await repoSignInWithOtp(parsed.data.email, redirectTo);
+  try {
+    await repoSignInWithOtp(parsed.data.email, redirectTo);
+  } catch (error: unknown) {
+    throw mapSignInWithOtpError(error);
+  }
 }
 
 export async function verifyLoginOtpService(rawEmail: string, rawCode: string) {

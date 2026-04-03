@@ -86,7 +86,7 @@ export default function RegisterPage() {
 
         <AuthFooterLinks>
           <AuthInlineLinkRow>
-            ¿Ya tienes cuenta?{" "}
+            <span>¿Ya tienes cuenta?</span>
             <Link
               href="/login"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
@@ -95,7 +95,7 @@ export default function RegisterPage() {
             </Link>
           </AuthInlineLinkRow>
           <AuthInlineLinkRow>
-            ¿Eres empresa?{" "}
+            <span>¿Eres empresa?</span>
             <Link
               href="/register/empresa"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"

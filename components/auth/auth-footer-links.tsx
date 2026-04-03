@@ -25,7 +25,14 @@ type AuthInlineLinkRowProps = {
   children: React.ReactNode;
 };
 
-/** Una línea de texto con enlace (p. ej. «¿Ya tienes cuenta? …»). */
+/**
+ * Texto + enlace: por debajo de 375px se apilan; desde 375px van en una línea.
+ * Usar `<span>` para la pregunta y `<Link>` (u otro control) para la acción.
+ */
 export function AuthInlineLinkRow({ children }: AuthInlineLinkRowProps) {
-  return <p>{children}</p>;
+  return (
+    <p className="flex flex-col items-center gap-1 min-[375px]:flex-row min-[375px]:flex-wrap min-[375px]:justify-center min-[375px]:gap-1">
+      {children}
+    </p>
+  );
 }

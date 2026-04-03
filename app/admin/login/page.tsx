@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
           <AuthPrimaryButton
             type="submit"
             pending={isPending}
-            pendingLabel="Entrando…"
+            pendingLabel="Entrando"
           >
             Entrar al panel
           </AuthPrimaryButton>
@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
 
         <AuthFooterLinks>
           <AuthInlineLinkRow>
-            ¿Eres cliente o empresa?{" "}
+            <span>¿Eres cliente o empresa?</span>
             <Link
               href="/login"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"

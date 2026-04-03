@@ -86,7 +86,7 @@ export default function RegisterEmpresaPage() {
           <AuthPrimaryButton
             type="submit"
             pending={isPending}
-            pendingLabel="Enviando solicitud…"
+            pendingLabel="Enviando solicitud"
           >
             Enviar solicitud
           </AuthPrimaryButton>
@@ -94,7 +94,7 @@ export default function RegisterEmpresaPage() {
 
         <AuthFooterLinks>
           <AuthInlineLinkRow>
-            ¿Ya tienes cuenta?{" "}
+            <span>¿Ya tienes cuenta?</span>
             <Link
               href="/login"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
