@@ -1,15 +1,17 @@
 "use client";
 
 import { registerBusinessAction } from "@/app/register/empresa/actions";
-import { ButtonPending } from "@/components/ui/button-pending";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Form, FormField } from "@/components/ui/form";
+  AuthBrandHeader,
+  AuthCard,
+  AuthField,
+  AuthFooterLinks,
+  AuthHeading,
+  AuthInlineLinkRow,
+  AuthLayout,
+  AuthPrimaryButton,
+} from "@/components/auth";
+import { Form } from "@/components/ui/form";
 import { useServerAction } from "@/hooks/use-server-action";
 import {
   registerBusinessSchema,
@@ -42,65 +44,66 @@ export default function RegisterEmpresaPage() {
   const errors = form.formState.errors;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Registro como empresa</CardTitle>
-          <CardDescription>
-            Completa los datos de tu negocio. Su solicitud será revisada y se te notificará por correo cuando esté aprobada.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form form={form} onSubmit={(v) => execute(v)}>
-            <FormField
-              name="businessName"
-              label="Nombre de negocio"
-              required
-              autoComplete="organization"
-              error={errors.businessName?.message}
-            />
-            <FormField
-              name="phone"
-              label="Teléfono"
-              type="tel"
-              autoComplete="tel"
-              error={errors.phone?.message}
-            />
-            <FormField
-              name="email"
-              label="Correo electrónico"
-              type="email"
-              required
-              autoComplete="email"
-              error={errors.email?.message}
-            />
-            <FormField
-              name="employerIdentificationNumber"
-              label="Employer Identification Number (EIN)"
-              required
-              autoComplete="off"
-              placeholder="p. ej. 12-3456789"
-              error={errors.employerIdentificationNumber?.message}
-            />
-            <ButtonPending
-              type="submit"
-              className="w-full"
-              pending={isPending}
-              pendingLabel="Creando cuenta…"
-              skipMinWidth
-            >
-              Crear cuenta de empresa
-            </ButtonPending>
-          </Form>
+    <AuthLayout>
+      <AuthBrandHeader />
+      <AuthCard>
+        <AuthHeading
+          title="Crear cuenta de empresa"
+          description="Completa los datos de tu negocio."
+        />
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
+        <Form form={form} onSubmit={(v) => execute(v)} className="space-y-5">
+          <AuthField
+            name="businessName"
+            label="Nombre del negocio"
+            required
+            autoComplete="organization"
+            error={errors.businessName?.message}
+          />
+          <AuthField
+            name="phone"
+            label="Teléfono"
+            type="tel"
+            autoComplete="tel"
+            error={errors.phone?.message}
+          />
+          <AuthField
+            name="email"
+            label="Correo electrónico"
+            type="email"
+            required
+            autoComplete="email"
+            error={errors.email?.message}
+          />
+          <AuthField
+            name="employerIdentificationNumber"
+            label="Employer Identification Number (EIN)"
+            required
+            autoComplete="off"
+            placeholder="p. ej. 12-3456789"
+            error={errors.employerIdentificationNumber?.message}
+          />
+          <AuthPrimaryButton
+            type="submit"
+            pending={isPending}
+            pendingLabel="Enviando solicitud…"
+          >
+            Enviar solicitud
+          </AuthPrimaryButton>
+        </Form>
+
+        <AuthFooterLinks>
+          <AuthInlineLinkRow>
             ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="underline">
+            <Link
+              href="/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+            >
               Inicia sesión
             </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </main>
+          </AuthInlineLinkRow>
+        </AuthFooterLinks>
+      </AuthCard>
+    </AuthLayout>
   );
 }

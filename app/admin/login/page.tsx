@@ -5,10 +5,17 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { AppLogo } from "@/components/brand/AppLogo";
-import { ButtonPending } from "@/components/ui/button-pending";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Form, FormField } from "@/components/ui/form";
+import {
+  AuthBrandHeader,
+  AuthCard,
+  AuthField,
+  AuthFooterLinks,
+  AuthHeading,
+  AuthInlineLinkRow,
+  AuthLayout,
+  AuthPrimaryButton,
+} from "@/components/auth";
+import { Form } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
@@ -37,51 +44,50 @@ export default function AdminLoginPage() {
   const errors = form.formState.errors;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="pb-2 pt-8 text-center">
-          <div className="flex justify-center px-2">
-            <AppLogo
-              priority
-              className="h-[3.75rem] max-h-16 sm:h-[4.25rem] sm:max-h-[5rem]"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Form form={form} onSubmit={onSubmit}>
-            <FormField
-              name="email"
-              label="Email"
-              type="email"
-              required
-              error={errors.email?.message}
-            />
-            <FormField
-              name="password"
-              label="Contraseña"
-              type="password"
-              required
-              error={errors.password?.message}
-            />
-            <ButtonPending
-              type="submit"
-              className="w-full"
-              pending={isPending}
-              pendingLabel="Entrando"
-              skipMinWidth
-            >
-              Entrar al panel
-            </ButtonPending>
-          </Form>
+    <AuthLayout>
+      <AuthBrandHeader />
+      <AuthCard>
+        <AuthHeading
+          title="Acceso administrativo"
+          description="Usa el correo y la contraseña de tu cuenta de administrador."
+        />
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
+        <Form form={form} onSubmit={onSubmit} className="space-y-5">
+          <AuthField
+            name="email"
+            label="Correo electrónico"
+            type="email"
+            required
+            error={errors.email?.message}
+          />
+          <AuthField
+            name="password"
+            label="Contraseña"
+            type="password"
+            required
+            error={errors.password?.message}
+          />
+          <AuthPrimaryButton
+            type="submit"
+            pending={isPending}
+            pendingLabel="Entrando…"
+          >
+            Entrar al panel
+          </AuthPrimaryButton>
+        </Form>
+
+        <AuthFooterLinks>
+          <AuthInlineLinkRow>
             ¿Eres cliente o empresa?{" "}
-            <Link href="/login" className="underline">
-              Inicio de sesión con código
+            <Link
+              href="/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+            >
+              Iniciar sesión
             </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </main>
+          </AuthInlineLinkRow>
+        </AuthFooterLinks>
+      </AuthCard>
+    </AuthLayout>
   );
 }

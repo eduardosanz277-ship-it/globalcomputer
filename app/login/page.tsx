@@ -6,10 +6,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Suspense, useMemo, useState } from "react";
 
-import { ButtonPending } from "@/components/ui/button-pending";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormField } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import {
+  AuthAlert,
+  AuthBrandHeader,
+  AuthCard,
+  AuthField,
+  AuthFooterLinks,
+  AuthHeading,
+  AuthInlineLinkRow,
+  AuthInput,
+  AuthLayout,
+  AuthPrimaryButton,
+} from "@/components/auth";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
 import {
@@ -22,7 +31,7 @@ import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
 
 const loginErrorMessages: Record<string, string> = {
   admin:
-    "Las cuentas de administrador deben iniciar sesión en Acceso admin.",
+    "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
   auth:
     "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
   pending_business:
@@ -64,7 +73,7 @@ function LoginPageContent() {
         codeForm.reset({ code: "" });
         setStep("code");
       },
-    }
+    },
   );
 
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
@@ -75,114 +84,116 @@ function LoginPageContent() {
         router.push("/");
         router.refresh();
       },
-    }
+    },
   );
 
   const emailErrors = emailForm.formState.errors;
   const codeErrors = codeForm.formState.errors;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Iniciar sesión</CardTitle>
-          <CardDescription>
-            Clientes y empresas: te enviamos un enlace mágico y, si lo
-            prefieres, un código. Los administradores deben usar{" "}
-            <Link href="/admin/login" className="font-medium underline">
-              Acceso admin
-            </Link>
-            .
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {loginError && (
-            <p
-              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              role="alert"
-            >
-              {loginError}
-            </p>
-          )}
-          {step === "email" ? (
-            <Form
-              form={emailForm}
-              onSubmit={(v) => sendOtp(v.email)}
-            >
-              <FormField
-                name="email"
-                label="Email"
-                type="email"
-                autoComplete="email"
-                required
-                error={emailErrors.email?.message}
-              />
-              <ButtonPending
-                type="submit"
-                className="mt-4 w-full"
-                pending={sending}
-                pendingLabel="Enviando…"
-                skipMinWidth
-              >
-                Enviar enlace y código
-              </ButtonPending>
-            </Form>
-          ) : (
-            <>
-              <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Código enviado a </span>
-                <span className="font-medium">{emailForCode}</span>
-                <button
-                  type="button"
-                  className="ml-2 text-xs text-primary underline"
-                    onClick={() => {
-                    setStep("email");
-                    codeForm.reset({ code: "" });
-                  }}
-                >
-                  Cambiar email
-                </button>
-              </div>
-              <Form
-                form={codeForm}
-                onSubmit={(v) => verifyOtp(emailForCode, v.code)}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="otp-code">Código</Label>
-                  <Input
-                    id="otp-code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="123456"
-                    maxLength={10}
-                    aria-invalid={Boolean(codeErrors.code)}
-                    {...codeForm.register("code")}
-                  />
-                  {codeErrors.code && (
-                    <p className="text-sm text-destructive">{codeErrors.code.message}</p>
-                  )}
-                </div>
-                <ButtonPending
-                  type="submit"
-                  className="mt-4 w-full"
-                  pending={verifying}
-                  pendingLabel="Verificando…"
-                  skipMinWidth
-                >
-                  Entrar
-                </ButtonPending>
-              </Form>
-            </>
-          )}
+    <AuthLayout>
+      <AuthBrandHeader />
+      <AuthCard>
+        <AuthHeading
+          title="Iniciar sesión"
+          description="Accede con tu correo electrónico."
+        />
 
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href="/register/empresa" className="font-medium underline">
-              Regístrate como empresa
+        {loginError ? <AuthAlert>{loginError}</AuthAlert> : null}
+
+        {step === "email" ? (
+          <Form
+            form={emailForm}
+            onSubmit={(v) => sendOtp(v.email)}
+            className="space-y-5"
+          >
+            <AuthField
+              name="email"
+              label="Correo electrónico"
+              type="email"
+              autoComplete="email"
+              required
+              error={emailErrors.email?.message}
+            />
+            <AuthPrimaryButton
+              type="submit"
+              pending={sending}
+              pendingLabel="Enviando…"
+            >
+              Continuar
+            </AuthPrimaryButton>
+          </Form>
+        ) : (
+          <div className="space-y-5">
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+              <span className="text-muted-foreground">Código enviado a </span>
+              <span className="font-medium text-foreground">{emailForCode}</span>
+              <button
+                type="button"
+                className="ml-2 text-sm font-medium text-primary underline underline-offset-4"
+                onClick={() => {
+                  setStep("email");
+                  codeForm.reset({ code: "" });
+                }}
+              >
+                Cambiar correo
+              </button>
+            </div>
+            <Form
+              form={codeForm}
+              onSubmit={(v) => verifyOtp(emailForCode, v.code)}
+              className="space-y-5"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="otp-code">Código de verificación</Label>
+                <AuthInput
+                  id="otp-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  maxLength={10}
+                  aria-invalid={Boolean(codeErrors.code)}
+                  {...codeForm.register("code")}
+                />
+                {codeErrors.code ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {codeErrors.code.message}
+                  </p>
+                ) : null}
+              </div>
+              <AuthPrimaryButton
+                type="submit"
+                pending={verifying}
+                pendingLabel="Verificando…"
+              >
+                Entrar
+              </AuthPrimaryButton>
+            </Form>
+          </div>
+        )}
+
+        <AuthFooterLinks>
+          <AuthInlineLinkRow>
+            ¿Eres empresa?{" "}
+            <Link
+              href="/register/empresa"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+            >
+              Crear cuenta empresarial
             </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </main>
+          </AuthInlineLinkRow>
+          <AuthInlineLinkRow>
+            ¿Administrador?{" "}
+            <Link
+              href="/admin/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+            >
+              Acceso administrativo
+            </Link>
+          </AuthInlineLinkRow>
+        </AuthFooterLinks>
+      </AuthCard>
+    </AuthLayout>
   );
 }
 
@@ -190,9 +201,14 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center px-4">
-          <p className="text-sm text-muted-foreground">Cargando…</p>
-        </main>
+        <AuthLayout>
+          <AuthBrandHeader />
+          <AuthCard>
+            <p className="text-center text-sm text-muted-foreground">
+              Cargando…
+            </p>
+          </AuthCard>
+        </AuthLayout>
       }
     >
       <LoginPageContent />

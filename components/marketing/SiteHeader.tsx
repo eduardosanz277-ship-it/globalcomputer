@@ -46,8 +46,10 @@ export function SiteHeader({ user }: Props) {
     brands: false,
     services: false,
   });
-  const [showTopHeader, setShowTopHeader] = useState(true);
-  const [showMainMenu, setShowMainMenu] = useState(true);
+  /** Una sola actualización al hacer scroll evita dobles renders al cambiar barra + menú. */
+  const [headerShelf, setHeaderShelf] = useState({ top: true, menu: true });
+  const showTopHeader = headerShelf.top;
+  const showMainMenu = headerShelf.menu;
   const [navData, setNavData] = useState<NavigationData | null>(null);
   const [navLoading, setNavLoading] = useState(true);
   /** Columna derecha en menús mega (evita overflow que recorta submenús CSS) */
@@ -91,7 +93,11 @@ export function SiteHeader({ user }: Props) {
     let rafId = 0;
 
     const setIfChanged = (nextTop: boolean, nextMenu: boolean) => {
-      if (nextTop !== visibleTop) {
+      const topChanged = nextTop !== visibleTop;
+      const menuChanged = nextMenu !== visibleMenu;
+      if (!topChanged && !menuChanged) return;
+
+      if (topChanged) {
         if (nextTop && !visibleTop) {
           /* Evita desync: al mostrar el header el layout/scroll puede cambiar y el siguiente delta fallaba. */
           lastY = window.scrollY;
@@ -99,18 +105,15 @@ export function SiteHeader({ user }: Props) {
         } else if (!nextTop && visibleTop) {
           /* Al colapsar la barra, el layout/scroll anchoring puede mover scrollY sin input del usuario. */
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              lastY = window.scrollY;
-            });
+            lastY = window.scrollY;
           });
         }
         visibleTop = nextTop;
-        setShowTopHeader(nextTop);
       }
-      if (nextMenu !== visibleMenu) {
+      if (menuChanged) {
         visibleMenu = nextMenu;
-        setShowMainMenu(nextMenu);
       }
+      setHeaderShelf({ top: visibleTop, menu: visibleMenu });
     };
 
     const update = () => {
@@ -229,8 +232,12 @@ export function SiteHeader({ user }: Props) {
   const generalPanelHasSubs = Boolean(activeGeneral?.specifics?.length);
   const brandPanelHasSubs = Boolean(activeBrand?.brandTypes?.length);
 
+  /** `grid-template-rows` 0fr→1fr anima sin el coste de `max-height`. `overflow-hidden` se aplica por bloque; con cuenta abierta va `overflow-visible` para no recortar el dropdown. */
+  const shelfRevealClass =
+    "grid transition-[grid-template-rows,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none";
+
   const megaPanelClass =
-    "overflow-hidden rounded-xl border border-white/25 bg-primary text-left text-white shadow-2xl ring-1 ring-black/40";
+    "overflow-hidden rounded-xl border border-white/10 bg-primary text-left text-white shadow-md";
 
   const navMegaRowClass =
     "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-white/95 transition";
@@ -284,31 +291,38 @@ export function SiteHeader({ user }: Props) {
   }, [mobileNavOpen]);
 
   /** Misma lógica de scroll que la fila superior en desktop; se mantiene visible si menú o cuenta están abiertos. */
-  const showMobileHeaderVisible =
-    showTopHeader || mobileNavOpen || accountOpen;
+  const showMobileHeaderVisible = showTopHeader || mobileNavOpen || accountOpen;
 
   return (
     <>
       <header
         className={cn(
-          "sticky top-0 z-50 border-b border-border/40 bg-background/90 shadow-sm shadow-primary/[0.03] backdrop-blur-xl",
+          "sticky top-0 z-50 border-b border-border/40 bg-background/90 shadow-sm shadow-primary/[0.03] backdrop-blur-md",
           !showMobileHeaderVisible &&
             "max-lg:border-b-0 max-lg:bg-transparent max-lg:shadow-none max-lg:backdrop-blur-none",
         )}
       >
         <div
           className={cn(
-            "lg:hidden will-change-[max-height,transform,opacity] motion-reduce:transition-none transition-[max-height,transform,opacity] duration-200 ease-out",
+            "lg:hidden",
+            shelfRevealClass,
+            accountOpen ? "overflow-visible" : "overflow-hidden",
             showMobileHeaderVisible
-              ? "max-h-[min(50vh,18rem)] overflow-visible opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-1 overflow-hidden opacity-0",
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0 pointer-events-none",
           )}
         >
           <div
             className={cn(
-              "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2 sm:px-3 sm:pb-2",
+              "min-h-0",
+              accountOpen ? "overflow-visible" : "overflow-hidden",
             )}
           >
+            <div
+              className={cn(
+                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2 sm:px-3 sm:pb-2",
+              )}
+            >
             <button
               type="button"
               onClick={() => setMobileNavOpen((v) => !v)}
@@ -378,8 +392,8 @@ export function SiteHeader({ user }: Props) {
                     </span>
                   </button>
                   {accountOpen && (
-                    <div className="absolute right-0 top-full z-[70] pt-1">
-                      <div className="min-w-[220px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
+                    <div className="absolute right-0 top-full z-[100] pt-1">
+                      <div className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
                         <div className="border-b border-border px-3 py-2">
                           <p className="truncate text-sm font-medium">
                             {displayName}
@@ -390,15 +404,20 @@ export function SiteHeader({ user }: Props) {
                         </div>
                         <Link
                           href="/cuenta"
-                          className="block px-3 py-2 text-sm transition hover:bg-muted/80"
+                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                           onClick={() => setAccountOpen(false)}
                         >
+                          <CircleUserRound
+                            className="h-4 w-4 shrink-0"
+                            strokeWidth={1.35}
+                            aria-hidden
+                          />
                           Mi cuenta
                         </Link>
                         <form action="/auth/logout" method="post">
                           <button
                             type="submit"
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-muted/80"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
                           >
                             <LogOut className="h-4 w-4" />
                             Cerrar sesión
@@ -445,17 +464,25 @@ export function SiteHeader({ user }: Props) {
               </span>
             </Button>
           </div>
+          </div>
         </div>
 
         <div
           className={cn(
-            "will-change-[max-height,transform,opacity] motion-reduce:transition-none transition-[max-height,transform,opacity] duration-200 ease-out",
+            shelfRevealClass,
+            accountOpen ? "overflow-visible" : "overflow-hidden",
             showTopHeader
-              ? "relative z-[80] max-h-32 overflow-visible opacity-100"
-              : "max-h-0 -translate-y-1 overflow-hidden opacity-0",
+              ? "relative z-[80] grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0 pointer-events-none",
           )}
         >
-          <div className="mx-auto hidden min-h-[4rem] max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2 sm:min-h-[4.75rem] sm:gap-x-3 sm:px-6 lg:grid lg:px-8">
+          <div
+            className={cn(
+              "min-h-0",
+              accountOpen ? "overflow-visible" : "overflow-hidden",
+            )}
+          >
+            <div className="mx-auto hidden min-h-[4rem] max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2 sm:min-h-[4.75rem] sm:gap-x-3 sm:px-6 lg:grid lg:px-8">
             <div className="flex min-w-0 justify-self-start">
               <Link
                 href="/"
@@ -549,7 +576,7 @@ export function SiteHeader({ user }: Props) {
                       <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                     </button>
                     {accountOpen && (
-                      <div className="absolute right-0 top-full z-[70] pt-1">
+                      <div className="absolute right-0 top-full z-[100] pt-1">
                         <div
                           className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
                           role="menu"
@@ -611,40 +638,42 @@ export function SiteHeader({ user }: Props) {
                       <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                     </button>
                     {accountOpen && (
-                      <div
-                        className="absolute right-0 top-full z-[70] mt-1 min-w-[220px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
-                        role="menu"
-                      >
-                        <Link
-                          href="/login"
-                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                          role="menuitem"
-                          onClick={() => setAccountOpen(false)}
+                      <div className="absolute right-0 top-full z-[100] pt-0.5">
+                        <div
+                          className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
+                          role="menu"
                         >
-                          <LogIn className="h-4 w-4" strokeWidth={1.6} />
-                          Iniciar sesión
-                        </Link>
-                        <Link
-                          href="/register"
-                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                          role="menuitem"
-                          onClick={() => setAccountOpen(false)}
-                        >
-                          <UserRoundPlus
-                            className="h-4 w-4"
-                            strokeWidth={1.6}
-                          />
-                          Crear cuenta
-                        </Link>
-                        <Link
-                          href="/cuenta"
-                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                          role="menuitem"
-                          onClick={() => setAccountOpen(false)}
-                        >
-                          <Package className="h-4 w-4" strokeWidth={1.6} />
-                          Mis pedidos
-                        </Link>
+                          <Link
+                            href="/login"
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                            role="menuitem"
+                            onClick={() => setAccountOpen(false)}
+                          >
+                            <LogIn className="h-4 w-4" strokeWidth={1.6} />
+                            Iniciar sesión
+                          </Link>
+                          <Link
+                            href="/register"
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                            role="menuitem"
+                            onClick={() => setAccountOpen(false)}
+                          >
+                            <UserRoundPlus
+                              className="h-4 w-4"
+                              strokeWidth={1.6}
+                            />
+                            Crear cuenta
+                          </Link>
+                          <Link
+                            href="/cuenta"
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                            role="menuitem"
+                            onClick={() => setAccountOpen(false)}
+                          >
+                            <Package className="h-4 w-4" strokeWidth={1.6} />
+                            Mis pedidos
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -652,16 +681,18 @@ export function SiteHeader({ user }: Props) {
               </div>
             </div>
           </div>
+          </div>
         </div>
 
         <div
           className={cn(
-            "hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] will-change-[max-height,transform,opacity] motion-reduce:transition-none transition-[max-height,transform,opacity] duration-200 ease-out lg:block",
+            "hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:grid lg:overflow-hidden lg:transition-[grid-template-rows,opacity] lg:duration-[220ms] lg:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:lg:transition-none",
             showMainMenu
-              ? "max-h-20 translate-y-0 opacity-100"
-              : "max-h-0 -translate-y-1 opacity-0",
+              ? "lg:grid-rows-[1fr] lg:opacity-100"
+              : "lg:grid-rows-[0fr] lg:opacity-0 lg:pointer-events-none",
           )}
         >
+          <div className="min-h-0 overflow-hidden lg:min-h-0">
           <nav
             className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 overflow-visible px-4 py-1 sm:gap-3 sm:px-6 lg:px-8"
             aria-label="Principal"
@@ -669,7 +700,7 @@ export function SiteHeader({ user }: Props) {
             <Link
               href="/"
               className={cn(
-                "snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/15 sm:px-4",
+                "snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                 navPrimaryLabelClass,
               )}
               onClick={handleScrollToTopOnHome}
@@ -680,7 +711,7 @@ export function SiteHeader({ user }: Props) {
             <div className="group/nav relative">
               <span
                 className={cn(
-                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/nav:bg-white/15 sm:px-4",
+                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/nav:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
               >
@@ -693,7 +724,7 @@ export function SiteHeader({ user }: Props) {
                   <div
                     className={cn(
                       megaPanelClass,
-                      "flex font-roboto",
+                      "flex items-stretch font-roboto",
                       generalPanelHasSubs
                         ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
                         : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
@@ -708,10 +739,10 @@ export function SiteHeader({ user }: Props) {
                       <>
                         <div
                           className={cn(
-                            "max-h-72 shrink-0 overflow-y-auto py-2",
+                            "shrink-0 overflow-y-auto py-2",
                             generalPanelHasSubs
-                              ? "w-[46%] border-r border-white/10"
-                              : "w-full",
+                              ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                              : "w-full max-h-[70vh]",
                           )}
                         >
                           {navData!.characteristicsGeneral.map((general) => {
@@ -727,9 +758,8 @@ export function SiteHeader({ user }: Props) {
                                 className={cn(
                                   navMegaRowClass,
                                   "justify-between",
-                                  rowActive
-                                    ? "bg-white/12"
-                                    : "hover:bg-white/10",
+                                  "hover:bg-white/10",
+                                  rowActive && "bg-white/10",
                                 )}
                               >
                                 <span className="truncate">{general.name}</span>
@@ -745,7 +775,7 @@ export function SiteHeader({ user }: Props) {
                         </div>
                         {generalPanelHasSubs && activeGeneral ? (
                           <div className="min-w-0 flex-1 py-2">
-                            <ul className="max-h-72 overflow-y-auto py-1">
+                            <ul className="py-1">
                               {activeGeneral.specifics.map((specific) => (
                                 <li key={specific.id}>
                                   <Link
@@ -774,7 +804,7 @@ export function SiteHeader({ user }: Props) {
             <div className="group/shop relative">
               <span
                 className={cn(
-                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/shop:bg-white/15 sm:px-4",
+                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/shop:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
               >
@@ -786,7 +816,7 @@ export function SiteHeader({ user }: Props) {
                   <div
                     className={cn(
                       megaPanelClass,
-                      "flex font-roboto",
+                      "flex items-stretch font-roboto",
                       brandPanelHasSubs
                         ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
                         : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
@@ -801,10 +831,10 @@ export function SiteHeader({ user }: Props) {
                       <>
                         <div
                           className={cn(
-                            "max-h-72 shrink-0 overflow-y-auto py-2",
+                            "shrink-0 overflow-y-auto py-2",
                             brandPanelHasSubs
-                              ? "w-[46%] border-r border-white/10"
-                              : "w-full",
+                              ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                              : "w-full max-h-[70vh]",
                           )}
                         >
                           {navData!.brands.map((brand) => {
@@ -818,9 +848,8 @@ export function SiteHeader({ user }: Props) {
                                 className={cn(
                                   navMegaRowClass,
                                   "justify-between",
-                                  rowActive
-                                    ? "bg-white/12"
-                                    : "hover:bg-white/10",
+                                  "hover:bg-white/10",
+                                  rowActive && "bg-white/10",
                                 )}
                               >
                                 <span className="truncate">{brand.name}</span>
@@ -836,7 +865,7 @@ export function SiteHeader({ user }: Props) {
                         </div>
                         {brandPanelHasSubs && activeBrand ? (
                           <div className="min-w-0 flex-1 py-2">
-                            <ul className="max-h-72 overflow-y-auto py-1">
+                            <ul className="py-1">
                               {activeBrand.brandTypes.map((type) => (
                                 <li key={type.id}>
                                   <Link
@@ -865,7 +894,7 @@ export function SiteHeader({ user }: Props) {
             <div className="group/svc relative">
               <span
                 className={cn(
-                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/svc:bg-white/15 sm:px-4",
+                  "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/svc:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
               >
@@ -882,16 +911,17 @@ export function SiteHeader({ user }: Props) {
                   >
                     {navLoading ? (
                       <p className="p-4 text-xs uppercase tracking-[0.35em] text-white/50">
-                        cargando…
+                        Cargando…
                       </p>
                     ) : (
-                      <ul className="max-h-80 divide-y divide-white/10 overflow-y-auto py-1">
+                      <ul className="py-2">
                         {navData!.services.map((service) => (
                           <li key={service.id}>
                             <Link
                               href={`/services/${service.id}`}
                               className={cn(
-                                "block px-4 py-3 text-white transition hover:bg-white/[0.07]",
+                                navMegaRowClass,
+                                "hover:bg-white/10",
                                 navPrimaryLabelClass,
                               )}
                             >
@@ -909,7 +939,7 @@ export function SiteHeader({ user }: Props) {
             <Link
               href="/contact"
               className={cn(
-                "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/15 sm:px-4",
+                "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                 navPrimaryLabelClass,
               )}
             >
@@ -919,13 +949,14 @@ export function SiteHeader({ user }: Props) {
             <Link
               href="/leave-review"
               className={cn(
-                "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/15 sm:px-4",
+                "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                 navPrimaryLabelClass,
               )}
             >
               Reseñas
             </Link>
           </nav>
+          </div>
         </div>
       </header>
 
