@@ -2,6 +2,8 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
+type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
 async function getAuthenticatedUserId() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -65,30 +67,60 @@ export async function updateProfileNameAction(payload: { name: string }) {
 }
 
 export type AddAddressPayload = {
-  label?: string;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  apartment?: string;
+  phone?: string;
   street: string;
   city: string;
   state?: string;
   postalCode: string;
   country?: string;
+  isDefault?: boolean;
 };
+
+async function clearDefaultAddressesForUser(
+  supabase: ServerSupabase,
+  userId: string,
+) {
+  const { error } = await supabase
+    .from("addresses")
+    .update({ is_default: false, updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("is_default", true);
+  if (error) throw error;
+}
 
 export async function addAddressAction(payload: AddAddressPayload) {
   const { supabase, userId } = await getAuthenticatedUserId();
+  const firstName = payload.firstName.trim();
+  const lastName = payload.lastName.trim();
+  if (!firstName) throw new Error("El nombre es obligatorio.");
+  if (!lastName) throw new Error("El apellido es obligatorio.");
   const street = payload.street.trim();
   if (!street) throw new Error("La calle es obligatoria.");
   const postalCode = payload.postalCode?.trim() ?? "";
   if (!postalCode) throw new Error("El código postal es obligatorio.");
   const city = payload.city.trim();
+  if (!city) throw new Error("La ciudad es obligatoria.");
+  const isDefault = Boolean(payload.isDefault);
+  if (isDefault) {
+    await clearDefaultAddressesForUser(supabase, userId);
+  }
   const { error } = await supabase.from("addresses").insert({
     user_id: userId,
-    label: payload.label?.trim() || null,
+    first_name: firstName,
+    last_name: lastName,
+    company: payload.company?.trim() || null,
+    apartment: payload.apartment?.trim() || null,
+    phone: payload.phone?.trim() || null,
     street,
     city,
     state: payload.state?.trim() || null,
     postal_code: postalCode,
     country: payload.country?.trim() || "United States",
-    is_default: false,
+    is_default: isDefault,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
@@ -100,20 +132,34 @@ export type UpdateAddressPayload = AddAddressPayload & { addressId: string };
 
 export async function updateAddressAction(payload: UpdateAddressPayload) {
   const { supabase, userId } = await getAuthenticatedUserId();
+  const firstName = payload.firstName.trim();
+  const lastName = payload.lastName.trim();
+  if (!firstName) throw new Error("El nombre es obligatorio.");
+  if (!lastName) throw new Error("El apellido es obligatorio.");
   const street = payload.street.trim();
   if (!street) throw new Error("La calle es obligatoria.");
   const postalCode = payload.postalCode?.trim() ?? "";
   if (!postalCode) throw new Error("El código postal es obligatorio.");
   const city = payload.city.trim();
+  if (!city) throw new Error("La ciudad es obligatoria.");
+  const isDefault = Boolean(payload.isDefault);
+  if (isDefault) {
+    await clearDefaultAddressesForUser(supabase, userId);
+  }
   const { error } = await supabase
     .from("addresses")
     .update({
-      label: payload.label?.trim() || null,
+      first_name: firstName,
+      last_name: lastName,
+      company: payload.company?.trim() || null,
+      apartment: payload.apartment?.trim() || null,
+      phone: payload.phone?.trim() || null,
       street,
       city,
       state: payload.state?.trim() || null,
       postal_code: postalCode,
       country: payload.country?.trim() || "United States",
+      is_default: isDefault,
       updated_at: new Date().toISOString(),
     })
     .eq("id", payload.addressId)

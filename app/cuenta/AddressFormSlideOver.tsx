@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -32,12 +32,17 @@ import type { CuentaAddress } from "./types";
 const ADDRESS_FORM_ID = "cuenta-address-form-slide-over";
 
 const addressFormSchema = z.object({
-  label: z.string(),
+  firstName: z.string().trim().min(1, "El nombre es obligatorio"),
+  lastName: z.string().trim().min(1, "El apellido es obligatorio"),
+  company: z.string(),
+  apartment: z.string(),
+  phone: z.string(),
   street: z.string().trim().min(1, "La calle es obligatoria"),
-  city: z.string(),
+  city: z.string().trim().min(1, "La ciudad es obligatoria"),
   state: z.string(),
   postalCode: z.string().trim().min(1, "El código postal es obligatorio"),
   countryCode: z.string().min(1),
+  isDefault: z.boolean(),
 });
 
 /** País fijo: solo EE. UU.; el desplegable queda deshabilitado. */
@@ -52,23 +57,33 @@ export type AddressFormValues = z.infer<typeof addressFormSchema>;
 
 function emptyFormValues(): AddressFormValues {
   return {
-    label: "",
+    firstName: "",
+    lastName: "",
+    company: "",
+    apartment: "",
+    phone: "",
     street: "",
     city: "",
     state: "",
     postalCode: "",
     countryCode: DEFAULT_COUNTRY_CODE,
+    isDefault: false,
   };
 }
 
 function addressToFormValues(address: CuentaAddress): AddressFormValues {
   return {
-    label: address.label ?? "",
+    firstName: address.firstName ?? "",
+    lastName: address.lastName ?? "",
+    company: address.company ?? "",
+    apartment: address.apartment ?? "",
+    phone: address.phone ?? "",
     street: address.street,
     city: address.city,
     state: address.state ?? "",
     postalCode: address.postalCode ?? "",
     countryCode: DEFAULT_COUNTRY_CODE,
+    isDefault: address.isDefault,
   };
 }
 
@@ -130,12 +145,17 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
   const onSubmit = (values: AddressFormValues) => {
     const country = countryCodeToName(DEFAULT_COUNTRY_CODE);
     const payload = {
-      label: values.label,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      company: values.company,
+      apartment: values.apartment,
+      phone: values.phone,
       street: values.street,
       city: values.city,
       state: values.state,
       postalCode: values.postalCode,
       country,
+      isDefault: values.isDefault,
     };
     if (address) {
       executeUpdate({ addressId: address.id, ...payload });
@@ -149,7 +169,7 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
       open={open}
       onClose={() => onOpenChange(false)}
       title={address ? "Editar dirección" : "Nueva dirección"}
-      description="Usa un alias para reconocerla, elige provincia o estado y completa el resto de la dirección."
+      description="Completa tus datos de contacto, la dirección postal y el estado. Puedes marcar una dirección como predeterminada."
       contentAriaLabel="Formulario de dirección"
       footer={
         <SlideOverFooter>
@@ -183,8 +203,31 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
         <section className={adminSlideOverSectionClassName}>
           <div className="flex flex-col gap-4">
             <FormField
-              name="label"
-              label="Alias (ej: Casa, Trabajo)"
+              name="firstName"
+              label="Nombre"
+              required
+              disabled={isPending}
+              error={errors.firstName?.message}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
+              name="lastName"
+              label="Apellido"
+              required
+              disabled={isPending}
+              error={errors.lastName?.message}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
+              name="company"
+              label="Compañía"
+              disabled={isPending}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
+              name="phone"
+              label="Teléfono"
+              type="tel"
               disabled={isPending}
               className={adminServiceLikeInputClassName}
             />
@@ -197,8 +240,16 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
               className={adminServiceLikeInputClassName}
             />
             <FormField
+              name="apartment"
+              label="Apartamento"
+              disabled={isPending}
+              placeholder="Apto., suite, unidad, etc."
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
               name="city"
               label="Ciudad"
+              required
               disabled={isPending}
               error={errors.city?.message}
               className={adminServiceLikeInputClassName}
@@ -239,6 +290,33 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
               disabled={isPending}
               error={errors.postalCode?.message}
               className={adminServiceLikeInputClassName}
+            />
+            <Controller
+              name="isDefault"
+              control={form.control}
+              render={({ field }) => (
+                <div className="flex items-start gap-3 rounded-lg border border-border/80 bg-muted/15 px-3 py-3">
+                  <input
+                    id="cuenta-address-is-default"
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    disabled={isPending}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  />
+                  <label
+                    htmlFor="cuenta-address-is-default"
+                    className="min-w-0 cursor-pointer text-sm leading-snug"
+                  >
+                    <span className="font-medium text-foreground">
+                      Dirección por defecto
+                    </span>
+                    <span className="mt-0.5 block text-muted-foreground">
+                      Se usará como predeterminada en envíos cuando no elijas otra.
+                    </span>
+                  </label>
+                </div>
+              )}
             />
           </div>
         </section>

@@ -29,14 +29,18 @@ export default async function CuentaPage() {
   const { data: addresses } = await supabase
     .from("addresses")
     .select(
-      "id, label, street, city, state, postal_code, country, is_default, created_at",
+      "id, first_name, last_name, company, apartment, phone, street, city, state, postal_code, country, is_default, created_at",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   const mappedAddresses: CuentaAddress[] = (addresses ?? []).map((address) => ({
     id: address.id,
-    label: address.label,
+    firstName: address.first_name,
+    lastName: address.last_name,
+    company: address.company,
+    apartment: address.apartment,
+    phone: address.phone,
     street: address.street,
     city: address.city,
     state: address.state,
@@ -67,13 +71,13 @@ export default async function CuentaPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
       <AdminHeader
         user={headerUser}
         variant="standalone"
         brandHref="/"
       />
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

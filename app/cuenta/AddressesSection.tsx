@@ -27,6 +27,17 @@ function escapeHtmlBasic(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function addressRecipientLine(address: CuentaAddress): string {
+  const name = [address.firstName?.trim(), address.lastName?.trim()]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (name) return name;
+  const co = address.company?.trim();
+  if (co) return co;
+  return "Dirección";
+}
+
 /** Segunda línea: ciudad, estado y CP sin comas colgantes. */
 function addressLocalityLine(address: CuentaAddress): string | null {
   const cityState = [address.city?.trim(), address.state?.trim()]
@@ -36,6 +47,21 @@ function addressLocalityLine(address: CuentaAddress): string | null {
   if (!cityState && !zip) return null;
   if (cityState && zip) return `${cityState} · ${zip}`;
   return cityState || zip || null;
+}
+
+function addressStreetBlock(address: CuentaAddress): string {
+  const street = address.street?.trim() ?? "";
+  const apt = address.apartment?.trim();
+  if (street && apt) return `${street} · ${apt}`;
+  return street || apt || "";
+}
+
+function addressConfirmLabel(address: CuentaAddress): string {
+  const recipient = addressRecipientLine(address);
+  const street = addressStreetBlock(address);
+  if (recipient !== "Dirección" && street) return `${recipient} — ${street}`;
+  if (street) return street;
+  return recipient;
 }
 
 type Props = {
@@ -72,10 +98,8 @@ export function AddressesSection({ addresses }: Props) {
   };
 
   const handleDelete = async (address: CuentaAddress) => {
-    const raw =
-      address.label?.trim() ||
-      [address.street, address.city].filter(Boolean).join(", ") ||
-      "esta dirección";
+    const label = addressConfirmLabel(address);
+    const raw = label === "Dirección" ? "esta dirección" : label;
     await swalSaasConfirmAsync({
       title: "¿Eliminar dirección?",
       html: `Vas a eliminar <strong>${escapeHtmlBasic(raw)}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
@@ -159,6 +183,10 @@ export function AddressesSection({ addresses }: Props) {
           >
             {addresses.map((address) => {
               const locality = addressLocalityLine(address);
+              const recipient = addressRecipientLine(address);
+              const streetBlock = addressStreetBlock(address);
+              const companyLine = address.company?.trim();
+              const phoneLine = address.phone?.trim();
               return (
                 <li key={address.id} className="min-w-0">
                   <article
@@ -187,11 +215,9 @@ export function AddressesSection({ addresses }: Props) {
                             <div className="flex min-w-0 flex-nowrap items-center gap-2">
                               <h4
                                 className="min-w-0 flex-1 truncate text-sm font-semibold leading-none tracking-tight text-foreground"
-                                title={
-                                  address.label?.trim() || "Dirección"
-                                }
+                                title={recipient}
                               >
-                                {address.label?.trim() || "Dirección"}
+                                {recipient}
                               </h4>
                               {address.isDefault ? (
                                 <span className="inline-flex shrink-0 items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
@@ -212,8 +238,18 @@ export function AddressesSection({ addresses }: Props) {
                         </div>
                       </div>
                       <div className="min-w-0 space-y-1.5 border-t border-border/50 pt-2.5">
+                        {companyLine ? (
+                          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                            {companyLine}
+                          </p>
+                        ) : null}
+                        {phoneLine ? (
+                          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                            {phoneLine}
+                          </p>
+                        ) : null}
                         <p className="text-sm font-medium leading-snug text-foreground/90 [overflow-wrap:anywhere]">
-                          {address.street}
+                          {streetBlock || "—"}
                         </p>
                         {locality ? (
                           <p className="text-sm leading-snug text-muted-foreground [overflow-wrap:anywhere]">

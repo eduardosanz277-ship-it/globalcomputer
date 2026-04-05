@@ -1,6 +1,10 @@
 export type CuentaAddress = {
   id: string;
-  label: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  apartment: string | null;
+  phone: string | null;
   street: string;
   city: string;
   state: string | null;
