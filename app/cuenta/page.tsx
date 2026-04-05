@@ -32,6 +32,7 @@ export default async function CuentaPage() {
       "id, first_name, last_name, company, apartment, phone, street, city, state, postal_code, country, is_default, created_at",
     )
     .eq("user_id", user.id)
+    .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
 
   const mappedAddresses: CuentaAddress[] = (addresses ?? []).map((address) => ({

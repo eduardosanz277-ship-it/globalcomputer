@@ -49,18 +49,14 @@ function addressLocalityLine(address: CuentaAddress): string | null {
   return cityState || zip || null;
 }
 
-function addressStreetBlock(address: CuentaAddress): string {
-  const street = address.street?.trim() ?? "";
-  const apt = address.apartment?.trim();
-  if (street && apt) return `${street} · ${apt}`;
-  return street || apt || "";
-}
-
 function addressConfirmLabel(address: CuentaAddress): string {
   const recipient = addressRecipientLine(address);
-  const street = addressStreetBlock(address);
-  if (recipient !== "Dirección" && street) return `${recipient} — ${street}`;
-  if (street) return street;
+  const street = address.street?.trim() ?? "";
+  const apt = address.apartment?.trim();
+  const location = [street, apt].filter(Boolean).join(" · ");
+  if (recipient !== "Dirección" && location)
+    return `${recipient} — ${location}`;
+  if (location) return location;
   return recipient;
 }
 
@@ -142,7 +138,7 @@ export function AddressesSection({ addresses }: Props) {
             className="w-full gap-1.5 px-6 sm:w-auto sm:shrink-0"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
-            Agregar dirección
+            Agregar
           </Button>
         </div>
         {addresses.length === 0 ? (
@@ -175,32 +171,46 @@ export function AddressesSection({ addresses }: Props) {
             </Button>
           </div>
         ) : (
-          <ul
-            className={cn(
-              "grid list-none gap-3 p-0 sm:gap-4",
-              addresses.length > 1 && "sm:grid-cols-2 lg:grid-cols-3",
-            )}
-          >
+          <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {addresses.map((address) => {
               const locality = addressLocalityLine(address);
               const recipient = addressRecipientLine(address);
-              const streetBlock = addressStreetBlock(address);
+              const streetLine = address.street?.trim() ?? "";
+              const apartmentLine = address.apartment?.trim();
               const companyLine = address.company?.trim();
               const phoneLine = address.phone?.trim();
+              const hasRecipientName = Boolean(
+                [address.firstName?.trim(), address.lastName?.trim()].filter(
+                  Boolean,
+                ).length,
+              );
+              /** Compañía debajo del título solo si ya hay persona; si no hay nombre, la compañía va en el h4. */
+              const showCompanySubline = hasRecipientName && Boolean(companyLine);
+              const showPhoneSubline = Boolean(phoneLine);
+              const isMinimalHeader =
+                !showCompanySubline && !showPhoneSubline;
               return (
-                <li key={address.id} className="min-w-0">
+                <li key={address.id} className="min-w-0 self-stretch">
                   <article
                     className={cn(
-                      "overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm",
+                      "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm",
                       "p-3 sm:p-4",
                       "transition-[box-shadow,border-color] duration-200",
                       "hover:border-primary/25 hover:shadow-md",
                     )}
                   >
-                    <div className="flex flex-col gap-2.5 sm:gap-3">
-                      <div className="flex min-w-0 gap-x-2.5 sm:gap-x-3">
+                    <div className="flex min-h-0 flex-1 flex-col gap-2.5 sm:gap-3">
+                      <div
+                        className={cn(
+                          "flex min-w-0 gap-x-2.5 sm:gap-x-3",
+                          isMinimalHeader ? "items-center" : "items-start",
+                        )}
+                      >
                         <div
-                          className="flex shrink-0 items-center justify-center self-center"
+                          className={cn(
+                            "flex shrink-0 items-center justify-center",
+                            !isMinimalHeader && "pt-0.5",
+                          )}
                           aria-hidden
                         >
                           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-inset ring-primary/10 sm:h-11 sm:w-11 sm:rounded-xl">
@@ -210,23 +220,56 @@ export function AddressesSection({ addresses }: Props) {
                             />
                           </div>
                         </div>
-                        <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1 overflow-hidden">
-                            <div className="flex min-w-0 flex-nowrap items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex min-w-0 flex-1 justify-between gap-2",
+                            isMinimalHeader ? "items-center" : "items-start",
+                          )}
+                        >
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div
+                              className={cn(
+                                "flex min-w-0 gap-2",
+                                address.isDefault
+                                  ? "flex-col items-stretch"
+                                  : "flex-row flex-nowrap items-center",
+                              )}
+                            >
                               <h4
-                                className="min-w-0 flex-1 truncate text-sm font-semibold leading-none tracking-tight text-foreground"
+                                className={cn(
+                                  "min-w-0 text-sm font-semibold leading-tight tracking-tight text-foreground",
+                                  address.isDefault
+                                    ? "w-full text-pretty break-words [overflow-wrap:anywhere]"
+                                    : "min-w-0 flex-1 truncate",
+                                  !isMinimalHeader && "pt-0.5",
+                                )}
                                 title={recipient}
                               >
                                 {recipient}
                               </h4>
                               {address.isDefault ? (
-                                <span className="inline-flex shrink-0 items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                <span className="inline-flex w-fit shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                  <span aria-hidden className="select-none">
+                                    ✓
+                                  </span>
                                   Predeterminada
                                 </span>
                               ) : null}
                             </div>
+                            {showCompanySubline ? (
+                              <p className="text-xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                                {companyLine}
+                              </p>
+                            ) : null}
+                            {showPhoneSubline ? (
+                              <p className="text-xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                                {phoneLine}
+                              </p>
+                            ) : null}
                           </div>
-                          <div className="shrink-0">
+                          <div
+                            className={cn("shrink-0", !isMinimalHeader && "pt-0.5")}
+                          >
                             <AdminEditDeleteRowMenu
                               onEdit={() => openEdit(address)}
                               onDelete={() => void handleDelete(address)}
@@ -238,19 +281,14 @@ export function AddressesSection({ addresses }: Props) {
                         </div>
                       </div>
                       <div className="min-w-0 space-y-1.5 border-t border-border/50 pt-2.5">
-                        {companyLine ? (
-                          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                            {companyLine}
-                          </p>
-                        ) : null}
-                        {phoneLine ? (
-                          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                            {phoneLine}
-                          </p>
-                        ) : null}
                         <p className="text-sm font-medium leading-snug text-foreground/90 [overflow-wrap:anywhere]">
-                          {streetBlock || "—"}
+                          {streetLine || "—"}
                         </p>
+                        {apartmentLine ? (
+                          <p className="text-sm leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                            Apartamento: {apartmentLine}
+                          </p>
+                        ) : null}
                         {locality ? (
                           <p className="text-sm leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                             {locality}

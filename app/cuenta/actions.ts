@@ -67,8 +67,8 @@ export async function updateProfileNameAction(payload: { name: string }) {
 }
 
 export type AddAddressPayload = {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   company?: string;
   apartment?: string;
   phone?: string;
@@ -94,10 +94,8 @@ async function clearDefaultAddressesForUser(
 
 export async function addAddressAction(payload: AddAddressPayload) {
   const { supabase, userId } = await getAuthenticatedUserId();
-  const firstName = payload.firstName.trim();
-  const lastName = payload.lastName.trim();
-  if (!firstName) throw new Error("El nombre es obligatorio.");
-  if (!lastName) throw new Error("El apellido es obligatorio.");
+  const firstName = payload.firstName?.trim() || null;
+  const lastName = payload.lastName?.trim() || null;
   const street = payload.street.trim();
   if (!street) throw new Error("La calle es obligatoria.");
   const postalCode = payload.postalCode?.trim() ?? "";
@@ -132,10 +130,8 @@ export type UpdateAddressPayload = AddAddressPayload & { addressId: string };
 
 export async function updateAddressAction(payload: UpdateAddressPayload) {
   const { supabase, userId } = await getAuthenticatedUserId();
-  const firstName = payload.firstName.trim();
-  const lastName = payload.lastName.trim();
-  if (!firstName) throw new Error("El nombre es obligatorio.");
-  if (!lastName) throw new Error("El apellido es obligatorio.");
+  const firstName = payload.firstName?.trim() || null;
+  const lastName = payload.lastName?.trim() || null;
   const street = payload.street.trim();
   if (!street) throw new Error("La calle es obligatoria.");
   const postalCode = payload.postalCode?.trim() ?? "";

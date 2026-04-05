@@ -32,8 +32,8 @@ import type { CuentaAddress } from "./types";
 const ADDRESS_FORM_ID = "cuenta-address-form-slide-over";
 
 const addressFormSchema = z.object({
-  firstName: z.string().trim().min(1, "El nombre es obligatorio"),
-  lastName: z.string().trim().min(1, "El apellido es obligatorio"),
+  firstName: z.string(),
+  lastName: z.string(),
   company: z.string(),
   apartment: z.string(),
   phone: z.string(),
@@ -132,6 +132,8 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
   );
 
   const isPending = isCreating || isUpdating;
+  /** Al editar la que ya es predeterminada, no mostrar el check (sigue siendo predeterminada al guardar). */
+  const showDefaultCheckbox = !address || !address.isDefault;
 
   useEffect(() => {
     if (!open) return;
@@ -144,6 +146,8 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
 
   const onSubmit = (values: AddressFormValues) => {
     const country = countryCodeToName(DEFAULT_COUNTRY_CODE);
+    const isDefault =
+      Boolean(address?.isDefault) || values.isDefault;
     const payload = {
       firstName: values.firstName,
       lastName: values.lastName,
@@ -155,7 +159,7 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
       state: values.state,
       postalCode: values.postalCode,
       country,
-      isDefault: values.isDefault,
+      isDefault,
     };
     if (address) {
       executeUpdate({ addressId: address.id, ...payload });
@@ -205,17 +209,13 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
             <FormField
               name="firstName"
               label="Nombre"
-              required
               disabled={isPending}
-              error={errors.firstName?.message}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="lastName"
               label="Apellido"
-              required
               disabled={isPending}
-              error={errors.lastName?.message}
               className={adminServiceLikeInputClassName}
             />
             <FormField
@@ -243,7 +243,7 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
               name="apartment"
               label="Apartamento"
               disabled={isPending}
-              placeholder="Apto., suite, unidad, etc."
+              placeholder="Apto., suite, etc."
               className={adminServiceLikeInputClassName}
             />
             <FormField
@@ -291,33 +291,36 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
               error={errors.postalCode?.message}
               className={adminServiceLikeInputClassName}
             />
-            <Controller
-              name="isDefault"
-              control={form.control}
-              render={({ field }) => (
-                <div className="flex items-start gap-3 rounded-lg border border-border/80 bg-muted/15 px-3 py-3">
-                  <input
-                    id="cuenta-address-is-default"
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    disabled={isPending}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                  />
-                  <label
-                    htmlFor="cuenta-address-is-default"
-                    className="min-w-0 cursor-pointer text-sm leading-snug"
-                  >
-                    <span className="font-medium text-foreground">
-                      Dirección por defecto
-                    </span>
-                    <span className="mt-0.5 block text-muted-foreground">
-                      Se usará como predeterminada en envíos cuando no elijas otra.
-                    </span>
-                  </label>
-                </div>
-              )}
-            />
+            {showDefaultCheckbox ? (
+              <Controller
+                name="isDefault"
+                control={form.control}
+                render={({ field }) => (
+                  <div className="flex items-start gap-3 rounded-lg border border-border/80 bg-muted/15 px-3 py-3">
+                    <input
+                      id="cuenta-address-is-default"
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={field.onChange}
+                      disabled={isPending}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    />
+                    <label
+                      htmlFor="cuenta-address-is-default"
+                      className="min-w-0 cursor-pointer text-sm leading-snug"
+                    >
+                      <span className="font-medium text-foreground">
+                        Dirección por defecto
+                      </span>
+                      <span className="mt-0.5 block text-muted-foreground">
+                        Se usará como predeterminada en envíos cuando no elijas
+                        otra.
+                      </span>
+                    </label>
+                  </div>
+                )}
+              />
+            ) : null}
           </div>
         </section>
       </Form>
