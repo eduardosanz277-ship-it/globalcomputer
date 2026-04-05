@@ -23,7 +23,7 @@ export const CardHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col space-y-1.5 p-4 border-b border-border", className)}
+    className={cn("flex flex-col gap-2 p-4 border-b border-border", className)}
     {...props}
   />
 );

@@ -81,9 +81,7 @@ function businessDisplayName(row: AdminBusinessProfileRow): string {
 }
 
 function businessSortValue(row: AdminBusinessProfileRow): string {
-  return `${row.fullName ?? ""} ${row.email ?? ""}`
-    .trim()
-    .toLowerCase();
+  return `${row.fullName ?? ""} ${row.email ?? ""}`.trim().toLowerCase();
 }
 
 function businessInitial(row: AdminBusinessProfileRow): string {
@@ -103,9 +101,7 @@ function businessAvatarClass(row: AdminBusinessProfileRow): string {
   return "bg-muted text-muted-foreground ring-1 ring-border";
 }
 
-function lastSignInTimestampMs(
-  row: AdminBusinessProfileRow,
-): number | null {
+function lastSignInTimestampMs(row: AdminBusinessProfileRow): number | null {
   const raw = row.lastSignInAt;
   if (raw == null) return null;
   const t = new Date(raw).getTime();
@@ -142,21 +138,12 @@ function businessSubscriptionRowClassName(
   // 2px barrita a la izquierda (suave) usando `box-shadow inset`.
   // rgba(..., 0.35) para que sea sutil.
   if (s === "pending") {
-    return cn(
-      base,
-      "shadow-[inset_2px_0_0_rgba(245,158,11,0.35)]",
-    );
+    return cn(base, "shadow-[inset_2px_0_0_rgba(245,158,11,0.35)]");
   }
   if (s === "rejected") {
-    return cn(
-      base,
-      "shadow-[inset_2px_0_0_rgba(239,68,68,0.35)]",
-    );
+    return cn(base, "shadow-[inset_2px_0_0_rgba(239,68,68,0.35)]");
   }
-  return cn(
-    base,
-    "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]",
-  );
+  return cn(base, "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]");
 }
 
 function SortableHeader({
@@ -451,7 +438,7 @@ function SuscripcionesRowActionsMenu({
           }}
         >
           <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-          {deletingUser ? "Eliminando…" : "Eliminar"}
+          {deletingUser ? "Eliminando" : "Eliminar"}
         </button>
       </div>
     ) : null;
@@ -503,44 +490,40 @@ export function AdminSuscripcionesEmpresasTable({
     APPROVAL_FILTER_OPTIONS.find((o) => o.value === approvalFilter) ??
     APPROVAL_FILTER_OPTIONS[0];
 
-  const renderMobileRow = useCallback(
-    (row: Row<AdminBusinessProfileRow>) => {
-      const r = row.original;
-      return (
-        <li key={row.id}>
-          <BusinessProfileCard
-            email={r.email ?? ""}
-            fullName={r.fullName}
-            businessRegistrationStatus={r.businessRegistrationStatus}
-            lastSignInAt={r.lastSignInAt}
-            createdAt={r.createdAt}
-            phone={r.phone}
-            employerIdentificationNumber={r.employerIdentificationNumber}
-            className="hover:bg-muted/50 transition-colors duration-150"
-            actions={
-              <SuscripcionesRowActionsMenu
-                row={r}
-                onViewDetail={() => setDetailUserId(r.id)}
-                onDeleteSuccess={() => {
-                  setDetailUserId((current) =>
-                    current === r.id ? null : current,
-                  );
-                }}
-              />
-            }
-          />
-        </li>
-      );
-    },
-    [],
-  );
+  const renderMobileRow = useCallback((row: Row<AdminBusinessProfileRow>) => {
+    const r = row.original;
+    return (
+      <li key={row.id}>
+        <BusinessProfileCard
+          email={r.email ?? ""}
+          fullName={r.fullName}
+          businessRegistrationStatus={r.businessRegistrationStatus}
+          lastSignInAt={r.lastSignInAt}
+          createdAt={r.createdAt}
+          phone={r.phone}
+          employerIdentificationNumber={r.employerIdentificationNumber}
+          className="hover:bg-muted/50 transition-colors duration-150"
+          actions={
+            <SuscripcionesRowActionsMenu
+              row={r}
+              onViewDetail={() => setDetailUserId(r.id)}
+              onDeleteSuccess={() => {
+                setDetailUserId((current) =>
+                  current === r.id ? null : current,
+                );
+              }}
+            />
+          }
+        />
+      </li>
+    );
+  }, []);
 
   const columns = useMemo<ColumnDef<AdminBusinessProfileRow>[]>(
     () => [
       {
         id: "business",
-        accessorFn: (row) =>
-          `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
+        accessorFn: (row) => `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           businessSortValue(rowA.original).localeCompare(
@@ -734,9 +717,7 @@ export function AdminSuscripcionesEmpresasTable({
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
         paginationClassName="border-border/50"
-        getRowClassName={(row) =>
-          businessSubscriptionRowClassName(row)
-        }
+        getRowClassName={(row) => businessSubscriptionRowClassName(row)}
         renderMobileRow={renderMobileRow}
         toolbarFilters={
           <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">

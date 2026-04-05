@@ -25,17 +25,17 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>(tabs[0].id);
 
   return (
-    <div className="rounded-2xl border border-border bg-background/80 p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-background/80 p-3 shadow-sm sm:p-5">
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={
               activeTab === tab.id
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
+                ? "rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 transition hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                : "rounded-full border border-border/80 bg-white px-4 py-2 text-sm font-semibold text-muted-foreground shadow-sm transition hover:border-border hover:bg-muted/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
+            }
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}

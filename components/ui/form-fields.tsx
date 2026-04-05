@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { FieldValues, Path } from "react-hook-form";
 import Select from "react-select";
@@ -74,6 +75,28 @@ type FormSelectFieldProps<TFieldValues extends FieldValues> = {
   instanceId: string;
   /** Muestra * en la etiqueta (validación con zod). */
   required?: boolean;
+  /** Búsqueda en el desplegable (filtra opciones al escribir). */
+  isSearchable?: boolean;
+  /**
+   * Usa `position: fixed` para el menú, permitiendo que salga de contenedores
+   * con overflow (p. ej. el área scrollable de un slide-over o modal).
+   * El menú permanece en el árbol DOM del componente, por lo que Radix Dialog
+   * no bloquea sus eventos de puntero.
+   */
+  useMenuPortal?: boolean;
+  /** Tras cambiar la opción (p. ej. limpiar otro campo dependiente). */
+  onValueChange?: (value: string) => void;
+};
+
+const fixedMenuStyles: typeof appSelectStyles = {
+  ...appSelectStyles,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  menu: (base: any, state: any) => {
+    const base2 = typeof appSelectStyles.menu === "function"
+      ? appSelectStyles.menu(base, state)
+      : base;
+    return { ...base2, zIndex: 9999 };
+  },
 };
 
 export function FormSelectField<TFieldValues extends FieldValues>({
@@ -84,6 +107,9 @@ export function FormSelectField<TFieldValues extends FieldValues>({
   isDisabled,
   instanceId,
   required: fieldRequired,
+  isSearchable = false,
+  useMenuPortal = false,
+  onValueChange,
 }: FormSelectFieldProps<TFieldValues>) {
   const { control, formState } = useFormContext<TFieldValues>();
   const err = formState.errors[name as keyof typeof formState.errors];
@@ -110,13 +136,19 @@ export function FormSelectField<TFieldValues extends FieldValues>({
               inputId={`${instanceId}-input`}
               options={options}
               value={value}
-              onChange={(opt) => field.onChange(opt?.value ?? "")}
+              onChange={(opt) => {
+                const next = opt?.value ?? "";
+                field.onChange(next);
+                onValueChange?.(next);
+              }}
               onBlur={field.onBlur}
               placeholder={placeholder}
               isDisabled={isDisabled}
               isClearable={false}
-              isSearchable={false}
-              styles={appSelectStyles}
+              isSearchable={isSearchable}
+              menuPosition={useMenuPortal ? "fixed" : undefined}
+              noOptionsMessage={() => "Sin coincidencias"}
+              styles={useMenuPortal ? fixedMenuStyles : appSelectStyles}
               className={cn("w-full", isDisabled && "opacity-60")}
             />
           );

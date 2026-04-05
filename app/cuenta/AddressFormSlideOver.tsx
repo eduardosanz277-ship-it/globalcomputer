@@ -1,0 +1,248 @@
+"use client";
+
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import { useServerAction } from "@/hooks/use-server-action";
+import { Form, FormField } from "@/components/ui/form";
+import {
+  FormSelectField,
+  type SelectOption,
+} from "@/components/ui/form-fields";
+import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
+import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  adminServiceLikeInputClassName,
+  adminSlideOverSectionClassName,
+} from "@/components/admin/admin-form-classes";
+import {
+  countryCodeToName,
+  DEFAULT_COUNTRY_CODE,
+} from "@/lib/countries-options";
+import {
+  countryHasRegionList,
+  getRegionsForCountry,
+} from "@/lib/address-regions";
+import { addAddressAction, updateAddressAction } from "./actions";
+import type { CuentaAddress } from "./types";
+
+const ADDRESS_FORM_ID = "cuenta-address-form-slide-over";
+
+const addressFormSchema = z.object({
+  label: z.string(),
+  street: z.string().trim().min(1, "La calle es obligatoria"),
+  city: z.string(),
+  state: z.string(),
+  postalCode: z.string().trim().min(1, "El código postal es obligatorio"),
+  countryCode: z.string().min(1),
+});
+
+/** País fijo: solo EE. UU.; el desplegable queda deshabilitado. */
+const LOCKED_COUNTRY_OPTIONS: SelectOption[] = [
+  {
+    value: DEFAULT_COUNTRY_CODE,
+    label: countryCodeToName(DEFAULT_COUNTRY_CODE),
+  },
+];
+
+export type AddressFormValues = z.infer<typeof addressFormSchema>;
+
+function emptyFormValues(): AddressFormValues {
+  return {
+    label: "",
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    countryCode: DEFAULT_COUNTRY_CODE,
+  };
+}
+
+function addressToFormValues(address: CuentaAddress): AddressFormValues {
+  return {
+    label: address.label ?? "",
+    street: address.street,
+    city: address.city,
+    state: address.state ?? "",
+    postalCode: address.postalCode ?? "",
+    countryCode: DEFAULT_COUNTRY_CODE,
+  };
+}
+
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** `null` = nueva dirección */
+  address: CuentaAddress | null;
+};
+
+export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
+  const router = useRouter();
+  const form = useForm<AddressFormValues>({
+    resolver: zodResolver(addressFormSchema),
+    defaultValues: emptyFormValues(),
+  });
+
+  const countryCode = form.watch("countryCode");
+  const regionOptions = getRegionsForCountry(countryCode);
+  const showRegionSelect = countryHasRegionList(countryCode);
+
+  const errors = form.formState.errors;
+
+  const { execute: executeCreate, isPending: isCreating } = useServerAction(
+    addAddressAction,
+    {
+      successMessage: "Dirección agregada",
+      errorMessage: "No se pudo guardar la dirección",
+      onSuccess: () => {
+        onOpenChange(false);
+        router.refresh();
+      },
+    },
+  );
+
+  const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
+    updateAddressAction,
+    {
+      successMessage: "Dirección actualizada",
+      errorMessage: "No se pudo actualizar la dirección",
+      onSuccess: () => {
+        onOpenChange(false);
+        router.refresh();
+      },
+    },
+  );
+
+  const isPending = isCreating || isUpdating;
+
+  useEffect(() => {
+    if (!open) return;
+    if (address) {
+      form.reset(addressToFormValues(address));
+    } else {
+      form.reset(emptyFormValues());
+    }
+  }, [open, address, form]);
+
+  const onSubmit = (values: AddressFormValues) => {
+    const country = countryCodeToName(DEFAULT_COUNTRY_CODE);
+    const payload = {
+      label: values.label,
+      street: values.street,
+      city: values.city,
+      state: values.state,
+      postalCode: values.postalCode,
+      country,
+    };
+    if (address) {
+      executeUpdate({ addressId: address.id, ...payload });
+    } else {
+      executeCreate(payload);
+    }
+  };
+
+  return (
+    <SlideOver
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={address ? "Editar dirección" : "Nueva dirección"}
+      description="Usa un alias para reconocerla, elige provincia o estado y completa el resto de la dirección."
+      contentAriaLabel="Formulario de dirección"
+      footer={
+        <SlideOverFooter>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            Cancelar
+          </Button>
+          <ButtonPending
+            type="submit"
+            form={ADDRESS_FORM_ID}
+            pending={isPending}
+            pendingLabel="Guardando"
+            skipMinWidth
+            className="px-6"
+          >
+            Guardar
+          </ButtonPending>
+        </SlideOverFooter>
+      }
+    >
+      <Form
+        id={ADDRESS_FORM_ID}
+        form={form}
+        onSubmit={onSubmit}
+        className="space-y-0"
+      >
+        <section className={adminSlideOverSectionClassName}>
+          <div className="flex flex-col gap-4">
+            <FormField
+              name="label"
+              label="Alias (ej: Casa, Trabajo)"
+              disabled={isPending}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
+              name="street"
+              label="Calle"
+              required
+              disabled={isPending}
+              error={errors.street?.message}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormField
+              name="city"
+              label="Ciudad"
+              disabled={isPending}
+              error={errors.city?.message}
+              className={adminServiceLikeInputClassName}
+            />
+            <FormSelectField<AddressFormValues>
+              name="countryCode"
+              label="País"
+              options={LOCKED_COUNTRY_OPTIONS}
+              instanceId="cuenta-address-country"
+              isDisabled
+              isSearchable={false}
+              useMenuPortal={false}
+            />
+            {showRegionSelect ? (
+              <FormSelectField<AddressFormValues>
+                key={`state-${countryCode}`}
+                name="state"
+                label="Provincia / Estado"
+                options={regionOptions}
+                instanceId={`cuenta-address-region-${countryCode}`}
+                isDisabled={isPending}
+                isSearchable
+                useMenuPortal
+                placeholder="Buscar provincia o estado…"
+              />
+            ) : (
+              <FormField
+                name="state"
+                label="Provincia / Estado"
+                disabled={isPending}
+                className={adminServiceLikeInputClassName}
+              />
+            )}
+            <FormField
+              name="postalCode"
+              label="Código postal"
+              required
+              disabled={isPending}
+              error={errors.postalCode?.message}
+              className={adminServiceLikeInputClassName}
+            />
+          </div>
+        </section>
+      </Form>
+    </SlideOver>
+  );
+}

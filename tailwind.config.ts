@@ -120,7 +120,7 @@ const config: Config = {
       },
       animation: {
         "slide-over-in":
-          "slide-over-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+          "slide-over-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1)",
         "slide-over-out":
           "slide-over-out 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
         "fade-in": "fade-in 0.22s ease-out forwards",

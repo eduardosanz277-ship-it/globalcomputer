@@ -48,35 +48,65 @@ interface FormFieldProps
   error?: string;
   /** Muestra * en la etiqueta y `aria-required` en el input (validación sigue siendo con zod). */
   required?: boolean;
+  /**
+   * `inline`: etiqueta e input en fila con alineación vertical centrada (p. ej. alias en slide-overs).
+   * Por defecto la etiqueta va encima del input.
+   */
+  layout?: "stack" | "inline";
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
   (
-    { name, label, error, type = "text", required: fieldRequired, ...props },
+    {
+      name,
+      label,
+      error,
+      type = "text",
+      required: fieldRequired,
+      layout = "stack",
+      ...props
+    },
     ref
   ) => {
     const { register } = useFormContext();
     const registration = register(name);
     const { ref: registrationRef, ...rest } = registration;
 
+    const inputEl = (
+      <Input
+        id={name}
+        type={type}
+        {...props}
+        {...rest}
+        aria-required={fieldRequired ? true : undefined}
+        ref={(node) => {
+          registrationRef(node);
+          if (typeof ref === "function") ref(node);
+          else if (ref) ref.current = node;
+        }}
+      />
+    );
+
+    const labelEl = (
+      <Label htmlFor={name} className={layout === "inline" ? "shrink-0" : undefined}>
+        {label}
+        {fieldRequired ? <RequiredMark /> : null}
+      </Label>
+    );
+
     return (
       <div className="space-y-2">
-        <Label htmlFor={name}>
-          {label}
-          {fieldRequired ? <RequiredMark /> : null}
-        </Label>
-        <Input
-          id={name}
-          type={type}
-          {...props}
-          {...rest}
-          aria-required={fieldRequired ? true : undefined}
-          ref={(node) => {
-            registrationRef(node);
-            if (typeof ref === "function") ref(node);
-            else if (ref) ref.current = node;
-          }}
-        />
+        {layout === "inline" ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            {labelEl}
+            <div className="min-w-0 flex-1">{inputEl}</div>
+          </div>
+        ) : (
+          <>
+            {labelEl}
+            {inputEl}
+          </>
+        )}
         {error ? (
           <p className="mt-1 text-sm text-destructive" role="alert">
             {error}

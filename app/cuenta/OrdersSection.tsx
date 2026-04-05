@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { CuentaOrder } from "./types";
 
 type Props = {
@@ -40,6 +46,9 @@ export function OrdersSection({ orders }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>Mis pedidos recientes</CardTitle>
+        <CardDescription>
+          Consulta el estado y el importe de tus compras.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {orders.length === 0 ? (

@@ -21,16 +21,20 @@ import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
-import {
-  rejectBusinessRegistrationAction,
-  deleteUserAction,
-} from "./actions";
+import { rejectBusinessRegistrationAction, deleteUserAction } from "./actions";
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
-import { Eye, FilterX, MoreVertical, Plus, Trash2, XCircle } from "lucide-react";
+import {
+  Eye,
+  FilterX,
+  MoreVertical,
+  Plus,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 
 const ROLE_FILTER_OPTIONS = [
   { value: "all" as const, label: "Todos los roles" },
@@ -54,9 +58,7 @@ function userDisplayName(user: AdminUser): string {
 
 /** Valor estable para ordenar la columna Usuario (nombre + email, locale es). */
 function userSortValue(u: AdminUser): string {
-  return `${u.fullName ?? ""} ${u.email ?? ""}`
-    .trim()
-    .toLowerCase();
+  return `${u.fullName ?? ""} ${u.email ?? ""}`.trim().toLowerCase();
 }
 
 function userInitial(u: AdminUser): string {
@@ -178,10 +180,7 @@ function UsersRowActionsMenu({
     };
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (
-        wrapRef.current?.contains(t) ||
-        menuRef.current?.contains(t)
-      ) {
+      if (wrapRef.current?.contains(t) || menuRef.current?.contains(t)) {
         return;
       }
       setOpen(false);
@@ -278,7 +277,7 @@ function UsersRowActionsMenu({
           }}
         >
           <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-          {deletingUser ? "Eliminando…" : "Eliminar"}
+          {deletingUser ? "Eliminando" : "Eliminar"}
         </button>
       </div>
     ) : null;
@@ -354,8 +353,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
     () => [
       {
         id: "user",
-        accessorFn: (row) =>
-          `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
+        accessorFn: (row) => `${row.fullName ?? ""} ${row.email ?? ""}`.trim(),
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           userSortValue(rowA.original).localeCompare(

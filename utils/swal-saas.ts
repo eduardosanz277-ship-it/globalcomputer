@@ -94,7 +94,7 @@ function resolveLoadingConfirmText(
 function applyConfirmLoadingUi(loadingText: string): () => void {
   const btn = Swal.getConfirmButton();
   const cancelBtn = Swal.getCancelButton();
-  if (!btn) return () => {};
+  if (!btn) return () => { };
 
   const previousHtml = btn.innerHTML;
   btn.classList.add("swal-saas-confirm-loading");
@@ -121,7 +121,7 @@ export type SwalSaasConfirmAsyncOptions = SwalSaasConfirmOptions & {
 };
 
 /**
- * Mismo botón de confirmación con spinner delante y texto tipo "Eliminando…" mientras corre `preConfirm`.
+ * Mismo botón de confirmación con spinner delante y texto tipo "Eliminando" mientras corre `preConfirm`.
  * No usa el loader por defecto de SweetAlert2 (que sustituye el botón).
  */
 export function swalSaasConfirmAsync(

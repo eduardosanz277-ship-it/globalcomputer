@@ -69,13 +69,16 @@ export type AddAddressPayload = {
   street: string;
   city: string;
   state?: string;
-  postalCode?: string;
+  postalCode: string;
   country?: string;
 };
 
 export async function addAddressAction(payload: AddAddressPayload) {
   const { supabase, userId } = await getAuthenticatedUserId();
   const street = payload.street.trim();
+  if (!street) throw new Error("La calle es obligatoria.");
+  const postalCode = payload.postalCode?.trim() ?? "";
+  if (!postalCode) throw new Error("El código postal es obligatorio.");
   const city = payload.city.trim();
   const { error } = await supabase.from("addresses").insert({
     user_id: userId,
@@ -83,12 +86,38 @@ export async function addAddressAction(payload: AddAddressPayload) {
     street,
     city,
     state: payload.state?.trim() || null,
-    postal_code: payload.postalCode?.trim() || null,
-    country: payload.country?.trim() || "España",
+    postal_code: postalCode,
+    country: payload.country?.trim() || "United States",
     is_default: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
+  if (error) throw error;
+  return null;
+}
+
+export type UpdateAddressPayload = AddAddressPayload & { addressId: string };
+
+export async function updateAddressAction(payload: UpdateAddressPayload) {
+  const { supabase, userId } = await getAuthenticatedUserId();
+  const street = payload.street.trim();
+  if (!street) throw new Error("La calle es obligatoria.");
+  const postalCode = payload.postalCode?.trim() ?? "";
+  if (!postalCode) throw new Error("El código postal es obligatorio.");
+  const city = payload.city.trim();
+  const { error } = await supabase
+    .from("addresses")
+    .update({
+      label: payload.label?.trim() || null,
+      street,
+      city,
+      state: payload.state?.trim() || null,
+      postal_code: postalCode,
+      country: payload.country?.trim() || "United States",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", payload.addressId)
+    .eq("user_id", userId);
   if (error) throw error;
   return null;
 }

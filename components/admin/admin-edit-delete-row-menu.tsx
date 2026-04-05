@@ -15,13 +15,16 @@ export function AdminEditDeleteRowMenu({
   onEdit,
   onDelete,
   isDeleting,
-  deletingLabel = "Eliminando…",
+  deletingLabel = "Eliminando",
+  /** Desactiva el menú (p. ej. otro panel abierto) sin mostrar el estado “Eliminando”. */
+  disabled = false,
 }: {
   onView?: () => void;
   onEdit: () => void;
   onDelete: () => void | Promise<void>;
   isDeleting: boolean;
   deletingLabel?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -73,7 +76,7 @@ export function AdminEditDeleteRowMenu({
     };
   }, [open]);
 
-  const busy = isDeleting;
+  const busy = disabled || isDeleting;
 
   const menuContent =
     open && menuPos ? (
@@ -114,7 +117,10 @@ export function AdminEditDeleteRowMenu({
             setOpen(false);
           }}
         >
-          <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Pencil
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           Editar
         </button>
         <div className="my-1 h-px bg-border/70" role="separator" />
