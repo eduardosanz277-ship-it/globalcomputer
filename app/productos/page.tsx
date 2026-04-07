@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
+import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
@@ -35,7 +35,7 @@ export default async function ProductosPage() {
         />
       </div>
       <div className="mt-10">
-        <StorefrontProductGrid products={products} priceTier={priceTier} />
+        <StorefrontProductCatalog products={products} priceTier={priceTier} />
       </div>
     </main>
   );

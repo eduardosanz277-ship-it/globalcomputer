@@ -6,6 +6,7 @@
 export type StorefrontProduct = {
   id: string;
   name: string;
+  updated_at: string;
   price: number;
   stock: number;
   discount_business_pct: number;

@@ -12,6 +12,7 @@ const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
     "./modules/**/*.{ts,tsx}",
   ],
   theme: {
@@ -104,6 +105,14 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(100%)" },
         },
+        "slide-over-left-in": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "slide-over-left-out": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-100%)" },
+        },
         "fade-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
@@ -123,6 +132,10 @@ const config: Config = {
           "slide-over-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1)",
         "slide-over-out":
           "slide-over-out 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+        "slide-over-left-in":
+          "slide-over-left-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "slide-over-left-out":
+          "slide-over-left-out 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
         "fade-in": "fade-in 0.22s ease-out forwards",
         blob: "blob 20s ease-in-out infinite",
         "fade-up": "fade-up 0.6s ease-out forwards",

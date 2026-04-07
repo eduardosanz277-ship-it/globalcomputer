@@ -18,6 +18,8 @@ export type SlideOverProps = {
   panelClassName?: string;
   /** aria-label del área con scroll (p. ej. formulario vs. solo lectura) */
   contentAriaLabel?: string;
+  /** `right` (por defecto, panel admin) o `left` (p. ej. filtros en tienda). */
+  side?: "left" | "right";
 };
 
 const SlideOverOverlay = React.forwardRef<
@@ -37,7 +39,7 @@ const SlideOverOverlay = React.forwardRef<
 SlideOverOverlay.displayName = "SlideOverOverlay";
 
 /**
- * Panel lateral desde la derecha (crear/editar entidades).
+ * Panel lateral (derecha por defecto, estilo admin; `side="left"` para filtros u otros).
  * Bloquea scroll del documento, cierra con overlay, ESC y botón (icono X).
  */
 export function SlideOver({
@@ -49,8 +51,10 @@ export function SlideOver({
   footer,
   panelClassName,
   contentAriaLabel,
+  side = "right",
 }: SlideOverProps) {
   const hasDescription = Boolean(description?.trim());
+  const fromLeft = side === "left";
 
   return (
     <DialogPrimitive.Root
@@ -64,11 +68,13 @@ export function SlideOver({
         <SlideOverOverlay />
         <DialogPrimitive.Content
           className={cn(
-            "fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col outline-none",
-            "border-l border-border/70 bg-background shadow-[0_25px_50px_-12px_rgba(15,23,42,0.18)]",
+            "fixed inset-y-0 z-50 flex h-full w-full flex-col outline-none",
+            fromLeft
+              ? "left-0 border-r border-border/70 data-[state=open]:animate-slide-over-left-in data-[state=closed]:animate-slide-over-left-out"
+              : "right-0 border-l border-border/70 data-[state=open]:animate-slide-over-in data-[state=closed]:animate-slide-over-out",
+            "bg-background shadow-[0_25px_50px_-12px_rgba(15,23,42,0.18)]",
             "rounded-none",
             "md:w-[min(52vw,28rem)] lg:w-[30vw]",
-            "data-[state=open]:animate-slide-over-in data-[state=closed]:animate-slide-over-out",
             "focus:outline-none",
             panelClassName
           )}

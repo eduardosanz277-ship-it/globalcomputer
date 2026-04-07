@@ -5,6 +5,7 @@ import type { StorefrontProduct } from "@/modules/catalog/storefront-product.sha
 export const STOREFRONT_PRODUCT_SELECT = `
   id,
   name,
+  updated_at,
   price,
   stock,
   discount_business_pct,
@@ -46,6 +47,7 @@ export function mapStorefrontProductRow(
   return {
     id: String(row.id),
     name: String(row.name),
+    updated_at: String(row.updated_at ?? ""),
     price: Number(row.price),
     stock: Number(row.stock ?? 0),
     discount_business_pct: Number(row.discount_business_pct ?? 0),
