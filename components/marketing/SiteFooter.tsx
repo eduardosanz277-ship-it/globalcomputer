@@ -1,5 +1,16 @@
 import Link from "next/link";
-import { Facebook, Instagram, Mail, MapPin, Music2, Phone } from "lucide-react";
+import {
+  Clock,
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  Music2,
+  Phone,
+} from "lucide-react";
+
+const FOOTER_ADDRESS = "11629 SW 216th St, Miami, FL 33170";
+const FOOTER_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(FOOTER_ADDRESS)}`;
 
 export function SiteFooter() {
   return (
@@ -15,7 +26,7 @@ export function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
-              Tienda
+              Empresa
             </p>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
@@ -69,26 +80,45 @@ export function SiteFooter() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
               Contacto
             </p>
-            <p className="flex items-start gap-3">
+            <a
+              href="tel:+17863951076"
+              className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
+            >
               <Phone
-                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
               <span>786-395-1076</span>
-            </p>
-            <p className="flex items-start gap-3">
+            </a>
+            <a
+              href="mailto:globalcomputer1024@gmail.com"
+              className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
+            >
               <Mail
-                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
               <span>globalcomputer1024@gmail.com</span>
-            </p>
-            <p className="flex items-start gap-3">
+            </a>
+            <a
+              href={FOOTER_MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
+              aria-label={`Abrir ${FOOTER_ADDRESS} en Google Maps`}
+            >
               <MapPin
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
+                aria-hidden
+              />
+              <span>{FOOTER_ADDRESS}</span>
+            </a>
+            <p className="flex items-start gap-3">
+              <Clock
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
                 aria-hidden
               />
-              <span>11629 SW 216th St, Miami, FL 33170</span>
+              <span>Lun–Vie: 8 AM – 5 PM</span>
             </p>
           </div>
           <div>

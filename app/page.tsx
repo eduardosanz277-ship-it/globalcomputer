@@ -91,7 +91,10 @@ export default async function HomePage() {
         <StoreHero />
 
         {/* Categories */}
-        <section id="categorias" className="scroll-mt-32 bg-background pt-24 sm:scroll-mt-36 sm:pt-28">
+        <section
+          id="categorias"
+          className="scroll-mt-32 bg-background pb-20 pt-24 sm:scroll-mt-36 sm:pb-24 sm:pt-28"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <HomeSectionHeading
               eyebrow="Catálogo"
