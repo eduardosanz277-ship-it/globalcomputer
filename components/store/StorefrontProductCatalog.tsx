@@ -41,10 +41,9 @@ const sortOptions: SortOption[] = [
   { value: "date_asc", label: "Más antiguos" },
 ];
 
-const SORT_SELECT_WIDTH_CH = sortOptions.reduce(
-  (max, option) => Math.max(max, option.label.length),
-  0,
-) + 8;
+const SORT_SELECT_WIDTH_CH =
+  sortOptions.reduce((max, option) => Math.max(max, option.label.length), 0) +
+  8;
 
 function salePrice(p: StorefrontProduct, tier: StorefrontPriceTier): number {
   const pct = activeDiscountPercent(p, tier);
@@ -222,14 +221,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     if (Object.values(stockFilters).some(Boolean)) n += 1;
     if (discountOnly) n += 1;
     return n;
-  }, [
-    search,
-    brandIds,
-    priceMin,
-    priceMax,
-    stockFilters,
-    discountOnly,
-  ]);
+  }, [search, brandIds, priceMin, priceMax, stockFilters, discountOnly]);
 
   const clearFilters = () => {
     setSearch("");
@@ -303,7 +295,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           >
             Ordenar por
           </Label>
-          <div className="min-w-0 flex-1 sm:flex-none" style={{ width: `${SORT_SELECT_WIDTH_CH}ch` }}>
+          <div
+            className="min-w-0 flex-1 sm:flex-none"
+            style={{ width: `${SORT_SELECT_WIDTH_CH}ch` }}
+          >
             <Select<SortOption, false>
               instanceId="toolbar-sort"
               inputId="toolbar-sort"
@@ -606,16 +601,9 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
       </SlideOver>
 
       {filtered.length === 0 && products.length > 0 ? (
-        <p className="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-6 py-12 text-center text-sm text-muted-foreground">
-          Ningún producto coincide con los filtros. Prueba a ajustarlos o pulsa{" "}
-          <button
-            type="button"
-            className="font-medium text-primary underline underline-offset-2 hover:text-primary/90"
-            onClick={clearFilters}
-          >
-            Limpiar
-          </button>
-          .
+        <p className="rounded-2xl border border-dashed border-border/60 bg-muted/35 px-6 py-12 text-center text-sm text-muted-foreground">
+          Ningún producto coincide con los filtros. Ajusta los criterios para
+          ver más resultados.
         </p>
       ) : (
         <StorefrontProductGrid products={filtered} priceTier={priceTier} />

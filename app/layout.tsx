@@ -41,6 +41,11 @@ export const metadata: Metadata = {
     template: "%s | Global Computers USA",
   },
   description: "Cámaras de Seguridad, Software y Tecnología",
+  icons: {
+    icon: "/logos/logo.png",
+    shortcut: "/logos/logo.png",
+    apple: "/logos/logo.png",
+  },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

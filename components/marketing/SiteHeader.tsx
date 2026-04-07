@@ -91,8 +91,7 @@ export function SiteHeader({ user }: Props) {
   const [hoveredGeneralId, setHoveredGeneralId] = useState<string | null>(null);
   const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
   /** Tras navegar, corta el :hover del mega menú hasta el siguiente movimiento o timeout. */
-  const [suppressDesktopNavHover, setSuppressDesktopNavHover] =
-    useState(false);
+  const [suppressDesktopNavHover, setSuppressDesktopNavHover] = useState(false);
   const accountRefMobile = useRef<HTMLDivElement>(null);
   const accountRefDesktop = useRef<HTMLDivElement>(null);
   /** Limpia listeners/timeout de `armDesktopNavStripSuppress` al volver a armar o al desmontar. */
@@ -174,12 +173,10 @@ export function SiteHeader({ user }: Props) {
     "font-roboto text-[15px] font-medium uppercase tracking-[1px]";
 
   /** Generales / marcas (cabecera de fila o desplegable) en menú móvil. */
-  const mobileNavCatalogHeadingClass =
-    "text-sm font-bold text-foreground/90";
+  const mobileNavCatalogHeadingClass = "text-sm font-bold text-foreground/90";
 
   /** Específicos y tipos por marca (subenlaces). */
-  const mobileNavCatalogRowClass =
-    "text-sm font-medium text-foreground/90";
+  const mobileNavCatalogRowClass = "text-sm font-medium text-foreground/90";
 
   const handleScrollToTopOnHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
     setMobileNavOpen(false);
@@ -193,9 +190,7 @@ export function SiteHeader({ user }: Props) {
   };
 
   const popMobileNavPanel = () => {
-    setMobileNavStack((prev) =>
-      prev.length > 1 ? prev.slice(0, -1) : prev,
-    );
+    setMobileNavStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
   };
 
   /** Cierra estado hover del mega menú y bloquea el :hover de la franja hasta movimiento o timeout (evita reapertura al quedar el puntero sobre el trigger). */
@@ -294,7 +289,7 @@ export function SiteHeader({ user }: Props) {
           >
             <div
               className={cn(
-                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2 sm:px-3 sm:pb-2",
+                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-1.5 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2 sm:px-3 sm:pb-2",
               )}
             >
               <button
@@ -326,7 +321,7 @@ export function SiteHeader({ user }: Props) {
                   className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
                 />
                 <span className="truncate font-roboto text-sm font-light leading-tight tracking-tight text-[#040b1f] sm:text-[0.95rem]">
-                  Global Computer USA
+                  Global Computers USA
                 </span>
               </Link>
 
@@ -425,7 +420,7 @@ export function SiteHeader({ user }: Props) {
                 variant="ghost"
                 size="icon"
                 type="button"
-                className="relative -ml-1 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
+                className="relative -ml-2 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
                 aria-label="Carrito (0 artículos)"
               >
                 <span className="relative inline-flex">
@@ -1213,32 +1208,28 @@ export function SiteHeader({ user }: Props) {
                                           />
                                         </summary>
                                         <div className="grid gap-0.5 pt-0.5">
-                                          {general.specifics.map(
-                                            (specific) => (
-                                              <Link
-                                                key={specific.id}
-                                                href={`/security-system/${general.id}/${specific.id}`}
-                                                onClick={() =>
-                                                  setMobileNavOpen(false)
-                                                }
-                                                className={cn(
-                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                                  mobileNavCatalogRowClass,
-                                                )}
-                                              >
-                                                {specific.name}
-                                              </Link>
-                                            ),
-                                          )}
+                                          {general.specifics.map((specific) => (
+                                            <Link
+                                              key={specific.id}
+                                              href={`/security-system/${general.id}/${specific.id}`}
+                                              onClick={() =>
+                                                setMobileNavOpen(false)
+                                              }
+                                              className={cn(
+                                                "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                mobileNavCatalogRowClass,
+                                              )}
+                                            >
+                                              {specific.name}
+                                            </Link>
+                                          ))}
                                         </div>
                                       </details>
                                     ) : (
                                       <Link
                                         key={general.id}
                                         href={`/security-system/${general.id}`}
-                                        onClick={() =>
-                                          setMobileNavOpen(false)
-                                        }
+                                        onClick={() => setMobileNavOpen(false)}
                                         className={cn(
                                           "rounded-lg px-3 py-2 transition hover:bg-muted",
                                           mobileNavCatalogHeadingClass,

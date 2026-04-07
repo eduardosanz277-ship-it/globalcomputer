@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone } from "lucide-react";
-import { AppLogo } from "@/components/brand/AppLogo";
+import { Facebook, Instagram, Mail, MapPin, Music2, Phone } from "lucide-react";
 
 export function SiteFooter() {
   return (
@@ -14,15 +13,6 @@ export function SiteFooter() {
       />
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
-          <div className="lg:col-span-1">
-            <div className="inline-flex max-w-[min(100%,360px)] rounded-xl bg-white px-4 py-3.5 shadow-sm">
-              <AppLogo className="h-14 max-h-[3.75rem] sm:h-[4.25rem] sm:max-h-[4.75rem]" />
-            </div>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-zinc-500">
-              Videovigilancia y tecnología para hogar y negocio. Compra clara,
-              envío y soporte de verdad.
-            </p>
-          </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
               Tienda
@@ -80,24 +70,67 @@ export function SiteFooter() {
               Contacto
             </p>
             <p className="flex items-start gap-3">
-              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
-              <span>+1 (000) 000-0000</span>
+              <Phone
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+                aria-hidden
+              />
+              <span>786-395-1076</span>
             </p>
             <p className="flex items-start gap-3">
-              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
-              <span>ventas@globalcomputer.local</span>
+              <Mail
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+                aria-hidden
+              />
+              <span>globalcomputer1024@gmail.com</span>
             </p>
             <p className="flex items-start gap-3">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
-              <span>Miami, FL · Envíos a todo EE. UU.</span>
+              <MapPin
+                className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+                aria-hidden
+              />
+              <span>11629 SW 216th St, Miami, FL 33170</span>
             </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+              Redes sociales
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="https://www.facebook.com/globalcomptersusa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
+                aria-label="Facebook de Global Computers USA"
+              >
+                <Facebook className="h-4 w-4" aria-hidden />
+              </Link>
+              <Link
+                href="https://www.instagram.com/globalcomputersusa?igsh=MTdiMnFicXF0dmthYQ=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
+                aria-label="Instagram de Global Computers USA"
+              >
+                <Instagram className="h-4 w-4" aria-hidden />
+              </Link>
+              <Link
+                href="https://www.tiktok.com/@globalcomputersusa?_r=1&_t=ZP-95LFaENqPwV"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
+                aria-label="TikTok de Global Computers USA"
+              >
+                <Music2 className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center text-xs text-zinc-600 sm:flex-row sm:text-left">
           <p>
-            © {new Date().getFullYear()} Global Computers USA. Todos los derechos
-            reservados.
+            © {new Date().getFullYear()} Global Computers USA. Todos los
+            derechos reservados. Creado por Veltrix Digital.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="#" className="transition hover:text-zinc-300">
