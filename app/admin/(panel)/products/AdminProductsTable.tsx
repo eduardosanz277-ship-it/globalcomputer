@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { Product } from "@/modules/admin/products/products.types";

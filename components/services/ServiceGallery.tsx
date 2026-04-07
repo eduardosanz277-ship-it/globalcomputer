@@ -134,7 +134,11 @@ export function ServiceGallery({ images }: { images: Image[] }) {
                 i === index ? "ring-primary" : "ring-transparent"
               }`}
             >
-              <img src={img.url} alt={`thumb-${i}`} className="h-full w-full object-cover" />
+              <img
+                src={img.url}
+                alt={`thumb-${i}`}
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>

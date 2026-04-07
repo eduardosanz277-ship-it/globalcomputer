@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   adminServiceLikeInputClassName,
+  adminSlideOverNestedScrollClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
 import {
@@ -689,7 +690,7 @@ function ProductFormBody({
           </p>
         </header>
 
-        <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+        <div className={adminSlideOverNestedScrollClassName}>
           {specificOptions.map((item) => {
             const selected = selectedSet.has(item.id);
 

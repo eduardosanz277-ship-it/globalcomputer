@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Filter, FilterX } from "lucide-react";
+import { useEffect, useId, useMemo, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Filter,
+  FilterX,
+} from "lucide-react";
 import Select from "react-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import {
+  appSelectStyles,
+  appToolbarSelectStyles,
+} from "@/components/ui/react-select-app-styles";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   activeDiscountPercent,
@@ -16,9 +26,29 @@ import {
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import {
   adminServiceLikeInputClassName,
+  adminSlideOverNestedScrollClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { cn } from "@/utils/cn";
 import { StorefrontProductGrid } from "./StorefrontProductGrid";
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
+const DEFAULT_PAGE_SIZE = 20;
+
+/** react-select dentro del SlideOver: menú por encima del área scroll (mismo criterio que `FormSelectField` con portal). */
+const catalogSlideOverSelectStyles: typeof appSelectStyles = {
+  ...appSelectStyles,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  menu: (base: any, state: any) => {
+    const base2 =
+      typeof appSelectStyles.menu === "function"
+        ? appSelectStyles.menu(base, state)
+        : base;
+    return { ...base2, zIndex: 9999 };
+  },
+};
+
+type PageSizeOption = { value: number; label: string };
 
 type StockFilterKey = "in_stock" | "low" | "out";
 type SortKey =
@@ -75,6 +105,9 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
   >({});
   const [discountOnly, setDiscountOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>("relevance");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const pageSizeSelectId = useId();
 
   const brandOptions = useMemo(() => {
     const m = new Map<string, string>();
@@ -213,6 +246,57 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     sortBy,
   ]);
 
+  const filterResetKey = useMemo(
+    () =>
+      `${search}|${priceMin}|${priceMax}|${discountOnly}|${sortBy}|${JSON.stringify(brandIds)}|${JSON.stringify(stockFilters)}`,
+    [search, priceMin, priceMax, discountOnly, sortBy, brandIds, stockFilters],
+  );
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [filterResetKey]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize) || 1);
+
+  useEffect(() => {
+    setPageIndex((i) => Math.min(i, Math.max(0, totalPages - 1)));
+  }, [filtered.length, pageSize, totalPages]);
+
+  const safePageIndex = Math.min(pageIndex, Math.max(0, totalPages - 1));
+  const paginatedProducts = useMemo(() => {
+    const start = safePageIndex * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePageIndex, pageSize]);
+
+  const filteredCount = filtered.length;
+  const startRow = filteredCount === 0 ? 0 : safePageIndex * pageSize + 1;
+  const endRow = Math.min((safePageIndex + 1) * pageSize, filteredCount);
+
+  const mergedPageSizeOptions = useMemo(
+    () =>
+      [...new Set([...PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE])].sort(
+        (a, b) => a - b,
+      ),
+    [],
+  );
+
+  const pageSizeSelectOptions = useMemo<PageSizeOption[]>(
+    () =>
+      mergedPageSizeOptions.map((size) => ({
+        value: size,
+        label: String(size),
+      })),
+    [mergedPageSizeOptions],
+  );
+
+  const pageSizeValue =
+    pageSizeSelectOptions.find((o) => o.value === pageSize) ??
+    pageSizeSelectOptions[0] ??
+    null;
+
+  const canPrev = safePageIndex > 0;
+  const canNext = safePageIndex < totalPages - 1;
+
   const activeFilterCount = useMemo(() => {
     let n = 0;
     if (search.trim()) n += 1;
@@ -254,33 +338,40 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 gap-2 rounded-xl border-border/80 bg-card px-4 text-sm font-semibold shadow-sm transition hover:bg-muted/50"
-            onClick={() => setPanelOpen(true)}
-            aria-expanded={panelOpen}
-            aria-controls="storefront-filters-panel"
-          >
-            <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-            {activeFilterCount > 0
-              ? `Filtros (${activeFilterCount})`
-              : "Filtro"}
-          </Button>
-          {activeFilterCount > 0 ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-center",
+            activeFilterCount > 0 ? "gap-1 sm:gap-3" : "gap-3"
+          )}
+        >
+          <div className="flex shrink-0 items-center gap-1">
             <Button
               type="button"
               variant="outline"
-              size="icon"
-              className="h-11 w-11 rounded-xl border-border/80 bg-card shadow-sm transition hover:bg-muted/50"
-              onClick={clearFilters}
-              title="Limpiar filtros"
-              aria-label="Limpiar filtros"
+              className="h-11 gap-2 rounded-xl border-border/80 bg-card px-4 text-sm font-semibold shadow-sm transition hover:bg-muted/50"
+              onClick={() => setPanelOpen(true)}
+              aria-expanded={panelOpen}
+              aria-controls="storefront-filters-panel"
             >
-              <FilterX className="h-4 w-4" aria-hidden />
+              <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+              {activeFilterCount > 0
+                ? `Filtros (${activeFilterCount})`
+                : "Filtro"}
             </Button>
-          ) : null}
+            {activeFilterCount > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 rounded-xl border-border/80 bg-card shadow-sm transition hover:bg-muted/50"
+                onClick={clearFilters}
+                title="Limpiar filtros"
+                aria-label="Limpiar filtros"
+              >
+                <FilterX className="h-4 w-4" aria-hidden />
+              </Button>
+            ) : null}
+          </div>
           <p className="text-sm font-medium text-muted-foreground">
             {activeFilterCount > 0
               ? `${filtered.length} de ${products.length} productos`
@@ -288,12 +379,12 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           </p>
         </div>
 
-        <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+        <div className="hidden w-full items-center gap-2 sm:ml-auto sm:flex sm:w-auto">
           <Label
             htmlFor="toolbar-sort"
             className="whitespace-nowrap text-sm font-medium"
           >
-            Ordenar por
+            Ordenar por:
           </Label>
           <div
             className="min-w-0 flex-1 sm:flex-none"
@@ -344,6 +435,46 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         }
       >
         <div id="storefront-filters-panel" className="space-y-5">
+          <section
+            className={cn(adminSlideOverSectionClassName, "sm:hidden")}
+            aria-label="Ordenar catálogo"
+          >
+            <header className="space-y-1">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                Ordenar por
+              </h2>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Elige cómo ordenar los productos del listado.
+              </p>
+            </header>
+            <div className="mt-4 space-y-2">
+              <Label
+                htmlFor="filter-sort-mobile"
+                className="text-sm font-medium"
+              >
+                Criterio
+              </Label>
+              <Select<SortOption, false>
+                instanceId="filter-sort-mobile"
+                inputId="filter-sort-mobile"
+                menuPosition="fixed"
+                styles={catalogSlideOverSelectStyles}
+                options={sortOptions}
+                value={
+                  sortOptions.find((option) => option.value === sortBy) ??
+                  sortOptions[0]
+                }
+                onChange={(option) => {
+                  if (option) setSortBy(option.value);
+                }}
+                isClearable={false}
+                isSearchable={false}
+                noOptionsMessage={() => "Sin coincidencias"}
+                className="w-full"
+              />
+            </div>
+          </section>
+
           <section className={adminSlideOverSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
@@ -542,7 +673,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                   Marca una o varias marcas para acotar el listado.
                 </p>
               </header>
-              <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+              <div className={adminSlideOverNestedScrollClassName}>
                 {brandOptions.map(({ id, name }) => (
                   <div
                     key={id}
@@ -606,7 +737,140 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           ver más resultados.
         </p>
       ) : (
-        <StorefrontProductGrid products={filtered} priceTier={priceTier} />
+        <>
+          <StorefrontProductGrid
+            products={paginatedProducts}
+            priceTier={priceTier}
+          />
+          {filteredCount > 0 ? (
+            <nav
+              className={cn("mt-8 border-t border-border/80 pt-4")}
+              aria-label="Paginación del catálogo"
+            >
+              <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
+                <p
+                  role="status"
+                  className="min-w-0 text-sm leading-relaxed text-muted-foreground"
+                >
+                  {filteredCount === 0 ? (
+                    "Sin productos."
+                  ) : (
+                    <>
+                      Mostrando{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {startRow}–{endRow}
+                      </span>{" "}
+                      de{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {filteredCount}
+                      </span>
+                      {filteredCount === 1 ? " producto" : " productos"}
+                      <span className="mx-1.5 text-muted-foreground/70">·</span>
+                      página{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {safePageIndex + 1}
+                      </span>{" "}
+                      de{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {totalPages}
+                      </span>
+                    </>
+                  )}
+                </p>
+
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-6 sm:gap-y-3 xl:shrink-0">
+                  <div
+                    className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap"
+                    role="group"
+                    aria-labelledby={`${pageSizeSelectId}-label`}
+                  >
+                    <label
+                      id={`${pageSizeSelectId}-label`}
+                      htmlFor={`${pageSizeSelectId}-input`}
+                      className="max-w-full text-sm leading-snug text-muted-foreground sm:whitespace-nowrap"
+                    >
+                      Productos por página
+                    </label>
+                    <Select<PageSizeOption, false>
+                      instanceId={pageSizeSelectId}
+                      inputId={`${pageSizeSelectId}-input`}
+                      aria-labelledby={`${pageSizeSelectId}-label`}
+                      isSearchable={false}
+                      isClearable={false}
+                      options={pageSizeSelectOptions}
+                      value={pageSizeValue}
+                      onChange={(opt) => {
+                        if (opt) {
+                          setPageSize(opt.value);
+                          setPageIndex(0);
+                        }
+                      }}
+                      styles={appToolbarSelectStyles}
+                      className="min-w-[62px] shrink-0"
+                    />
+                  </div>
+
+                  <div
+                    className="flex items-center gap-1"
+                    role="group"
+                    aria-label="Ir a otra página de productos"
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setPageIndex(0)}
+                      disabled={!canPrev}
+                      aria-label="Ir a la primera página"
+                      title="Primera página"
+                    >
+                      <ChevronsLeft className="h-4 w-4" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                      disabled={!canPrev}
+                      aria-label="Página anterior"
+                      title="Anterior"
+                    >
+                      <ChevronLeft className="h-4 w-4" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        setPageIndex((i) => Math.min(totalPages - 1, i + 1))
+                      }
+                      disabled={!canNext}
+                      aria-label="Página siguiente"
+                      title="Siguiente"
+                    >
+                      <ChevronRight className="h-4 w-4" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setPageIndex(Math.max(0, totalPages - 1))}
+                      disabled={!canNext}
+                      aria-label="Ir a la última página"
+                      title="Última página"
+                    >
+                      <ChevronsRight className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </nav>
+          ) : null}
+        </>
       )}
     </div>
   );

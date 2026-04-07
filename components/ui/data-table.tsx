@@ -479,9 +479,7 @@ export function DataTable<TData, TValue>({
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-0">
                     <EmptyState
-                      variant={
-                        data.length === 0 ? "no-data" : "no-match"
-                      }
+                      variant={data.length === 0 ? "no-data" : "no-match"}
                       title={
                         data.length === 0
                           ? "No hay datos disponibles."

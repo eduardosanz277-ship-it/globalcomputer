@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
+import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
@@ -89,7 +89,7 @@ export default async function BrandsSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} priceTier={priceTier} />
+          <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>
     );
@@ -142,7 +142,7 @@ export default async function BrandsSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} priceTier={priceTier} />
+          <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>
     );

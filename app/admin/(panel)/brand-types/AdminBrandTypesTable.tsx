@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
@@ -63,9 +58,7 @@ interface Props {
 }
 
 function brandTypeSortValue(row: BrandType): string {
-  return `${row.brandName ?? ""} ${row.name ?? ""}`
-    .trim()
-    .toLowerCase();
+  return `${row.brandName ?? ""} ${row.name ?? ""}`.trim().toLowerCase();
 }
 
 function updatedAtSortMs(row: BrandType): number {
@@ -274,9 +267,7 @@ export function AdminBrandTypesTable({
           const absolute = formatDateDdMmYyyyHhMm(raw);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">
-                {absolute}
-              </span>
+              <span className="text-sm text-muted-foreground">{absolute}</span>
             );
           }
           return (
@@ -292,7 +283,9 @@ export function AdminBrandTypesTable({
                   align="start"
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
-                  <span className="block font-medium">Última actualización</span>
+                  <span className="block font-medium">
+                    Última actualización
+                  </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
                   </span>
@@ -320,32 +313,29 @@ export function AdminBrandTypesTable({
     [],
   );
 
-  const renderMobileRow = useCallback(
-    (row: Row<BrandType>) => {
-      const r = row.original;
-      return (
-        <li key={row.id}>
-          <BrandTypeProfileCard
-            name={r.name}
-            brandName={r.brandName}
-            active={r.active}
-            updatedAt={r.updatedAt}
-            className="hover:bg-muted/50 transition-colors duration-150"
-            actions={
-              <RowActions
-                row={r}
-                onEdit={() => {
-                  setEditing(r);
-                  setDialogOpen(true);
-                }}
-              />
-            }
-          />
-        </li>
-      );
-    },
-    [],
-  );
+  const renderMobileRow = useCallback((row: Row<BrandType>) => {
+    const r = row.original;
+    return (
+      <li key={row.id}>
+        <BrandTypeProfileCard
+          name={r.name}
+          brandName={r.brandName}
+          active={r.active}
+          updatedAt={r.updatedAt}
+          className="hover:bg-muted/50 transition-colors duration-150"
+          actions={
+            <RowActions
+              row={r}
+              onEdit={() => {
+                setEditing(r);
+                setDialogOpen(true);
+              }}
+            />
+          }
+        />
+      </li>
+    );
+  }, []);
 
   const noBrands = brands.length === 0;
 

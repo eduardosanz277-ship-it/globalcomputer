@@ -20,6 +20,8 @@ export type SlideOverProps = {
   contentAriaLabel?: string;
   /** `right` (por defecto, panel admin) o `left` (p. ej. filtros en tienda). */
   side?: "left" | "right";
+  /** Clases extra para el cuerpo con scroll (debajo del encabezado). */
+  contentClassName?: string;
 };
 
 const SlideOverOverlay = React.forwardRef<
@@ -31,7 +33,7 @@ const SlideOverOverlay = React.forwardRef<
     className={cn(
       "fixed inset-0 z-40 bg-black/45",
       "data-[state=open]:animate-fade-in",
-      className
+      className,
     )}
     {...props}
   />
@@ -52,6 +54,7 @@ export function SlideOver({
   panelClassName,
   contentAriaLabel,
   side = "right",
+  contentClassName,
 }: SlideOverProps) {
   const hasDescription = Boolean(description?.trim());
   const fromLeft = side === "left";
@@ -76,7 +79,7 @@ export function SlideOver({
             "rounded-none",
             "md:w-[min(52vw,28rem)] lg:w-[30vw]",
             "focus:outline-none",
-            panelClassName
+            panelClassName,
           )}
         >
           <header className="relative shrink-0 border-b border-border/70 bg-background px-6 pb-4 pt-4">
@@ -98,7 +101,7 @@ export function SlideOver({
               <DialogPrimitive.Description
                 className={cn(
                   "text-sm leading-relaxed text-muted-foreground",
-                  !hasDescription && "sr-only"
+                  !hasDescription && "sr-only",
                 )}
               >
                 {hasDescription ? description : "Formulario de edición."}
@@ -107,7 +110,12 @@ export function SlideOver({
           </header>
 
           <div
-            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5"
+            className={cn(
+              "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5",
+              "overscroll-y-contain [scrollbar-width:thin]",
+              "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/70 [&::-webkit-scrollbar-track]:bg-transparent",
+              contentClassName,
+            )}
             role="region"
             aria-label={contentAriaLabel ?? "Contenido del panel"}
           >
@@ -137,7 +145,7 @@ export function SlideOverFooter({
     <footer
       className={cn(
         "flex flex-wrap items-center justify-end gap-2 px-6 py-4",
-        className
+        className,
       )}
     >
       {children}

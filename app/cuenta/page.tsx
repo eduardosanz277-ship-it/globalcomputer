@@ -73,11 +73,7 @@ export default async function CuentaPage() {
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
-      <AdminHeader
-        user={headerUser}
-        variant="standalone"
-        brandHref="/"
-      />
+      <AdminHeader user={headerUser} variant="standalone" brandHref="/" />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="space-y-6">

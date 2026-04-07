@@ -66,7 +66,10 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-border/80 last:border-0">
+                <tr
+                  key={r.id}
+                  className="border-b border-border/80 last:border-0"
+                >
                   <td className="px-4 py-3 font-medium">{r.id}</td>
                   <td className="px-4 py-3">{r.client}</td>
                   <td className="px-4 py-3">{r.delivery}</td>
@@ -80,7 +83,11 @@ export default function AdminOrdersPage() {
                   <td className="px-4 py-3">S/ {r.amount}</td>
                   <td className="px-4 py-3">{r.payment}</td>
                   <td className="px-4 py-3">
-                    <Button size="icon" variant="ghost" aria-label="Ver detalle">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Ver detalle"
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
                   </td>

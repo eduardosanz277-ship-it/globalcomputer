@@ -92,7 +92,7 @@ export default async function HomePage() {
 
         {/* Categories */}
         <section
-          id="categorias"
+          id="marcas"
           className="scroll-mt-32 bg-background pb-20 pt-24 sm:scroll-mt-36 sm:pb-24 sm:pt-28"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -144,7 +144,7 @@ export default async function HomePage() {
                 titleClassName="text-3xl sm:text-4xl"
               />
               <Link
-                href="#categorias"
+                href="#marcas"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "shrink-0 rounded-2xl border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",

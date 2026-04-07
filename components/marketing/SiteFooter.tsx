@@ -8,9 +8,13 @@ import {
   Music2,
   Phone,
 } from "lucide-react";
-
-const FOOTER_ADDRESS = "11629 SW 216th St, Miami, FL 33170";
-const FOOTER_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(FOOTER_ADDRESS)}`;
+import {
+  SITE_CONTACT_ADDRESS,
+  SITE_CONTACT_EMAIL,
+  SITE_CONTACT_PHONE_DISPLAY,
+  SITE_CONTACT_PHONE_TEL,
+  siteContactMapsUrl,
+} from "@/lib/site";
 
 export function SiteFooter() {
   return (
@@ -31,15 +35,15 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-3 text-sm">
               <li>
                 <Link
-                  href="#categorias"
+                  href="/#marcas"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Categorías
+                  Marcas
                 </Link>
               </li>
               <li>
                 <Link
-                  href="#destacados"
+                  href="/#destacados"
                   className="text-zinc-400 transition hover:text-white"
                 >
                   Destacados
@@ -47,10 +51,26 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/register"
+                  href="/#servicios"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Crear cuenta
+                  Servicios
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-zinc-400 transition hover:text-white"
+                >
+                  Contacto
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/leave-review"
+                  className="text-zinc-400 transition hover:text-white"
+                >
+                  Reseñas
                 </Link>
               </li>
             </ul>
@@ -81,37 +101,37 @@ export function SiteFooter() {
               Contacto
             </p>
             <a
-              href="tel:+17863951076"
+              href={`tel:${SITE_CONTACT_PHONE_TEL}`}
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
             >
               <Phone
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>786-395-1076</span>
+              <span>{SITE_CONTACT_PHONE_DISPLAY}</span>
             </a>
             <a
-              href="mailto:globalcomputer1024@gmail.com"
+              href={`mailto:${SITE_CONTACT_EMAIL}`}
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
             >
               <Mail
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>globalcomputer1024@gmail.com</span>
+              <span>{SITE_CONTACT_EMAIL}</span>
             </a>
             <a
-              href={FOOTER_MAPS_URL}
+              href={siteContactMapsUrl()}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
-              aria-label={`Abrir ${FOOTER_ADDRESS} en Google Maps`}
+              aria-label={`Abrir ${SITE_CONTACT_ADDRESS} en Google Maps`}
             >
               <MapPin
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>{FOOTER_ADDRESS}</span>
+              <span>{SITE_CONTACT_ADDRESS}</span>
             </a>
             <p className="flex items-start gap-3">
               <Clock
