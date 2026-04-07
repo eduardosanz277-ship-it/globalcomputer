@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
   getCharacteristicGeneralById,
   getCharacteristicSpecificById,
@@ -63,7 +65,11 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
     const general = await getCharacteristicGeneralById(generalId);
     if (!general) notFound();
 
-    const products = await listProductsByGeneralId(generalId);
+    const [products, user] = await Promise.all([
+      listProductsByGeneralId(generalId),
+      getCurrentUserService(),
+    ]);
+    const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -82,7 +88,7 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} />
+          <StorefrontProductGrid products={products} priceTier={priceTier} />
         </div>
       </main>
     );
@@ -110,7 +116,11 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
     const general = await getCharacteristicGeneralById(generalId);
     if (!general) notFound();
 
-    const products = await listProductsByGeneralAndSpecific(generalId, specificId);
+    const [products, user] = await Promise.all([
+      listProductsByGeneralAndSpecific(generalId, specificId),
+      getCurrentUserService(),
+    ]);
+    const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -131,7 +141,7 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} />
+          <StorefrontProductGrid products={products} priceTier={priceTier} />
         </div>
       </main>
     );

@@ -1,0 +1,203 @@
+import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+
+export type StorefrontProductCharacteristicRow = {
+  id: string;
+  generalName: string;
+  specificName: string;
+  value: string | null;
+};
+
+export type StorefrontProductDetail = {
+  id: string;
+  sku: string;
+  name: string;
+  description: string | null;
+  stock: number;
+  price: number;
+  discount_business_pct: number;
+  discount_client: number;
+  manual_pdf_url: string | null;
+  brand_id: string;
+  brand_type_id: string | null;
+  brand_name: string;
+  brand_type_name: string;
+  created_at: string;
+  updated_at: string;
+  images: {
+    id: string;
+    url: string;
+    is_primary: boolean;
+    sort_order: number;
+  }[];
+  characteristics: StorefrontProductCharacteristicRow[];
+};
+
+const DETAIL_SELECT = `
+  id,
+  sku,
+  name,
+  description,
+  stock,
+  price,
+  discount_business_pct,
+  discount_client,
+  manual_pdf_url,
+  brand_id,
+  brand_type_id,
+  created_at,
+  updated_at,
+  brands ( name ),
+  brand_types ( name ),
+  product_images ( id, url, is_primary, sort_order ),
+  product_characteristic_values (
+    id,
+    characteristic_specific_id,
+    value,
+    product_characteristics_specific (
+      name,
+      product_characteristics_general ( name )
+    )
+  )
+`;
+
+function relationName(
+  rel: { name?: string } | { name?: string }[] | null | undefined,
+): string {
+  if (!rel) return "—";
+  if (Array.isArray(rel)) return rel[0]?.name ?? "—";
+  return rel.name ?? "—";
+}
+
+function specificRelation(
+  rel:
+    | {
+        name: string;
+        product_characteristics_general:
+          | { name: string }
+          | { name: string }[]
+          | null;
+      }
+    | {
+        name: string;
+        product_characteristics_general:
+          | { name: string }
+          | { name: string }[]
+          | null;
+      }[]
+    | null
+    | undefined,
+) {
+  if (!rel) return null;
+  if (Array.isArray(rel)) return rel[0] ?? null;
+  return rel;
+}
+
+function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
+  const rawImages = row.product_images as
+    | StorefrontProductDetail["images"]
+    | null
+    | undefined;
+  const images = (rawImages ?? [])
+    .slice()
+    .sort((a, b) => {
+      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
+
+  const rawCv = row.product_characteristic_values as
+    | Array<{
+        id: string;
+        characteristic_specific_id: string;
+        value: string | null;
+        product_characteristics_specific: unknown;
+      }>
+    | null
+    | undefined;
+
+  const characteristics: StorefrontProductCharacteristicRow[] = (
+    rawCv ?? []
+  )
+    .map((cv) => {
+      const specific = specificRelation(
+        cv.product_characteristics_specific as
+          | {
+              name: string;
+              product_characteristics_general:
+                | { name: string }
+                | { name: string }[]
+                | null;
+            }
+          | {
+              name: string;
+              product_characteristics_general:
+                | { name: string }
+                | { name: string }[]
+                | null;
+            }[]
+          | null
+          | undefined,
+      );
+      const generalName = relationName(
+        specific?.product_characteristics_general ?? null,
+      );
+      return {
+        id: cv.id,
+        generalName,
+        specificName: specific?.name ?? "—",
+        value: cv.value,
+      };
+    })
+    .sort((a, b) => {
+      const byG = a.generalName.localeCompare(b.generalName, "es");
+      if (byG !== 0) return byG;
+      return a.specificName.localeCompare(b.specificName, "es");
+    });
+
+  return {
+    id: String(row.id),
+    sku: String(row.sku),
+    name: String(row.name),
+    description:
+      row.description != null && String(row.description).trim() !== ""
+        ? String(row.description)
+        : null,
+    stock: Number(row.stock ?? 0),
+    price: Number(row.price),
+    discount_business_pct: Number(row.discount_business_pct ?? 0),
+    discount_client: Number(row.discount_client ?? 0),
+    manual_pdf_url:
+      row.manual_pdf_url != null && String(row.manual_pdf_url).trim() !== ""
+        ? String(row.manual_pdf_url)
+        : null,
+    brand_id: String(row.brand_id),
+    brand_type_id:
+      row.brand_type_id != null ? String(row.brand_type_id) : null,
+    brand_name: relationName(row.brands as Parameters<typeof relationName>[0]),
+    brand_type_name: relationName(
+      row.brand_types as Parameters<typeof relationName>[0],
+    ),
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? ""),
+    images,
+    characteristics,
+  };
+}
+
+export async function getStorefrontProductDetailById(
+  id: string,
+): Promise<StorefrontProductDetail | null> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(DETAIL_SELECT)
+    .eq("id", id)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[storefront] getStorefrontProductDetailById", id, error.message);
+    return null;
+  }
+  if (!data) return null;
+  return mapDetailRow(data as Record<string, unknown>);
+}

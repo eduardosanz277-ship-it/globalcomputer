@@ -1,34 +1,24 @@
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 
 /** Select de producto para tienda (reutilizable en otros módulos del catálogo). */
 export const STOREFRONT_PRODUCT_SELECT = `
   id,
   name,
-  description,
   price,
-  sku,
+  stock,
+  discount_business_pct,
+  discount_client,
   brand_id,
   brand_type_id,
+  brands ( name ),
   product_images ( id, url, is_primary, sort_order )
 `;
 
 const PRODUCT_SELECT = STOREFRONT_PRODUCT_SELECT;
 
-export type StorefrontProduct = {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  sku: string;
-  brand_id: string;
-  brand_type_id: string | null;
-  product_images: {
-    id: string;
-    url: string;
-    is_primary: boolean;
-    sort_order: number;
-  }[];
-};
+export type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+export { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 
 function mapProductImages(
   raw: StorefrontProduct["product_images"] | null | undefined,
@@ -37,16 +27,33 @@ function mapProductImages(
   return raw;
 }
 
-export function mapStorefrontProductRow(row: Record<string, unknown>): StorefrontProduct {
+function brandNameFromProductRow(row: Record<string, unknown>): string {
+  const b = row.brands;
+  if (b && typeof b === "object" && !Array.isArray(b) && "name" in b) {
+    const n = (b as { name?: unknown }).name;
+    return n != null && String(n).trim() !== "" ? String(n) : "—";
+  }
+  if (Array.isArray(b) && b[0] && typeof b[0] === "object" && "name" in b[0]) {
+    const n = (b[0] as { name?: unknown }).name;
+    return n != null && String(n).trim() !== "" ? String(n) : "—";
+  }
+  return "—";
+}
+
+export function mapStorefrontProductRow(
+  row: Record<string, unknown>,
+): StorefrontProduct {
   return {
     id: String(row.id),
     name: String(row.name),
-    description: row.description != null ? String(row.description) : null,
     price: Number(row.price),
-    sku: String(row.sku),
+    stock: Number(row.stock ?? 0),
+    discount_business_pct: Number(row.discount_business_pct ?? 0),
+    discount_client: Number(row.discount_client ?? 0),
     brand_id: String(row.brand_id),
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,
+    brand_name: brandNameFromProductRow(row),
     product_images: mapProductImages(
       row.product_images as StorefrontProduct["product_images"],
     ),
@@ -61,15 +68,6 @@ function looksLikeMissingColumnError(error: { message?: string } | null): boolea
     m.includes("Could not find") ||
     m.includes("does not exist")
   );
-}
-
-export function storefrontPrimaryImageUrl(product: StorefrontProduct): string | null {
-  const imgs = product.product_images.slice().sort((a, b) => {
-    if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
-    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-  });
-  const primary = imgs.find((i) => i.is_primary) ?? imgs[0];
-  return primary?.url ?? null;
 }
 
 export async function getBrandById(

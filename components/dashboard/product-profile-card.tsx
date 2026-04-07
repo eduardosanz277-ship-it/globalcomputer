@@ -30,7 +30,7 @@ function formatCurrency(value: number): string {
 
 function stockBadgeClass(stock: number): string {
   return stock <= 0
-    ? "inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700"
+    ? "inline-flex items-center rounded-full bg-neutral-600 px-2 py-0.5 text-[11px] font-medium text-white"
     : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700";
 }
 

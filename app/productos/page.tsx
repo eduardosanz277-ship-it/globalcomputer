@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +15,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ProductosPage() {
-  const products = await listAllActiveStorefrontProducts();
+  const [products, user] = await Promise.all([
+    listAllActiveStorefrontProducts(),
+    getCurrentUserService(),
+  ]);
+  const priceTier = resolveStorefrontPriceTier(user?.role);
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -29,7 +35,7 @@ export default async function ProductosPage() {
         />
       </div>
       <div className="mt-10">
-        <StorefrontProductGrid products={products} />
+        <StorefrontProductGrid products={products} priceTier={priceTier} />
       </div>
     </main>
   );

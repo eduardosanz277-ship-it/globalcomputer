@@ -2,8 +2,8 @@ import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import {
   mapStorefrontProductRow,
   STOREFRONT_PRODUCT_SELECT,
-  type StorefrontProduct,
 } from "@/modules/catalog/storefront-products.service";
+import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 
 function looksLikeMissingColumnError(error: { message?: string } | null): boolean {
   const m = error?.message ?? "";

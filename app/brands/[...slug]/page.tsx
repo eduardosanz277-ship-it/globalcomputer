@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
   getBrandById,
   getBrandTypeById,
@@ -64,7 +66,11 @@ export default async function BrandsSlugPage({ params }: Props) {
     const brand = await getBrandById(brandId);
     if (!brand) notFound();
 
-    const products = await listProductsByBrandId(brandId);
+    const [products, user] = await Promise.all([
+      listProductsByBrandId(brandId),
+      getCurrentUserService(),
+    ]);
+    const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -83,7 +89,7 @@ export default async function BrandsSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} />
+          <StorefrontProductGrid products={products} priceTier={priceTier} />
         </div>
       </main>
     );
@@ -111,7 +117,11 @@ export default async function BrandsSlugPage({ params }: Props) {
     const brand = await getBrandById(brandId);
     if (!brand) notFound();
 
-    const products = await listProductsByBrandAndType(brandId, brandTypeId);
+    const [products, user] = await Promise.all([
+      listProductsByBrandAndType(brandId, brandTypeId),
+      getCurrentUserService(),
+    ]);
+    const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -132,7 +142,7 @@ export default async function BrandsSlugPage({ params }: Props) {
         </div>
 
         <div className="mt-10">
-          <StorefrontProductGrid products={products} />
+          <StorefrontProductGrid products={products} priceTier={priceTier} />
         </div>
       </main>
     );
