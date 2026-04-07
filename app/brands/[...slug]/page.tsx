@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import {
   getBrandById,
   getBrandTypeById,
-  listBrandTypesForBrand,
   listProductsByBrandAndType,
   listProductsByBrandId,
 } from "@/modules/catalog/storefront-products.service";
@@ -38,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!brand) return { title: "Marca" };
     return {
       title: brand.name,
-      description: `Productos ${brand.name} — Shop by brand.`,
+      description: `Productos ${brand.name}.`,
     };
   }
   if (segments.length === 2) {
@@ -66,45 +64,27 @@ export default async function BrandsSlugPage({ params }: Props) {
     const brand = await getBrandById(brandId);
     if (!brand) notFound();
 
-    const types = await listBrandTypesForBrand(brandId);
-    const products =
-      types.length === 0 ? await listProductsByBrandId(brandId) : [];
+    const products = await listProductsByBrandId(brandId);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <HomeSectionHeading
-          eyebrow="Shop by brand"
-          title={brand.name}
-          description={
-            types.length > 0
-              ? "Elige un tipo de producto para ver el catálogo de esta marca."
-              : "Catálogo de productos de esta marca."
-          }
+      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+        <MarketingBreadcrumb
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Catálogo", href: "/brands" },
+            { label: brand.name },
+          ]}
         />
+        <div className="mt-6">
+          <HomeSectionHeading
+            title={brand.name}
+            description="Catálogo de productos de esta marca."
+          />
+        </div>
 
-        {types.length > 0 ? (
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {types.map((t) => (
-              <Link
-                key={t.id}
-                href={`/brands/${brandId}/${t.id}`}
-                className="group flex flex-col rounded-2xl border border-border/50 bg-card p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-soft-lg"
-              >
-                <h2 className="font-display text-lg font-semibold text-foreground group-hover:text-primary">
-                  {t.name}
-                </h2>
-                <span className="mt-4 inline-flex items-center text-sm font-semibold text-primary">
-                  Ver productos
-                  <ArrowRight className="ml-1.5 h-4 w-4 transition group-hover:translate-x-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-10">
-            <StorefrontProductGrid products={products} />
-          </div>
-        )}
+        <div className="mt-10">
+          <StorefrontProductGrid products={products} />
+        </div>
       </main>
     );
   }
@@ -134,24 +114,20 @@ export default async function BrandsSlugPage({ params }: Props) {
     const products = await listProductsByBrandAndType(brandId, brandTypeId);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <nav className="text-xs text-muted-foreground">
-          <Link href="/brands" className="hover:text-foreground">
-            Shop by brand
-          </Link>
-          <span className="mx-2">/</span>
-          <Link href={`/brands/${brandId}`} className="hover:text-foreground">
-            {brand.name}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground">{typeRow.name}</span>
-        </nav>
+      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+        <MarketingBreadcrumb
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Catálogo", href: "/brands" },
+            { label: brand.name, href: `/brands/${brandId}` },
+            { label: typeRow.name },
+          ]}
+        />
 
         <div className="mt-6">
           <HomeSectionHeading
-            eyebrow={brand.name}
             title={typeRow.name}
-            description={`Productos de ${typeRow.name} en ${brand.name}.`}
+            description={`Productos de ${typeRow.name}.`}
           />
         </div>
 

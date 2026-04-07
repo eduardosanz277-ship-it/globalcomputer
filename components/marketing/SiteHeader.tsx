@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  ChevronLeft,
   CircleUserRound,
   ChevronDown,
   ChevronRight,
@@ -57,22 +58,45 @@ type Props = {
   user: SessionUser | null;
 };
 
+/** Paneles del menú móvil (deslizamiento horizontal). Subopciones van en `<details>` dentro del nivel 2. */
+type MobileNavPanel =
+  | { kind: "root" }
+  | { kind: "security" }
+  | { kind: "brands" }
+  | { kind: "services" };
+
+function mobileNavPanelKey(panel: MobileNavPanel): string {
+  switch (panel.kind) {
+    case "root":
+      return "root";
+    case "security":
+      return "security";
+    case "brands":
+      return "brands";
+    case "services":
+      return "services";
+  }
+}
+
 export function SiteHeader({ user }: Props) {
   const pathname = usePathname();
   const [accountOpen, setAccountOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [mobileDetailsOpen, setMobileDetailsOpen] = useState({
-    security: false,
-    brands: false,
-    services: false,
-  });
+  const [mobileNavStack, setMobileNavStack] = useState<MobileNavPanel[]>([
+    { kind: "root" },
+  ]);
   const [navData, setNavData] = useState<NavigationData | null>(null);
   const [navLoading, setNavLoading] = useState(true);
   /** Columna derecha en menús mega (evita overflow que recorta submenús CSS) */
   const [hoveredGeneralId, setHoveredGeneralId] = useState<string | null>(null);
   const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
+  /** Tras navegar, corta el :hover del mega menú hasta el siguiente movimiento o timeout. */
+  const [suppressDesktopNavHover, setSuppressDesktopNavHover] =
+    useState(false);
   const accountRefMobile = useRef<HTMLDivElement>(null);
   const accountRefDesktop = useRef<HTMLDivElement>(null);
+  /** Limpia listeners/timeout de `armDesktopNavStripSuppress` al volver a armar o al desmontar. */
+  const suppressNavStripCleanupRef = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -149,6 +173,14 @@ export function SiteHeader({ user }: Props) {
   const navPrimaryLabelClass =
     "font-roboto text-[15px] font-medium uppercase tracking-[1px]";
 
+  /** Generales / marcas (cabecera de fila o desplegable) en menú móvil. */
+  const mobileNavCatalogHeadingClass =
+    "text-sm font-bold text-foreground/90";
+
+  /** Específicos y tipos por marca (subenlaces). */
+  const mobileNavCatalogRowClass =
+    "text-sm font-medium text-foreground/90";
+
   const handleScrollToTopOnHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
     setMobileNavOpen(false);
     if (pathname !== "/") return;
@@ -156,26 +188,76 @@ export function SiteHeader({ user }: Props) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleMobileDetailsToggle =
-    (key: "security" | "brands" | "services") =>
-    (e: React.SyntheticEvent<HTMLDetailsElement>) => {
-      const el = e.currentTarget;
-      if (!el) return;
-      setMobileDetailsOpen((prev) => ({ ...prev, [key]: el.open }));
+  const pushMobileNavPanel = (panel: MobileNavPanel) => {
+    setMobileNavStack((prev) => [...prev, panel]);
+  };
+
+  const popMobileNavPanel = () => {
+    setMobileNavStack((prev) =>
+      prev.length > 1 ? prev.slice(0, -1) : prev,
+    );
+  };
+
+  /** Cierra estado hover del mega menú y bloquea el :hover de la franja hasta movimiento o timeout (evita reapertura al quedar el puntero sobre el trigger). */
+  function armDesktopNavStripSuppress() {
+    setHoveredBrandId(null);
+    setHoveredGeneralId(null);
+    suppressNavStripCleanupRef.current?.();
+    suppressNavStripCleanupRef.current = null;
+    setSuppressDesktopNavHover(true);
+    let timerId: number | null = null;
+    const clearSuppress = () => {
+      setSuppressDesktopNavHover(false);
+      suppressNavStripCleanupRef.current = null;
     };
+    const onPointerMove = () => {
+      if (timerId != null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+      window.removeEventListener("pointermove", onPointerMove);
+      clearSuppress();
+    };
+    timerId = window.setTimeout(() => {
+      timerId = null;
+      window.removeEventListener("pointermove", onPointerMove);
+      clearSuppress();
+    }, 650);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    suppressNavStripCleanupRef.current = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      if (timerId != null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    };
+  }
 
   useEffect(() => {
+    return () => {
+      suppressNavStripCleanupRef.current?.();
+      suppressNavStripCleanupRef.current = null;
+    };
+  }, []);
+
+  const prevPathnameForNavRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
     setMobileNavOpen(false);
     setAccountOpen(false);
   }, [pathname]);
 
+  /** Tras commit de la nueva ruta (App Router ya actualizó `pathname`): cerrar mega menú y suprimir hover en la franja. */
+  useEffect(() => {
+    const prev = prevPathnameForNavRef.current;
+    if (prev !== null && prev !== pathname) {
+      armDesktopNavStripSuppress();
+    }
+    prevPathnameForNavRef.current = pathname;
+  }, [pathname]);
+
   useEffect(() => {
     if (!mobileNavOpen) {
-      setMobileDetailsOpen({
-        security: false,
-        brands: false,
-        services: false,
-      });
+      setMobileNavStack([{ kind: "root" }]);
     }
   }, [mobileNavOpen]);
 
@@ -576,7 +658,14 @@ export function SiteHeader({ user }: Props) {
           </div>
         </div>
 
-        <div className="hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:grid lg:grid-rows-[1fr] lg:overflow-visible">
+        <div
+          className={cn(
+            "hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:grid lg:grid-rows-[1fr] lg:overflow-visible",
+            /* Solo `pointer-events-none` en el padre no corta :hover en hijos; hay que anular hits en todo el subárbol (y ! para vencer group-hover:*:pointer-events-auto del mega). */
+            suppressDesktopNavHover &&
+              "pointer-events-none [&_*]:!pointer-events-none",
+          )}
+        >
           <div className="min-h-0 overflow-visible lg:min-h-0">
             <nav
               className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 overflow-visible px-4 py-1 sm:gap-3 sm:px-6 lg:px-8"
@@ -879,197 +968,436 @@ export function SiteHeader({ user }: Props) {
                 </button>
               </div>
               <nav
-                className="h-[calc(100dvh-57px)] overflow-y-auto overscroll-contain bg-[#e4e7ec] p-3"
+                className="flex h-[calc(100dvh-57px)] flex-col overflow-hidden overscroll-contain bg-[#e4e7ec]"
                 aria-label="Principal móvil"
               >
-                <div className="grid gap-0.5">
-                  <Link
-                    href="/"
-                    onClick={handleScrollToTopOnHome}
+                <div className="relative min-h-0 flex-1 overflow-hidden">
+                  <div
                     className={cn(
-                      "rounded-lg px-3 py-2 transition hover:bg-muted",
-                      navPrimaryLabelClass,
+                      "flex h-full transition-transform duration-300 ease-out motion-reduce:transition-none",
                     )}
+                    style={{
+                      width: `${mobileNavStack.length * 100}%`,
+                      transform: `translateX(-${((mobileNavStack.length - 1) * 100) / mobileNavStack.length}%)`,
+                    }}
                   >
-                    Inicio
-                  </Link>
-                  <details
-                    className="rounded-lg transition open:bg-muted/40"
-                    open={mobileDetailsOpen.security}
-                    onToggle={handleMobileDetailsToggle("security")}
-                  >
-                    <summary
-                      className={cn(
-                        "flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 transition hover:bg-muted",
-                        navPrimaryLabelClass,
-                      )}
-                    >
-                      Sistema de Seguridad
-                      <ChevronDown className="h-4 w-4 shrink-0" />
-                    </summary>
-                    <div className="grid gap-0.5 px-2 pb-2">
-                      {(navData?.characteristicsGeneral ?? []).map(
-                        (general) => (
-                          <Link
-                            key={general.id}
-                            href={`/security-system/${general.id}`}
-                            onClick={() => setMobileNavOpen(false)}
-                            className="rounded-md px-3 py-1.5 text-sm text-foreground/90 transition hover:bg-muted"
-                          >
-                            {general.name}
-                          </Link>
-                        ),
-                      )}
-                    </div>
-                  </details>
-                  <details
-                    className="rounded-lg transition open:bg-muted/40"
-                    open={mobileDetailsOpen.brands}
-                    onToggle={handleMobileDetailsToggle("brands")}
-                  >
-                    <summary
-                      className={cn(
-                        "flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 transition hover:bg-muted",
-                        navPrimaryLabelClass,
-                      )}
-                    >
-                      Ver Marcas
-                      <ChevronDown className="h-4 w-4 shrink-0" />
-                    </summary>
-                    <div className="grid gap-0.5 px-2 pb-2">
-                      {(navData?.brands ?? []).map((brand) => (
-                        <Link
-                          key={brand.id}
-                          href={`/brands/${brand.id}`}
-                          onClick={() => setMobileNavOpen(false)}
-                          className="rounded-md px-3 py-1.5 text-sm text-foreground/90 transition hover:bg-muted"
-                        >
-                          {brand.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </details>
-                  <details
-                    className="rounded-lg transition open:bg-muted/40"
-                    open={mobileDetailsOpen.services}
-                    onToggle={handleMobileDetailsToggle("services")}
-                  >
-                    <summary
-                      className={cn(
-                        "flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 transition hover:bg-muted",
-                        navPrimaryLabelClass,
-                      )}
-                    >
-                      Services
-                      <ChevronDown className="h-4 w-4 shrink-0" />
-                    </summary>
-                    <div className="grid gap-0.5 px-2 pb-2">
-                      {(navData?.services ?? []).map((service) => (
-                        <Link
-                          key={service.id}
-                          href={`/services/${service.id}`}
-                          onClick={() => setMobileNavOpen(false)}
-                          className="rounded-md px-3 py-1.5 text-sm text-foreground/90 transition hover:bg-muted"
-                        >
-                          {service.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </details>
-                  <Link
-                    href="/contact"
-                    onClick={() => setMobileNavOpen(false)}
-                    className={cn(
-                      "rounded-lg px-3 py-2 transition hover:bg-muted",
-                      navPrimaryLabelClass,
-                    )}
-                  >
-                    Contact
-                  </Link>
-                  <Link
-                    href="/leave-review"
-                    onClick={() => setMobileNavOpen(false)}
-                    className={cn(
-                      "rounded-lg px-3 py-2 transition hover:bg-muted",
-                      navPrimaryLabelClass,
-                    )}
-                  >
-                    Leave a review
-                  </Link>
-                  {user ? (
-                    <>
-                      <Link
-                        href="/cuenta"
-                        onClick={() => setMobileNavOpen(false)}
-                        className={cn(
-                          "mt-1 rounded-lg border-t border-border/70 px-3 py-2 transition hover:bg-muted",
-                          navPrimaryLabelClass,
-                        )}
+                    {mobileNavStack.map((panel) => (
+                      <div
+                        key={mobileNavPanelKey(panel)}
+                        className="flex h-full max-h-full shrink-0 flex-col overflow-hidden"
+                        style={{ width: `${100 / mobileNavStack.length}%` }}
                       >
-                        Mi cuenta
-                      </Link>
-                      <Link
-                        href="/cuenta"
-                        onClick={() => setMobileNavOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
-                          navPrimaryLabelClass,
-                        )}
-                      >
-                        <Package className="h-4 w-4" strokeWidth={2} />
-                        Mis pedidos
-                      </Link>
-                      <form action="/auth/logout" method="post">
-                        <button
-                          type="submit"
-                          onClick={() => setMobileNavOpen(false)}
-                          className={cn(
-                            "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-destructive transition hover:bg-muted",
-                            navPrimaryLabelClass,
-                          )}
-                        >
-                          <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-                          Cerrar sesión
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/login"
-                        onClick={() => setMobileNavOpen(false)}
-                        className={cn(
-                          "mt-1 flex items-center gap-2 rounded-lg border-t border-border/70 px-3 py-2 transition hover:bg-muted",
-                          navPrimaryLabelClass,
-                        )}
-                      >
-                        <LogIn className="h-4 w-4" strokeWidth={2} />
-                        Iniciar sesión
-                      </Link>
-                      <Link
-                        href="/register"
-                        onClick={() => setMobileNavOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
-                          navPrimaryLabelClass,
-                        )}
-                      >
-                        <UserRoundPlus className="h-4 w-4" strokeWidth={2} />
-                        Crear cuenta
-                      </Link>
-                      <Link
-                        href="/cuenta"
-                        onClick={() => setMobileNavOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
-                          navPrimaryLabelClass,
-                        )}
-                      >
-                        <Package className="h-4 w-4" strokeWidth={2} />
-                        Mis pedidos
-                      </Link>
-                    </>
-                  )}
+                        {panel.kind === "root" ? (
+                          <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                            <Link
+                              href="/"
+                              onClick={handleScrollToTopOnHome}
+                              className={cn(
+                                "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                            >
+                              Inicio
+                            </Link>
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                              onClick={() =>
+                                pushMobileNavPanel({ kind: "security" })
+                              }
+                            >
+                              Sistema de Seguridad
+                              <ChevronRight
+                                className="h-4 w-4 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                              onClick={() =>
+                                pushMobileNavPanel({ kind: "brands" })
+                              }
+                            >
+                              Ver Marcas
+                              <ChevronRight
+                                className="h-4 w-4 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                              onClick={() =>
+                                pushMobileNavPanel({ kind: "services" })
+                              }
+                            >
+                              Servicios
+                              <ChevronRight
+                                className="h-4 w-4 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            </button>
+                            <Link
+                              href="/contact"
+                              onClick={() => setMobileNavOpen(false)}
+                              className={cn(
+                                "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                            >
+                              Contacto
+                            </Link>
+                            <Link
+                              href="/leave-review"
+                              onClick={() => setMobileNavOpen(false)}
+                              className={cn(
+                                "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                            >
+                              Reseñas
+                            </Link>
+                            {user ? (
+                              <>
+                                <Link
+                                  href="/cuenta"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "mt-1 rounded-lg border-t border-border/70 px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  Mi cuenta
+                                </Link>
+                                <Link
+                                  href="/cuenta"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  <Package
+                                    className="h-4 w-4"
+                                    strokeWidth={2}
+                                  />
+                                  Mis pedidos
+                                </Link>
+                                <form action="/auth/logout" method="post">
+                                  <button
+                                    type="submit"
+                                    onClick={() => setMobileNavOpen(false)}
+                                    className={cn(
+                                      "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-destructive transition hover:bg-muted",
+                                      navPrimaryLabelClass,
+                                    )}
+                                  >
+                                    <LogOut
+                                      className="h-4 w-4 shrink-0"
+                                      aria-hidden
+                                    />
+                                    Cerrar sesión
+                                  </button>
+                                </form>
+                              </>
+                            ) : (
+                              <>
+                                <Link
+                                  href="/login"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "mt-1 flex items-center gap-2 rounded-lg border-t border-border/70 px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  <LogIn className="h-4 w-4" strokeWidth={2} />
+                                  Iniciar sesión
+                                </Link>
+                                <Link
+                                  href="/register"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  <UserRoundPlus
+                                    className="h-4 w-4"
+                                    strokeWidth={2}
+                                  />
+                                  Crear cuenta
+                                </Link>
+                                <Link
+                                  href="/cuenta"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  <Package
+                                    className="h-4 w-4"
+                                    strokeWidth={2}
+                                  />
+                                  Mis pedidos
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        ) : panel.kind === "security" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={popMobileNavPanel}
+                              className={cn(
+                                "flex w-full shrink-0 items-center gap-2 border-b border-border/60 bg-[#e4e7ec] px-3 py-2.5 text-left transition hover:bg-muted/60",
+                              )}
+                              aria-label="Volver al menú principal"
+                            >
+                              <ChevronLeft
+                                className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <span
+                                className={cn(
+                                  "min-w-0 flex-1 truncate",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                Sistema de Seguridad
+                              </span>
+                            </button>
+                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                              {navLoading ? (
+                                <div
+                                  className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
+                                  role="status"
+                                >
+                                  <Loader2 className="h-8 w-8 animate-spin" />
+                                  <span className="text-xs uppercase tracking-widest">
+                                    Cargando…
+                                  </span>
+                                </div>
+                              ) : (
+                                (navData?.characteristicsGeneral ?? []).map(
+                                  (general) => {
+                                    const hasSubs =
+                                      general.specifics.length > 0;
+                                    return hasSubs ? (
+                                      <details
+                                        key={general.id}
+                                        className="group rounded-lg"
+                                      >
+                                        <summary
+                                          className={cn(
+                                            "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
+                                            mobileNavCatalogHeadingClass,
+                                          )}
+                                        >
+                                          <span className="truncate">
+                                            {general.name}
+                                          </span>
+                                          <ChevronDown
+                                            className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
+                                            aria-hidden
+                                          />
+                                        </summary>
+                                        <div className="grid gap-0.5 pt-0.5">
+                                          {general.specifics.map(
+                                            (specific) => (
+                                              <Link
+                                                key={specific.id}
+                                                href={`/security-system/${general.id}/${specific.id}`}
+                                                onClick={() =>
+                                                  setMobileNavOpen(false)
+                                                }
+                                                className={cn(
+                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                  mobileNavCatalogRowClass,
+                                                )}
+                                              >
+                                                {specific.name}
+                                              </Link>
+                                            ),
+                                          )}
+                                        </div>
+                                      </details>
+                                    ) : (
+                                      <Link
+                                        key={general.id}
+                                        href={`/security-system/${general.id}`}
+                                        onClick={() =>
+                                          setMobileNavOpen(false)
+                                        }
+                                        className={cn(
+                                          "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                          mobileNavCatalogHeadingClass,
+                                        )}
+                                      >
+                                        {general.name}
+                                      </Link>
+                                    );
+                                  },
+                                )
+                              )}
+                            </div>
+                          </>
+                        ) : panel.kind === "brands" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={popMobileNavPanel}
+                              className={cn(
+                                "flex w-full shrink-0 items-center gap-2 border-b border-border/60 bg-[#e4e7ec] px-3 py-2.5 text-left transition hover:bg-muted/60",
+                              )}
+                              aria-label="Volver al menú principal"
+                            >
+                              <ChevronLeft
+                                className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <span
+                                className={cn(
+                                  "min-w-0 flex-1 truncate",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                Ver Marcas
+                              </span>
+                            </button>
+                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                              {navLoading ? (
+                                <div
+                                  className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
+                                  role="status"
+                                >
+                                  <Loader2 className="h-8 w-8 animate-spin" />
+                                  <span className="text-xs uppercase tracking-widest">
+                                    Cargando…
+                                  </span>
+                                </div>
+                              ) : (
+                                (navData?.brands ?? []).map((brand) => {
+                                  const hasTypes = brand.brandTypes.length > 0;
+                                  return hasTypes ? (
+                                    <details
+                                      key={brand.id}
+                                      className="group rounded-lg"
+                                    >
+                                      <summary
+                                        className={cn(
+                                          "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
+                                          mobileNavCatalogHeadingClass,
+                                        )}
+                                      >
+                                        <span className="truncate">
+                                          {brand.name}
+                                        </span>
+                                        <ChevronDown
+                                          className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
+                                          aria-hidden
+                                        />
+                                      </summary>
+                                      <div className="grid gap-0.5 pt-0.5">
+                                        {brand.brandTypes.map((type) => (
+                                          <Link
+                                            key={type.id}
+                                            href={`/brands/${brand.id}/${type.id}`}
+                                            onClick={() =>
+                                              setMobileNavOpen(false)
+                                            }
+                                            className={cn(
+                                              "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                              mobileNavCatalogRowClass,
+                                            )}
+                                          >
+                                            {type.name}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </details>
+                                  ) : (
+                                    <Link
+                                      key={brand.id}
+                                      href={`/brands/${brand.id}`}
+                                      onClick={() => setMobileNavOpen(false)}
+                                      className={cn(
+                                        "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                        mobileNavCatalogHeadingClass,
+                                      )}
+                                    >
+                                      {brand.name}
+                                    </Link>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </>
+                        ) : panel.kind === "services" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={popMobileNavPanel}
+                              className={cn(
+                                "flex w-full shrink-0 items-center gap-2 border-b border-border/60 bg-[#e4e7ec] px-3 py-2.5 text-left transition hover:bg-muted/60",
+                              )}
+                              aria-label="Volver al menú principal"
+                            >
+                              <ChevronLeft
+                                className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <span
+                                className={cn(
+                                  "min-w-0 flex-1 truncate",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                Servicios
+                              </span>
+                            </button>
+                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                              {navLoading ? (
+                                <div
+                                  className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
+                                  role="status"
+                                >
+                                  <Loader2 className="h-8 w-8 animate-spin" />
+                                  <span className="text-xs uppercase tracking-widest">
+                                    Cargando…
+                                  </span>
+                                </div>
+                              ) : (
+                                (navData?.services ?? []).map((service) => (
+                                  <Link
+                                    key={service.id}
+                                    href={`/services/${service.id}`}
+                                    onClick={() => setMobileNavOpen(false)}
+                                    className={cn(
+                                      "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                      mobileNavCatalogHeadingClass,
+                                    )}
+                                  >
+                                    {service.name}
+                                  </Link>
+                                ))
+                              )}
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </nav>
             </aside>

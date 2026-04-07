@@ -11,7 +11,7 @@ export default async function SecuritySystemPage() {
       <HomeSectionHeading
         eyebrow="Security"
         title="Security System"
-        description="Explora por característica general y luego por valor específico, como en Shop by brand."
+        description="Elige una categoría para ver todos sus productos, o entra en un valor concreto desde el menú para filtrar."
       />
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {generals.map((g) => (

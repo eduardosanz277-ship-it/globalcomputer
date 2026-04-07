@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import {
   getCharacteristicGeneralById,
   getCharacteristicSpecificById,
   listProductsByGeneralAndSpecific,
-  listSpecificsForGeneral,
+  listProductsByGeneralId,
 } from "@/modules/catalog/storefront-security.service";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!g) return { title: "Security System" };
     return {
       title: g.name,
-      description: `${g.name} — Security System.`,
+      description: `Productos — ${g.name}.`,
     };
   }
   if (segments.length === 2) {
@@ -47,8 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const general = await getCharacteristicGeneralById(spec.general_id);
     if (!general) return { title: "Security System" };
     return {
-      title: `${general.name} — ${spec.name}`,
-      description: `Productos con ${spec.name} (${general.name}).`,
+      title: spec.name,
+      description: `Productos de ${spec.name}.`,
     };
   }
   return { title: "Security System" };
@@ -64,39 +63,27 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
     const general = await getCharacteristicGeneralById(generalId);
     if (!general) notFound();
 
-    const specifics = await listSpecificsForGeneral(generalId);
+    const products = await listProductsByGeneralId(generalId);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <HomeSectionHeading
-          eyebrow="Security System"
-          title={general.name}
-          description={
-            specifics.length > 0
-              ? "Elige una opción para ver productos asociados."
-              : "No hay valores específicos configurados para esta categoría."
-          }
+      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+        <MarketingBreadcrumb
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Catálogo", href: "/security-system" },
+            { label: general.name },
+          ]}
         />
+        <div className="mt-6">
+          <HomeSectionHeading
+            title={general.name}
+            description="Catálogo de productos de esta categoría."
+          />
+        </div>
 
-        {specifics.length > 0 ? (
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {specifics.map((s) => (
-              <Link
-                key={s.id}
-                href={`/security-system/${generalId}/${s.id}`}
-                className="group flex flex-col rounded-2xl border border-border/50 bg-card p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-soft-lg"
-              >
-                <h2 className="font-display text-lg font-semibold text-foreground group-hover:text-primary">
-                  {s.name}
-                </h2>
-                <span className="mt-4 inline-flex items-center text-sm font-semibold text-primary">
-                  Ver productos
-                  <ArrowRight className="ml-1.5 h-4 w-4 transition group-hover:translate-x-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        ) : null}
+        <div className="mt-10">
+          <StorefrontProductGrid products={products} />
+        </div>
       </main>
     );
   }
@@ -126,27 +113,20 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
     const products = await listProductsByGeneralAndSpecific(generalId, specificId);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <nav className="text-xs text-muted-foreground">
-          <Link href="/security-system" className="hover:text-foreground">
-            Security System
-          </Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={`/security-system/${generalId}`}
-            className="hover:text-foreground"
-          >
-            {general.name}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground">{specRow.name}</span>
-        </nav>
+      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+        <MarketingBreadcrumb
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Catálogo", href: "/security-system" },
+            { label: general.name, href: `/security-system/${generalId}` },
+            { label: specRow.name },
+          ]}
+        />
 
         <div className="mt-6">
           <HomeSectionHeading
-            eyebrow={general.name}
             title={specRow.name}
-            description={`Productos asociados a «${specRow.name}» en ${general.name}.`}
+            description={`Productos de ${specRow.name}.`}
           />
         </div>
 

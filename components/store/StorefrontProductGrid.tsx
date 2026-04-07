@@ -23,7 +23,7 @@ export function StorefrontProductGrid({
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {products.map((p) => {
         const img = storefrontPrimaryImageUrl(p);
         return (
@@ -38,7 +38,7 @@ export function StorefrontProductGrid({
                   alt={p.name}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs text-muted-foreground">

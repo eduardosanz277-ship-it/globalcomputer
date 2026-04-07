@@ -110,6 +110,47 @@ export async function getCharacteristicSpecificById(
   };
 }
 
+/**
+ * Todos los productos activos vinculados a cualquier característica específica
+ * bajo el general indicado (equivalente a “toda la marca” en Comprar por marca).
+ */
+export async function listProductsByGeneralId(
+  generalId: string,
+): Promise<StorefrontProduct[]> {
+  const specifics = await listSpecificsForGeneral(generalId);
+  if (specifics.length === 0) return [];
+
+  const supabase = await getCatalogSupabase();
+  const specificIds = specifics.map((s) => s.id);
+
+  const { data: links, error: linkErr } = await supabase
+    .from("product_characteristic_values")
+    .select("product_id")
+    .in("characteristic_specific_id", specificIds);
+
+  if (linkErr) {
+    console.warn(
+      "[storefront-security] product_characteristic_values (general)",
+      generalId,
+      linkErr.message,
+    );
+    return [];
+  }
+  if (!links?.length) return [];
+
+  const productIds = [...new Set(links.map((l) => l.product_id))];
+
+  const { data: rows, error: prodErr } = await supabase
+    .from("products")
+    .select(STOREFRONT_PRODUCT_SELECT)
+    .in("id", productIds)
+    .eq("active", true)
+    .order("name");
+
+  if (prodErr || !rows) return [];
+  return rows.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 /** Productos que tienen valor asignado a la característica específica (y pertenece al general indicado). */
 export async function listProductsByGeneralAndSpecific(
   generalId: string,

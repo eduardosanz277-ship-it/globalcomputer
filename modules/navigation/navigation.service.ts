@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import {
   NavigationBrand,
@@ -7,7 +8,11 @@ import {
   NavigationService,
 } from "./navigation.types";
 
-export async function getNavigationData(): Promise<NavigationData> {
+/**
+ * Una sola ejecución por petición: evita duplicar consultas cuando varios
+ * componentes del mismo render llaman (p. ej. `page.tsx` + `StoreHero`).
+ */
+export const getNavigationData = cache(async (): Promise<NavigationData> => {
   const supabase = await getCatalogSupabase();
 
   const [
@@ -109,4 +114,4 @@ export async function getNavigationData(): Promise<NavigationData> {
     brands: Array.from(brandsMap.values()),
     services,
   };
-}
+});

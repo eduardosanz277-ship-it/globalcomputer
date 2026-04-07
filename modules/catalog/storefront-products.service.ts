@@ -168,6 +168,21 @@ export async function listBrandTypesForBrand(
     .map((r) => ({ id: r.id, name: r.name }));
 }
 
+/** Todos los productos activos del catálogo público (tienda). */
+export async function listAllActiveStorefrontProducts(): Promise<
+  StorefrontProduct[]
+> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .order("name");
+
+  if (error || !data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 export async function listProductsByBrandId(
   brandId: string,
 ): Promise<StorefrontProduct[]> {

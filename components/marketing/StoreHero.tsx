@@ -1,9 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
 import {
-  ArrowRight,
-  Camera,
+  ChevronRight,
   Headphones,
+  ShoppingCart,
   ShieldCheck,
   Star,
   Truck,
@@ -69,8 +70,8 @@ export async function StoreHero() {
                 </span>
               </h1>
               <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/85 sm:text-lg">
-                Cámaras, grabadoras y kits con precios visibles y equipo que te orienta. Así
-                debería ser comprar tecnología.
+                Cámaras, grabadoras y kits con precios visibles y equipo que te
+                orienta. Así debería ser comprar tecnología.
               </p>
 
               <ul className="mt-7 flex flex-wrap gap-2 sm:gap-2.5">
@@ -90,14 +91,14 @@ export async function StoreHero() {
 
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link
-                  href="#destacados"
+                  href="/productos"
                   className={cn(
                     buttonVariants({ size: "lg" }),
                     "gap-2 rounded-2xl bg-white px-8 font-semibold text-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-white",
                   )}
                 >
-                  Ver ofertas
-                  <ArrowRight className="h-4 w-4" />
+                  <ShoppingCart className="h-4 w-4" />
+                  Comprar ahora
                 </Link>
                 <Link
                   href="/register"
@@ -120,30 +121,48 @@ export async function StoreHero() {
                     <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-secondary-foreground shadow-md">
                       Top ventas
                     </span>
-                    <div className="flex items-center gap-0.5 text-amber-300" aria-hidden>
+                    <div
+                      className="flex items-center gap-0.5 text-amber-300"
+                      aria-hidden
+                    >
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star key={i} className="h-4 w-4 fill-current" />
                       ))}
                     </div>
                   </div>
-                  <div className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/40 via-slate-800/80 to-slate-950">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_30%,rgba(53,127,210,0.45),transparent_55%)]" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Camera className="h-20 w-20 text-white/90 drop-shadow-lg sm:h-24 sm:w-24" aria-hidden />
-                    </div>
-                    <span className="absolute bottom-3 left-3 rounded-lg bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/95 backdrop-blur-sm">
+                  <div className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl bg-slate-900">
+                    {/* Imagen grande en disco: sin priority para no competir con el héroe; conviene comprimir el webp. */}
+                    <Image
+                      src="/images/camaras_de_seguridad.webp"
+                      alt="Cámaras de seguridad"
+                      fill
+                      className="object-cover object-center"
+                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 480px"
+                      quality={80}
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/35 via-transparent to-slate-950/80"
+                      aria-hidden
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_40%_30%,rgba(53,127,210,0.35),transparent_55%)]"
+                      aria-hidden
+                    />
+                    <span className="absolute bottom-3 left-3 z-[1] rounded-lg bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/95 backdrop-blur-sm">
                       Vista tienda
                     </span>
                   </div>
                   <div className="mt-5 flex items-end justify-between gap-3 border-t border-white/10 pt-5">
                     <div>
-                      <p className="text-sm font-medium text-white/90">Kit 4 cámaras + NVR</p>
+                      <p className="text-sm font-medium text-white/90">
+                        Kit 4 cámaras + NVR
+                      </p>
                       <p className="mt-0.5 text-2xl font-bold tabular-nums text-white">
                         Desde $490
                       </p>
                     </div>
                     <Link
-                      href="#destacados"
+                      href="/productos"
                       className={cn(
                         buttonVariants({ size: "sm", variant: "secondary" }),
                         "shrink-0 rounded-xl font-semibold shadow-lg",
@@ -158,8 +177,12 @@ export async function StoreHero() {
                   <p className="text-[10px] font-medium uppercase tracking-wider text-white/60">
                     Clientes
                   </p>
-                  <p className="mt-1 font-display text-2xl font-bold text-white">+2,5k</p>
-                  <p className="mt-0.5 text-[11px] text-white/65">compras felices</p>
+                  <p className="mt-1 font-display text-2xl font-bold text-white">
+                    +2,5k
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-white/65">
+                    compras felices
+                  </p>
                 </div>
               </div>
 
@@ -172,9 +195,26 @@ export async function StoreHero() {
                     <li key={b.id}>
                       <Link
                         href={`/brands/${b.id}`}
-                        className="block rounded-lg bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+                        prefetch={false}
+                        aria-label={`Ver productos de ${b.name}`}
+                        className={cn(
+                          "group relative flex min-h-[2.75rem] items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-300 ease-out",
+                          "hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.14] hover:shadow-lg hover:shadow-primary/25",
+                          "active:translate-y-0 active:scale-[0.98]",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2540]",
+                        )}
                       >
-                        {b.name}
+                        <span
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                          aria-hidden
+                        />
+                        <span className="relative z-[1] min-w-0 flex-1 truncate pr-1">
+                          {b.name}
+                        </span>
+                        <ChevronRight
+                          className="relative z-[1] h-4 w-4 shrink-0 text-secondary/90 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100 -translate-x-1"
+                          aria-hidden
+                        />
                       </Link>
                     </li>
                   ))}
