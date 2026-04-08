@@ -45,7 +45,7 @@ export function OrdersSection({ orders }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Mis pedidos recientes</CardTitle>
+        <CardTitle>Pedidos recientes</CardTitle>
         <CardDescription>
           Consulta el estado y el importe de tus compras.
         </CardDescription>

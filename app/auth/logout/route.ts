@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { logoutService } from "@/modules/auth/auth.service";
 
-export async function POST() {
+/**
+ * Redirige al home del mismo origen que la petición (evita mandar a localhost
+ * en staging si `NEXT_PUBLIC_APP_URL` no está definido).
+ */
+export async function POST(request: Request) {
   await logoutService();
-  return NextResponse.redirect(
-    new URL("/", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  );
+  const origin = new URL(request.url).origin;
+  return NextResponse.redirect(new URL("/", origin));
 }
 

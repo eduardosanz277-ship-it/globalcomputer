@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  MapPin,
   Menu,
   Package,
   UserRoundPlus,
@@ -43,16 +44,10 @@ function NavMegaMenuLoading() {
         aria-hidden
       />
       <span className="text-xs uppercase tracking-[0.35em] text-white/55">
-        Cargando…
+        Cargando
       </span>
     </div>
   );
-}
-
-function roleLabel(role: SessionUser["role"]): string {
-  if (role === "ADMIN") return "Administrador";
-  if (role === "BUSINESS") return "Empresa";
-  return "Cliente";
 }
 
 type Props = {
@@ -138,6 +133,20 @@ export function SiteHeader({ user }: Props) {
 
   const displayName =
     user?.fullName?.trim() || user?.email?.split("@")[0] || "";
+
+  /** Inicial para avatar circular (solo header público / SiteHeader). */
+  const userInitial = useMemo(() => {
+    if (!user) return "";
+    const base = displayName.trim() || user.email?.split("@")[0] || "";
+    const ch = base.charAt(0);
+    return ch ? ch.toUpperCase() : "?";
+  }, [user, displayName]);
+
+  const publicUserAvatarClass =
+    "flex shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-sm font-semibold leading-none text-primary";
+
+  /** En tienda pública, el admin solo ve en el menú usuario: panel + cerrar sesión. */
+  const isAdminPublicUser = user?.role === "ADMIN";
 
   const activeGeneral = useMemo(() => {
     if (!navData?.characteristicsGeneral?.length || !hoveredGeneralId) {
@@ -337,7 +346,7 @@ export function SiteHeader({ user }: Props) {
                   name="q"
                   placeholder="Buscar cámaras, kits, marcas..."
                   autoComplete="off"
-                  className="h-10 w-full rounded-2xl border border-border/80 bg-muted/50 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
+                  className="h-10 w-full rounded-2xl border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
                 />
               </label>
 
@@ -359,56 +368,108 @@ export function SiteHeader({ user }: Props) {
                       aria-expanded={accountOpen}
                       aria-label="Mi cuenta"
                     >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
-                        {(displayName || "U").slice(0, 1).toUpperCase()}
+                      <span
+                        className={cn(publicUserAvatarClass, "h-8 w-8 text-xs")}
+                        aria-hidden
+                      >
+                        {userInitial}
                       </span>
                     </button>
                     {accountOpen && (
                       <div className="absolute right-0 top-full z-[100] pt-1">
-                        <div className="min-w-[280px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
-                          <div className="border-b border-border px-3 py-2">
-                            <p className="truncate text-sm font-medium">
-                              {displayName}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                          <Link
-                            href="/cuenta"
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                            onClick={() => setAccountOpen(false)}
-                          >
-                            <CircleUserRound
-                              className="h-4 w-4 shrink-0"
-                              strokeWidth={1.35}
+                        <div className="min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
+                          <div className="flex gap-3 border-b border-border px-3 py-3">
+                            <span
+                              className={cn(
+                                publicUserAvatarClass,
+                                "h-10 w-10 text-base",
+                              )}
                               aria-hidden
-                            />
-                            Mi cuenta
-                          </Link>
-                          {user.role === "ADMIN" ? (
-                            <Link
-                              href="/admin/home"
-                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                              onClick={() => setAccountOpen(false)}
                             >
-                              <LayoutDashboard
-                                className="h-4 w-4 shrink-0"
-                                strokeWidth={1.35}
-                                aria-hidden
-                              />
-                              Panel de administración
-                            </Link>
-                          ) : null}
-                          <form action="/auth/logout" method="post">
-                            <button
-                              type="submit"
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
-                            >
-                              <LogOut className="h-4 w-4" />
-                              Cerrar sesión
-                            </button>
-                          </form>
+                              {userInitial}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-foreground">
+                                {displayName}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {user.email}
+                              </p>
+                            </div>
+                          </div>
+                          {isAdminPublicUser ? (
+                            <>
+                              <Link
+                                href="/admin/home"
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                onClick={() => setAccountOpen(false)}
+                              >
+                                <LayoutDashboard
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={1.35}
+                                  aria-hidden
+                                />
+                                Panel de administración
+                              </Link>
+                              <form action="/auth/logout" method="post">
+                                <button
+                                  type="submit"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                                >
+                                  <LogOut className="h-4 w-4" />
+                                  Cerrar sesión
+                                </button>
+                              </form>
+                            </>
+                          ) : (
+                            <>
+                              <Link
+                                href="/cuenta"
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                onClick={() => setAccountOpen(false)}
+                              >
+                                <CircleUserRound
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={1.35}
+                                  aria-hidden
+                                />
+                                Mi cuenta
+                              </Link>
+                              <Link
+                                href="/cuenta?tab=orders"
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                onClick={() => setAccountOpen(false)}
+                              >
+                                <Package
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={1.35}
+                                  aria-hidden
+                                />
+                                Pedidos
+                              </Link>
+                              <Link
+                                href="/cuenta?tab=addresses"
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                onClick={() => setAccountOpen(false)}
+                              >
+                                <MapPin
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={1.35}
+                                  aria-hidden
+                                />
+                                Direcciones
+                              </Link>
+                              <form action="/auth/logout" method="post">
+                                <button
+                                  type="submit"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                                >
+                                  <LogOut className="h-4 w-4" />
+                                  Cerrar sesión
+                                </button>
+                              </form>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}
@@ -500,7 +561,7 @@ export function SiteHeader({ user }: Props) {
                     name="q"
                     placeholder="Buscar cámaras IP, DVR, kits de seguridad, marcas..."
                     autoComplete="off"
-                    className="h-11 w-full rounded-3xl border border-border/80 bg-muted/50 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
+                    className="h-11 w-full rounded-3xl border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
                   />
                 </label>
               </div>
@@ -546,15 +607,15 @@ export function SiteHeader({ user }: Props) {
                         aria-expanded={accountOpen}
                         aria-haspopup="menu"
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
-                          {(displayName || "U").slice(0, 1).toUpperCase()}
+                        <span
+                          className={cn(publicUserAvatarClass, "h-8 w-8")}
+                          aria-hidden
+                        >
+                          {userInitial}
                         </span>
                         <span className="min-w-0 flex-1 text-left">
                           <span className="block truncate text-sm font-medium leading-tight">
                             {displayName}
-                          </span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {roleLabel(user.role)}
                           </span>
                         </span>
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -562,50 +623,105 @@ export function SiteHeader({ user }: Props) {
                       {accountOpen && (
                         <div className="absolute right-0 top-full z-[100] pt-1">
                           <div
-                            className="min-w-[280px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
+                            className="min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
                             role="menu"
                           >
-                            <div className="border-b border-border px-3 py-2">
-                              <p className="truncate text-xs text-muted-foreground">
-                                {user.email}
-                              </p>
+                            <div className="flex gap-3 border-b border-border px-3 py-3">
+                              <span
+                                className={cn(
+                                  publicUserAvatarClass,
+                                  "h-10 w-10 text-base",
+                                )}
+                                aria-hidden
+                              >
+                                {userInitial}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {displayName}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {user.email}
+                                </p>
+                              </div>
                             </div>
-                            <Link
-                              href="/cuenta"
-                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                              role="menuitem"
-                              onClick={() => setAccountOpen(false)}
-                            >
-                              <CircleUserRound
-                                className="h-4 w-4"
-                                strokeWidth={1.35}
-                              />
-                              Mi cuenta
-                            </Link>
-                            {user.role === "ADMIN" ? (
-                              <Link
-                                href="/admin/home"
-                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                                role="menuitem"
-                                onClick={() => setAccountOpen(false)}
-                              >
-                                <LayoutDashboard
-                                  className="h-4 w-4"
-                                  strokeWidth={1.35}
-                                />
-                                Panel de administración
-                              </Link>
-                            ) : null}
-                            <form action="/auth/logout" method="post">
-                              <button
-                                type="submit"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
-                                role="menuitem"
-                              >
-                                <LogOut className="h-4 w-4" />
-                                Cerrar sesión
-                              </button>
-                            </form>
+                            {isAdminPublicUser ? (
+                              <>
+                                <Link
+                                  href="/admin/home"
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                  role="menuitem"
+                                  onClick={() => setAccountOpen(false)}
+                                >
+                                  <LayoutDashboard
+                                    className="h-4 w-4"
+                                    strokeWidth={1.35}
+                                  />
+                                  Panel de administración
+                                </Link>
+                                <form action="/auth/logout" method="post">
+                                  <button
+                                    type="submit"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                                    role="menuitem"
+                                  >
+                                    <LogOut className="h-4 w-4" />
+                                    Cerrar sesión
+                                  </button>
+                                </form>
+                              </>
+                            ) : (
+                              <>
+                                <Link
+                                  href="/cuenta"
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                  role="menuitem"
+                                  onClick={() => setAccountOpen(false)}
+                                >
+                                  <CircleUserRound
+                                    className="h-4 w-4"
+                                    strokeWidth={1.35}
+                                  />
+                                  Mi cuenta
+                                </Link>
+                                <Link
+                                  href="/cuenta?tab=orders"
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                  role="menuitem"
+                                  onClick={() => setAccountOpen(false)}
+                                >
+                                  <Package
+                                    className="h-4 w-4 shrink-0"
+                                    strokeWidth={1.35}
+                                    aria-hidden
+                                  />
+                                  Pedidos
+                                </Link>
+                                <Link
+                                  href="/cuenta?tab=addresses"
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                  role="menuitem"
+                                  onClick={() => setAccountOpen(false)}
+                                >
+                                  <MapPin
+                                    className="h-4 w-4 shrink-0"
+                                    strokeWidth={1.35}
+                                    aria-hidden
+                                  />
+                                  Direcciones
+                                </Link>
+                                <form action="/auth/logout" method="post">
+                                  <button
+                                    type="submit"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                                    role="menuitem"
+                                  >
+                                    <LogOut className="h-4 w-4" />
+                                    Cerrar sesión
+                                  </button>
+                                </form>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -663,13 +779,26 @@ export function SiteHeader({ user }: Props) {
                               Crear cuenta
                             </Link>
                             <Link
-                              href="/cuenta"
+                              href="/cuenta?tab=orders"
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                               role="menuitem"
                               onClick={() => setAccountOpen(false)}
                             >
                               <Package className="h-4 w-4" strokeWidth={1.6} />
-                              Mis pedidos
+                              Pedidos
+                            </Link>
+                            <Link
+                              href="/cuenta?tab=addresses"
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                              role="menuitem"
+                              onClick={() => setAccountOpen(false)}
+                            >
+                              <MapPin
+                                className="h-4 w-4 shrink-0"
+                                strokeWidth={1.6}
+                                aria-hidden
+                              />
+                              Direcciones
                             </Link>
                           </div>
                         </div>
@@ -1093,62 +1222,125 @@ export function SiteHeader({ user }: Props) {
                             </Link>
                             {user ? (
                               <>
-                                <Link
-                                  href="/cuenta"
-                                  onClick={() => setMobileNavOpen(false)}
-                                  className={cn(
-                                    "mt-1 rounded-lg border-t border-border/70 px-3 py-2 transition hover:bg-muted",
-                                    navPrimaryLabelClass,
-                                  )}
-                                >
-                                  Mi cuenta
-                                </Link>
-                                {user.role === "ADMIN" ? (
-                                  <Link
-                                    href="/admin/home"
-                                    onClick={() => setMobileNavOpen(false)}
-                                    className={cn(
-                                      "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
-                                      navPrimaryLabelClass,
-                                    )}
-                                  >
-                                    <LayoutDashboard
-                                      className="h-4 w-4"
-                                      strokeWidth={2}
-                                    />
-                                    Panel de administración
-                                  </Link>
-                                ) : null}
-                                <Link
-                                  href="/cuenta"
-                                  onClick={() => setMobileNavOpen(false)}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
-                                    navPrimaryLabelClass,
-                                  )}
-                                >
-                                  <Package
-                                    className="h-4 w-4"
-                                    strokeWidth={2}
-                                  />
-                                  Mis pedidos
-                                </Link>
-                                <form action="/auth/logout" method="post">
-                                  <button
-                                    type="submit"
-                                    onClick={() => setMobileNavOpen(false)}
-                                    className={cn(
-                                      "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-destructive transition hover:bg-muted",
-                                      navPrimaryLabelClass,
-                                    )}
-                                  >
-                                    <LogOut
-                                      className="h-4 w-4 shrink-0"
+                                <div className="mt-1 border-t border-border/70 px-3 pt-3">
+                                  <div className="flex gap-3 pb-2">
+                                    <span
+                                      className={cn(
+                                        publicUserAvatarClass,
+                                        "h-10 w-10 text-base",
+                                      )}
                                       aria-hidden
-                                    />
-                                    Cerrar sesión
-                                  </button>
-                                </form>
+                                    >
+                                      {userInitial}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-sm font-semibold text-foreground">
+                                        {displayName}
+                                      </p>
+                                      <p className="truncate text-xs text-muted-foreground">
+                                        {user.email}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                {isAdminPublicUser ? (
+                                  <>
+                                    <Link
+                                      href="/admin/home"
+                                      onClick={() => setMobileNavOpen(false)}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                        navPrimaryLabelClass,
+                                      )}
+                                    >
+                                      <LayoutDashboard
+                                        className="h-4 w-4"
+                                        strokeWidth={2}
+                                      />
+                                      Panel de administración
+                                    </Link>
+                                    <form action="/auth/logout" method="post">
+                                      <button
+                                        type="submit"
+                                        onClick={() => setMobileNavOpen(false)}
+                                        className={cn(
+                                          "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-destructive transition hover:bg-muted",
+                                          navPrimaryLabelClass,
+                                        )}
+                                      >
+                                        <LogOut
+                                          className="h-4 w-4 shrink-0"
+                                          aria-hidden
+                                        />
+                                        Cerrar sesión
+                                      </button>
+                                    </form>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Link
+                                      href="/cuenta"
+                                      onClick={() => setMobileNavOpen(false)}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                        navPrimaryLabelClass,
+                                      )}
+                                    >
+                                      <CircleUserRound
+                                        className="h-4 w-4 shrink-0"
+                                        strokeWidth={2}
+                                        aria-hidden
+                                      />
+                                      Mi cuenta
+                                    </Link>
+                                    <Link
+                                      href="/cuenta?tab=orders"
+                                      onClick={() => setMobileNavOpen(false)}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                        navPrimaryLabelClass,
+                                      )}
+                                    >
+                                      <Package
+                                        className="h-4 w-4 shrink-0"
+                                        strokeWidth={2}
+                                        aria-hidden
+                                      />
+                                      Pedidos
+                                    </Link>
+                                    <Link
+                                      href="/cuenta?tab=addresses"
+                                      onClick={() => setMobileNavOpen(false)}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                        navPrimaryLabelClass,
+                                      )}
+                                    >
+                                      <MapPin
+                                        className="h-4 w-4 shrink-0"
+                                        strokeWidth={2}
+                                        aria-hidden
+                                      />
+                                      Direcciones
+                                    </Link>
+                                    <form action="/auth/logout" method="post">
+                                      <button
+                                        type="submit"
+                                        onClick={() => setMobileNavOpen(false)}
+                                        className={cn(
+                                          "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-destructive transition hover:bg-muted",
+                                          navPrimaryLabelClass,
+                                        )}
+                                      >
+                                        <LogOut
+                                          className="h-4 w-4 shrink-0"
+                                          aria-hidden
+                                        />
+                                        Cerrar sesión
+                                      </button>
+                                    </form>
+                                  </>
+                                )}
                               </>
                             ) : (
                               <>
@@ -1178,7 +1370,7 @@ export function SiteHeader({ user }: Props) {
                                   Crear cuenta
                                 </Link>
                                 <Link
-                                  href="/cuenta"
+                                  href="/cuenta?tab=orders"
                                   onClick={() => setMobileNavOpen(false)}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1186,10 +1378,26 @@ export function SiteHeader({ user }: Props) {
                                   )}
                                 >
                                   <Package
-                                    className="h-4 w-4"
+                                    className="h-4 w-4 shrink-0"
                                     strokeWidth={2}
+                                    aria-hidden
                                   />
-                                  Mis pedidos
+                                  Pedidos
+                                </Link>
+                                <Link
+                                  href="/cuenta?tab=addresses"
+                                  onClick={() => setMobileNavOpen(false)}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                    navPrimaryLabelClass,
+                                  )}
+                                >
+                                  <MapPin
+                                    className="h-4 w-4 shrink-0"
+                                    strokeWidth={2}
+                                    aria-hidden
+                                  />
+                                  Direcciones
                                 </Link>
                               </>
                             )}
@@ -1225,7 +1433,7 @@ export function SiteHeader({ user }: Props) {
                                 >
                                   <Loader2 className="h-8 w-8 animate-spin" />
                                   <span className="text-xs uppercase tracking-widest">
-                                    Cargando…
+                                    Cargando
                                   </span>
                                 </div>
                               ) : (
@@ -1319,7 +1527,7 @@ export function SiteHeader({ user }: Props) {
                                 >
                                   <Loader2 className="h-8 w-8 animate-spin" />
                                   <span className="text-xs uppercase tracking-widest">
-                                    Cargando…
+                                    Cargando
                                   </span>
                                 </div>
                               ) : (
@@ -1410,7 +1618,7 @@ export function SiteHeader({ user }: Props) {
                                 >
                                   <Loader2 className="h-8 w-8 animate-spin" />
                                   <span className="text-xs uppercase tracking-widest">
-                                    Cargando…
+                                    Cargando
                                   </span>
                                 </div>
                               ) : (

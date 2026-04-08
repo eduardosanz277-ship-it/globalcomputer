@@ -375,7 +375,7 @@ export function UserDetailDrawer({
             className="h-10 w-10 animate-spin text-muted-foreground"
             aria-hidden
           />
-          <span className="sr-only">Cargando…</span>
+          <span className="sr-only">Cargando</span>
         </div>
       ) : (
         <>

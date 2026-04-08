@@ -341,7 +341,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         <div
           className={cn(
             "flex flex-wrap items-center",
-            activeFilterCount > 0 ? "gap-1 sm:gap-3" : "gap-3"
+            activeFilterCount > 0 ? "gap-1 sm:gap-3" : "gap-3",
           )}
         >
           <div className="flex shrink-0 items-center gap-1">
@@ -353,10 +353,16 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
               aria-expanded={panelOpen}
               aria-controls="storefront-filters-panel"
             >
-              <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              {activeFilterCount > 0
-                ? `Filtros (${activeFilterCount})`
-                : "Filtro"}
+              <Filter
+                className="h-4 w-4 shrink-0"
+                strokeWidth={2}
+                aria-hidden
+              />
+              {activeFilterCount === 0
+                ? "Filtro"
+                : activeFilterCount === 1
+                  ? `Filtro (${activeFilterCount})`
+                  : `Filtros (${activeFilterCount})`}
             </Button>
             {activeFilterCount > 0 ? (
               <Button
@@ -374,8 +380,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           </div>
           <p className="text-sm font-medium text-muted-foreground">
             {activeFilterCount > 0
-              ? `${filtered.length} de ${products.length} productos`
-              : `${products.length} productos`}
+              ? `${filtered.length} de ${products.length} ${products.length === 1 ? "producto" : "productos"}`
+              : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}
           </p>
         </div>
 
@@ -732,9 +738,16 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
       </SlideOver>
 
       {filtered.length === 0 && products.length > 0 ? (
-        <p className="rounded-2xl border border-dashed border-border/60 bg-muted/35 px-6 py-12 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
           Ningún producto coincide con los filtros. Ajusta los criterios para
-          ver más resultados.
+          ver más resultados o{" "}
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="font-semibold text-black underline underline-offset-2 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          >
+            Limpiar todo
+          </button>
         </p>
       ) : (
         <>

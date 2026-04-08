@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Bell,
   ChevronDown,
@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
@@ -57,14 +56,14 @@ export function AdminHeader({
 
   const displayName =
     user.fullName?.trim() || user.email?.split("@")[0] || "Usuario";
-  const roleLabel =
-    user.role === "ADMIN"
-      ? "Administrador"
-      : user.role === "BUSINESS"
-        ? "Negocio"
-        : user.role === "CLIENT"
-          ? "Cliente"
-          : user.role;
+
+  const userInitial = useMemo(() => {
+    const base = displayName.trim() || user.email?.split("@")[0] || "";
+    const ch = base.charAt(0);
+    return ch ? ch.toUpperCase() : "?";
+  }, [displayName, user.email]);
+  const avatarClass =
+    "flex shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-sm font-semibold leading-none text-primary";
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-white px-2.5 lg:px-6">
@@ -117,30 +116,32 @@ export function AdminHeader({
       >
         <button
           type="button"
-          className="rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="rounded-lg p-1.5 text-muted-foreground transition hover:text-foreground"
           aria-label="Notificaciones"
         >
           <Bell className="h-5 w-5" />
         </button>
 
-        <div className="relative" ref={ref}>
+        <div
+          className="relative"
+          ref={ref}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+        >
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="flex items-center gap-3 rounded-lg py-1.5 px-1 transition hover:bg-muted/80"
+            className="flex items-center gap-3 rounded-lg py-1.5 px-1 transition hover:bg-transparent"
             aria-expanded={open}
             aria-haspopup="menu"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-admin text-white">
-              <User className="h-4 w-4" aria-hidden />
-            </div>
+            <span className={cn(avatarClass, "h-9 w-9")} aria-hidden>
+              {userInitial}
+            </span>
             <div className="hidden text-left sm:block">
               <p className="text-xs text-muted-foreground">Bienvenido,</p>
               <p className="max-w-[200px] truncate text-sm font-semibold leading-tight text-foreground">
                 {displayName}
-              </p>
-              <p className="max-w-[200px] truncate text-xs text-muted-foreground">
-                {roleLabel}
               </p>
             </div>
             <ChevronDown
@@ -153,7 +154,7 @@ export function AdminHeader({
 
           {open && (
             <div
-              className="absolute right-0 top-full z-50 mt-1 min-w-[260px] rounded-lg border border-border bg-popover py-1 shadow-md"
+              className="absolute right-0 top-full z-50 mt-0 min-w-[260px] rounded-lg border border-border bg-popover py-1 shadow-md"
               role="menu"
             >
               <div className="border-b border-border px-3 py-2 sm:hidden">

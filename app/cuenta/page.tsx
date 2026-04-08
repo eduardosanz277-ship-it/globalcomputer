@@ -2,6 +2,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { CuentaTabs } from "./CuentaTabs";
 import { CuentaAddress, CuentaOrder } from "./types";
@@ -89,12 +90,18 @@ export default async function CuentaPage() {
               </div>
             </div>
 
-            <CuentaTabs
-              initialName={profile?.full_name ?? user.fullName}
-              email={user.email}
-              addresses={mappedAddresses}
-              orders={mappedOrders}
-            />
+            <Suspense
+              fallback={
+                <div className="min-h-[12rem] animate-pulse rounded-2xl border border-border bg-muted/20" />
+              }
+            >
+              <CuentaTabs
+                initialName={profile?.full_name ?? user.fullName}
+                email={user.email}
+                addresses={mappedAddresses}
+                orders={mappedOrders}
+              />
+            </Suspense>
           </div>
         </div>
       </div>
