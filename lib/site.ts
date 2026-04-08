@@ -9,6 +9,13 @@ export const SITE_CONTACT_PHONE_DISPLAY = "786-395-1076";
 export const SITE_CONTACT_PHONE_TEL = "+17863951076";
 export const SITE_CONTACT_EMAIL = "globalcomputer1024@gmail.com";
 
+export type PublicSiteContact = {
+  address: string;
+  email: string;
+  phoneDisplay: string;
+  phoneTel: string;
+};
+
 export function siteContactMapsUrl(): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE_CONTACT_ADDRESS)}`;
 }

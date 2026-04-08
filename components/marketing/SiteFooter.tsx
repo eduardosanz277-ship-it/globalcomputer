@@ -9,14 +9,12 @@ import {
   Phone,
 } from "lucide-react";
 import {
+  type PublicSiteContact,
   SITE_CONTACT_ADDRESS,
-  SITE_CONTACT_EMAIL,
-  SITE_CONTACT_PHONE_DISPLAY,
-  SITE_CONTACT_PHONE_TEL,
   siteContactMapsUrl,
 } from "@/lib/site";
 
-export function SiteFooter() {
+export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
   return (
     <footer
       id="ayuda"
@@ -101,24 +99,24 @@ export function SiteFooter() {
               Contacto
             </p>
             <a
-              href={`tel:${SITE_CONTACT_PHONE_TEL}`}
+              href={`tel:${contact.phoneTel}`}
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
             >
               <Phone
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>{SITE_CONTACT_PHONE_DISPLAY}</span>
+              <span>{contact.phoneDisplay}</span>
             </a>
             <a
-              href={`mailto:${SITE_CONTACT_EMAIL}`}
+              href={`mailto:${contact.email}`}
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
             >
               <Mail
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>{SITE_CONTACT_EMAIL}</span>
+              <span>{contact.email}</span>
             </a>
             <a
               href={siteContactMapsUrl()}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
+import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
 import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
@@ -92,7 +93,7 @@ export function ServiceForm({
             aria-invalid={Boolean(nameError)}
             aria-describedby={nameError ? "service-name-error" : undefined}
             className={cn(
-              "h-11 rounded-lg border-border/80 bg-background/80 shadow-sm transition focus-visible:ring-2 focus-visible:ring-ring/35",
+              adminServiceLikeInputClassName,
               nameError &&
                 "border-destructive focus-visible:ring-destructive/30",
             )}

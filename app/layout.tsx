@@ -7,6 +7,7 @@ import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
 import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { ToastContainer } from "react-toastify";
@@ -49,7 +50,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const user = await getCurrentUserService();
+  const [user, contact] = await Promise.all([
+    getCurrentUserService(),
+    getPublicSiteContact(),
+  ]);
 
   return (
     <html
@@ -61,7 +65,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <ScrollToTopOnPathname />
         <ConditionalSiteHeader user={user} />
         <main className="flex-1">{children}</main>
-        <ConditionalSiteFooter />
+        <ConditionalSiteFooter contact={contact} />
         <ToastContainer position="top-right" autoClose={3000} />
       </body>
     </html>

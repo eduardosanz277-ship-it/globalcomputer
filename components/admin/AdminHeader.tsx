@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
@@ -82,9 +90,7 @@ export function AdminHeader({
           variant="mark"
           className={cn(
             "shrink-0",
-            variant === "standalone"
-              ? "h-9 w-9 md:h-12 md:w-12"
-              : "h-9 w-9",
+            variant === "standalone" ? "h-9 w-9 md:h-12 md:w-12" : "h-9 w-9",
           )}
         />
         {variant === "standalone" ? (
@@ -147,7 +153,7 @@ export function AdminHeader({
 
           {open && (
             <div
-              className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-popover py-1 shadow-md"
+              className="absolute right-0 top-full z-50 mt-1 min-w-[260px] rounded-lg border border-border bg-popover py-1 shadow-md"
               role="menu"
             >
               <div className="border-b border-border px-3 py-2 sm:hidden">
@@ -156,12 +162,24 @@ export function AdminHeader({
               </div>
               <Link
                 href="/"
-                className="block px-3 py-2 text-sm hover:bg-muted"
+                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                 role="menuitem"
                 onClick={() => setOpen(false)}
               >
+                <Home className="h-4 w-4" />
                 Ir al sitio
               </Link>
+              {variant === "standalone" && user.role === "ADMIN" ? (
+                <Link
+                  href="/admin/home"
+                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Panel de administración
+                </Link>
+              ) : null}
               <form action="/auth/logout" method="post">
                 <button
                   type="submit"

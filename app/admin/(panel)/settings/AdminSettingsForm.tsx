@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
 import { useServerAction } from "@/hooks/use-server-action";
 import { updateAppConfigAction } from "@/modules/admin/app-config/app-config.actions";
 import {
@@ -60,7 +61,7 @@ export function AdminSettingsForm({ initial }: Props) {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="supportEmail">
+              <Label htmlFor="supportEmail" className="text-sm font-medium">
                 Email
                 <RequiredMark />
               </Label>
@@ -70,7 +71,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   id="supportEmail"
                   type="email"
                   autoComplete="email"
-                  className="pl-9"
+                  className={cn(adminServiceLikeInputClassName, "pl-9")}
                   aria-required
                   {...form.register("supportEmail")}
                 />
@@ -82,7 +83,7 @@ export function AdminSettingsForm({ initial }: Props) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supportPhone">
+              <Label htmlFor="supportPhone" className="text-sm font-medium">
                 Teléfono
                 <RequiredMark />
               </Label>
@@ -92,7 +93,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   id="supportPhone"
                   type="tel"
                   autoComplete="tel"
-                  className="pl-9"
+                  className={cn(adminServiceLikeInputClassName, "pl-9")}
                   aria-required
                   {...form.register("supportPhone")}
                 />
@@ -149,7 +150,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   !lowStockAlertsOn && "pointer-events-none opacity-50",
                 )}
               >
-                <Label htmlFor="lowStockThreshold">
+                <Label htmlFor="lowStockThreshold" className="text-sm font-medium">
                   Umbral (límite)
                   <RequiredMark />
                 </Label>
@@ -163,6 +164,7 @@ export function AdminSettingsForm({ initial }: Props) {
                   min={0}
                   step={1}
                   disabled={!lowStockAlertsOn || isPending}
+                  className={adminServiceLikeInputClassName}
                   aria-required={lowStockAlertsOn}
                   {...form.register("lowStockThreshold", {
                     valueAsNumber: true,

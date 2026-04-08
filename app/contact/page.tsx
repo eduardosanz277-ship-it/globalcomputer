@@ -1,13 +1,13 @@
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import {
   SITE_CONTACT_ADDRESS,
-  SITE_CONTACT_EMAIL,
-  SITE_CONTACT_PHONE_DISPLAY,
-  SITE_CONTACT_PHONE_TEL,
   siteContactMapsUrl,
 } from "@/lib/site";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getPublicSiteContact();
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <HomeSectionHeading
@@ -24,10 +24,10 @@ export default function ContactPage() {
           <h4 className="text-sm font-semibold">Teléfono</h4>
           <p className="mt-1">
             <a
-              href={`tel:${SITE_CONTACT_PHONE_TEL}`}
+              href={`tel:${contact.phoneTel}`}
               className="text-foreground underline-offset-4 transition hover:text-primary hover:underline"
             >
-              {SITE_CONTACT_PHONE_DISPLAY}
+              {contact.phoneDisplay}
             </a>
           </p>
         </div>
@@ -35,10 +35,10 @@ export default function ContactPage() {
           <h4 className="text-sm font-semibold">Email</h4>
           <p className="mt-1">
             <a
-              href={`mailto:${SITE_CONTACT_EMAIL}`}
+              href={`mailto:${contact.email}`}
               className="text-foreground underline-offset-4 transition hover:text-primary hover:underline"
             >
-              {SITE_CONTACT_EMAIL}
+              {contact.email}
             </a>
           </p>
         </div>

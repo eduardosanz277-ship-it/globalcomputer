@@ -19,7 +19,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { StoreHero } from "@/components/marketing/StoreHero";
-import { getNavigationData } from "@/modules/navigation/navigation.service";
+// Temporal: sección «Explora por marca» oculta en home; restaurar al reactivar el bloque.
+// import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
@@ -83,14 +84,16 @@ const PLACEHOLDER_PRODUCTS = [
 ];
 
 export default async function HomePage() {
-  const nav = await getNavigationData();
-  const brands = nav?.brands ?? [];
+  // Temporal: junto con la sección «Explora por marca» más abajo.
+  // const nav = await getNavigationData();
+  // const brands = nav?.brands ?? [];
 
   return (
     <main className="overflow-x-hidden">
         <StoreHero />
 
-        {/* Categories */}
+        {/*
+        Temporal: sección «Explora por marca» oculta; descomentar para restaurar.
         <section
           id="marcas"
           className="scroll-mt-32 bg-background pb-20 pt-24 sm:scroll-mt-36 sm:pb-24 sm:pt-28"
@@ -127,11 +130,12 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+        */}
 
-        {/* Featured products */}
+        {/* Featured products — mismo gris que el fondo de página bajo el Hero (bg-background) */}
         <section
           id="destacados"
-          className="scroll-mt-32 border-y border-border/60 bg-gradient-to-b from-muted/50 to-background py-20 sm:scroll-mt-36 sm:py-24"
+          className="scroll-mt-32 border-b border-border/60 bg-background py-20 sm:scroll-mt-36 sm:py-24"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -144,7 +148,7 @@ export default async function HomePage() {
                 titleClassName="text-3xl sm:text-4xl"
               />
               <Link
-                href="#marcas"
+                href="/brands"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "shrink-0 rounded-2xl border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",

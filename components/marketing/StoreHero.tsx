@@ -4,13 +4,14 @@ import { getNavigationData } from "@/modules/navigation/navigation.service";
 import {
   ChevronRight,
   Headphones,
-  ShoppingCart,
+  Phone,
   ShieldCheck,
   Star,
   Truck,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 
 const TRUST_PILLS = [
   { Icon: Truck, label: "Envío a EE. UU." },
@@ -31,7 +32,10 @@ const TRUST_BAR = [
 ] as const;
 
 export async function StoreHero() {
-  const nav = await getNavigationData();
+  const [nav, contact] = await Promise.all([
+    getNavigationData(),
+    getPublicSiteContact(),
+  ]);
   const brands = nav?.brands ?? [];
 
   return (
@@ -58,11 +62,11 @@ export async function StoreHero() {
         />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8 lg:pt-16">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 xl:gap-16">
+          <div className="grid items-center gap-8 md:gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 xl:gap-16">
             <div className="animate-fade-up">
-              <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-secondary/95 backdrop-blur-md sm:text-xs">
+              {/* <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-secondary/95 backdrop-blur-md sm:text-xs">
                 Tienda de confianza
-              </p>
+              </p> */}
               <h1 className="mt-5 font-display text-[1.85rem] font-bold leading-[1.1] tracking-tight sm:text-4xl sm:leading-[1.08] lg:text-[2.85rem]">
                 Tu seguridad,{" "}
                 <span className="bg-gradient-to-r from-white via-white to-secondary/90 bg-clip-text text-transparent">
@@ -94,96 +98,43 @@ export async function StoreHero() {
                   href="/productos"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "gap-2 rounded-2xl bg-white px-8 font-semibold text-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-white",
+                    "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-primary/90 sm:w-auto",
                   )}
                 >
-                  <ShoppingCart className="h-4 w-4" />
-                  Comprar ahora
+                  <span className="text-base sm:text-[1.05rem]">Comprar ahora</span>
                 </Link>
                 <Link
-                  href="/register"
+                  href={`tel:${contact.phoneTel}`}
                   className={cn(
                     buttonVariants({ size: "lg", variant: "outline" }),
-                    "rounded-2xl border-2 border-white/35 bg-white/5 font-semibold text-white backdrop-blur-md hover:bg-white/15",
+                    "group h-14 w-full gap-2 rounded-full border-2 border-white/35 bg-white/5 px-5 font-semibold text-white backdrop-blur-md hover:bg-white/15 sm:w-auto",
                   )}
+                  aria-label={`Llamar para ayuda al ${contact.phoneDisplay}`}
                 >
-                  Crear cuenta gratis
+                  <Phone className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="flex flex-col items-start leading-tight">
+                    <span className="text-[11px] font-medium text-white/80 sm:text-xs">
+                      ¿Necesitas ayuda?
+                    </span>
+                    <span className="text-sm font-semibold text-white sm:text-base">
+                      {contact.phoneDisplay}
+                    </span>
+                  </span>
                 </Link>
               </div>
             </div>
 
             {/* Escaparate visual */}
             <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
-              <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-transparent to-secondary/20 blur-2xl lg:-inset-10" />
-              <div className="relative">
-                <div className="overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/[0.09] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:rounded-[2rem] sm:p-8">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-secondary-foreground shadow-md">
-                      Top ventas
-                    </span>
-                    <div
-                      className="flex items-center gap-0.5 text-amber-300"
-                      aria-hidden
-                    >
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl bg-slate-900">
-                    {/* Imagen grande en disco: sin priority para no competir con el héroe; conviene comprimir el webp. */}
-                    <Image
-                      src="/images/camaras_de_seguridad.webp"
-                      alt="Cámaras de seguridad"
-                      fill
-                      className="object-cover object-center"
-                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 480px"
-                      quality={80}
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/35 via-transparent to-slate-950/80"
-                      aria-hidden
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_40%_30%,rgba(53,127,210,0.35),transparent_55%)]"
-                      aria-hidden
-                    />
-                    <span className="absolute bottom-3 left-3 z-[1] rounded-lg bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/95 backdrop-blur-sm">
-                      Vista tienda
-                    </span>
-                  </div>
-                  <div className="mt-5 flex items-end justify-between gap-3 border-t border-white/10 pt-5">
-                    <div>
-                      <p className="text-sm font-medium text-white/90">
-                        Kit 4 cámaras + NVR
-                      </p>
-                      <p className="mt-0.5 text-2xl font-bold tabular-nums text-white">
-                        Desde $490
-                      </p>
-                    </div>
-                    <Link
-                      href="/productos"
-                      className={cn(
-                        buttonVariants({ size: "sm", variant: "secondary" }),
-                        "shrink-0 rounded-xl font-semibold shadow-lg",
-                      )}
-                    >
-                      Ver
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="absolute -right-2 top-8 hidden w-[9.5rem] rounded-2xl border border-white/15 bg-white/[0.1] p-4 shadow-xl backdrop-blur-md md:block lg:-right-4 lg:top-12">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-white/60">
-                    Clientes
-                  </p>
-                  <p className="mt-1 font-display text-2xl font-bold text-white">
-                    +2,5k
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-white/65">
-                    compras felices
-                  </p>
-                </div>
+              <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem]">
+                <Image
+                  src="/images/camaras_de_seguridad.webp"
+                  alt="Cámaras de seguridad"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 480px"
+                  quality={80}
+                />
               </div>
 
               <div className="mt-6">

@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Loader2,
+  LayoutDashboard,
   LogIn,
   LogOut,
   Menu,
@@ -364,7 +365,7 @@ export function SiteHeader({ user }: Props) {
                     </button>
                     {accountOpen && (
                       <div className="absolute right-0 top-full z-[100] pt-1">
-                        <div className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
+                        <div className="min-w-[280px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
                           <div className="border-b border-border px-3 py-2">
                             <p className="truncate text-sm font-medium">
                               {displayName}
@@ -385,6 +386,20 @@ export function SiteHeader({ user }: Props) {
                             />
                             Mi cuenta
                           </Link>
+                          {user.role === "ADMIN" ? (
+                            <Link
+                              href="/admin/home"
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                              onClick={() => setAccountOpen(false)}
+                            >
+                              <LayoutDashboard
+                                className="h-4 w-4 shrink-0"
+                                strokeWidth={1.35}
+                                aria-hidden
+                              />
+                              Panel de administración
+                            </Link>
+                          ) : null}
                           <form action="/auth/logout" method="post">
                             <button
                               type="submit"
@@ -547,7 +562,7 @@ export function SiteHeader({ user }: Props) {
                       {accountOpen && (
                         <div className="absolute right-0 top-full z-[100] pt-1">
                           <div
-                            className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
+                            className="min-w-[280px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
                             role="menu"
                           >
                             <div className="border-b border-border px-3 py-2">
@@ -567,6 +582,20 @@ export function SiteHeader({ user }: Props) {
                               />
                               Mi cuenta
                             </Link>
+                            {user.role === "ADMIN" ? (
+                              <Link
+                                href="/admin/home"
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                role="menuitem"
+                                onClick={() => setAccountOpen(false)}
+                              >
+                                <LayoutDashboard
+                                  className="h-4 w-4"
+                                  strokeWidth={1.35}
+                                />
+                                Panel de administración
+                              </Link>
+                            ) : null}
                             <form action="/auth/logout" method="post">
                               <button
                                 type="submit"
@@ -1074,6 +1103,22 @@ export function SiteHeader({ user }: Props) {
                                 >
                                   Mi cuenta
                                 </Link>
+                                {user.role === "ADMIN" ? (
+                                  <Link
+                                    href="/admin/home"
+                                    onClick={() => setMobileNavOpen(false)}
+                                    className={cn(
+                                      "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                      navPrimaryLabelClass,
+                                    )}
+                                  >
+                                    <LayoutDashboard
+                                      className="h-4 w-4"
+                                      strokeWidth={2}
+                                    />
+                                    Panel de administración
+                                  </Link>
+                                ) : null}
                                 <Link
                                   href="/cuenta"
                                   onClick={() => setMobileNavOpen(false)}

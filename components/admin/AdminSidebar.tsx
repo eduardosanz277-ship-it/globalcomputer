@@ -132,6 +132,7 @@ export function AdminSidebar({
                     onClick={onCloseMobile}
                     className={cn(
                       "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      parentActive && "border-l-2 border-l-primary",
                       parentActive
                         ? "bg-admin-muted text-admin"
                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
@@ -147,6 +148,7 @@ export function AdminSidebar({
                       onClick={() => toggleSubmenu(item.href)}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                        parentActive && "border-l-2 border-l-primary",
                         parentActive
                           ? "bg-admin-muted text-admin"
                           : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
@@ -172,6 +174,7 @@ export function AdminSidebar({
                                 onClick={onCloseMobile}
                                 className={cn(
                                   "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                                  subActive && "border-l-2 border-l-primary",
                                   subActive
                                     ? "bg-admin-muted font-medium text-admin"
                                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -191,6 +194,7 @@ export function AdminSidebar({
                     onClick={onCloseMobile}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      pathMatches(pathname, item.href) && "border-l-2 border-l-primary",
                       pathMatches(pathname, item.href)
                         ? "bg-admin-muted text-admin"
                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",

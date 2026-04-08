@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import Select from "react-select";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
@@ -22,11 +23,13 @@ import {
 import { useServerAction } from "@/hooks/use-server-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import { cn } from "@/utils/cn";
 import {
   adminServiceLikeInputClassName,
   adminSlideOverNestedScrollClassName,
@@ -374,13 +377,33 @@ function ProductFormBody({
   manualPdfFile: File | null;
   setManualPdfFile: (file: File | null) => void;
 }) {
+  type GeneralFilterOption = { value: string; label: string };
   const errors = form.formState.errors;
   const images = useServiceImagesManager(existingImages);
+  const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
 
   const selectedSet = useMemo(
     () => new Set(characteristics.map((item) => item.specificId)),
     [characteristics],
   );
+
+  const specificGeneralOptions = useMemo<GeneralFilterOption[]>(() => {
+    const map = new Map<string, string>();
+    for (const item of specificOptions) {
+      if (!map.has(item.generalId)) {
+        map.set(item.generalId, item.generalName);
+      }
+    }
+    const dynamic = Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+    return [{ value: "all", label: "Todas las características" }, ...dynamic];
+  }, [specificOptions]);
+
+  const visibleSpecificOptions = useMemo(() => {
+    if (selectedGeneralId === "all") return specificOptions;
+    return specificOptions.filter((item) => item.generalId === selectedGeneralId);
+  }, [specificOptions, selectedGeneralId]);
 
   const onSubmitForm = (values: ProductFormValues) => {
     onSubmit(
@@ -684,14 +707,42 @@ function ProductFormBody({
           <h2 className="text-sm font-semibold tracking-wide text-foreground">
             Características específicas
           </h2>
-          <p className="text-xs text-muted-foreground">
+          {/* <p className="text-xs text-muted-foreground">
             Marca las características que aplican al producto y, si quieres,
             añade un valor extra.
+          </p> */}
+          <p className="text-xs text-muted-foreground">
+            Marca las características que aplican al producto.
           </p>
         </header>
 
+        <div className="space-y-2">
+          <Label htmlFor="specific-general-filter" className="text-sm font-medium">
+            Filtrar por característica general
+          </Label>
+          <Select<GeneralFilterOption, false>
+            instanceId="specific-general-filter"
+            inputId="specific-general-filter"
+            styles={appSelectStyles}
+            options={specificGeneralOptions}
+            value={
+              specificGeneralOptions.find(
+                (option) => option.value === selectedGeneralId,
+              ) ?? specificGeneralOptions[0]
+            }
+            onChange={(option) => {
+              if (option) setSelectedGeneralId(option.value);
+            }}
+            isClearable={false}
+            isSearchable={false}
+            isDisabled={isPending || specificGeneralOptions.length === 0}
+            noOptionsMessage={() => "Sin coincidencias"}
+            className="w-full"
+          />
+        </div>
+
         <div className={adminSlideOverNestedScrollClassName}>
-          {specificOptions.map((item) => {
+          {visibleSpecificOptions.map((item) => {
             const selected = selectedSet.has(item.id);
 
             return (
@@ -738,6 +789,11 @@ function ProductFormBody({
               </div>
             );
           })}
+          {visibleSpecificOptions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+              No hay características específicas para este filtro.
+            </p>
+          ) : null}
         </div>
       </section>
     </Form>
