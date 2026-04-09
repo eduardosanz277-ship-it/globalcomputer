@@ -423,11 +423,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         side="left"
         contentAriaLabel="Opciones de filtrado del catálogo"
         footer={
-          <SlideOverFooter className="justify-between gap-3 sm:justify-between">
+          <SlideOverFooter className="justify-end gap-2">
             <Button
               type="button"
-              variant="ghost"
-              className="text-muted-foreground"
+              variant="outline"
               onClick={() => {
                 clearFilters();
               }}

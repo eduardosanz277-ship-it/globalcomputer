@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
 import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
 import { cn } from "@/utils/cn";
 
@@ -42,7 +43,15 @@ export function AdminHeader({
   const brandHref =
     brandHrefProp ?? (variant === "standalone" ? "/" : "/admin/home");
   const [open, setOpen] = useState(false);
+  const userMenuPresence = useDropdownPresence(open);
   const ref = useRef<HTMLDivElement>(null);
+
+  const userMenuMotionClass = cn(
+    "transition duration-200 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none",
+    userMenuPresence.entered
+      ? "translate-y-0 opacity-100"
+      : "pointer-events-none -translate-y-1 opacity-0",
+  );
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -152,45 +161,50 @@ export function AdminHeader({
             />
           </button>
 
-          {open && (
-            <div
-              className="absolute right-0 top-full z-50 mt-0 min-w-[260px] rounded-lg border border-border bg-popover py-1 shadow-md"
-              role="menu"
-            >
-              <div className="border-b border-border px-3 py-2 sm:hidden">
-                <p className="text-xs text-muted-foreground">Bienvenido,</p>
-                <p className="truncate text-sm font-medium">{displayName}</p>
-              </div>
-              <Link
-                href="/"
-                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                role="menuitem"
-                onClick={() => setOpen(false)}
+          {userMenuPresence.mounted && (
+            <div className="absolute right-0 top-full z-50 pt-1">
+              <div
+                className={cn(
+                  "min-w-[260px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md",
+                  userMenuMotionClass,
+                )}
+                role="menu"
               >
-                <Home className="h-4 w-4" />
-                Ir al sitio
-              </Link>
-              {variant === "standalone" && user.role === "ADMIN" ? (
+                <div className="border-b border-border px-3 py-2 sm:hidden">
+                  <p className="text-xs text-muted-foreground">Bienvenido,</p>
+                  <p className="truncate text-sm font-medium">{displayName}</p>
+                </div>
                 <Link
-                  href="/admin/home"
+                  href="/"
                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                   role="menuitem"
                   onClick={() => setOpen(false)}
                 >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Panel de administración
+                  <Home className="h-4 w-4" />
+                  Ir al sitio
                 </Link>
-              ) : null}
-              <form action="/auth/logout" method="post">
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
-                  role="menuitem"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Cerrar sesión
-                </button>
-              </form>
+                {variant === "standalone" && user.role === "ADMIN" ? (
+                  <Link
+                    href="/admin/home"
+                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Panel de administración
+                  </Link>
+                ) : null}
+                <form action="/auth/logout" method="post">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
+                    role="menuitem"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Cerrar sesión
+                  </button>
+                </form>
+              </div>
             </div>
           )}
         </div>

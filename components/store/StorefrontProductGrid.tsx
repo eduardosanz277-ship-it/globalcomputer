@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { ImageOff, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
@@ -30,6 +31,22 @@ export function StorefrontProductGrid({
   products: StorefrontProduct[];
   priceTier: StorefrontPriceTier;
 }) {
+  const [addingProductId, setAddingProductId] = useState<string | null>(null);
+
+  const handleAddToCart = async (productId: string, canBuy: boolean) => {
+    if (!canBuy) {
+      toast.info("Este producto no tiene stock disponible.");
+      return;
+    }
+    setAddingProductId(productId);
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 220));
+      gcCartAddProduct(productId, 1);
+    } finally {
+      setAddingProductId((current) => (current === productId ? null : current));
+    }
+  };
+
   if (products.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
@@ -121,23 +138,19 @@ export function StorefrontProductGrid({
                 ) : null}
               </div>
 
-              <Button
+              <ButtonPending
                 type="button"
                 variant="default"
                 disabled={!canBuy}
+                pending={addingProductId === p.id}
+                pendingLabel="Añadiendo"
+                skipMinWidth
                 className="mt-4 h-11 w-full gap-2 rounded-xl text-sm font-semibold shadow-sm transition hover:shadow-md"
-                onClick={() => {
-                  if (!canBuy) {
-                    toast.info("Este producto no tiene stock disponible.");
-                    return;
-                  }
-                  gcCartAddProduct(p.id, 1);
-                  toast.success(`${p.name} · añadido al carrito`);
-                }}
+                onClick={() => void handleAddToCart(p.id, canBuy)}
               >
-                <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2} />
+                {/* <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2} /> */}
                 Añadir al carrito
-              </Button>
+              </ButtonPending>
             </div>
           </li>
         );

@@ -28,6 +28,14 @@ import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import type { SessionUser } from "@/modules/auth/auth.types";
 import type { NavigationData } from "@/modules/navigation/navigation.types";
+import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
+import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
+import { useGcCart } from "@/components/store/useGcCart";
+import {
+  GC_CART_OPEN_EVENT,
+  gcCartTotalUnits,
+} from "@/lib/store-cart";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 
 const SITE_NAME = "Global Computers USA";
 
@@ -77,6 +85,7 @@ function mobileNavPanelKey(panel: MobileNavPanel): string {
 export function SiteHeader({ user }: Props) {
   const pathname = usePathname();
   const [accountOpen, setAccountOpen] = useState(false);
+  const accountMenuPresence = useDropdownPresence(accountOpen);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileNavStack, setMobileNavStack] = useState<MobileNavPanel[]>([
     { kind: "root" },
@@ -93,9 +102,48 @@ export function SiteHeader({ user }: Props) {
   /** Limpia listeners/timeout de `armDesktopNavStripSuppress` al volver a armar o al desmontar. */
   const suppressNavStripCleanupRef = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cartItems = useGcCart();
+  const cartCount = gcCartTotalUnits(cartItems);
+  const cartBadgeText = cartCount > 99 ? "99+" : String(cartCount);
+  const storefrontPriceTier = resolveStorefrontPriceTier(user?.role);
+
+  const handleCartIconClick = () => {
+    if (pathname === "/carrito") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      const cartHero = document.getElementById("cart-page-hero");
+      if (cartHero) {
+        cartHero.classList.add(
+          "ring-2",
+          "ring-primary/55",
+          "bg-primary/[0.04]",
+          "shadow-sm",
+        );
+        window.setTimeout(() => {
+          cartHero.classList.remove(
+            "ring-2",
+            "ring-primary/55",
+            "bg-primary/[0.04]",
+            "shadow-sm",
+          );
+        }, 900);
+      }
+      return;
+    }
+    setCartOpen(true);
+  };
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    function openCartFromAdd() {
+      setCartOpen(true);
+    }
+    window.addEventListener(GC_CART_OPEN_EVENT, openCartFromAdd);
+    return () =>
+      window.removeEventListener(GC_CART_OPEN_EVENT, openCartFromAdd);
   }, []);
 
   useEffect(() => {
@@ -147,6 +195,13 @@ export function SiteHeader({ user }: Props) {
 
   /** En tienda pública, el admin solo ve en el menú usuario: panel + cerrar sesión. */
   const isAdminPublicUser = user?.role === "ADMIN";
+
+  const accountMenuMotionClass = cn(
+    "transition duration-200 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none",
+    accountMenuPresence.entered
+      ? "translate-y-0 opacity-100"
+      : "pointer-events-none -translate-y-1 opacity-0",
+  );
 
   const activeGeneral = useMemo(() => {
     if (!navData?.characteristicsGeneral?.length || !hoveredGeneralId) {
@@ -299,7 +354,7 @@ export function SiteHeader({ user }: Props) {
           >
             <div
               className={cn(
-                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-1.5 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2 sm:px-3 sm:pb-2",
+                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2.5 sm:px-3 sm:pb-2",
               )}
             >
               <button
@@ -346,7 +401,7 @@ export function SiteHeader({ user }: Props) {
                   name="q"
                   placeholder="Buscar cámaras, kits, marcas..."
                   autoComplete="off"
-                  className="h-10 w-full rounded-2xl border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
+                  className="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
                 />
               </label>
 
@@ -375,9 +430,14 @@ export function SiteHeader({ user }: Props) {
                         {userInitial}
                       </span>
                     </button>
-                    {accountOpen && (
+                    {accountMenuPresence.mounted && (
                       <div className="absolute right-0 top-full z-[100] pt-1">
-                        <div className="min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md">
+                        <div
+                          className={cn(
+                            "min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md",
+                            accountMenuMotionClass,
+                          )}
+                        >
                           <div className="flex gap-3 border-b border-border px-3 py-3">
                             <span
                               className={cn(
@@ -496,8 +556,9 @@ export function SiteHeader({ user }: Props) {
                 variant="ghost"
                 size="icon"
                 type="button"
-                className="relative -ml-2 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
-                aria-label="Carrito (0 artículos)"
+                className="relative -ml-1.5 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
+                aria-label={`Carrito (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                onClick={handleCartIconClick}
               >
                 <span className="relative inline-flex">
                   <ShoppingCart
@@ -506,7 +567,7 @@ export function SiteHeader({ user }: Props) {
                     aria-hidden
                   />
                   <span className="absolute -right-1.5 -top-1.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                    0
+                    {cartBadgeText}
                   </span>
                 </span>
               </Button>
@@ -561,7 +622,7 @@ export function SiteHeader({ user }: Props) {
                     name="q"
                     placeholder="Buscar cámaras IP, DVR, kits de seguridad, marcas..."
                     autoComplete="off"
-                    className="h-11 w-full rounded-3xl border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
+                    className="h-11 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
                   />
                 </label>
               </div>
@@ -572,7 +633,8 @@ export function SiteHeader({ user }: Props) {
                   size="sm"
                   type="button"
                   className="shrink-0 gap-2 rounded-xl px-2.5 hover:bg-transparent hover:text-foreground md:order-2 md:px-3"
-                  aria-label="Carrito (0 artículos)"
+                  aria-label={`Carrito (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                  onClick={handleCartIconClick}
                 >
                   <span className="relative inline-flex">
                     <ShoppingCart
@@ -581,7 +643,7 @@ export function SiteHeader({ user }: Props) {
                       aria-hidden
                     />
                     <span className="absolute -right-2 -top-2 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                      0
+                      {cartBadgeText}
                     </span>
                   </span>
                   <span className="hidden text-sm font-medium md:inline">
@@ -620,10 +682,13 @@ export function SiteHeader({ user }: Props) {
                         </span>
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
-                      {accountOpen && (
+                      {accountMenuPresence.mounted && (
                         <div className="absolute right-0 top-full z-[100] pt-1">
                           <div
-                            className="min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
+                            className={cn(
+                              "min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md",
+                              accountMenuMotionClass,
+                            )}
                             role="menu"
                           >
                             <div className="flex gap-3 border-b border-border px-3 py-3">
@@ -751,10 +816,13 @@ export function SiteHeader({ user }: Props) {
                         <span>Cuenta</span>
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
-                      {accountOpen && (
+                      {accountMenuPresence.mounted && (
                         <div className="absolute right-0 top-full z-[100] pt-0.5">
                           <div
-                            className="min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md"
+                            className={cn(
+                              "min-w-[240px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md",
+                              accountMenuMotionClass,
+                            )}
                             role="menu"
                           >
                             <Link
@@ -847,7 +915,7 @@ export function SiteHeader({ user }: Props) {
                 </span>
                 {(navLoading ||
                   (navData?.characteristicsGeneral?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition duration-150 group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
                     <div className={navMegaMenuBridgeClass} aria-hidden />
                     <div
                       className={cn(
@@ -940,7 +1008,7 @@ export function SiteHeader({ user }: Props) {
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading || (navData?.brands?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition duration-150 group-hover/shop:pointer-events-auto group-hover/shop:visible group-hover/shop:opacity-100">
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/shop:pointer-events-auto group-hover/shop:visible group-hover/shop:opacity-100">
                     <div className={navMegaMenuBridgeClass} aria-hidden />
                     <div
                       className={cn(
@@ -1031,7 +1099,7 @@ export function SiteHeader({ user }: Props) {
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading || (navData?.services?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition duration-150 group-hover/svc:pointer-events-auto group-hover/svc:visible group-hover/svc:opacity-100">
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/svc:pointer-events-auto group-hover/svc:visible group-hover/svc:opacity-100">
                     <div className={navMegaMenuBridgeClass} aria-hidden />
                     <div
                       className={cn(
@@ -1086,6 +1154,12 @@ export function SiteHeader({ user }: Props) {
           </div>
         </div>
       </header>
+
+      <StoreCartDrawer
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        tier={storefrontPriceTier}
+      />
 
       {mounted &&
         createPortal(

@@ -214,3 +214,20 @@ export async function listProductsByBrandAndType(
   if (error || !data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
+
+/** Productos de vitrina por ids (p. ej. carrito). Omite ids inexistentes o inactivos. */
+export async function getStorefrontProductsByIds(
+  ids: string[],
+): Promise<StorefrontProduct[]> {
+  const unique = [...new Set(ids.filter((id) => id && id.trim() !== ""))];
+  if (unique.length === 0) return [];
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .in("id", unique)
+    .eq("active", true);
+
+  if (error || !data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}

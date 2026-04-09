@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, ImageOff, Minus, Plus, ZoomIn } from "lucide-react";
+import { FileText, ImageOff, ZoomIn } from "lucide-react";
 import { toast } from "react-toastify";
-import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
@@ -33,6 +34,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [cartQty, setCartQty] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const images = product.images;
   const hasImages = images.length > 0;
 
@@ -48,10 +50,6 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
   const stockUi = stockBadgeClass(product.stock);
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
-
-  const bumpCartQty = (delta: number) => {
-    setCartQty((q) => Math.min(maxCartQty, Math.max(1, q + delta)));
-  };
 
   useEffect(() => {
     setCartQty(1);
@@ -301,61 +299,41 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
                 "sm:flex-row sm:items-stretch sm:gap-3",
               )}
             >
-              <span id="product-qty-label" className="sr-only">
-                Cantidad
-              </span>
-              <div
-                className={cn(
-                  "flex h-12 w-fit shrink-0 self-start items-stretch overflow-hidden rounded-xl border border-border/35 bg-white shadow-sm dark:border-border/50 dark:bg-card sm:min-w-[7.25rem]",
-                  !canBuy && "pointer-events-none opacity-40",
-                )}
-                role="group"
-                aria-labelledby="product-qty-label"
-              >
-                <button
-                  type="button"
-                  className="flex w-11 items-center justify-center text-muted-foreground transition hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset disabled:opacity-30"
-                  aria-label="Reducir cantidad"
-                  disabled={!canBuy || cartQty <= 1}
-                  onClick={() => bumpCartQty(-1)}
-                >
-                  <Minus className="h-4 w-4" strokeWidth={2.75} />
-                </button>
-                <span className="flex min-w-[2.75rem] select-none items-center justify-center border-x border-border/50 px-2 text-center text-sm font-semibold tabular-nums text-foreground">
-                  {cartQty}
-                </span>
-                <button
-                  type="button"
-                  className="flex w-11 items-center justify-center text-muted-foreground transition hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset disabled:opacity-30"
-                  aria-label="Aumentar cantidad"
-                  disabled={!canBuy || cartQty >= maxCartQty}
-                  onClick={() => bumpCartQty(1)}
-                >
-                  <Plus className="h-4 w-4" strokeWidth={2.75} />
-                </button>
-              </div>
+              <StoreQuantityStepper
+                value={cartQty}
+                max={maxCartQty}
+                disabled={!canBuy}
+                className="sm:min-w-[7.25rem]"
+                onChange={setCartQty}
+              />
 
-              <Button
+              <ButtonPending
                 type="button"
                 size="lg"
                 disabled={!canBuy}
+                pending={isAddingToCart}
+                pendingLabel="Añadiendo"
+                skipMinWidth
                 className="h-12 w-full rounded-xl text-base font-semibold shadow-sm sm:min-w-0 sm:flex-1"
-                onClick={() => {
+                onClick={async () => {
                   if (!canBuy) {
                     toast.info("Este producto no tiene stock disponible.");
                     return;
                   }
-                  gcCartAddProduct(product.id, cartQty);
-                  toast.success(
-                    cartQty === 1
-                      ? `${product.name} · añadido al carrito`
-                      : `${cartQty} × ${product.name} · añadidos al carrito`,
-                  );
-                  setCartQty(1);
+                  setIsAddingToCart(true);
+                  try {
+                    await new Promise((resolve) =>
+                      window.setTimeout(resolve, 220),
+                    );
+                    gcCartAddProduct(product.id, cartQty);
+                    setCartQty(1);
+                  } finally {
+                    setIsAddingToCart(false);
+                  }
                 }}
               >
                 Añadir al carrito
-              </Button>
+              </ButtonPending>
             </div>
           </div>
 
