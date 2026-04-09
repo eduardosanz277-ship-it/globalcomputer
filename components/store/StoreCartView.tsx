@@ -41,7 +41,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-5 px-4 py-8 md:gap-6 lg:grid-cols-12 lg:gap-8 lg:px-6 lg:py-10">
+    <div className="mx-auto grid max-w-7xl gap-5 px-4 py-8 md:gap-6 sm:px-6 lg:grid-cols-12 lg:gap-8 lg:px-8 lg:py-10">
       <div className={cn("space-y-3 lg:col-span-8")}>
         <StoreCartLineItems
           items={items}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { notFound, redirect } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
@@ -22,6 +23,12 @@ type Props = {
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 async function slugSegments(
   params: Promise<PageParams> | PageParams,
@@ -73,22 +80,30 @@ export default async function BrandsSlugPage({ params }: Props) {
     const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-        <MarketingBreadcrumb
-          items={[
-            { label: "Inicio", href: "/" },
-            { label: "Catálogo", href: "/brands" },
-            { label: brand.name },
-          ]}
-        />
-        <div className="mt-6">
-          <HomeSectionHeading
-            title={brand.name}
-            description="Catálogo de productos de esta marca."
-          />
+      <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+        <div className="border-b border-border/60 bg-card/40">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <MarketingBreadcrumb
+              className={inter.className}
+              items={[
+                { label: "Inicio", href: "/" },
+                { label: "Catálogo", href: "/brands" },
+                { label: brand.name },
+              ]}
+            />
+            <div className="mt-4">
+              <HomeSectionHeading
+                align="left"
+                title={brand.name}
+                description="Catálogo de productos de esta marca."
+                titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
+                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="mt-10">
+        <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
           <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>
@@ -124,24 +139,32 @@ export default async function BrandsSlugPage({ params }: Props) {
     const priceTier = resolveStorefrontPriceTier(user?.role);
 
     return (
-      <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-        <MarketingBreadcrumb
-          items={[
-            { label: "Inicio", href: "/" },
-            { label: "Catálogo", href: "/brands" },
-            { label: brand.name, href: `/brands/${brandId}` },
-            { label: typeRow.name },
-          ]}
-        />
+      <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+        <div className="border-b border-border/60 bg-card/40">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <MarketingBreadcrumb
+              className={inter.className}
+              items={[
+                { label: "Inicio", href: "/" },
+                { label: "Catálogo", href: "/brands" },
+                { label: brand.name, href: `/brands/${brandId}` },
+                { label: typeRow.name },
+              ]}
+            />
 
-        <div className="mt-6">
-          <HomeSectionHeading
-            title={typeRow.name}
-            description={`Productos de ${typeRow.name}.`}
-          />
+            <div className="mt-4">
+              <HomeSectionHeading
+                align="left"
+                title={typeRow.name}
+                description={`Productos de ${typeRow.name}.`}
+                titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
+                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="mt-10">
+        <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
           <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>

@@ -8,6 +8,8 @@ type HomeSectionHeadingProps = {
   className?: string;
   /** Clases extra para el título (p. ej. tamaño expresivo en home) */
   titleClassName?: string;
+  /** Clases extra para la descripción. */
+  descriptionClassName?: string;
 };
 
 export function HomeSectionHeading({
@@ -17,6 +19,7 @@ export function HomeSectionHeading({
   align = "center",
   className,
   titleClassName,
+  descriptionClassName,
 }: HomeSectionHeadingProps) {
   return (
     <div
@@ -42,7 +45,12 @@ export function HomeSectionHeading({
         {title}
       </h2>
       {description ? (
-        <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p
+          className={cn(
+            "mt-3 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base",
+            descriptionClassName,
+          )}
+        >
           {description}
         </p>
       ) : null}

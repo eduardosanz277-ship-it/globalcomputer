@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { StorefrontProductDetailView } from "@/components/store/StorefrontProductDetailView";
@@ -10,6 +11,12 @@ export const dynamic = "force-dynamic";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 type Props = {
   params: Promise<{ id: string }> | { id: string };
@@ -43,6 +50,7 @@ export default async function ProductoDetallePage({ params }: Props) {
   return (
     <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
       <MarketingBreadcrumb
+        className={inter.className}
         items={[
           { label: "Inicio", href: "/" },
           { label: "Productos", href: "/productos" },

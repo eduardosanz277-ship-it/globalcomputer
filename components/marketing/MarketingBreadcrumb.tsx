@@ -1,3 +1,4 @@
+import { cn } from "@/utils/cn";
 import Link from "next/link";
 
 export type MarketingBreadcrumbItem = {
@@ -8,18 +9,22 @@ export type MarketingBreadcrumbItem = {
 
 type Props = {
   items: MarketingBreadcrumbItem[];
+  className?: string;
 };
 
 /**
  * Migas del storefront: `text-sm`, enlaces muted + hover, último tramo en negrita (mismo color).
  */
-export function MarketingBreadcrumb({ items }: Props) {
+export function MarketingBreadcrumb({ items, className }: Props) {
   if (items.length === 0) return null;
 
   return (
     <nav
       aria-label="Migas de pan"
-      className="text-sm text-muted-foreground"
+      className={cn(
+        "text-sm font-normal text-muted-foreground sm:text-[15px]",
+        className,
+      )}
     >
       {items.map((item, i) => {
         const isLast = i === items.length - 1;
