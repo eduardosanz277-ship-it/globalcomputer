@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import { useState } from "react";
 import { ImageOff, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
@@ -12,10 +13,19 @@ import {
   priceAfterDiscount,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+import {
+  type StorefrontProduct,
+  isStorefrontProductNew,
+} from "@/modules/catalog/storefront-product.shared";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 function formatUsd(price: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -64,6 +74,7 @@ export function StorefrontProductGrid({
         const showCompare = pct > 0 && sale < p.price;
         const stockUi = stockBadgeClass(p.stock);
         const canBuy = p.stock > 0;
+        const isNew = isStorefrontProductNew(p);
 
         return (
           <li
@@ -74,14 +85,32 @@ export function StorefrontProductGrid({
               href={`/productos/${p.id}`}
               className="relative block aspect-[4/3] w-full overflow-hidden bg-muted/40 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary"
             >
-              {pct > 0 ? (
-                <span
-                  className="absolute left-2 top-2 z-[1] rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white shadow-md ring-2 ring-white/25"
-                  aria-label={`Descuento ${Math.round(pct)} por ciento`}
-                >
-                  −{Math.round(pct)}%
-                </span>
+              {pct > 0 || isNew ? (
+                <div className="absolute left-2 top-2 z-[1] flex flex-wrap items-center gap-2">
+                  {pct > 0 ? (
+                    <span
+                      className={cn(
+                        inter.className,
+                        "rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2 py-[2px] text-[11px] font-semibold tabular-nums text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
+                      )}
+                      aria-label={`Descuento ${Math.round(pct)} por ciento`}
+                    >
+                      −{Math.round(pct)}%
+                    </span>
+                  ) : null}
+                  {isNew ? (
+                    <span
+                      className={cn(
+                        inter.className,
+                        "rounded-full bg-emerald-600 px-2 py-[2px] text-[11px] font-semibold text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
+                      )}
+                    >
+                      Nuevo
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
+              {/* Badge de stock sobre la imagen (esquina superior derecha) — desactivado; el estado se muestra bajo el precio.
               <span
                 className={cn(
                   "absolute right-2 top-2 z-[1] inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums shadow-md",
@@ -90,6 +119,7 @@ export function StorefrontProductGrid({
               >
                 {stockUi.label}
               </span>
+              */}
               {img ? (
                 <Image
                   src={img}
@@ -119,38 +149,81 @@ export function StorefrontProductGrid({
                 href={`/productos/${p.id}`}
                 className="min-w-0 outline-none ring-offset-2 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition group-hover/card:text-primary/90">
-                  {p.brand_name}
-                </p>
-                <h3 className="mt-1.5 font-display text-base font-semibold leading-snug text-foreground line-clamp-2 min-h-[2.75rem] transition group-hover/card:text-primary">
+                <h3
+                  className={cn(
+                    inter.className,
+                    "text-[14px] font-semibold leading-snug tracking-[0.015em] text-foreground line-clamp-2 transition group-hover/card:text-primary sm:text-[15px]",
+                  )}
+                >
                   {p.name}
                 </h3>
+                <p
+                  className={cn(
+                    inter.className,
+                    "mt-1 text-left text-[12px] font-medium leading-tight text-muted-foreground",
+                  )}
+                >
+                  {p.brand_name}
+                </p>
               </Link>
 
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-lg font-bold tabular-nums text-primary">
-                  {formatUsd(sale)}
-                </span>
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                 {showCompare ? (
-                  <span className="text-sm tabular-nums text-muted-foreground line-through decoration-2 decoration-muted-foreground/70">
-                    {formatUsd(p.price)}
+                  <>
+                    <span
+                      className={cn(
+                        inter.className,
+                        "text-base font-bold tabular-nums text-primary sm:text-lg",
+                      )}
+                    >
+                      {formatUsd(sale)}
+                    </span>
+                    <span
+                      className={cn(
+                        inter.className,
+                        "shrink-0 text-[13px] font-normal tabular-nums text-muted-foreground line-through decoration-muted-foreground/70",
+                      )}
+                    >
+                      {formatUsd(p.price)}
+                    </span>
+                  </>
+                ) : (
+                  <span
+                    className={cn(
+                      inter.className,
+                      "text-base font-semibold tabular-nums text-primary sm:text-lg",
+                    )}
+                  >
+                    {formatUsd(sale)}
                   </span>
-                ) : null}
+                )}
               </div>
 
-              <ButtonPending
-                type="button"
-                variant="default"
-                disabled={!canBuy}
-                pending={addingProductId === p.id}
-                pendingLabel="Añadiendo"
-                skipMinWidth
-                className="mt-4 h-11 w-full gap-2 rounded-xl text-sm font-semibold shadow-sm transition hover:shadow-md"
-                onClick={() => void handleAddToCart(p.id, canBuy)}
+              <span
+                className={cn(
+                  inter.className,
+                  "mt-1.5 inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-0.5 text-left text-[12px] font-medium leading-snug sm:text-[12px]",
+                  stockUi.cardLabelClassName,
+                )}
               >
-                {/* <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2} /> */}
-                Añadir al carrito
-              </ButtonPending>
+                {stockUi.label}
+              </span>
+
+              <div className="mt-auto w-full shrink-0 pt-4">
+                <ButtonPending
+                  type="button"
+                  variant="default"
+                  disabled={!canBuy}
+                  pending={addingProductId === p.id}
+                  pendingLabel="Añadiendo"
+                  skipMinWidth
+                  className="h-11 w-full gap-2 rounded-xl text-sm font-semibold shadow-sm transition hover:shadow-md"
+                  onClick={() => void handleAddToCart(p.id, canBuy)}
+                >
+                  {/* <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2} /> */}
+                  Añadir al carrito
+                </ButtonPending>
+              </div>
             </div>
           </li>
         );

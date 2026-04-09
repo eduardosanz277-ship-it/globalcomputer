@@ -6,6 +6,7 @@ import { DM_Sans, Outfit, Roboto } from "next/font/google";
 import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
 import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
+import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import type { ReactNode } from "react";
@@ -66,6 +67,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <ConditionalSiteHeader user={user} />
         <main className="flex-1">{children}</main>
         <ConditionalSiteFooter contact={contact} />
+        <HomeBackToTopButton />
         <ToastContainer position="top-right" autoClose={3000} />
       </body>
     </html>

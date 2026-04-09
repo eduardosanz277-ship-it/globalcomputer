@@ -103,18 +103,10 @@ export default async function ServiceDetailPage({ params }: Props) {
               </div>
             </div>
             <div className="border-t border-border/40 p-6 lg:border-l lg:border-t-0">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                  Tendencias
-                </span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  Actualizado
-                </span>
-              </div>
-              <h2 className="mt-4 text-lg font-semibold text-foreground">
+              {/* <h2 className="text-lg font-semibold text-foreground">
                 Descripción
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              </h2> */}
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {data.description ??
                   "No hay descripción disponible en este momento."}
               </p>

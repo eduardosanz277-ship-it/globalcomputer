@@ -48,16 +48,23 @@ export default async function ProductoDetallePage({ params }: Props) {
   const priceTier = resolveStorefrontPriceTier(user?.role);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-      <MarketingBreadcrumb
-        className={inter.className}
-        items={[
-          { label: "Inicio", href: "/" },
-          { label: "Productos", href: "/productos" },
-          { label: product.name },
-        ]}
-      />
-      <StorefrontProductDetailView product={product} priceTier={priceTier} />
+    <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+      <div className="border-b border-border/60 bg-card/40">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <MarketingBreadcrumb
+            className={inter.className}
+            items={[
+              { label: "Inicio", href: "/" },
+              { label: "Productos", href: "/productos" },
+              { label: product.name },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="mx-auto mt-4 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <StorefrontProductDetailView product={product} priceTier={priceTier} />
+      </div>
     </main>
   );
 }

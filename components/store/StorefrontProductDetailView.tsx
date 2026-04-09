@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import { FileText, ImageOff, ZoomIn } from "lucide-react";
 import { toast } from "react-toastify";
@@ -15,8 +16,15 @@ import {
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import { stockBadgeClass } from "@/lib/storefront-stock";
+import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
 import { cn } from "@/utils/cn";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 function formatUsd(price: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -50,6 +58,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
   const stockUi = stockBadgeClass(product.stock);
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
+  const isNew = isNewFromCreatedAt(product.created_at);
 
   useEffect(() => {
     setCartQty(1);
@@ -75,14 +84,13 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
       : null;
 
   return (
-    <div className="pb-16 pt-2">
-      <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-10">
+    <div className={cn(inter.className, "pb-16")}>
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-10">
         <div className="space-y-4">
           <div
             className={cn(
-              "grid gap-4",
-              hasImages &&
-                "md:grid-cols-[5rem_minmax(0,1fr)] md:items-stretch md:gap-3",
+              "grid gap-1 md:gap-3",
+              hasImages && "md:grid-cols-[5rem_minmax(0,1fr)] md:items-stretch",
             )}
           >
             {/* Imagen principal: arriba en móvil; columna derecha desde md */}
@@ -180,7 +188,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
                     className={cn(
                       "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       i === activeIdx
-                        ? "border-primary ring-2 ring-primary/25"
+                        ? "border-primary opacity-100"
                         : "border-transparent opacity-70 hover:opacity-100",
                     )}
                     aria-label={`Ver imagen ${i + 1}`}
@@ -202,60 +210,74 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
 
         <div className="lg:sticky lg:top-28 space-y-6">
           <div>
-            <div className="flex flex-col gap-2">
-              {pct > 0 ? (
-                <span
-                  className="inline-flex w-fit items-center rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2.5 py-1 text-xs font-bold tabular-nums text-white shadow-md ring-1 ring-white/20"
-                  aria-label={`Descuento ${Math.round(pct)} por ciento`}
-                >
-                  −{Math.round(pct)}%
-                </span>
-              ) : null}
-              <p className="flex flex-wrap items-center gap-x-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                <Link
-                  href={`/brands/${product.brand_id}`}
-                  className="transition hover:text-primary"
-                >
-                  {product.brand_name}
-                </Link>
-                {product.brand_type_name && product.brand_type_name !== "—" ? (
-                  <>
-                    <span
-                      className="inline-block h-3 w-px shrink-0 bg-muted-foreground/55"
-                      aria-hidden
-                    />
-                    {brandTypeHref ? (
-                      <Link
-                        href={brandTypeHref}
-                        className="transition hover:text-primary"
-                      >
-                        {product.brand_type_name}
-                      </Link>
-                    ) : (
-                      <span>{product.brand_type_name}</span>
+            {pct > 0 || isNew ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {pct > 0 ? (
+                  <span
+                    className={cn(
+                      inter.className,
+                      "rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2 py-[2px] text-[11px] font-semibold tabular-nums text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
                     )}
-                  </>
+                    aria-label={`Descuento ${Math.round(pct)} por ciento`}
+                  >
+                    −{Math.round(pct)}%
+                  </span>
                 ) : null}
-              </p>
-            </div>
-            <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+                {isNew ? (
+                  <span
+                    className={cn(
+                      inter.className,
+                      "rounded-full bg-emerald-600 px-2 py-[2px] text-[11px] font-semibold text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
+                    )}
+                  >
+                    Nuevo
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            <h1
+              className={cn(
+                pct > 0 || isNew ? "mt-2" : "mt-0",
+                "text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl",
+              )}
+            >
               {product.name}
             </h1>
-            <p className="mt-3 font-mono text-sm text-muted-foreground">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-left text-[13px] font-medium leading-tight text-muted-foreground sm:text-sm">
+              <Link
+                href={`/brands/${product.brand_id}`}
+                className="transition hover:text-primary"
+              >
+                {product.brand_name}
+              </Link>
+              {product.brand_type_name && product.brand_type_name !== "—" ? (
+                <>
+                  <span
+                    className="inline-block h-3 w-px shrink-0 bg-muted-foreground/55"
+                    aria-hidden
+                  />
+                  {brandTypeHref ? (
+                    <Link
+                      href={brandTypeHref}
+                      className="transition hover:text-primary"
+                    >
+                      {product.brand_type_name}
+                    </Link>
+                  ) : (
+                    <span>{product.brand_type_name}</span>
+                  )}
+                </>
+              ) : null}
+            </p>
+            <p className="mt-3 text-sm tabular-nums text-muted-foreground">
               SKU: <span className="text-foreground">{product.sku}</span>
             </p>
           </div>
 
           <div className="rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur-sm">
             {showCompare ? (
-              <div
-                className={cn(
-                  "flex w-full gap-2",
-                  "max-md:flex-col max-md:items-stretch",
-                  "md:flex-row md:flex-wrap md:items-center md:gap-x-3",
-                )}
-              >
-                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <div className="flex w-full flex-col gap-2">
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                   <span className="text-2xl font-bold tabular-nums leading-none text-primary">
                     {formatUsd(sale)}
                   </span>
@@ -265,22 +287,22 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
                 </div>
                 <span
                   className={cn(
-                    "inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-md",
-                    stockUi.className,
+                    "inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-0.5 text-left text-[12px] font-medium leading-snug sm:text-[13px]",
+                    stockUi.cardLabelClassName,
                   )}
                 >
                   {stockUi.label}
                 </span>
               </div>
             ) : (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="flex flex-col gap-2">
                 <span className="text-2xl font-bold tabular-nums leading-none text-primary">
                   {formatUsd(sale)}
                 </span>
                 <span
                   className={cn(
-                    "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-md",
-                    stockUi.className,
+                    "inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-0.5 text-left text-[12px] font-medium leading-snug sm:text-[13px]",
+                    stockUi.cardLabelClassName,
                   )}
                 >
                   {stockUi.label}
@@ -338,12 +360,14 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
           </div>
 
           {product.description ? (
-            <section className="space-y-2">
+            <section className="space-y-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Descripción
               </h2>
-              <div className="rounded-2xl border border-border/50 bg-muted/20 px-5 py-4 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                {product.description}
+              <div className="rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur-sm">
+                <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                  {product.description}
+                </div>
               </div>
             </section>
           ) : null}
