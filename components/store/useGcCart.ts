@@ -7,9 +7,7 @@ import {
 } from "@/lib/store-cart";
 
 export function useGcCart(): GcCartItem[] {
-  const [items, setItems] = useState<GcCartItem[]>(() =>
-    typeof window === "undefined" ? [] : gcCartRead(),
-  );
+  const [items, setItems] = useState<GcCartItem[]>([]);
 
   const sync = useCallback(() => {
     setItems(gcCartRead());
