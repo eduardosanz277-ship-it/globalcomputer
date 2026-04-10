@@ -1,11 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { Inter } from "next/font/google";
-import { useState } from "react";
-import { ImageOff, ShoppingCart } from "lucide-react";
-import { toast } from "react-toastify";
 import { ButtonPending } from "@/components/ui/button-pending";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
@@ -13,13 +7,19 @@ import {
   priceAfterDiscount,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import {
-  type StorefrontProduct,
-  isStorefrontProductNew,
-} from "@/modules/catalog/storefront-product.shared";
 import { stockBadgeClass } from "@/lib/storefront-stock";
-import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
+import {
+  isStorefrontProductNew,
+  storefrontPrimaryImageUrl,
+  type StorefrontProduct,
+} from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
+import { ImageOff, ShoppingCart } from "lucide-react";
+import { Inter } from "next/font/google";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "react-toastify";
 
 const inter = Inter({
   subsets: ["latin"],
