@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
@@ -30,6 +33,41 @@ export function StoreCartOrderSummary({
   const hasUnresolvedProducts = items.some(
     (line) => !productsById[line.productId],
   );
+
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  async function goToStripeCheckout() {
+    if (items.length === 0 || hasUnresolvedProducts) return;
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "No se pudo iniciar el pago.");
+      }
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      throw new Error("Respuesta inválida del servidor.");
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "No se pudo iniciar el pago.";
+      toast.error(msg);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  const checkoutDisabled =
+    loading ||
+    items.length === 0 ||
+    hasUnresolvedProducts ||
+    checkoutLoading;
 
   return (
     <div
@@ -68,14 +106,28 @@ export function StoreCartOrderSummary({
           </span>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Los impuestos y el envío se confirman en el siguiente paso.
+          Al finalizar se abrirá la página segura de Stripe (Checkout) con el importe y los
+          artículos. Impuestos y envío se confirman allí según corresponda.
         </p>
       </div>
 
       {variant === "page" ? (
         <div className="flex flex-col gap-2 pt-2">
-          <Button type="button" size="lg" className="w-full rounded-xl">
-            Finalizar compra
+          <Button
+            type="button"
+            size="lg"
+            className="w-full rounded-xl"
+            disabled={checkoutDisabled}
+            onClick={goToStripeCheckout}
+          >
+            {checkoutLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                Abriendo pago…
+              </>
+            ) : (
+              "Pagar con Stripe"
+            )}
           </Button>
           <Link
             href="/productos"
@@ -98,8 +150,20 @@ export function StoreCartOrderSummary({
           >
             Ver carrito
           </Link>
-          <Button type="button" className="w-full rounded-xl sm:flex-1">
-            Finalizar compra
+          <Button
+            type="button"
+            className="w-full rounded-xl sm:flex-1"
+            disabled={checkoutDisabled}
+            onClick={goToStripeCheckout}
+          >
+            {checkoutLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                Abriendo…
+              </>
+            ) : (
+              "Pagar con Stripe"
+            )}
           </Button>
         </div>
       ) : null}

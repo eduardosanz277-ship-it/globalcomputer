@@ -1,0 +1,309 @@
+import Stripe from "stripe";
+import {
+  activeDiscountPercent,
+  priceAfterDiscount,
+  resolveStorefrontPriceTier,
+} from "@/lib/storefront-pricing";
+import { getAppBaseUrl } from "@/lib/app-url";
+import type { GcCartItem } from "@/lib/store-cart";
+import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
+import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+import { getCurrentUserService } from "@/modules/auth/auth.service";
+import type { SessionUser } from "@/modules/auth/auth.types";
+import {
+  repoGetDefaultShippingAddressForUser,
+  repoGetProfileStripeCustomerId,
+  repoSetProfileStripeCustomerId,
+  type CheckoutShippingAddressRow,
+} from "@/modules/commerce/checkout-address.repository";
+import { countryToStripeIso2 } from "@/modules/commerce/country-to-stripe-iso";
+
+export class CheckoutSessionError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number = 400,
+  ) {
+    super(message);
+    this.name = "CheckoutSessionError";
+  }
+}
+
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY?.trim();
+  if (!key) {
+    throw new CheckoutSessionError(
+      "Pago no configurado (falta STRIPE_SECRET_KEY en el servidor).",
+      503,
+    );
+  }
+  return new Stripe(key, { typescript: true });
+}
+
+function unitPriceUsd(product: StorefrontProduct, tier: ReturnType<typeof resolveStorefrontPriceTier>): number {
+  const pct = activeDiscountPercent(product, tier);
+  return priceAfterDiscount(product.price, pct);
+}
+
+function dollarsToCents(amount: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return Math.round(amount * 100);
+}
+
+const MIN_CHECKOUT_USD = 0.5;
+
+/**
+ * Países desde los que Stripe Checkout permite pedir dirección de envío.
+ * Override: `STRIPE_CHECKOUT_SHIPPING_COUNTRIES=ES,PT,FR,...` (códigos ISO-2 separados por coma).
+ * @see https://stripe.com/docs/api/checkout/sessions/create#create_checkout_session-shipping_address_collection
+ */
+const DEFAULT_SHIPPING_COUNTRIES = [
+  "ES",
+  "AD",
+  "PT",
+  "FR",
+  "DE",
+  "IT",
+  "GB",
+  "IE",
+  "NL",
+  "BE",
+  "AT",
+  "CH",
+  "US",
+  "MX",
+  "AR",
+  "CO",
+  "CL",
+  "PE",
+  "UY",
+  "BR",
+] as const;
+
+type CheckoutSessionCreate = NonNullable<
+  Parameters<Stripe["checkout"]["sessions"]["create"]>[0]
+>;
+type ShippingAllowedCountry = NonNullable<
+  NonNullable<CheckoutSessionCreate["shipping_address_collection"]>["allowed_countries"]
+>[number];
+
+function shippingAllowedCountries(): ShippingAllowedCountry[] {
+  const raw = process.env.STRIPE_CHECKOUT_SHIPPING_COUNTRIES?.trim();
+  if (raw) {
+    const list = raw
+      .split(",")
+      .map((c) => c.trim().toUpperCase())
+      .filter((c) => /^[A-Z]{2}$/.test(c));
+    if (list.length > 0) {
+      return list as ShippingAllowedCountry[];
+    }
+  }
+  return [...DEFAULT_SHIPPING_COUNTRIES] as ShippingAllowedCountry[];
+}
+
+/**
+ * Convierte una fila `addresses` al formato `shipping` de Stripe (prellenado en Checkout).
+ * Si falta país mapeable o datos mínimos, devuelve null.
+ */
+function buildStripeShippingFromAddress(
+  addr: CheckoutShippingAddressRow,
+  fullNameFallback: string | undefined,
+): Stripe.CustomerCreateParams.Shipping | null {
+  const country = countryToStripeIso2(addr.country);
+  if (!country) return null;
+  const street = addr.street?.trim();
+  const city = addr.city?.trim();
+  if (!street || !city) return null;
+
+  const name =
+    [addr.first_name, addr.last_name].filter(Boolean).join(" ").trim() ||
+    fullNameFallback?.trim() ||
+    "Cliente";
+
+  const line2Parts = [addr.apartment, addr.company].filter(Boolean);
+  const line2 = line2Parts.length ? line2Parts.join(" · ") : undefined;
+
+  return {
+    name,
+    phone: addr.phone?.trim() || undefined,
+    address: {
+      line1: street,
+      line2,
+      city,
+      state: addr.state?.trim() || undefined,
+      postal_code: addr.postal_code?.trim() || undefined,
+      country,
+    },
+  };
+}
+
+/**
+ * Si el usuario tiene dirección guardada, se sincroniza en un Stripe Customer
+ * y Checkout la muestra rellena (el cliente puede corregirla; `customer_update` lo persiste).
+ * @see https://stripe.com/docs/api/customers/object#customer_object-shipping
+ */
+async function checkoutIdentityParams(
+  stripe: Stripe,
+  user: SessionUser | null,
+  email: string | undefined,
+): Promise<
+  | { customer: string; customer_update: { shipping: "auto"; address: "auto" } }
+  | { customer_email?: string }
+> {
+  if (!user) {
+    return { customer_email: email };
+  }
+
+  const [addr, existingCustomerId] = await Promise.all([
+    repoGetDefaultShippingAddressForUser(user.id),
+    repoGetProfileStripeCustomerId(user.id),
+  ]);
+
+  const shipping = addr
+    ? buildStripeShippingFromAddress(addr, user.fullName ?? undefined)
+    : null;
+
+  if (existingCustomerId) {
+    if (shipping) {
+      await stripe.customers.update(existingCustomerId, { shipping });
+    }
+    return {
+      customer: existingCustomerId,
+      customer_update: { shipping: "auto", address: "auto" },
+    };
+  }
+
+  if (shipping) {
+    const customer = await stripe.customers.create({
+      email: user.email || undefined,
+      name: user.fullName?.trim() || undefined,
+      metadata: { supabase_user_id: user.id },
+      shipping,
+    });
+    await repoSetProfileStripeCustomerId(user.id, customer.id);
+    return {
+      customer: customer.id,
+      customer_update: { shipping: "auto", address: "auto" },
+    };
+  }
+
+  return { customer_email: email };
+}
+
+/**
+ * Crea una [Stripe Checkout](https://stripe.com/docs/payments/checkout) Session
+ * y devuelve la URL de la página de pago alojada por Stripe.
+ */
+export async function createHostedCheckoutSession(
+  items: GcCartItem[],
+): Promise<{ url: string }> {
+  if (!items.length) {
+    throw new CheckoutSessionError("El carrito está vacío.");
+  }
+  if (items.length > 100) {
+    throw new CheckoutSessionError("Demasiadas líneas en el pedido.");
+  }
+
+  const user = await getCurrentUserService();
+  const tier = resolveStorefrontPriceTier(user?.role);
+
+  const ids = [...new Set(items.map((i) => i.productId))];
+  const products = await getStorefrontProductsByIds(ids);
+  const byId = Object.fromEntries(products.map((p) => [p.id, p]));
+
+  /**
+   * Stripe Tax: siempre activo en Checkout. Los precios del catálogo se interpretan como
+   * importe base sin impuesto; Stripe añade impuestos según configuración en el Dashboard.
+   */
+  const priceTaxBehavior = "exclusive" as const;
+
+  type SessionCreateParams = NonNullable<
+    Parameters<Stripe["checkout"]["sessions"]["create"]>[0]
+  >;
+  const lineItems: NonNullable<SessionCreateParams["line_items"]> = [];
+  let subtotalUsd = 0;
+
+  for (const line of items) {
+    const product = byId[line.productId];
+    if (!product) {
+      throw new CheckoutSessionError(
+        "Un producto del carrito ya no está disponible. Actualiza el carrito e inténtalo de nuevo.",
+      );
+    }
+    if (line.qty < 1 || line.qty > 999) {
+      throw new CheckoutSessionError("Cantidad no válida en una línea del pedido.");
+    }
+    if (product.stock < line.qty) {
+      throw new CheckoutSessionError(
+        `Stock insuficiente para «${product.name}». Ajusta las cantidades e inténtalo de nuevo.`,
+      );
+    }
+
+    const unitUsd = unitPriceUsd(product, tier);
+    const unitCents = dollarsToCents(unitUsd);
+    if (unitCents < 1) {
+      throw new CheckoutSessionError(
+        `El producto «${product.name}» no tiene un importe válido para cobrar.`,
+      );
+    }
+
+    subtotalUsd += unitUsd * line.qty;
+
+    lineItems.push({
+      quantity: line.qty,
+      price_data: {
+        currency: "usd",
+        unit_amount: unitCents,
+        tax_behavior: priceTaxBehavior,
+        product_data: {
+          name: product.name,
+          metadata: {
+            product_id: product.id,
+          },
+        },
+      },
+    });
+  }
+
+  if (subtotalUsd < MIN_CHECKOUT_USD) {
+    throw new CheckoutSessionError(
+      `El importe mínimo para pagar con tarjeta es $${MIN_CHECKOUT_USD.toFixed(2)} USD.`,
+    );
+  }
+
+  const base = getAppBaseUrl();
+  const stripe = getStripe();
+
+  const email = user?.email?.trim();
+  const identity = await checkoutIdentityParams(stripe, user, email);
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    locale: "es",
+    line_items: lineItems,
+    success_url: `${base}/carrito/exito?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${base}/carrito`,
+    client_reference_id: user?.id,
+    ...identity,
+    automatic_tax: { enabled: true },
+    /** Dirección de entrega en la propia página de Stripe (Checkout). */
+    shipping_address_collection: {
+      allowed_countries: shippingAllowedCountries(),
+    },
+    /** Teléfono de contacto (útil para mensajería). Opcional en Checkout. */
+    phone_number_collection: {
+      enabled: true,
+    },
+    metadata: {
+      source: "storefront",
+    },
+  });
+
+  if (!session.url) {
+    throw new CheckoutSessionError(
+      "No se pudo obtener la URL de pago. Inténtalo de nuevo.",
+      500,
+    );
+  }
+
+  return { url: session.url };
+}

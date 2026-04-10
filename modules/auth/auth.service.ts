@@ -17,13 +17,8 @@ import {
   repoSignInWithOtp,
   repoVerifyEmailOtp,
 } from "./auth.repository";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-
-function getAppBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000"
-  );
-}
 
 /** Convierte errores de `signInWithOtp` (p. ej. límite de envío de email) en mensajes legibles. */
 function mapSignInWithOtpError(error: unknown): Error {
