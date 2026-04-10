@@ -21,10 +21,25 @@ type ProductRow = {
   manual_pdf_url: string | null;
   brand_id: string;
   brand_type_id: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   created_at: string;
   updated_at: string;
   brands: { name: string } | { name: string }[] | null;
   brand_types: { name: string } | { name: string }[] | null;
+  categories: { name: string } | { name: string }[] | null;
+  subcategories:
+    | {
+        name: string;
+        category_id: string;
+        categories: { name: string } | { name: string }[] | null;
+      }
+    | Array<{
+        name: string;
+        category_id: string;
+        categories: { name: string } | { name: string }[] | null;
+      }>
+    | null;
   product_images?: Array<{ id: string; url: string; is_primary: boolean }>;
   product_characteristic_values?: Array<{
     id: string;
@@ -81,7 +96,73 @@ function specificRelation(
   return rel;
 }
 
+function subcategoryRelation(
+  rel:
+    | ProductRow["subcategories"]
+    | {
+        name: string;
+        category_id: string;
+        categories: { name: string } | { name: string }[] | null;
+      }
+    | null
+    | undefined,
+):
+  | {
+      name: string;
+      category_id: string;
+      categories: { name: string } | { name: string }[] | null;
+    }
+  | null {
+  if (!rel) return null;
+  if (Array.isArray(rel)) return rel[0] ?? null;
+  return rel;
+}
+
+function catalogPlacementFromRow(row: ProductRow): Pick<
+  Product,
+  | "categoryId"
+  | "subcategoryId"
+  | "catalogLabel"
+  | "placementCategoryId"
+  | "placementSubcategoryId"
+> {
+  const catName = relationName(row.categories);
+  const sub = subcategoryRelation(row.subcategories);
+
+  if (row.subcategory_id && sub) {
+    const parentName = relationName(sub.categories ?? null);
+    const subName = sub.name ?? "—";
+    return {
+      categoryId: null,
+      subcategoryId: row.subcategory_id,
+      catalogLabel:
+        parentName && subName ? `${parentName} › ${subName}` : subName,
+      placementCategoryId: sub.category_id ?? "",
+      placementSubcategoryId: row.subcategory_id,
+    };
+  }
+
+  if (row.category_id && catName) {
+    return {
+      categoryId: row.category_id,
+      subcategoryId: null,
+      catalogLabel: catName,
+      placementCategoryId: row.category_id,
+      placementSubcategoryId: "",
+    };
+  }
+
+  return {
+    categoryId: null,
+    subcategoryId: null,
+    catalogLabel: "—",
+    placementCategoryId: "",
+    placementSubcategoryId: "",
+  };
+}
+
 function mapRow(row: ProductRow): Product {
+  const placement = catalogPlacementFromRow(row);
   const images: ProductImage[] =
     row.product_images
       ?.slice()
@@ -131,6 +212,7 @@ function mapRow(row: ProductRow): Product {
     brandName: relationName(row.brands),
     brandTypeId: row.brand_type_id ?? "",
     brandTypeName: relationName(row.brand_types),
+    ...placement,
     imageUrl: primaryImage?.url ?? null,
     images,
     characteristicValues,
@@ -140,7 +222,18 @@ function mapRow(row: ProductRow): Product {
 }
 
 const PRODUCT_SELECT =
-  "id, sku, name, description, stock, price, active, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, created_at, updated_at, brands(name), brand_types(name), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
+  "id, sku, name, description, stock, price, active, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name), brand_types(name), categories(name), subcategories(name, category_id, categories(name)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
+
+function placementToDbColumns(payload: ProductInsert): {
+  category_id: string | null;
+  subcategory_id: string | null;
+} {
+  const sub = payload.placementSubcategoryId?.trim();
+  if (sub) {
+    return { category_id: null, subcategory_id: sub };
+  }
+  return { category_id: payload.placementCategoryId, subcategory_id: null };
+}
 
 export async function repoListProducts(): Promise<Product[]> {
   const supabase = createSupabaseAdminClient();
@@ -169,6 +262,7 @@ export async function repoCreateProduct(payload: ProductInsert): Promise<Product
       manual_pdf_url: payload.manualPdfUrl || null,
       brand_id: payload.brandId,
       brand_type_id: payload.brandTypeId || null,
+      ...placementToDbColumns(payload),
     })
     .select(PRODUCT_SELECT)
     .single();
@@ -196,6 +290,7 @@ export async function repoUpdateProduct(
       manual_pdf_url: payload.manualPdfUrl || null,
       brand_id: payload.brandId,
       brand_type_id: payload.brandTypeId || null,
+      ...placementToDbColumns(payload),
     })
     .eq("id", id);
 

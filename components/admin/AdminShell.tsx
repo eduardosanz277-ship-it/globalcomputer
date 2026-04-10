@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader, type AdminHeaderUser } from "./AdminHeader";
+import { cn } from "@/utils/cn";
 
 type Props = {
   user: AdminHeaderUser;
@@ -38,11 +39,11 @@ export function AdminShell({ user, children }: Props) {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="relative h-dvh min-h-0 overflow-x-hidden overflow-y-hidden bg-background">
       {mobileMenuOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
           aria-label="Cerrar menú"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -55,14 +56,20 @@ export function AdminShell({ user, children }: Props) {
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "flex h-dvh min-h-0 w-full min-w-0 flex-col overflow-hidden",
+          "transition-[padding] duration-200 ease-out",
+          collapsed ? "md:pl-[72px]" : "md:pl-[260px]",
+        )}
+      >
         <AdminHeader
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <div className="min-w-0 w-full flex-1 px-4 py-4 sm:px-6 lg:px-10">
+        <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 lg:px-10">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

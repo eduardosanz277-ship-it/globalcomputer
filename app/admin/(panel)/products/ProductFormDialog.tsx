@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Select from "react-select";
-import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
+import type { Brand } from "@/modules/admin/brands/brands.types";
+import type {
+  AdminCategory,
+  AdminSubcategory,
+} from "@/modules/admin/categories/categories.types";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
 import {
   productFormSchema,
@@ -58,6 +62,8 @@ type Props = {
   brands: Brand[];
   brandTypes: BrandType[];
   specificCharacteristics: SpecificCharacteristic[];
+  categories: AdminCategory[];
+  subcategories: AdminSubcategory[];
 };
 
 export function ProductFormDialog({
@@ -67,6 +73,8 @@ export function ProductFormDialog({
   brands,
   brandTypes,
   specificCharacteristics,
+  categories,
+  subcategories,
 }: Props) {
   const router = useRouter();
   const form = useForm<ProductFormValues>({
@@ -83,6 +91,8 @@ export function ProductFormDialog({
       manualPdfUrl: "",
       brandId: "",
       brandTypeId: "",
+      placementCategoryId: "",
+      placementSubcategoryId: "",
     },
   });
 
@@ -131,6 +141,8 @@ export function ProductFormDialog({
         manualPdfUrl: product.manualPdfUrl ?? "",
         brandId: product.brandId,
         brandTypeId: product.brandTypeId,
+        placementCategoryId: product.placementCategoryId,
+        placementSubcategoryId: product.placementSubcategoryId,
       });
       setCharacteristics(
         product.characteristicValues.map((item) => ({
@@ -152,6 +164,8 @@ export function ProductFormDialog({
         manualPdfUrl: "",
         brandId: "",
         brandTypeId: "",
+        placementCategoryId: "",
+        placementSubcategoryId: "",
       });
       setCharacteristics([]);
       setManualPdfFile(null);
@@ -159,6 +173,38 @@ export function ProductFormDialog({
   }, [open, product, form]);
 
   const watchedBrandId = form.watch("brandId");
+  const watchedPlacementCategoryId = form.watch("placementCategoryId");
+
+  const categoryOptions = useMemo(
+    () => categories.map((c) => ({ value: c.id, label: c.name })),
+    [categories],
+  );
+
+  const subcategoriesForCategory = useMemo(
+    () =>
+      watchedPlacementCategoryId
+        ? subcategories.filter(
+            (s) => s.categoryId === watchedPlacementCategoryId,
+          )
+        : [],
+    [subcategories, watchedPlacementCategoryId],
+  );
+
+  useEffect(() => {
+    if (!watchedPlacementCategoryId) return;
+    const current = form.getValues("placementSubcategoryId");
+    if (!current) return;
+    const ok = subcategories.some(
+      (s) =>
+        s.id === current && s.categoryId === watchedPlacementCategoryId,
+    );
+    if (!ok) {
+      form.setValue("placementSubcategoryId", "", {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [watchedPlacementCategoryId, subcategories, form]);
 
   const brandOptions = useMemo(
     () => brands.map((b) => ({ value: b.id, label: b.name })),
@@ -327,6 +373,8 @@ export function ProductFormDialog({
         onSubmit={handleSubmit}
         isPending={isPending}
         product={product}
+        categoryOptions={categoryOptions}
+        subcategoriesForCategory={subcategoriesForCategory}
         brandOptions={brandOptions}
         brandTypeOptions={brandTypeOptions}
         specificOptions={specificOptions}
@@ -346,6 +394,8 @@ function ProductFormBody({
   onSubmit,
   isPending,
   product,
+  categoryOptions,
+  subcategoriesForCategory,
   brandOptions,
   brandTypeOptions,
   specificOptions,
@@ -367,6 +417,8 @@ function ProductFormBody({
   ) => void;
   isPending: boolean;
   product: Product | null;
+  categoryOptions: Array<{ value: string; label: string }>;
+  subcategoriesForCategory: AdminSubcategory[];
   brandOptions: Array<{ value: string; label: string }>;
   brandTypeOptions: Array<{ value: string; label: string }>;
   specificOptions: SpecificCharacteristic[];
@@ -379,6 +431,7 @@ function ProductFormBody({
 }) {
   type GeneralFilterOption = { value: string; label: string };
   const errors = form.formState.errors;
+  const watchedPlacementCategoryId = form.watch("placementCategoryId");
   const images = useServiceImagesManager(existingImages);
   const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
 
@@ -523,6 +576,115 @@ function ProductFormBody({
             label="Activo en catálogo"
             description="Si está desactivado, el producto no se mostrará en el catálogo público."
           />
+        </div>
+      </section>
+
+      <section className={adminSlideOverSectionClassName}>
+        <header className="space-y-1">
+          <h2 className="text-sm font-semibold tracking-wide text-foreground">
+            Categoría en catálogo
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Selecciona la categoría y, si existe, marca una subcategoría. Si no
+            marcas ninguna subcategoría, el producto queda solo en la categoría.
+          </p>
+        </header>
+
+        <div className="space-y-4">
+          <FormSelectField<ProductFormValues>
+            name="placementCategoryId"
+            label="Categoría"
+            required
+            instanceId="product-category"
+            options={categoryOptions}
+            placeholder={
+              categoryOptions.length === 0
+                ? "No hay categorías"
+                : "Selecciona una categoría"
+            }
+            isDisabled={isPending || categoryOptions.length === 0}
+            isSearchable
+            useMenuPortal
+          />
+
+          <div className="space-y-2">
+            <Label
+              id="product-subcategory-group-label"
+              className="text-sm font-medium"
+            >
+              Subcategoría
+            </Label>
+            {!watchedPlacementCategoryId ? (
+              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                Primero elige una categoría para ver las subcategorías.
+              </p>
+            ) : subcategoriesForCategory.length === 0 ? (
+              <p className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                Esta categoría no tiene subcategorías; el producto se clasificará
+                únicamente en la categoría elegida.
+              </p>
+            ) : (
+              <Controller
+                name="placementSubcategoryId"
+                control={form.control}
+                render={({ field }) => (
+                  <div
+                    role="radiogroup"
+                    aria-labelledby="product-subcategory-group-label"
+                    className={adminSlideOverNestedScrollClassName}
+                  >
+                    <div className="rounded-lg border border-border/60 p-3">
+                      <label className="flex cursor-pointer items-start gap-3">
+                        <Input
+                          type="radio"
+                          name="product-placement-subcategory"
+                          checked={field.value === ""}
+                          onChange={() => field.onChange("")}
+                          disabled={isPending}
+                          className="mt-0.5 h-4 w-4"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground">
+                            Solo en esta categoría
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Sin subcategoría
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    {subcategoriesForCategory.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="rounded-lg border border-border/60 p-3"
+                      >
+                        <label className="flex cursor-pointer items-start gap-3">
+                          <Input
+                            type="radio"
+                            name="product-placement-subcategory"
+                            checked={field.value === sub.id}
+                            onChange={() => field.onChange(sub.id)}
+                            disabled={isPending}
+                            className="mt-0.5 h-4 w-4"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              {sub.name}
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              />
+            )}
+          </div>
+          {errors.placementSubcategoryId?.message ? (
+            <p className="text-sm text-destructive">
+              {String(errors.placementSubcategoryId.message)}
+            </p>
+          ) : null}
         </div>
       </section>
 

@@ -55,11 +55,12 @@ export function AdminSidebar({
   return (
     <aside
       className={cn(
-        "flex h-full min-h-0 shrink-0 flex-col self-stretch border-r border-border/80 bg-white",
+        /** Por debajo de modales / slide-overs (`z-50` en `dialog` / `slide-over`). */
+        "fixed inset-y-0 left-0 z-30 flex h-dvh min-h-0 flex-col border-r border-border/80 bg-white",
         "transition-[width,transform] duration-200 ease-out",
-        "fixed inset-y-0 left-0 z-50 w-[min(22rem,calc(100vw-1rem))] md:relative md:inset-auto md:z-auto md:translate-x-0",
-        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "w-[min(22rem,calc(100vw-1rem))] max-md:max-w-[calc(100vw-1rem)]",
         collapsed ? "md:w-[72px]" : "md:w-[260px]",
+        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       )}
     >
       <div

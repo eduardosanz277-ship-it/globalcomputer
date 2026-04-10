@@ -4,6 +4,47 @@
 
 :root {
   color-scheme: light;
+  /** Alineado a `tailwind.config`: foreground #2a2c30, primary #357fd2 */
+  --app-scrollbar-size: 5px;
+  --app-scrollbar-track: transparent;
+  --app-scrollbar-thumb: rgba(42, 44, 48, 0.22);
+  --app-scrollbar-thumb-hover: rgba(53, 127, 210, 0.5);
+}
+
+.dark {
+  --app-scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --app-scrollbar-thumb-hover: rgba(53, 127, 210, 0.62);
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--app-scrollbar-size);
+    height: var(--app-scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--app-scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--app-scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--app-scrollbar-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 /**

@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
-import type { Brand } from "@/modules/admin/brands/brands.types";
 import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
+import type { Brand } from "@/modules/admin/brands/brands.types";
+import type {
+  AdminCategory,
+  AdminSubcategory,
+} from "@/modules/admin/categories/categories.types";
 import type { Product } from "@/modules/admin/products/products.types";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
@@ -46,6 +50,8 @@ type Props = {
   brands: Brand[];
   brandTypes: BrandType[];
   specificCharacteristics: SpecificCharacteristic[];
+  categories: AdminCategory[];
+  subcategories: AdminSubcategory[];
   isLoading?: boolean;
 };
 
@@ -111,6 +117,8 @@ export function AdminProductsTable({
   brands,
   brandTypes,
   specificCharacteristics,
+  categories,
+  subcategories,
   isLoading = false,
 }: Props) {
   const router = useRouter();
@@ -265,6 +273,7 @@ export function AdminProductsTable({
           name={p.name}
           sku={p.sku}
           imageUrl={p.imageUrl}
+          catalogLabel={p.catalogLabel}
           brandName={p.brandName}
           brandTypeName={p.brandTypeName}
           price={p.price}
@@ -292,7 +301,8 @@ export function AdminProductsTable({
     () => [
       {
         id: "product",
-        accessorFn: (row) => `${row.name} ${row.sku} ${row.description ?? ""}`,
+        accessorFn: (row) =>
+          `${row.name} ${row.sku} ${row.catalogLabel} ${row.description ?? ""}`,
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           rowA.original.name.localeCompare(rowB.original.name, "es", {
@@ -337,7 +347,8 @@ export function AdminProductsTable({
                   {p.name}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  SKU: {p.sku} · {p.brandName} · {p.brandTypeName}
+                  SKU: {p.sku} · {p.catalogLabel} · {p.brandName} ·{" "}
+                  {p.brandTypeName}
                 </p>
                 {desc ? (
                   <p className="line-clamp-1 text-xs text-muted-foreground">
@@ -814,6 +825,8 @@ export function AdminProductsTable({
         brands={brands}
         brandTypes={brandTypes}
         specificCharacteristics={specificCharacteristics}
+        categories={categories}
+        subcategories={subcategories}
       />
       <ProductDetailDrawer
         product={viewing}

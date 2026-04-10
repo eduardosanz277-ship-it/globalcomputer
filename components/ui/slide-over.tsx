@@ -112,8 +112,7 @@ export function SlideOver({
           <div
             className={cn(
               "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5",
-              "overscroll-y-contain [scrollbar-width:thin]",
-              "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/70 [&::-webkit-scrollbar-track]:bg-transparent",
+              "overscroll-y-contain",
               contentClassName,
             )}
             role="region"

@@ -3,6 +3,8 @@ import {
   BadgeCheck,
   House,
   BriefcaseBusiness,
+  FolderTree,
+  Layers,
   ListChecks,
   ListTodo,
   Package,
@@ -42,6 +44,16 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/specific-characteristics",
     label: "Características específicas",
     icon: ListTodo,
+  },
+  {
+    href: "/admin/categories",
+    label: "Categorías",
+    icon: FolderTree,
+  },
+  {
+    href: "/admin/subcategories",
+    label: "Subcategorías",
+    icon: Layers,
   },
   {
     href: "/admin/services",

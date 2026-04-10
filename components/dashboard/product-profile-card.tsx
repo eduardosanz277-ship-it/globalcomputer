@@ -10,6 +10,8 @@ export type ProductProfileCardProps = {
   name: string;
   sku: string;
   imageUrl?: string | null;
+  /** Categoría / subcategoría en catálogo (opcional). */
+  catalogLabel?: string;
   brandName: string;
   brandTypeName: string;
   price: number;
@@ -44,6 +46,7 @@ export function ProductProfileCard({
   name,
   sku,
   imageUrl,
+  catalogLabel,
   brandName,
   brandTypeName,
   price,
@@ -97,7 +100,9 @@ export function ProductProfileCard({
               </h3>
               <p className="text-xs text-muted-foreground">SKU: {sku}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {brandName} · {brandTypeName}
+                {catalogLabel && catalogLabel !== "—"
+                  ? `${catalogLabel} · ${brandName} · ${brandTypeName}`
+                  : `${brandName} · ${brandTypeName}`}
               </p>
             </div>
 

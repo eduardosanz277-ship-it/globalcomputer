@@ -64,6 +64,19 @@ export const productFormSchema = z.object({
         message: "Selecciona un tipo válido",
       },
     ),
+  placementCategoryId: z
+    .string()
+    .min(1, "Selecciona una categoría")
+    .uuid("Selecciona una categoría válida"),
+  placementSubcategoryId: z
+    .string()
+    .transform((s) => s.trim())
+    .refine(
+      (v) => v.length === 0 || z.string().uuid().safeParse(v).success,
+      {
+        message: "Selecciona una subcategoría válida",
+      },
+    ),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

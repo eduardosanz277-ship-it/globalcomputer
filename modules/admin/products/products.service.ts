@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
+import { repoGetSubcategoryCategoryId } from "@/modules/admin/subcategories/subcategories.repository";
 import {
   repoCreateProduct,
   repoDeleteProduct,
@@ -17,6 +18,7 @@ import {
 import {
   productCharacteristicValueInputSchema,
   productFormSchema,
+  type ProductFormValues,
 } from "./products.schema";
 import type {
   ExistingProductImageOutput,
@@ -28,6 +30,17 @@ import type {
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
     throw new Error("Acceso restringido a administradores");
+  }
+}
+
+async function assertProductPlacementConsistent(data: ProductFormValues) {
+  const sub = data.placementSubcategoryId?.trim();
+  if (!sub) return;
+  const parentId = await repoGetSubcategoryCategoryId(sub);
+  if (!parentId || parentId !== data.placementCategoryId) {
+    throw new Error(
+      "La subcategoría no corresponde a la categoría elegida.",
+    );
   }
 }
 
@@ -237,6 +250,8 @@ export async function createProductService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
 
+  await assertProductPlacementConsistent(parsed.data);
+
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
 
   try {
@@ -285,6 +300,8 @@ export async function updateProductService(
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+
+  await assertProductPlacementConsistent(parsed.data);
 
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
 

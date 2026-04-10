@@ -108,8 +108,8 @@ export function ProductDetailDrawer({
                   {product.name}
                 </h2>
                 <p className="text-xs text-muted-foreground sm:text-sm">
-                  SKU: {product.sku} · {product.brandName} ·{" "}
-                  {product.brandTypeName}
+                  SKU: {product.sku} · {product.catalogLabel} ·{" "}
+                  {product.brandName} · {product.brandTypeName}
                 </p>
               </div>
             </div>

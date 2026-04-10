@@ -29,6 +29,19 @@ export type Product = {
   brandName: string;
   brandTypeId: string;
   brandTypeName: string;
+  /** En BD: categoría directa, o null si el producto está en una subcategoría. */
+  categoryId: string | null;
+  /** En BD: subcategoría, o null si el producto está solo en categoría. */
+  subcategoryId: string | null;
+  /** Texto para tablas y detalle (ej. «Periféricos» o «Periféricos › Teclados»). */
+  catalogLabel: string;
+  /**
+   * Categoría padre en el formulario: si hay subcategoría, coincide con su `category_id`;
+   * si no, es `category_id` del producto.
+   */
+  placementCategoryId: string;
+  /** Subcategoría elegida en el formulario; vacío si el producto va solo en la categoría. */
+  placementSubcategoryId: string;
   imageUrl: string | null;
   images: ProductImage[];
   characteristicValues: ProductCharacteristicValue[];
@@ -48,6 +61,10 @@ export type ProductInsert = {
   active: boolean;
   brandId: string;
   brandTypeId: string;
+  /** Categoría (padre si eliges subcategoría). */
+  placementCategoryId: string;
+  /** Vacío = producto en la categoría; UUID = producto en esa subcategoría. */
+  placementSubcategoryId: string;
 };
 
 export type ProductUpdate = ProductInsert;

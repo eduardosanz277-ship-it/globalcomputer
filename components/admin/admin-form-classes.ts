@@ -8,12 +8,11 @@ export const adminSlideOverSectionClassName = cn(
 
 /**
  * Scroll interno para listas largas dentro del SlideOver (p. ej. checkboxes de marcas).
- * Misma barra fina y contención de overscroll que el cuerpo del panel (`components/ui/slide-over`).
+ * Barras: `app/globals.css` (tema); aquí solo altura máxima y overscroll.
  */
 export const adminSlideOverNestedScrollClassName = cn(
   "max-h-[280px] space-y-2 overflow-y-auto pr-1",
-  "overscroll-y-contain [scrollbar-width:thin]",
-  "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/70 [&::-webkit-scrollbar-track]:bg-transparent",
+  "overscroll-y-contain",
 );
 
 /** Misma apariencia que los `Input` del formulario de servicios (`ServiceForm`). */

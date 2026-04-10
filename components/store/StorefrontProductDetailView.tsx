@@ -282,7 +282,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
             {hasImages ? (
               <div
                 className={cn(
-                  "flex w-full min-w-0 gap-2 [scrollbar-width:thin]",
+                  "flex w-full min-w-0 gap-2",
                   "max-md:order-2 max-md:flex-row max-md:overflow-x-auto max-md:overflow-y-hidden max-md:overscroll-x-contain max-md:pb-1",
                   "md:col-start-1 md:row-start-1 md:h-full md:min-h-0 md:max-h-full md:flex-col md:overflow-x-hidden md:overflow-y-auto md:overscroll-y-contain md:pb-0",
                 )}
