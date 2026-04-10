@@ -4,7 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, ImageOff, ZoomIn } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  ImageOff,
+  ZoomIn,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { ButtonPending } from "@/components/ui/button-pending";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -62,11 +68,41 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
 
   useEffect(() => {
     setCartQty(1);
+    setActiveIdx(0);
   }, [product.id]);
 
   useEffect(() => {
     setCartQty((q) => Math.min(maxCartQty, Math.max(1, q)));
   }, [maxCartQty]);
+
+  const imageCount = images.length;
+  const canNavigateImages = imageCount > 1;
+
+  const goToPrevImage = () => {
+    if (!canNavigateImages) return;
+    setActiveIdx((i) => (i === 0 ? imageCount - 1 : i - 1));
+  };
+
+  const goToNextImage = () => {
+    if (!canNavigateImages) return;
+    setActiveIdx((i) => (i === imageCount - 1 ? 0 : i + 1));
+  };
+
+  useEffect(() => {
+    if (!lightboxOpen || !canNavigateImages) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setActiveIdx((i) => (i === 0 ? imageCount - 1 : i - 1));
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setActiveIdx((i) => (i === imageCount - 1 ? 0 : i + 1));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, canNavigateImages, imageCount]);
 
   const charGroups = useMemo(() => {
     const m = new Map<string, typeof product.characteristics>();
@@ -101,59 +137,130 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
               )}
             >
               {hasImages ? (
-                <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-                  <button
-                    type="button"
-                    className="group relative w-full cursor-pointer overflow-hidden rounded-xl text-left ring-offset-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-haspopup="dialog"
-                    aria-expanded={lightboxOpen}
-                    aria-label="Ver imagen ampliada"
-                    onClick={() => setLightboxOpen(true)}
-                  >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-xl">
-                      <Image
-                        src={images[activeIdx].url}
-                        alt={product.name}
-                        fill
-                        className="object-cover object-center transition duration-300 ease-out group-hover:scale-[1.02]"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 65vw, 50vw"
-                        priority
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/35 via-black/10 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                        aria-hidden
-                      >
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background/85 text-foreground shadow-lg ring-1 ring-white/25 backdrop-blur-md transition duration-200 group-hover:scale-105 dark:bg-background/75 dark:ring-white/10">
-                          <ZoomIn
-                            className="h-7 w-7"
-                            strokeWidth={1.5}
-                            aria-hidden
-                          />
-                        </span>
+                <div className="relative w-full">
+                  <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                    <button
+                      type="button"
+                      className="group relative w-full cursor-pointer overflow-hidden rounded-xl text-left ring-offset-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-haspopup="dialog"
+                      aria-expanded={lightboxOpen}
+                      aria-label="Ver imagen ampliada"
+                      onClick={() => setLightboxOpen(true)}
+                    >
+                      <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+                        <Image
+                          src={images[activeIdx].url}
+                          alt={product.name}
+                          fill
+                          className="object-cover object-center transition duration-300 ease-out group-hover:scale-[1.02]"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 65vw, 50vw"
+                          priority
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/35 via-black/10 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                          aria-hidden
+                        >
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background/85 text-foreground shadow-lg ring-1 ring-white/25 backdrop-blur-md transition duration-200 group-hover:scale-105 dark:bg-background/75 dark:ring-white/10">
+                            <ZoomIn
+                              className="h-7 w-7"
+                              strokeWidth={1.5}
+                              aria-hidden
+                            />
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                  <DialogContent
-                    className={cn(
-                      "flex max-h-[90vh] w-full max-w-[min(90vw,1200px)] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-y-auto border-0 bg-transparent p-0 shadow-none sm:rounded-none",
-                      "[&>button]:right-3 [&>button]:top-3 [&>button]:rounded-full [&>button]:border [&>button]:border-border/50 [&>button]:bg-background/95 [&>button]:shadow-md",
-                    )}
-                  >
-                    <DialogTitle className="sr-only">
-                      {product.name} — vista ampliada
-                    </DialogTitle>
-                    <div className="relative h-[min(85vh,90vw)] w-full min-h-[12rem]">
-                      <Image
-                        src={images[activeIdx].url}
-                        alt={product.name}
-                        fill
-                        className="object-contain"
-                        sizes="90vw"
-                        priority={lightboxOpen}
-                      />
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </button>
+                    <DialogContent
+                      className={cn(
+                        "flex max-h-[90vh] w-full max-w-[min(90vw,1200px)] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-y-auto border-0 bg-transparent p-0 shadow-none sm:rounded-none",
+                        /* Botón cerrar (Radix): esquina superior derecha, más grande que el default */
+                        "[&>button]:right-0 [&>button]:top-0 [&>button]:z-[70] [&>button]:flex [&>button]:h-8 [&>button]:w-8 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:border [&>button]:border-border/50 [&>button]:bg-background/95 [&>button]:p-0 [&>button]:opacity-100 [&>button]:shadow-md [&>button]:ring-offset-0 [&>button>svg]:h-[1.125rem] [&>button>svg]:w-[1.125rem] sm:[&>button]:right-1 sm:[&>button]:top-1",
+                      )}
+                    >
+                      <DialogTitle className="sr-only">
+                        {product.name} — vista ampliada
+                      </DialogTitle>
+                      <div className="relative h-[min(85vh,90vw)] w-full min-h-[12rem]">
+                        <Image
+                          src={images[activeIdx].url}
+                          alt={product.name}
+                          fill
+                          className="object-contain"
+                          sizes="90vw"
+                          priority={lightboxOpen}
+                        />
+                        {canNavigateImages ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToPrevImage();
+                              }}
+                              className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:left-4"
+                              aria-label="Imagen anterior"
+                            >
+                              <ChevronLeft
+                                className="h-6 w-6"
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToNextImage();
+                              }}
+                              className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:right-4"
+                              aria-label="Imagen siguiente"
+                            >
+                              <ChevronRight
+                                className="h-6 w-6"
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  {canNavigateImages ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToPrevImage();
+                        }}
+                        className="absolute left-2 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:left-3"
+                        aria-label="Imagen anterior"
+                      >
+                        <ChevronLeft
+                          className="h-5 w-5"
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToNextImage();
+                        }}
+                        className="absolute right-2 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:right-3"
+                        aria-label="Imagen siguiente"
+                      >
+                        <ChevronRight
+                          className="h-5 w-5"
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               ) : (
                 <div className="relative aspect-square w-full">
                   <div

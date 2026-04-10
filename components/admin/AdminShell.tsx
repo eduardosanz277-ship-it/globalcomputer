@@ -38,7 +38,7 @@ export function AdminShell({ user, children }: Props) {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen min-h-0 overflow-hidden bg-background">
+    <div className="flex min-h-dvh bg-background">
       {mobileMenuOpen && (
         <button
           type="button"
@@ -55,12 +55,12 @@ export function AdminShell({ user, children }: Props) {
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <AdminHeader
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <div className="min-h-0 min-w-0 w-full flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-10">
+        <div className="min-w-0 w-full flex-1 px-4 py-4 sm:px-6 lg:px-10">
           {children}
         </div>
       </div>
