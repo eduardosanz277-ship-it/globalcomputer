@@ -81,12 +81,37 @@ export function StorefrontProductGrid({
             key={p.id}
             className="group/card flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-soft-lg"
           >
-            <Link
-              href={`/productos/${p.id}`}
-              className="relative block aspect-[4/3] w-full overflow-hidden bg-muted/40 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary"
-            >
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/40">
+              <Link
+                href={`/productos/${p.id}`}
+                className="absolute inset-0 z-0 block outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {img ? (
+                  <Image
+                    src={img}
+                    alt={p.name}
+                    fill
+                    className="object-cover transition duration-500 ease-out group-hover/card:scale-[1.04]"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  />
+                ) : (
+                  <div
+                    className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-muted/50 to-muted/80 text-muted-foreground"
+                    role="img"
+                    aria-label="Sin imagen del producto"
+                  >
+                    <ImageOff
+                      className="h-12 w-12 opacity-50"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <span className="sr-only">Sin imagen</span>
+                  </div>
+                )}
+              </Link>
+
               {pct > 0 || isNew ? (
-                <div className="absolute left-2 top-2 z-[1] flex flex-wrap items-center gap-2">
+                <div className="pointer-events-none absolute left-2 top-2 z-[3] flex flex-wrap items-center gap-2">
                   {pct > 0 ? (
                     <span
                       className={cn(
@@ -110,39 +135,50 @@ export function StorefrontProductGrid({
                   ) : null}
                 </div>
               ) : null}
-              {/* Badge de stock sobre la imagen (esquina superior derecha) — desactivado; el estado se muestra bajo el precio.
-              <span
+
+              <div
                 className={cn(
-                  "absolute right-2 top-2 z-[1] inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums shadow-md",
-                  stockUi.className,
+                  "pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-end px-2 pb-2 pt-6",
+                  "lg:justify-center lg:px-2.5 lg:pb-2.5",
+                  "translate-y-0 opacity-100 transition-all duration-300 ease-out",
+                  /* Solo en pantallas grandes se oculta hasta hover (tablet/móvil no tienen hover fiable). */
+                  "lg:translate-y-1 lg:opacity-0",
+                  "lg:group-hover/card:translate-y-0 lg:group-hover/card:opacity-100",
                 )}
               >
-                {stockUi.label}
-              </span>
-              */}
-              {img ? (
-                <Image
-                  src={img}
-                  alt={p.name}
-                  fill
-                  className="object-cover transition duration-500 ease-out group-hover/card:scale-[1.04]"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                />
-              ) : (
-                <div
-                  className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-muted/50 to-muted/80 text-muted-foreground"
-                  role="img"
-                  aria-label="Sin imagen del producto"
+                <ButtonPending
+                  type="button"
+                  variant="default"
+                  disabled={!canBuy}
+                  pending={addingProductId === p.id}
+                  pendingLabel={
+                    <span className="hidden lg:inline">Añadiendo</span>
+                  }
+                  skipMinWidth
+                  aria-label="Añadir al carrito"
+                  className={cn(
+                    "font-roboto pointer-events-auto rounded-full border-0 border-white text-primary-foreground shadow-md transition hover:bg-primary hover:shadow-lg",
+                    "bg-primary/90 hover:bg-primary",
+                    "h-9 w-9 min-w-[2.25rem] shrink-0 px-0 lg:h-9 lg:w-auto lg:min-w-[12rem] lg:max-w-[min(17rem,calc(100%-0.5rem))] lg:px-4 lg:text-xs",
+                    "gap-0",
+                    "text-[11px] font-medium leading-none tracking-wide lg:text-[12px] lg:font-semibold",
+                    "[&>svg]:m-0 [&>svg]:text-primary-foreground",
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleAddToCart(p.id, canBuy);
+                  }}
                 >
-                  <ImageOff
-                    className="h-12 w-12 opacity-50"
-                    strokeWidth={1.5}
+                  <ShoppingCart
+                    className="h-4 w-4 shrink-0 lg:hidden"
+                    strokeWidth={2}
                     aria-hidden
                   />
-                  <span className="sr-only">Sin imagen</span>
-                </div>
-              )}
-            </Link>
+                  <span className="hidden lg:inline">Añadir al carrito</span>
+                </ButtonPending>
+              </div>
+            </div>
 
             <div className="flex flex-1 flex-col p-4">
               <Link
@@ -208,22 +244,6 @@ export function StorefrontProductGrid({
               >
                 {stockUi.label}
               </span>
-
-              <div className="mt-auto w-full shrink-0 pt-4">
-                <ButtonPending
-                  type="button"
-                  variant="default"
-                  disabled={!canBuy}
-                  pending={addingProductId === p.id}
-                  pendingLabel="Añadiendo"
-                  skipMinWidth
-                  className="h-11 w-full gap-2 rounded-xl text-sm font-semibold shadow-sm transition hover:shadow-md"
-                  onClick={() => void handleAddToCart(p.id, canBuy)}
-                >
-                  {/* <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2} /> */}
-                  Añadir al carrito
-                </ButtonPending>
-              </div>
             </div>
           </li>
         );
