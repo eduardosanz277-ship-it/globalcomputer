@@ -87,17 +87,17 @@ export default async function BrandsSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/brands" },
+                { label: "Catálogo", href: "/productos" },
                 { label: brand.name },
               ]}
             />
             <div className="mt-4">
+              {/* description="Catálogo de productos de esta marca." */}
+              {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
               <HomeSectionHeading
                 align="left"
                 title={brand.name}
-                description="Catálogo de productos de esta marca."
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
               />
             </div>
           </div>
@@ -146,19 +146,19 @@ export default async function BrandsSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/brands" },
+                { label: "Catálogo", href: "/productos" },
                 { label: brand.name, href: `/brands/${brandId}` },
                 { label: typeRow.name },
               ]}
             />
 
             <div className="mt-4">
+              {/* description={`Productos de ${typeRow.name}.`} */}
+              {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
               <HomeSectionHeading
                 align="left"
                 title={typeRow.name}
-                description={`Productos de ${typeRow.name}.`}
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
               />
             </div>
           </div>

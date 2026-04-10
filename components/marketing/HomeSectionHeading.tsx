@@ -1,3 +1,4 @@
+import { inter } from "@/lib/fonts/inter";
 import { cn } from "@/utils/cn";
 
 type HomeSectionHeadingProps = {
@@ -24,6 +25,7 @@ export function HomeSectionHeading({
   return (
     <div
       className={cn(
+        inter.className,
         align === "center" && "mx-auto max-w-2xl text-center",
         align === "left" && "max-w-2xl",
         className,
@@ -36,7 +38,7 @@ export function HomeSectionHeading({
       ) : null}
       <h2
         className={cn(
-          "font-display text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl sm:leading-tight",
+          "text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl sm:leading-tight",
           eyebrow && "mt-3",
           !eyebrow && "mt-0",
           titleClassName,

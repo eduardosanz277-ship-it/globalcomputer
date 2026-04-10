@@ -943,15 +943,15 @@ export function SiteHeader({ user }: Props) {
                               const rowActive = hoveredGeneralId === general.id;
                               const hasSubs = general.specifics.length > 0;
                               return (
-                                <Link
+                                <div
                                   key={general.id}
-                                  href={`/security-system/${general.id}`}
+                                  role="presentation"
                                   onMouseEnter={() =>
                                     setHoveredGeneralId(general.id)
                                   }
                                   className={cn(
                                     navMegaRowClass,
-                                    "justify-between",
+                                    "cursor-default justify-between select-none",
                                     "hover:bg-white/10",
                                     rowActive && "bg-white/10",
                                   )}
@@ -965,7 +965,7 @@ export function SiteHeader({ user }: Props) {
                                       aria-hidden
                                     />
                                   ) : null}
-                                </Link>
+                                </div>
                               );
                             })}
                           </div>
@@ -1499,7 +1499,7 @@ export function SiteHeader({ user }: Props) {
                                 Sistema de Seguridad
                               </span>
                             </button>
-                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-3">
                               {navLoading ? (
                                 <div
                                   className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
@@ -1512,60 +1512,39 @@ export function SiteHeader({ user }: Props) {
                                 </div>
                               ) : (
                                 (navData?.characteristicsGeneral ?? []).map(
-                                  (general) => {
-                                    const hasSubs =
-                                      general.specifics.length > 0;
-                                    return hasSubs ? (
-                                      <details
-                                        key={general.id}
-                                        className="group rounded-lg"
-                                      >
-                                        <summary
-                                          className={cn(
-                                            "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
-                                            mobileNavCatalogHeadingClass,
-                                          )}
-                                        >
-                                          <span className="truncate">
-                                            {general.name}
-                                          </span>
-                                          <ChevronDown
-                                            className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
-                                            aria-hidden
-                                          />
-                                        </summary>
-                                        <div className="grid gap-0.5 pt-0.5">
-                                          {general.specifics.map((specific) => (
-                                            <Link
-                                              key={specific.id}
-                                              href={`/security-system/${general.id}/${specific.id}`}
-                                              onClick={() =>
-                                                setMobileNavOpen(false)
-                                              }
-                                              className={cn(
-                                                "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                                mobileNavCatalogRowClass,
-                                              )}
-                                            >
-                                              {specific.name}
-                                            </Link>
-                                          ))}
-                                        </div>
-                                      </details>
-                                    ) : (
-                                      <Link
-                                        key={general.id}
-                                        href={`/security-system/${general.id}`}
-                                        onClick={() => setMobileNavOpen(false)}
+                                  (general) => (
+                                    <div key={general.id} className="space-y-1">
+                                      <div
                                         className={cn(
-                                          "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                          "px-3 py-2 text-left",
                                           mobileNavCatalogHeadingClass,
                                         )}
                                       >
                                         {general.name}
-                                      </Link>
-                                    );
-                                  },
+                                      </div>
+                                      {general.specifics.length > 0 ? (
+                                        <div className="grid gap-0.5">
+                                          {general.specifics.map(
+                                            (specific) => (
+                                              <Link
+                                                key={specific.id}
+                                                href={`/security-system/${general.id}/${specific.id}`}
+                                                onClick={() =>
+                                                  setMobileNavOpen(false)
+                                                }
+                                                className={cn(
+                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                  mobileNavCatalogRowClass,
+                                                )}
+                                              >
+                                                {specific.name}
+                                              </Link>
+                                            ),
+                                          )}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  ),
                                 )
                               )}
                             </div>

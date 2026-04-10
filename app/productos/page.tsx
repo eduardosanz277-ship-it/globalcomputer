@@ -38,12 +38,12 @@ export default async function ProductosPage() {
           />
 
           <div className="mt-4">
+            {/* description="Listado de todos los artículos activos en la tienda." */}
+            {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
             <HomeSectionHeading
               align="left"
               title="Todos los productos"
-              description="Listado de todos los artículos activos en la tienda."
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-              descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
             />
           </div>
         </div>

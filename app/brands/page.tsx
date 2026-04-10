@@ -17,13 +17,13 @@ export default async function BrandsPage() {
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {/* description="Explora productos organizados por marca." */}
+          {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
           <HomeSectionHeading
             eyebrow="Tienda"
             align="left"
             title="Comprar por marca"
-            description="Explora productos organizados por marca."
             titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-            descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
           />
         </div>
       </div>

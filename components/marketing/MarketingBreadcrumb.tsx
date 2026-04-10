@@ -1,3 +1,4 @@
+import { inter } from "@/lib/fonts/inter";
 import { cn } from "@/utils/cn";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ export function MarketingBreadcrumb({ items, className }: Props) {
     <nav
       aria-label="Migas de pan"
       className={cn(
+        inter.className,
         "text-sm font-normal text-muted-foreground sm:text-[15px]",
         className,
       )}

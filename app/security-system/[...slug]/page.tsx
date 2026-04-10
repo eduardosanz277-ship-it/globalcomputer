@@ -86,17 +86,17 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/security-system" },
+                { label: "Catálogo", href: "/productos" },
                 { label: general.name },
               ]}
             />
             <div className="mt-4">
+              {/* description="Catálogo de productos de esta categoría." */}
+              {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
               <HomeSectionHeading
                 align="left"
                 title={general.name}
-                description="Catálogo de productos de esta categoría."
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
               />
             </div>
           </div>
@@ -128,9 +128,6 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
       redirect(`/security-system/${specRow.general_id}/${specificId}`);
     }
 
-    const general = await getCharacteristicGeneralById(generalId);
-    if (!general) notFound();
-
     const [products, user] = await Promise.all([
       listProductsByGeneralAndSpecific(generalId, specificId),
       getCurrentUserService(),
@@ -145,19 +142,18 @@ export default async function SecuritySystemSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/security-system" },
-                { label: general.name, href: `/security-system/${generalId}` },
+                { label: "Catálogo", href: "/productos" },
                 { label: specRow.name },
               ]}
             />
 
             <div className="mt-4">
+              {/* description={`Productos de ${specRow.name}.`} */}
+              {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
               <HomeSectionHeading
                 align="left"
                 title={specRow.name}
-                description={`Productos de ${specRow.name}.`}
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-                descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
               />
             </div>
           </div>
