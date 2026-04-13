@@ -3,6 +3,7 @@ import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import {
   NavigationBrand,
   NavigationBrandType,
+  NavigationCatalogCategory,
   NavigationCharacteristicGeneral,
   NavigationData,
   NavigationService,
@@ -21,6 +22,8 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     brandsResult,
     brandTypesResult,
     servicesResult,
+    categoriesResult,
+    subcategoriesResult,
   ] = await Promise.all([
     supabase
       .from("product_characteristics_general")
@@ -39,6 +42,16 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
       .eq("active", true)
       .order("name"),
     supabase.from("services").select("id, name, description").order("name"),
+    supabase
+      .from("categories")
+      .select("id, name")
+      .is("deleted_at", null)
+      .order("name"),
+    supabase
+      .from("subcategories")
+      .select("id, name, category_id")
+      .is("deleted_at", null)
+      .order("name"),
   ]);
 
   if (generalResult.error) {
@@ -64,6 +77,15 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   }
   if (servicesResult.error) {
     console.warn("Navigation: failed to load services", servicesResult.error);
+  }
+  if (categoriesResult.error) {
+    console.warn("Navigation: failed to load categories", categoriesResult.error);
+  }
+  if (subcategoriesResult.error) {
+    console.warn(
+      "Navigation: failed to load subcategories",
+      subcategoriesResult.error,
+    );
   }
 
   const generalMap = new Map<string, NavigationCharacteristicGeneral>();
@@ -109,9 +131,27 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     description: row.description,
   }));
 
+  const categoriesMap = new Map<string, NavigationCatalogCategory>();
+  const categoryRows = categoriesResult.data ?? [];
+  for (const row of categoryRows) {
+    categoriesMap.set(row.id, {
+      id: row.id,
+      name: row.name,
+      subcategories: [],
+    });
+  }
+  const subcategoryRows = subcategoriesResult.data ?? [];
+  for (const row of subcategoryRows) {
+    const cat = categoriesMap.get(row.category_id);
+    if (cat) {
+      cat.subcategories.push({ id: row.id, name: row.name });
+    }
+  }
+
   return {
     characteristicsGeneral: Array.from(generalMap.values()),
     brands: Array.from(brandsMap.values()),
     services,
+    catalogCategories: Array.from(categoriesMap.values()),
   };
 });

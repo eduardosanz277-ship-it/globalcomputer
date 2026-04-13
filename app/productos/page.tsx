@@ -33,7 +33,7 @@ export default async function ProductosPage() {
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
-            items={[{ label: "Inicio", href: "/" }, { label: "Productos" }]}
+            items={[{ label: "Inicio", href: "/" }, { label: "Catálogo" }]}
             className={inter.className}
           />
 

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Poppins } from "next/font/google";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
 import {
   ChevronRight,
@@ -31,12 +32,18 @@ const TRUST_BAR = [
   { Icon: ShieldCheck, text: "Pago seguro", sub: "datos protegidos" },
 ] as const;
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+});
+
 export async function StoreHero() {
   const [nav, contact] = await Promise.all([
     getNavigationData(),
     getPublicSiteContact(),
   ]);
-  const brands = nav?.brands ?? [];
+  const categories = nav?.catalogCategories ?? [];
 
   return (
     <div className="relative">
@@ -67,13 +74,18 @@ export async function StoreHero() {
               {/* <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-secondary/95 backdrop-blur-md sm:text-xs">
                 Tienda de confianza
               </p> */}
-              <h1 className="mt-5 font-display text-[1.85rem] font-bold leading-[1.1] tracking-tight sm:text-4xl sm:leading-[1.08] lg:text-[2.85rem]">
+              <h1
+                className={cn(
+                  poppins.className,
+                  "mt-5 text-[2.25rem] font-semibold leading-[1.1] tracking-tight sm:text-[2.625rem] sm:leading-[1.08] lg:text-[2.725rem]",
+                )}
+              >
                 Tu seguridad,{" "}
                 <span className="bg-gradient-to-r from-white via-white to-secondary/90 bg-clip-text text-transparent">
                   simple y clara
                 </span>
               </h1>
-              <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/85 sm:text-lg">
+              <p className="mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:text-[18px]">
                 Cámaras, grabadoras y kits con precios visibles y equipo que te
                 orienta. Así debería ser comprar tecnología.
               </p>
@@ -82,7 +94,7 @@ export async function StoreHero() {
                 {TRUST_PILLS.map(({ Icon, label }) => (
                   <li
                     key={label}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-xs font-medium text-white/92 backdrop-blur-md sm:px-3.5 sm:py-2 sm:text-sm"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-white/92 backdrop-blur-md sm:px-3.5 sm:py-2 sm:text-base"
                   >
                     <Icon
                       className="h-3.5 w-3.5 shrink-0 text-secondary sm:h-4 sm:w-4"
@@ -101,7 +113,9 @@ export async function StoreHero() {
                     "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-primary/90 sm:w-auto",
                   )}
                 >
-                  <span className="text-base sm:text-[1.05rem]">Comprar ahora</span>
+                  <span className="text-base sm:text-[1.05rem]">
+                    Comprar ahora
+                  </span>
                 </Link>
                 <Link
                   href={`tel:${contact.phoneTel}`}
@@ -138,18 +152,18 @@ export async function StoreHero() {
               </div>
 
               <div className="mt-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/75">
-                  Explora por marca
+                <p className="text-sm font-semibold uppercase tracking-wider text-white/75 sm:text-base">
+                  Explora por categoría
                 </p>
-                <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                  {brands.map((b) => (
-                    <li key={b.id}>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {categories.map((c) => (
+                    <li key={c.id} className="max-w-full">
                       <Link
-                        href={`/brands/${b.id}`}
+                        href={`/catalogo/${c.id}`}
                         prefetch={false}
-                        aria-label={`Ver productos de ${b.name}`}
+                        aria-label={`Ver productos en ${c.name}`}
                         className={cn(
-                          "group relative flex min-h-[2.75rem] items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-300 ease-out",
+                          "group relative inline-flex w-max max-w-full items-start gap-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-left text-[13px] font-medium leading-snug text-white shadow-sm transition-all duration-300 ease-out sm:text-sm",
                           "hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.14] hover:shadow-lg hover:shadow-primary/25",
                           "active:translate-y-0 active:scale-[0.98]",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2540]",
@@ -159,13 +173,13 @@ export async function StoreHero() {
                           className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                           aria-hidden
                         />
-                        <span className="relative z-[1] min-w-0 flex-1 truncate pr-1">
-                          {b.name}
+                        <span className="relative z-[1] break-words">
+                          {c.name}
                         </span>
-                        <ChevronRight
-                          className="relative z-[1] h-4 w-4 shrink-0 text-secondary/90 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100 -translate-x-1"
+                        {/* <ChevronRight
+                          className="relative z-[1] mt-0.5 hidden h-4 w-4 shrink-0 text-secondary/90 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100 -translate-x-1 lg:block"
                           aria-hidden
-                        />
+                        /> */}
                       </Link>
                     </li>
                   ))}
@@ -191,8 +205,12 @@ export async function StoreHero() {
                 <Icon className="h-5 w-5" aria-hidden />
               </span>
               <div className="min-w-0 text-left">
-                <p className="text-sm font-semibold text-foreground">{text}</p>
-                <p className="text-xs text-muted-foreground">{sub}</p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {text}
+                </p>
+                <p className="text-sm text-muted-foreground sm:text-base">
+                  {sub}
+                </p>
               </div>
             </div>
           ))}

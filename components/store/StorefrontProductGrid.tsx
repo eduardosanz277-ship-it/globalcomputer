@@ -14,7 +14,7 @@ import {
   type StorefrontProduct,
 } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
-import { ImageOff, ShoppingCart } from "lucide-react";
+import { ImageOff, Plus, ShoppingCart } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,12 +34,36 @@ function formatUsd(price: number): string {
   }).format(price);
 }
 
+/**
+ * Un solo glifo compuesto: carrito + «+» en esquina (Lucide no incluye shopping-cart-plus).
+ * Solo bajo `lg`; en escritorio el botón usa texto.
+ */
+function AddToCartGlyphIcon({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "relative inline-flex h-6 w-6 shrink-0 items-center justify-center",
+        className,
+      )}
+      aria-hidden
+    >
+      <ShoppingCart className="relative z-0 h-5 w-5" strokeWidth={2} />
+      {/* Mitad sobre el carrito (lado derecho), mitad asomando: típico “badge” */}
+      <span className="pointer-events-none absolute right-1 top-2/5 z-[1] flex h-3 w-3 -translate-y-1/2 translate-x-[35%] items-center justify-center rounded-full bg-primary-foreground shadow-md ring-[1.5px] ring-primary/50">
+        <Plus className="h-2 w-2 !text-primary" strokeWidth={3} />
+      </span>
+    </span>
+  );
+}
+
 export function StorefrontProductGrid({
   products,
   priceTier,
+  gridClassName,
 }: {
   products: StorefrontProduct[];
   priceTier: StorefrontPriceTier;
+  gridClassName?: string;
 }) {
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
 
@@ -66,7 +90,12 @@ export function StorefrontProductGrid({
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <ul
+      className={cn(
+        "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
+        gridClassName,
+      )}
+    >
       {products.map((p) => {
         const img = storefrontPrimaryImageUrl(p);
         const pct = activeDiscountPercent(p, priceTier);
@@ -157,12 +186,13 @@ export function StorefrontProductGrid({
                   skipMinWidth
                   aria-label="Añadir al carrito"
                   className={cn(
-                    "font-roboto pointer-events-auto rounded-full border-0 border-white text-primary-foreground shadow-md transition hover:bg-primary hover:shadow-lg",
+                    inter.className,
+                    "pointer-events-auto rounded-full border-0 border-white text-primary-foreground shadow-md transition hover:bg-primary hover:shadow-lg",
                     "bg-primary/90 hover:bg-primary",
-                    "h-9 w-9 min-w-[2.25rem] shrink-0 px-0 lg:h-9 lg:w-auto lg:min-w-[12rem] lg:max-w-[min(17rem,calc(100%-0.5rem))] lg:px-4 lg:text-xs",
+                    "h-9 w-9 min-w-[2.25rem] shrink-0 px-0 lg:h-9 lg:w-auto lg:min-w-[12rem] lg:max-w-[min(17rem,calc(100%-0.5rem))] lg:px-4 lg:text-sm",
                     "gap-0",
-                    "text-[11px] font-medium leading-none tracking-wide lg:text-[12px] lg:font-semibold",
-                    "[&>svg]:m-0 [&>svg]:text-primary-foreground",
+                    "text-[11px] font-medium leading-none tracking-wide lg:text-[13px] lg:font-semibold",
+                    "[&_svg]:text-primary-foreground",
                   )}
                   onClick={(e) => {
                     e.preventDefault();
@@ -170,11 +200,7 @@ export function StorefrontProductGrid({
                     void handleAddToCart(p.id, canBuy);
                   }}
                 >
-                  <ShoppingCart
-                    className="h-4 w-4 shrink-0 lg:hidden"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
+                  <AddToCartGlyphIcon className="lg:hidden" />
                   <span className="hidden lg:inline">Añadir al carrito</span>
                 </ButtonPending>
               </div>

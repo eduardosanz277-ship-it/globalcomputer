@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import "./globals.css";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { DM_Sans, Outfit, Roboto } from "next/font/google";
+import { Inter, Outfit, Roboto } from "next/font/google";
 import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
 import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
@@ -10,16 +10,10 @@ import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton"
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fontSans = DM_Sans({
+const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",

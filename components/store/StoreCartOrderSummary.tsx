@@ -64,10 +64,7 @@ export function StoreCartOrderSummary({
   }
 
   const checkoutDisabled =
-    loading ||
-    items.length === 0 ||
-    hasUnresolvedProducts ||
-    checkoutLoading;
+    loading || items.length === 0 || hasUnresolvedProducts || checkoutLoading;
 
   return (
     <div
@@ -106,8 +103,9 @@ export function StoreCartOrderSummary({
           </span>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Al finalizar se abrirá la página segura de Stripe (Checkout) con el importe y los
-          artículos. Impuestos y envío se confirman allí según corresponda.
+          Al finalizar se abrirá la página segura de Stripe (Checkout) con el
+          importe y los artículos. Impuestos y envío se confirman allí según
+          corresponda.
         </p>
       </div>
 
@@ -123,7 +121,7 @@ export function StoreCartOrderSummary({
             {checkoutLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Abriendo pago…
+                Abriendo pago
               </>
             ) : (
               "Pagar con Stripe"
@@ -131,7 +129,10 @@ export function StoreCartOrderSummary({
           </Button>
           <Link
             href="/productos"
-            className={cn(buttonVariants({ variant: "outline" }), "w-full rounded-xl")}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "w-full rounded-xl",
+            )}
           >
             Seguir comprando
           </Link>
@@ -159,7 +160,7 @@ export function StoreCartOrderSummary({
             {checkoutLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Abriendo…
+                Abriendo pago
               </>
             ) : (
               "Pagar con Stripe"

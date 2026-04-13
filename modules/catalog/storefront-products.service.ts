@@ -217,6 +217,73 @@ export async function listProductsByBrandAndType(
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
+/**
+ * Productos clasificados en la categoría: `category_id` directo o `subcategory_id`
+ * cuya subcategoría pertenece a esta categoría (exclusivo XOR en DB).
+ */
+export async function listProductsByCategoryId(
+  categoryId: string,
+): Promise<StorefrontProduct[]> {
+  const supabase = await getCatalogSupabase();
+  const { data: subs, error: subErr } = await supabase
+    .from("subcategories")
+    .select("id")
+    .eq("category_id", categoryId)
+    .is("deleted_at", null);
+
+  if (subErr) {
+    console.warn(
+      "[storefront] listProductsByCategoryId subcategories",
+      subErr.message,
+    );
+  }
+
+  const subIds = (subs ?? []).map((s) => s.id as string);
+
+  let query = supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true);
+
+  if (subIds.length > 0) {
+    const inList = subIds.join(",");
+    query = query.or(
+      `category_id.eq.${categoryId},subcategory_id.in.(${inList})`,
+    );
+  } else {
+    query = query.eq("category_id", categoryId);
+  }
+
+  const { data, error } = await query.order("name");
+
+  if (error || !data) {
+    if (error) {
+      console.warn(
+        "[storefront] listProductsByCategoryId",
+        categoryId,
+        error.message,
+      );
+    }
+    return [];
+  }
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
+export async function listProductsBySubcategoryId(
+  subcategoryId: string,
+): Promise<StorefrontProduct[]> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("subcategory_id", subcategoryId)
+    .eq("active", true)
+    .order("name");
+
+  if (error || !data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 /** Productos de vitrina por ids (p. ej. carrito). Omite ids inexistentes o inactivos. */
 export async function getStorefrontProductsByIds(
   ids: string[],

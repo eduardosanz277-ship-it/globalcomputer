@@ -1,4 +1,5 @@
 import { inter } from "@/lib/fonts/inter";
+import { Poppins } from "next/font/google";
 import { cn } from "@/utils/cn";
 
 type HomeSectionHeadingProps = {
@@ -12,6 +13,12 @@ type HomeSectionHeadingProps = {
   /** Clases extra para la descripción. */
   descriptionClassName?: string;
 };
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+});
 
 export function HomeSectionHeading({
   eyebrow,
@@ -38,7 +45,8 @@ export function HomeSectionHeading({
       ) : null}
       <h2
         className={cn(
-          "text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl sm:leading-tight",
+          poppins.className,
+          "text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl sm:leading-tight",
           eyebrow && "mt-3",
           !eyebrow && "mt-0",
           titleClassName,

@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ChevronLeft,
-  CircleUserRound,
+  UserRound,
   ChevronDown,
   ChevronRight,
   Loader2,
@@ -31,10 +31,7 @@ import type { NavigationData } from "@/modules/navigation/navigation.types";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
 import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
 import { useGcCart } from "@/components/store/useGcCart";
-import {
-  GC_CART_OPEN_EVENT,
-  gcCartTotalUnits,
-} from "@/lib/store-cart";
+import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 
 const SITE_NAME = "Global Computers USA";
@@ -67,6 +64,7 @@ type MobileNavPanel =
   | { kind: "root" }
   | { kind: "security" }
   | { kind: "brands" }
+  | { kind: "categories" }
   | { kind: "services" };
 
 function mobileNavPanelKey(panel: MobileNavPanel): string {
@@ -77,6 +75,8 @@ function mobileNavPanelKey(panel: MobileNavPanel): string {
       return "security";
     case "brands":
       return "brands";
+    case "categories":
+      return "categories";
     case "services":
       return "services";
   }
@@ -95,6 +95,9 @@ export function SiteHeader({ user }: Props) {
   /** Columna derecha en menús mega (evita overflow que recorta submenús CSS) */
   const [hoveredGeneralId, setHoveredGeneralId] = useState<string | null>(null);
   const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
+  const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(
+    null,
+  );
   /** Tras navegar, corta el :hover del mega menú hasta el siguiente movimiento o timeout. */
   const [suppressDesktopNavHover, setSuppressDesktopNavHover] = useState(false);
   const accountRefMobile = useRef<HTMLDivElement>(null);
@@ -218,8 +221,18 @@ export function SiteHeader({ user }: Props) {
     return navData.brands.find((b) => b.id === hoveredBrandId) ?? null;
   }, [navData?.brands, hoveredBrandId]);
 
+  const activeCategory = useMemo(() => {
+    if (!navData?.catalogCategories?.length || !hoveredCategoryId) {
+      return null;
+    }
+    return (
+      navData.catalogCategories.find((c) => c.id === hoveredCategoryId) ?? null
+    );
+  }, [navData?.catalogCategories, hoveredCategoryId]);
+
   const generalPanelHasSubs = Boolean(activeGeneral?.specifics?.length);
   const brandPanelHasSubs = Boolean(activeBrand?.brandTypes?.length);
+  const categoryPanelHasSubs = Boolean(activeCategory?.subcategories?.length);
 
   /** Contenedor en grid para la barra superior (móvil / escritorio). */
   const shelfRevealClass = "grid";
@@ -262,6 +275,7 @@ export function SiteHeader({ user }: Props) {
   function armDesktopNavStripSuppress() {
     setHoveredBrandId(null);
     setHoveredGeneralId(null);
+    setHoveredCategoryId(null);
     suppressNavStripCleanupRef.current?.();
     suppressNavStripCleanupRef.current = null;
     setSuppressDesktopNavHover(true);
@@ -488,7 +502,7 @@ export function SiteHeader({ user }: Props) {
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                 onClick={() => setAccountOpen(false)}
                               >
-                                <CircleUserRound
+                                <UserRound
                                   className="h-4 w-4 shrink-0"
                                   strokeWidth={1.35}
                                   aria-hidden
@@ -543,7 +557,7 @@ export function SiteHeader({ user }: Props) {
                     )}
                     aria-label="Iniciar sesión"
                   >
-                    <CircleUserRound
+                    <UserRound
                       className="h-7 w-7"
                       strokeWidth={1.35}
                       aria-hidden
@@ -743,7 +757,7 @@ export function SiteHeader({ user }: Props) {
                                   role="menuitem"
                                   onClick={() => setAccountOpen(false)}
                                 >
-                                  <CircleUserRound
+                                  <UserRound
                                     className="h-4 w-4"
                                     strokeWidth={1.35}
                                   />
@@ -808,7 +822,7 @@ export function SiteHeader({ user }: Props) {
                         aria-expanded={accountOpen}
                         aria-haspopup="menu"
                       >
-                        <CircleUserRound
+                        <UserRound
                           className="h-7 w-7"
                           strokeWidth={1.35}
                           aria-hidden
@@ -846,6 +860,10 @@ export function SiteHeader({ user }: Props) {
                               />
                               Crear cuenta
                             </Link>
+                            <div
+                              className="my-1 border-t border-border"
+                              aria-hidden
+                            />
                             <Link
                               href="/cuenta?tab=orders"
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
@@ -895,7 +913,7 @@ export function SiteHeader({ user }: Props) {
               <Link
                 href="/"
                 className={cn(
-                  "snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
+                  "snap-start rounded-xl px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
                 onClick={handleScrollToTopOnHome}
@@ -903,10 +921,104 @@ export function SiteHeader({ user }: Props) {
                 Inicio
               </Link>
 
+              <div className="group/cat relative">
+                <span
+                  className={cn(
+                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/cat:bg-white/10 sm:px-4",
+                    navPrimaryLabelClass,
+                  )}
+                >
+                  Categorías
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                </span>
+                {(navLoading ||
+                  (navData?.catalogCategories?.length ?? 0) > 0) && (
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
+                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                    <div
+                      className={cn(
+                        megaPanelClass,
+                        "flex items-stretch font-roboto",
+                        categoryPanelHasSubs
+                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
+                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
+                      )}
+                      onMouseLeave={() => setHoveredCategoryId(null)}
+                    >
+                      {navLoading ? (
+                        <NavMegaMenuLoading />
+                      ) : (
+                        <>
+                          <div
+                            className={cn(
+                              "shrink-0 overflow-y-auto py-2",
+                              categoryPanelHasSubs
+                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                                : "w-full max-h-[70vh]",
+                            )}
+                          >
+                            {navData!.catalogCategories.map((cat) => {
+                              const rowActive = hoveredCategoryId === cat.id;
+                              const hasSubs = cat.subcategories.length > 0;
+                              return (
+                                <Link
+                                  key={cat.id}
+                                  href={`/catalogo/${cat.id}`}
+                                  onMouseEnter={() =>
+                                    setHoveredCategoryId(cat.id)
+                                  }
+                                  onClick={armDesktopNavStripSuppress}
+                                  className={cn(
+                                    navMegaRowClass,
+                                    "justify-between",
+                                    "hover:bg-white/10",
+                                    rowActive && "bg-white/10",
+                                  )}
+                                >
+                                  <span className="truncate">{cat.name}</span>
+                                  {hasSubs ? (
+                                    <ChevronRight
+                                      className="h-4 w-4 shrink-0 text-white"
+                                      aria-hidden
+                                    />
+                                  ) : null}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                          {categoryPanelHasSubs && activeCategory ? (
+                            <div className="min-w-0 flex-1 py-2">
+                              <ul className="py-1">
+                                {activeCategory.subcategories.map((sub) => (
+                                  <li key={sub.id}>
+                                    <Link
+                                      href={`/catalogo/${activeCategory.id}/${sub.id}`}
+                                      onClick={armDesktopNavStripSuppress}
+                                      className={cn(
+                                        navMegaRowClass,
+                                        "hover:bg-white/10",
+                                      )}
+                                    >
+                                      <span className="truncate">
+                                        {sub.name}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="group/nav relative">
                 <span
                   className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/nav:bg-white/10 sm:px-4",
+                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/nav:bg-white/10 sm:px-4",
                     navPrimaryLabelClass,
                   )}
                 >
@@ -957,7 +1069,7 @@ export function SiteHeader({ user }: Props) {
                                   )}
                                 >
                                   <span className="truncate">
-                                    {general.name}
+                                    Ver por {general.name}
                                   </span>
                                   {hasSubs ? (
                                     <ChevronRight
@@ -1000,7 +1112,7 @@ export function SiteHeader({ user }: Props) {
               <div className="group/shop relative">
                 <span
                   className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/shop:bg-white/10 sm:px-4",
+                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/shop:bg-white/10 sm:px-4",
                     navPrimaryLabelClass,
                   )}
                 >
@@ -1091,7 +1203,7 @@ export function SiteHeader({ user }: Props) {
               <div className="group/svc relative">
                 <span
                   className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-full px-3 py-1.5 text-white transition group-hover/svc:bg-white/10 sm:px-4",
+                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/svc:bg-white/10 sm:px-4",
                     navPrimaryLabelClass,
                   )}
                 >
@@ -1134,22 +1246,24 @@ export function SiteHeader({ user }: Props) {
               <Link
                 href="/contact"
                 className={cn(
-                  "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
+                  "group snap-start rounded-xl px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
               >
                 Contacto
               </Link>
 
+              {/*
               <Link
                 href="/leave-review"
                 className={cn(
-                  "group snap-start rounded-full px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
+                  "group snap-start rounded-xl px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
                   navPrimaryLabelClass,
                 )}
               >
                 Reseñas
               </Link>
+              */}
             </nav>
           </div>
         </div>
@@ -1233,6 +1347,22 @@ export function SiteHeader({ user }: Props) {
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
+                                pushMobileNavPanel({ kind: "categories" })
+                              }
+                            >
+                              Categorías
+                              <ChevronRight
+                                className="h-4 w-4 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                navPrimaryLabelClass,
+                              )}
+                              onClick={() =>
                                 pushMobileNavPanel({ kind: "security" })
                               }
                             >
@@ -1284,6 +1414,7 @@ export function SiteHeader({ user }: Props) {
                             >
                               Contacto
                             </Link>
+                            {/*
                             <Link
                               href="/leave-review"
                               onClick={() => setMobileNavOpen(false)}
@@ -1294,6 +1425,7 @@ export function SiteHeader({ user }: Props) {
                             >
                               Reseñas
                             </Link>
+                            */}
                             {user ? (
                               <>
                                 <div className="mt-1 border-t border-border/70 px-3 pt-3">
@@ -1360,7 +1492,7 @@ export function SiteHeader({ user }: Props) {
                                         navPrimaryLabelClass,
                                       )}
                                     >
-                                      <CircleUserRound
+                                      <UserRound
                                         className="h-4 w-4 shrink-0"
                                         strokeWidth={2}
                                         aria-hidden
@@ -1443,6 +1575,10 @@ export function SiteHeader({ user }: Props) {
                                   />
                                   Crear cuenta
                                 </Link>
+                                <div
+                                  className="my-1 border-t border-border/70"
+                                  aria-hidden
+                                />
                                 <Link
                                   href="/cuenta?tab=orders"
                                   onClick={() => setMobileNavOpen(false)}
@@ -1520,27 +1656,25 @@ export function SiteHeader({ user }: Props) {
                                           mobileNavCatalogHeadingClass,
                                         )}
                                       >
-                                        {general.name}
+                                        Ver por {general.name}
                                       </div>
                                       {general.specifics.length > 0 ? (
                                         <div className="grid gap-0.5">
-                                          {general.specifics.map(
-                                            (specific) => (
-                                              <Link
-                                                key={specific.id}
-                                                href={`/security-system/${general.id}/${specific.id}`}
-                                                onClick={() =>
-                                                  setMobileNavOpen(false)
-                                                }
-                                                className={cn(
-                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                                  mobileNavCatalogRowClass,
-                                                )}
-                                              >
-                                                {specific.name}
-                                              </Link>
-                                            ),
-                                          )}
+                                          {general.specifics.map((specific) => (
+                                            <Link
+                                              key={specific.id}
+                                              href={`/security-system/${general.id}/${specific.id}`}
+                                              onClick={() =>
+                                                setMobileNavOpen(false)
+                                              }
+                                              className={cn(
+                                                "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                mobileNavCatalogRowClass,
+                                              )}
+                                            >
+                                              {specific.name}
+                                            </Link>
+                                          ))}
                                         </div>
                                       ) : null}
                                     </div>
@@ -1637,6 +1771,114 @@ export function SiteHeader({ user }: Props) {
                                     </Link>
                                   );
                                 })
+                              )}
+                            </div>
+                          </>
+                        ) : panel.kind === "categories" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={popMobileNavPanel}
+                              className={cn(
+                                "flex w-full shrink-0 items-center gap-2 border-b border-border/60 bg-[#e4e7ec] px-3 py-2.5 text-left transition hover:bg-muted/60",
+                              )}
+                              aria-label="Volver al menú principal"
+                            >
+                              <ChevronLeft
+                                className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <span
+                                className={cn(
+                                  "min-w-0 flex-1 truncate",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                Categorías
+                              </span>
+                            </button>
+                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                              {navLoading ? (
+                                <div
+                                  className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
+                                  role="status"
+                                >
+                                  <Loader2 className="h-8 w-8 animate-spin" />
+                                  <span className="text-xs uppercase tracking-widest">
+                                    Cargando
+                                  </span>
+                                </div>
+                              ) : (
+                                <>
+                                  <Link
+                                    href="/categorias"
+                                    onClick={() => setMobileNavOpen(false)}
+                                    className={cn(
+                                      "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                      mobileNavCatalogHeadingClass,
+                                    )}
+                                  >
+                                    Ver todas las categorías
+                                  </Link>
+                                  {(navData?.catalogCategories ?? []).map(
+                                    (cat) => {
+                                      const hasSubs =
+                                        cat.subcategories.length > 0;
+                                      return hasSubs ? (
+                                        <details
+                                          key={cat.id}
+                                          className="group rounded-lg"
+                                        >
+                                          <summary
+                                            className={cn(
+                                              "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
+                                              mobileNavCatalogHeadingClass,
+                                            )}
+                                          >
+                                            <span className="truncate">
+                                              {cat.name}
+                                            </span>
+                                            <ChevronDown
+                                              className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
+                                              aria-hidden
+                                            />
+                                          </summary>
+                                          <div className="grid gap-0.5 pt-0.5">
+                                            {cat.subcategories.map((sub) => (
+                                              <Link
+                                                key={sub.id}
+                                                href={`/catalogo/${cat.id}/${sub.id}`}
+                                                onClick={() =>
+                                                  setMobileNavOpen(false)
+                                                }
+                                                className={cn(
+                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                  mobileNavCatalogRowClass,
+                                                )}
+                                              >
+                                                {sub.name}
+                                              </Link>
+                                            ))}
+                                          </div>
+                                        </details>
+                                      ) : (
+                                        <Link
+                                          key={cat.id}
+                                          href={`/catalogo/${cat.id}`}
+                                          onClick={() =>
+                                            setMobileNavOpen(false)
+                                          }
+                                          className={cn(
+                                            "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                            mobileNavCatalogHeadingClass,
+                                          )}
+                                        >
+                                          {cat.name}
+                                        </Link>
+                                      );
+                                    },
+                                  )}
+                                </>
                               )}
                             </div>
                           </>

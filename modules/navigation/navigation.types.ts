@@ -27,8 +27,22 @@ export type NavigationService = {
   description?: string | null;
 };
 
+/** Subcategoría de catálogo (`subcategories`). */
+export type NavigationCatalogSubcategory = {
+  id: string;
+  name: string;
+};
+
+/** Categoría de producto con subcategorías (`categories` + `subcategories`). */
+export type NavigationCatalogCategory = {
+  id: string;
+  name: string;
+  subcategories: NavigationCatalogSubcategory[];
+};
+
 export type NavigationData = {
   characteristicsGeneral: NavigationCharacteristicGeneral[];
   brands: NavigationBrand[];
   services: NavigationService[];
+  catalogCategories: NavigationCatalogCategory[];
 };
