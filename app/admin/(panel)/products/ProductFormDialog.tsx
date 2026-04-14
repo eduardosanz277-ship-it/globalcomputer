@@ -786,6 +786,8 @@ function ProductFormBody({
                   onSetPrimary={images.markPrimary}
                   onMoveUp={(key) => images.moveByKeyboard(key, "up")}
                   onMoveDown={(key) => images.moveByKeyboard(key, "down")}
+                  className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] sm:grid-cols-none"
+                  itemClassName="w-[12rem] shrink-0"
                 />
               ) : (
                 <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">

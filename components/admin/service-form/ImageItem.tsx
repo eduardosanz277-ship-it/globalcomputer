@@ -22,6 +22,7 @@ type ImageItemProps = {
   onMoveDown: (key: string) => void;
   isFirst: boolean;
   isLast: boolean;
+  className?: string;
 };
 
 export function ImageItem({
@@ -33,6 +34,7 @@ export function ImageItem({
   onMoveDown,
   isFirst,
   isLast,
+  className,
 }: ImageItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.key });
@@ -47,7 +49,8 @@ export function ImageItem({
       className={cn(
         "group relative overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm",
         "h-[140px] w-full",
-        isDragging && "z-20 shadow-lg ring-2 ring-ring/30"
+        isDragging && "z-20 shadow-lg ring-2 ring-ring/30",
+        className,
       )}
     >
       <Image
@@ -112,7 +115,7 @@ export function ImageItem({
               {...attributes}
               {...listeners}
             >
-              <GripVertical className="h-3.5 w-3.5" aria-hidden />
+              <GripVertical className="h-3.5 w-3.5 text-foreground" aria-hidden />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-[220px] text-center">

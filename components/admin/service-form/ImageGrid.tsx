@@ -15,6 +15,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/utils/cn";
 import type { ServiceImageItem } from "./types";
 import { ImageItem } from "./ImageItem";
 
@@ -25,6 +26,8 @@ type ImageGridProps = {
   onSetPrimary: (key: string) => void;
   onMoveUp: (key: string) => void;
   onMoveDown: (key: string) => void;
+  className?: string;
+  itemClassName?: string;
 };
 
 export function ImageGrid({
@@ -34,6 +37,8 @@ export function ImageGrid({
   onSetPrimary,
   onMoveUp,
   onMoveDown,
+  className,
+  itemClassName,
 }: ImageGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -54,7 +59,7 @@ export function ImageGrid({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.key)} strategy={rectSortingStrategy}>
         <TooltipProvider delayDuration={200}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", className)}>
           {items.map((item, idx) => (
             <ImageItem
               key={item.key}
@@ -66,9 +71,10 @@ export function ImageGrid({
               onMoveDown={onMoveDown}
               isFirst={idx === 0}
               isLast={idx === items.length - 1}
+              className={itemClassName}
             />
           ))}
-        </div>
+          </div>
         </TooltipProvider>
       </SortableContext>
     </DndContext>
