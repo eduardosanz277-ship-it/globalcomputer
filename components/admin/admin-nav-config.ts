@@ -29,6 +29,16 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/home", label: "Home", icon: House },
+  {
+    href: "/admin/categories",
+    label: "Categorías",
+    icon: FolderTree,
+  },
+  {
+    href: "/admin/subcategories",
+    label: "Subcategorías",
+    icon: Layers,
+  },
   { href: "/admin/brands", label: "Marcas", icon: Tag },
   {
     href: "/admin/brand-types",
@@ -44,16 +54,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/specific-characteristics",
     label: "Características específicas",
     icon: ListTodo,
-  },
-  {
-    href: "/admin/categories",
-    label: "Categorías",
-    icon: FolderTree,
-  },
-  {
-    href: "/admin/subcategories",
-    label: "Subcategorías",
-    icon: Layers,
   },
   {
     href: "/admin/services",
