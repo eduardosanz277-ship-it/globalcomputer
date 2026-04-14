@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  RICH_HTML_DESCRIPTION_MAX_ERROR,
+  RICH_HTML_DESCRIPTION_MAX_LENGTH,
+} from "@/modules/admin/shared/rich-html-description";
 
 const percentSchema = z.coerce
   .number({ invalid_type_error: "Ingresa un número válido" })
@@ -34,7 +38,7 @@ export const productFormSchema = z.object({
     .transform((s) => s.trim()),
   description: z
     .string()
-    .max(200000, "La descripción HTML supera el tamaño máximo permitido")
+    .max(RICH_HTML_DESCRIPTION_MAX_LENGTH, RICH_HTML_DESCRIPTION_MAX_ERROR)
     .transform((s) => s.trim()),
   stock: z.coerce
     .number({ invalid_type_error: "Ingresa un stock válido" })

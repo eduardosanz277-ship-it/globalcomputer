@@ -31,7 +31,7 @@ export default function AdminOrdersPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <select
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
             defaultValue="pendiente"
             aria-label="Estado"
           >

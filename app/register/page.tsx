@@ -54,7 +54,7 @@ export default function RegisterPage() {
           description="Introduce tus datos para registrarte."
         />
 
-        <Form form={form} onSubmit={onSubmit} className="space-y-5">
+        <Form form={form} onSubmit={onSubmit} className="space-y-4">
           <AuthField
             name="fullName"
             label="Nombre completo"

@@ -108,7 +108,7 @@ function LoginPageContent() {
           <Form
             form={emailForm}
             onSubmit={(v) => sendOtp(v.email)}
-            className="space-y-5"
+            className="space-y-4"
           >
             <AuthField
               name="email"
@@ -127,7 +127,7 @@ function LoginPageContent() {
             </AuthPrimaryButton>
           </Form>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
               <span className="text-muted-foreground">Código enviado a </span>
               <span className="font-medium text-foreground">
@@ -137,7 +137,7 @@ function LoginPageContent() {
             <Form
               form={codeForm}
               onSubmit={(v) => verifyOtp(emailForCode, v.code)}
-              className="space-y-5"
+              className="space-y-4"
             >
               <div className="space-y-2">
                 <Label htmlFor="otp-code">Código de verificación</Label>

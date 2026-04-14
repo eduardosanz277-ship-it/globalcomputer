@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
           description="Usa el correo y la contraseña de tu cuenta de administrador."
         />
 
-        <Form form={form} onSubmit={onSubmit} className="space-y-5">
+        <Form form={form} onSubmit={onSubmit} className="space-y-4">
           <AuthField
             name="email"
             label="Correo electrónico"

@@ -595,7 +595,6 @@ function ProductFormBody({
                     : "Selecciona una categoría"
                 }
                 isDisabled={isPending || categoryOptions.length === 0}
-                isSearchable
                 useMenuPortal
               />
 

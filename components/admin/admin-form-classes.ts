@@ -15,9 +15,9 @@ export const adminSlideOverNestedScrollClassName = cn(
   "overscroll-y-contain",
 );
 
-/** Misma apariencia que los `Input` del formulario de servicios (`ServiceForm`). */
+/** Misma altura que `react-select` en formularios (`appSelectStyles`, 40px). */
 export const adminServiceLikeInputClassName = cn(
-  "h-11 rounded-lg border-border/80 bg-background/80 shadow-sm transition",
+  "h-10 rounded-lg border-border/80 bg-background/80 shadow-sm transition",
   "focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-0",
   "placeholder:text-muted-foreground/70",
 );

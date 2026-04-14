@@ -17,7 +17,10 @@ const mutedBg = "#f0f0f1";
 export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
   control: (base, state) => ({
     ...base,
+    boxSizing: "border-box",
     minHeight: 40,
+    height: 40,
+    alignItems: "center",
     width: "100%",
     minWidth: 0,
     borderRadius: "0.5rem",
@@ -35,11 +38,17 @@ export const appSelectStyles: StylesConfig<any, false, GroupBase<any>> = {
         state.isFocused || state.menuIsOpen ? primaryBorder : border,
     },
   }),
-  valueContainer: (base) => ({ ...base, padding: "0 8px" }),
+  valueContainer: (base) => ({
+    ...base,
+    /** Un poco más de aire a la izquierda evita que el glifo quede rozando el borde redondeado. */
+    padding: "2px 10px 2px 12px",
+    alignItems: "center",
+  }),
   singleValue: (base) => ({
     ...base,
     color: foreground,
     fontSize: "0.875rem",
+    lineHeight: 1.25,
   }),
   input: (base) => ({ ...base, margin: 0, padding: 0 }),
   placeholder: (base) => ({

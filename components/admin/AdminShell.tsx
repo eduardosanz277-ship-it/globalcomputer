@@ -38,6 +38,13 @@ export function AdminShell({ user, children }: Props) {
     };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    document.body.classList.add("admin-panel-theme");
+    return () => {
+      document.body.classList.remove("admin-panel-theme");
+    };
+  }, []);
+
   return (
     <div className="relative h-dvh min-h-0 overflow-x-hidden overflow-y-hidden bg-background">
       {mobileMenuOpen && (
@@ -67,7 +74,7 @@ export function AdminShell({ user, children }: Props) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
+        <main className="admin-panel min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
           {children}
         </main>
       </div>

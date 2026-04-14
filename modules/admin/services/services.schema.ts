@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  RICH_HTML_DESCRIPTION_MAX_ERROR,
+  RICH_HTML_DESCRIPTION_MAX_LENGTH,
+} from "@/modules/admin/shared/rich-html-description";
 
 export const serviceFormSchema = z.object({
   name: z
@@ -8,7 +12,7 @@ export const serviceFormSchema = z.object({
     .transform((s) => s.trim()),
   description: z
     .string()
-    .max(2000, "Máximo 2000 caracteres")
+    .max(RICH_HTML_DESCRIPTION_MAX_LENGTH, RICH_HTML_DESCRIPTION_MAX_ERROR)
     .transform((s) => s.trim()),
 });
 

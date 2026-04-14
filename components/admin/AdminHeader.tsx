@@ -125,7 +125,7 @@ export function AdminHeader({
       >
         <button
           type="button"
-          className="rounded-lg p-1.5 text-muted-foreground transition hover:text-foreground"
+          className="rounded-lg py-1.5 text-muted-foreground transition hover:text-foreground"
           aria-label="Notificaciones"
         >
           <Bell className="h-5 w-5" />

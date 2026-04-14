@@ -31,7 +31,6 @@ import {
   Eye,
   FilterX,
   MoreVertical,
-  Plus,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -306,7 +305,6 @@ function UsersRowActionsMenu({
 }
 
 export function AdminUsersTable({ users, isLoading = false }: Props) {
-  const router = useRouter();
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
 
@@ -322,6 +320,24 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
   const clearRoleFilter = useCallback(() => {
     setRoleFilter("all");
   }, []);
+
+  /*
+   * Botón "Nuevo" en la barra (acceso a /admin/suscripciones-empresas) — oculto temporalmente.
+   * Para reactivarlo: importar `Plus` desde lucide-react, añadir `const router = useRouter();`
+   * y pasar de nuevo `toolbarActions` al `DataTable`:
+   *
+   * toolbarActions={
+   *   <Button
+   *     type="button"
+   *     className="h-9 w-full shrink-0 md:w-auto"
+   *     onClick={() => router.push("/admin/suscripciones-empresas")}
+   *     title="Gestionar solicitudes de registro de empresas"
+   *   >
+   *     <Plus className="mr-2 h-4 w-4" aria-hidden />
+   *     Nuevo
+   *   </Button>
+   * }
+   */
 
   const renderMobileRow = useCallback((row: Row<AdminUser>) => {
     const u = row.original;
@@ -529,17 +545,6 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
               <FilterX className="h-4 w-4" aria-hidden />
             </Button>
           </div>
-        }
-        toolbarActions={
-          <Button
-            type="button"
-            className="h-9 w-full shrink-0 md:w-auto"
-            onClick={() => router.push("/admin/suscripciones-empresas")}
-            title="Gestionar solicitudes de registro de empresas"
-          >
-            <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
-          </Button>
         }
       />
       <UserDetailDrawer

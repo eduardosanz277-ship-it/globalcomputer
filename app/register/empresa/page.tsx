@@ -52,7 +52,7 @@ export default function RegisterEmpresaPage() {
           description="Completa los datos de tu negocio."
         />
 
-        <Form form={form} onSubmit={(v) => execute(v)} className="space-y-5">
+        <Form form={form} onSubmit={(v) => execute(v)} className="space-y-4">
           <AuthField
             name="businessName"
             label="Nombre del negocio"

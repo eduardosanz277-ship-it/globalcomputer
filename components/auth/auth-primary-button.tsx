@@ -6,7 +6,7 @@ import { cn } from "@/utils/cn";
 type AuthPrimaryButtonProps = ButtonPendingProps;
 
 /**
- * Botón principal de auth: 48px, radio 10px, semibold, ancho completo.
+ * Botón principal de auth: misma altura que los campos (`AuthInput`, h-10).
  */
 export function AuthPrimaryButton({
   className,
@@ -17,7 +17,7 @@ export function AuthPrimaryButton({
     <ButtonPending
       skipMinWidth={skipMinWidth}
       className={cn(
-        "h-12 w-full rounded-[10px] text-base font-semibold",
+        "h-10 w-full rounded-lg text-sm font-semibold",
         className,
       )}
       {...props}
