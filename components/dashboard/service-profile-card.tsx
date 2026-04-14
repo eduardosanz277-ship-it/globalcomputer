@@ -16,6 +16,20 @@ export type ServiceProfileCardProps = {
   actions?: ReactNode;
 };
 
+function serviceExcerpt(description: string | null | undefined): string | null {
+  if (!description) return null;
+  const plain = description
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.length > 0 ? plain : null;
+}
+
 export function ServiceProfileCard({
   name,
   imageUrl,
@@ -27,7 +41,7 @@ export function ServiceProfileCard({
   const title = name.trim() || "—";
   const relative = formatRelativeLastAccess(updatedAt);
   const absolute = formatDateDdMmYyyyHhMm(updatedAt);
-  const desc = description?.trim();
+  const desc = serviceExcerpt(description);
   const initial = name.trim().slice(0, 1).toUpperCase() || "?";
 
   return (

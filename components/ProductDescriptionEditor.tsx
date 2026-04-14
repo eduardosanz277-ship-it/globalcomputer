@@ -203,15 +203,15 @@ export function ProductDescriptionEditor({
   }, [editor, disabled]);
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2", className)}>
       <div className="space-y-1.5">
         <Label htmlFor={id} className="text-sm font-medium">
           {label}
         </Label>
-        <p className="text-xs text-muted-foreground">
+        {/* <p className="text-xs text-muted-foreground">
           Texto enriquecido con imágenes alojadas en Storage. Se guarda como
           HTML en la base de datos.
-        </p>
+        </p> */}
       </div>
 
       <input

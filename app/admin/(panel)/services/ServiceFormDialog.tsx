@@ -92,6 +92,8 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       onClose={() => onOpenChange(false)}
       title={service ? "Editar servicio" : "Nuevo servicio"}
       description="Gestiona nombre, descripción e imágenes del servicio."
+      panelClassName="md:w-[min(90vw,42rem)] lg:w-[50%] lg:max-w-none"
+      contentClassName="bg-background px-4 pb-4 pt-0"
       footer={
         <SlideOverFooter>
           <Button

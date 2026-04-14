@@ -18,6 +18,15 @@ export function ProductDescriptionPreview({ html, className }: Props) {
     () => sanitizeProductDescriptionHtml(html ?? ""),
     [html],
   );
+  const hasRenderableContent = useMemo(() => {
+    const textOnly = safe
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\u00a0/g, " ")
+      .trim();
+    if (textOnly.length > 0) return true;
+    return /<(img|table|ul|ol|blockquote|hr|iframe)\b/i.test(safe);
+  }, [safe]);
 
   return (
     <div className="space-y-2">
@@ -25,17 +34,18 @@ export function ProductDescriptionPreview({ html, className }: Props) {
         Vista previa
       </p>
       <div
-        className={`rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 ${className ?? ""}`}
+        className={`rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 py-2 ${className ?? ""}`}
       >
-        {safe.trim() ? (
+        {hasRenderableContent ? (
           <div
             className="product-description-html max-w-none"
             // HTML ya filtrado con DOMPurify
             dangerouslySetInnerHTML={{ __html: safe }}
           />
         ) : (
-          <p className="text-sm italic text-muted-foreground">
-            La vista previa aparecerá cuando escribas contenido.
+          <p className="min-h-6 truncate text-sm italic leading-6 text-muted-foreground">
+            Empieza a redactar una descripción clara y atractiva para ver aquí
+            cómo se presentará al cliente.
           </p>
         )}
       </div>

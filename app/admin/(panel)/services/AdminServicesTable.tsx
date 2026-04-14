@@ -35,6 +35,20 @@ function serviceInitial(name: string): string {
   return t ? t.slice(0, 1).toUpperCase() : "?";
 }
 
+function serviceExcerpt(description: string | null): string | null {
+  if (!description) return null;
+  const plain = description
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.length > 0 ? plain : null;
+}
+
 function updatedAtSortMs(row: Service): number {
   const t = new Date(row.updatedAt).getTime();
   return Number.isNaN(t) ? 0 : t;
@@ -127,7 +141,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         cell: ({ row }) => {
           const r = row.original;
           const imageUrl = r.imageUrl;
-          const desc = r.description?.trim();
+          const desc = serviceExcerpt(r.description);
           return (
             <div className="flex min-w-0 items-start gap-3">
               {imageUrl ? (
