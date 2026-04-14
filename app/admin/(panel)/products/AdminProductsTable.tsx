@@ -34,15 +34,7 @@ import { ProductFormDialog } from "./ProductFormDialog";
 import { ProductDetailDrawer } from "./ProductDetailDrawer";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ProductProfileCard } from "@/components/dashboard/product-profile-card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 type Props = {
   products: Product[];
@@ -104,11 +96,6 @@ function discountBadgeClass(kind: "business" | "client"): string {
   return kind === "business"
     ? "inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
     : "inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground";
-}
-
-function updatedAtSortMs(row: Product): number {
-  const t = new Date(row.updatedAt).getTime();
-  return Number.isNaN(t) ? 0 : t;
 }
 
 function RowActions({
@@ -299,7 +286,6 @@ export function AdminProductsTable({
           price={p.price}
           stock={p.stock}
           active={p.active}
-          updatedAt={p.updatedAt}
           className="hover:bg-muted/50 transition-colors duration-150"
           actions={
             <RowActions
@@ -468,61 +454,6 @@ export function AdminProductsTable({
             </span>
           </div>
         ),
-      },
-      {
-        id: "updatedAt",
-        accessorKey: "updatedAt",
-        enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
-        meta: { cellClassName: "w-[12rem] min-w-[12rem]" },
-        header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
-          />
-        ),
-        cell: ({ row }) => {
-          const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
-          if (relative == null) {
-            return (
-              <span
-                className="block truncate text-sm text-muted-foreground"
-                title={absolute}
-              >
-                {absolute}
-              </span>
-            );
-          }
-          return (
-            <TooltipProvider delayDuration={120}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="block max-w-full cursor-help truncate text-sm text-muted-foreground">
-                    {relative}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  align="start"
-                  className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
-                >
-                  <span className="block font-medium">
-                    Última actualización
-                  </span>
-                  <span className="mt-0.5 block text-muted-foreground">
-                    {absolute}
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        },
       },
       {
         id: "actions",
