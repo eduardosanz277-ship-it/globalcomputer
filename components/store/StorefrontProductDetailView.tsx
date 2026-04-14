@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -44,6 +45,52 @@ type Props = {
   product: StorefrontProductDetail;
   priceTier: StorefrontPriceTier;
 };
+
+type ProductDescriptionCollapsibleProps = {
+  description: string;
+};
+
+function ProductDescriptionCollapsible({
+  description,
+}: ProductDescriptionCollapsibleProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        aria-label={open ? "Contraer descripción" : "Expandir descripción"}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:py-4 text-left transition hover:bg-card/80"
+      >
+        <span className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
+          Descripción
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border/70 px-6 py-1">
+            <ProductDescriptionViewer descripcion={description} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function StorefrontProductDetailView({ product, priceTier }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
@@ -316,21 +363,18 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
           </div>
 
           {product.description?.trim() ? (
-            <section className="hidden space-y-2 lg:block">
-              <h2 className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
-                Descripción
-              </h2>
-              <div className="rounded-2xl border border-border/70 bg-card/80 px-6 shadow-sm backdrop-blur-sm">
-                <ProductDescriptionViewer descripcion={product.description} />
-              </div>
-            </section>
+            <div className="hidden lg:block">
+              <ProductDescriptionCollapsible
+                description={product.description}
+              />
+            </div>
           ) : null}
         </div>
 
         <div className="min-w-0 space-y-6 lg:sticky lg:top-28">
           <div>
             {pct > 0 || isNew ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 {pct > 0 ? (
                   <span
                     className={cn(
@@ -362,7 +406,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
             >
               {product.name}
             </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-left text-[13px] font-medium leading-tight text-muted-foreground sm:text-sm">
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 text-left text-[13px] font-medium leading-tight text-muted-foreground sm:text-sm">
               <Link
                 href={`/brands/${product.brand_id}`}
                 className="transition hover:text-primary"
@@ -491,14 +535,11 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
           ) : null}
 
           {product.description?.trim() ? (
-            <section className="space-y-2 lg:hidden">
-              <h2 className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
-                Descripción
-              </h2>
-              <div className="rounded-2xl border border-border/70 bg-card/80 px-6 shadow-sm backdrop-blur-sm">
-                <ProductDescriptionViewer descripcion={product.description} />
-              </div>
-            </section>
+            <div className="lg:hidden">
+              <ProductDescriptionCollapsible
+                description={product.description}
+              />
+            </div>
           ) : null}
 
           {/*
