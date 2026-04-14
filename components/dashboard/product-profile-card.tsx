@@ -30,16 +30,39 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+/** Categoría · subcategoría a partir de `catalogLabel` («Padre › Hijo» o solo categoría). */
+function formatCategorySubcategoryLine(catalogLabel: string): string | null {
+  const t = catalogLabel.trim();
+  if (!t || t === "—") return null;
+  const parts = t
+    .split(/\s*›\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]} · ${parts[1]}`;
+  }
+  return parts[0] ?? null;
+}
+
 function stockBadgeClass(stock: number): string {
-  return stock <= 0
-    ? "inline-flex items-center rounded-full bg-neutral-600 px-2 py-0.5 text-[11px] font-medium text-white"
-    : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700";
+  /** Base compartida con `activeBadgeClass` (mismo alto visual). */
+  const base =
+    "inline-flex items-center justify-center gap-0.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium leading-none";
+  if (stock <= 0) {
+    return `${base} border-red-200/90 bg-red-100 text-red-800 dark:border-red-800/50 dark:bg-red-950/45 dark:text-red-200`;
+  }
+  if (stock <= 10) {
+    return `${base} border-amber-200/90 bg-amber-100 text-amber-900 dark:border-amber-800/45 dark:bg-amber-950/40 dark:text-amber-200`;
+  }
+  return `${base} border-emerald-200/90 bg-emerald-100 text-emerald-700 dark:border-emerald-800/45 dark:bg-emerald-950/35 dark:text-emerald-200`;
 }
 
 function activeBadgeClass(active: boolean): string {
+  const base =
+    "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium leading-none";
   return active
-    ? "inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
-    : "inline-flex items-center rounded-full border border-slate-200/90 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700";
+    ? `${base} border-emerald-200/90 bg-emerald-50 text-emerald-800`
+    : `${base} border-slate-200/90 bg-slate-100 text-slate-700`;
 }
 
 export function ProductProfileCard({
@@ -60,21 +83,42 @@ export function ProductProfileCard({
   const relative = formatRelativeLastAccess(updatedAt);
   const absolute = formatDateDdMmYyyyHhMm(updatedAt);
 
+  const catalogOk = Boolean(catalogLabel?.trim()) && catalogLabel !== "—";
+  const brandOk = Boolean(brandName?.trim()) && brandName !== "—";
+  const typeOk = Boolean(brandTypeName?.trim()) && brandTypeName !== "—";
+
+  const categorySubcategoryLine =
+    catalogOk && catalogLabel
+      ? formatCategorySubcategoryLine(catalogLabel)
+      : null;
+  const brandTypeLine = [
+    brandOk ? brandName : null,
+    typeOk ? brandTypeName : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  /** `md+`: una sola línea meta (catálogo · marca · tipo o marca · tipo). */
+  const metaLineDesktop =
+    catalogOk && catalogLabel
+      ? [
+          catalogLabel.trim(),
+          brandOk ? brandName : null,
+          typeOk ? brandTypeName : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : brandTypeLine;
+
   return (
     <div
       className={cn(
-        "relative min-w-0 rounded-xl border border-border/80 bg-card p-5 text-card-foreground",
+        "min-w-0 rounded-xl border border-border/80 bg-card p-5 text-card-foreground",
         "transition-shadow duration-200 hover:shadow-sm",
         className,
       )}
     >
-      {actions ? (
-        <div className="absolute inset-x-0 top-0 z-10 flex justify-end p-3 sm:p-5">
-          <div className="pointer-events-auto shrink-0">{actions}</div>
-        </div>
-      ) : null}
-
-      <div className={cn("space-y-3.5", actions && "pr-10 sm:pr-12")}>
+      <div className="space-y-3.5">
         <div className="flex min-w-0 items-start gap-3">
           {imageUrl ? (
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border border-border/80 bg-muted">
@@ -99,24 +143,60 @@ export function ProductProfileCard({
                 {title}
               </h3>
               <p className="text-xs text-muted-foreground">SKU: {sku}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {catalogLabel && catalogLabel !== "—"
-                  ? `${catalogLabel} · ${brandName} · ${brandTypeName}`
-                  : `${brandName} · ${brandTypeName}`}
-              </p>
+              {metaLineDesktop ? (
+                <p className="hidden truncate text-xs text-muted-foreground md:block">
+                  {metaLineDesktop}
+                </p>
+              ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="hidden flex-wrap items-center gap-2 md:flex">
               <p className="text-sm font-semibold leading-none text-foreground">
                 {formatCurrency(price)}
               </p>
-              <span className={stockBadgeClass(stock)}>
-                {stock <= 0 ? "Sin stock" : `Stock ${stock}`}
-              </span>
-              <span className={activeBadgeClass(active)}>
-                {active ? "Activo" : "Inactivo"}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className={stockBadgeClass(stock)} title="Stock">
+                  <span className="tabular-nums">{stock}</span>
+                  <span> en stock</span>
+                </span>
+                <span className={activeBadgeClass(active)}>
+                  {active ? "Activo" : "Inactivo"}
+                </span>
+              </div>
             </div>
+          </div>
+
+          {actions ? (
+            <div className="shrink-0 self-start">{actions}</div>
+          ) : null}
+        </div>
+
+        <div className="space-y-2.5 border-t border-border/40 pt-3 md:hidden">
+          {categorySubcategoryLine || brandTypeLine ? (
+            <div className="space-y-1">
+              {categorySubcategoryLine ? (
+                <p className="truncate text-sm text-foreground">
+                  {categorySubcategoryLine}
+                </p>
+              ) : null}
+              {brandTypeLine ? (
+                <p className="truncate text-sm text-foreground">
+                  {brandTypeLine}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <p className="text-sm font-semibold leading-none text-foreground">
+            {formatCurrency(price)}
+          </p>
+          <div className="flex items-center gap-1">
+            <span className={stockBadgeClass(stock)} title="Stock">
+              <span className="tabular-nums">{stock}</span>
+              <span> en stock</span>
+            </span>
+            <span className={activeBadgeClass(active)}>
+              {active ? "Activo" : "Inactivo"}
+            </span>
           </div>
         </div>
 

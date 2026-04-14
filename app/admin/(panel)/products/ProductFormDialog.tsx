@@ -51,7 +51,8 @@ import {
   useServiceImagesManager,
   type ExistingServiceImageInput,
 } from "@/components/admin/service-form";
-import { Sparkles, Trash2, RefreshCcw } from "lucide-react";
+import { Trash2, RefreshCcw } from "lucide-react";
+import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
 
 const PRODUCT_FORM_ID = "product-form-slide-over";
 
@@ -195,8 +196,7 @@ export function ProductFormDialog({
     const current = form.getValues("placementSubcategoryId");
     if (!current) return;
     const ok = subcategories.some(
-      (s) =>
-        s.id === current && s.categoryId === watchedPlacementCategoryId,
+      (s) => s.id === current && s.categoryId === watchedPlacementCategoryId,
     );
     if (!ok) {
       form.setValue("placementSubcategoryId", "", {
@@ -345,6 +345,7 @@ export function ProductFormDialog({
       description={
         "Gestiona información comercial, imágenes y características específicas del producto."
       }
+      panelClassName="md:w-[min(90vw,42rem)] lg:w-[55%] lg:max-w-none"
       footer={
         <SlideOverFooter>
           <Button
@@ -366,6 +367,7 @@ export function ProductFormDialog({
         </SlideOverFooter>
       }
       contentAriaLabel="Formulario de producto"
+      contentClassName="bg-background px-4 pb-4 pt-0"
     >
       <ProductFormBody
         key={formKey}
@@ -435,6 +437,23 @@ function ProductFormBody({
   const images = useServiceImagesManager(existingImages);
   const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
 
+  type ProductFormTabId =
+    | "general"
+    | "description"
+    | "pricing"
+    | "media"
+    | "characteristics";
+
+  const PRODUCT_FORM_TABS: { id: ProductFormTabId; label: string }[] = [
+    { id: "general", label: "Información general" },
+    { id: "description", label: "Descripción" },
+    { id: "pricing", label: "Precios e inventario" },
+    { id: "media", label: "Multimedia" },
+    { id: "characteristics", label: "Características" },
+  ];
+
+  const [activeTab, setActiveTab] = useState<ProductFormTabId>("general");
+
   const selectedSet = useMemo(
     () => new Set(characteristics.map((item) => item.specificId)),
     [characteristics],
@@ -455,7 +474,9 @@ function ProductFormBody({
 
   const visibleSpecificOptions = useMemo(() => {
     if (selectedGeneralId === "all") return specificOptions;
-    return specificOptions.filter((item) => item.generalId === selectedGeneralId);
+    return specificOptions.filter(
+      (item) => item.generalId === selectedGeneralId,
+    );
   }, [specificOptions, selectedGeneralId]);
 
   const onSubmitForm = (values: ProductFormValues) => {
@@ -472,466 +493,507 @@ function ProductFormBody({
       id={PRODUCT_FORM_ID}
       form={form}
       onSubmit={onSubmitForm}
-      className="space-y-5"
+      className="flex min-h-0 min-w-0 flex-col gap-0"
     >
-      <section className={adminSlideOverSectionClassName}>
-        <header className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <h2 className="text-sm font-semibold tracking-wide text-foreground">
-            Información básica
-          </h2>
-        </header>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField
-            name="sku"
-            label="SKU"
-            required
-            disabled={isPending}
-            error={errors.sku?.message}
-            className={adminServiceLikeInputClassName}
-            autoComplete="off"
-          />
-          <FormField
-            name="name"
-            label="Nombre"
-            required
-            disabled={isPending}
-            error={errors.name?.message}
-            className={adminServiceLikeInputClassName}
-            autoComplete="off"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="product-description">Descripción</Label>
-          <textarea
-            id="product-description"
-            {...form.register("description")}
-            disabled={isPending}
-            className="min-h-[110px] w-full rounded-lg border border-border/80 bg-background/80 px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring/35"
-            placeholder="Describe brevemente el producto"
-          />
-          {errors.description?.message ? (
-            <p className="text-sm text-destructive">
-              {errors.description.message}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField
-            name="stock"
-            label="Stock"
-            type="number"
-            required
-            disabled={isPending}
-            error={errors.stock?.message}
-            className={adminServiceLikeInputClassName}
-            min={0}
-          />
-          <FormField
-            name="price"
-            label="Precio"
-            type="number"
-            step="0.01"
-            required
-            disabled={isPending}
-            error={errors.price?.message}
-            className={adminServiceLikeInputClassName}
-            min={0}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField
-            name="discountBusinessPct"
-            label="Descuento empresa (%)"
-            type="number"
-            step="0.01"
-            required
-            disabled={isPending}
-            error={errors.discountBusinessPct?.message}
-            className={adminServiceLikeInputClassName}
-            min={0}
-            max={100}
-          />
-          <FormField
-            name="discountClient"
-            label="Descuento cliente (%)"
-            type="number"
-            step="0.01"
-            required
-            disabled={isPending}
-            error={errors.discountClient?.message}
-            className={adminServiceLikeInputClassName}
-            min={0}
-            max={100}
-          />
-        </div>
-
-        <div className="border-t border-border/50 pt-4">
-          <FormSwitchField<ProductFormValues>
-            name="active"
-            label="Activo en catálogo"
-            description="Si está desactivado, el producto no se mostrará en el catálogo público."
-          />
-        </div>
-      </section>
-
-      <section className={adminSlideOverSectionClassName}>
-        <header className="space-y-1">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground">
-            Categoría en catálogo
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Selecciona la categoría y, si existe, marca una subcategoría. Si no
-            marcas ninguna subcategoría, el producto queda solo en la categoría.
-          </p>
-        </header>
-
-        <div className="space-y-4">
-          <FormSelectField<ProductFormValues>
-            name="placementCategoryId"
-            label="Categoría"
-            required
-            instanceId="product-category"
-            options={categoryOptions}
-            placeholder={
-              categoryOptions.length === 0
-                ? "No hay categorías"
-                : "Selecciona una categoría"
-            }
-            isDisabled={isPending || categoryOptions.length === 0}
-            isSearchable
-            useMenuPortal
-          />
-
-          <div className="space-y-2">
-            <Label
-              id="product-subcategory-group-label"
-              className="text-sm font-medium"
-            >
-              Subcategoría
-            </Label>
-            {!watchedPlacementCategoryId ? (
-              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                Primero elige una categoría para ver las subcategorías.
-              </p>
-            ) : subcategoriesForCategory.length === 0 ? (
-              <p className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                Esta categoría no tiene subcategorías; el producto se clasificará
-                únicamente en la categoría elegida.
-              </p>
-            ) : (
-              <Controller
-                name="placementSubcategoryId"
-                control={form.control}
-                render={({ field }) => (
-                  <div
-                    role="radiogroup"
-                    aria-labelledby="product-subcategory-group-label"
-                    className={adminSlideOverNestedScrollClassName}
-                  >
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <label className="flex cursor-pointer items-start gap-3">
-                        <Input
-                          type="radio"
-                          name="product-placement-subcategory"
-                          checked={field.value === ""}
-                          onChange={() => field.onChange("")}
-                          disabled={isPending}
-                          className="mt-0.5 h-4 w-4"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-foreground">
-                            Solo en esta categoría
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Sin subcategoría
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                    {subcategoriesForCategory.map((sub) => (
-                      <div
-                        key={sub.id}
-                        className="rounded-lg border border-border/60 p-3"
-                      >
-                        <label className="flex cursor-pointer items-start gap-3">
-                          <Input
-                            type="radio"
-                            name="product-placement-subcategory"
-                            checked={field.value === sub.id}
-                            onChange={() => field.onChange(sub.id)}
-                            disabled={isPending}
-                            className="mt-0.5 h-4 w-4"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground">
-                              {sub.name}
-                            </p>
-                          </div>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              />
+      <div
+        role="tablist"
+        aria-label="Secciones del formulario de producto"
+        className="sticky top-0 z-[100] -mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-background px-4 pb-3 pt-4 shadow-sm [scrollbar-width:thin]"
+      >
+        {PRODUCT_FORM_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.id}
+            className={cn(
+              "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+              activeTab === t.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
             )}
-          </div>
-          {errors.placementSubcategoryId?.message ? (
-            <p className="text-sm text-destructive">
-              {String(errors.placementSubcategoryId.message)}
-            </p>
-          ) : null}
-        </div>
-      </section>
+            onClick={() => setActiveTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <section className={adminSlideOverSectionClassName}>
-        <header className="space-y-1">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground">
-            Imágenes
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Reordena por drag & drop, define una principal y elimina las que no
-            necesites.
-          </p>
-        </header>
+      <div className="relative z-0 min-h-0 flex-1 space-y-4">
+        {activeTab === "general" && (
+          <section className={adminSlideOverSectionClassName}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-1">
+                <FormField
+                  name="sku"
+                  label="SKU"
+                  required
+                  disabled={isPending}
+                  error={errors.sku?.message}
+                  className={adminServiceLikeInputClassName}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <FormField
+                  name="name"
+                  label="Nombre"
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  className={adminServiceLikeInputClassName}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
 
-        <Dropzone onFilesAdded={images.addFiles} />
-
-        {images.items.length > 0 ? (
-          <ImageGrid
-            items={images.items}
-            onReorder={images.moveImage}
-            onRemove={images.removeImage}
-            onSetPrimary={images.markPrimary}
-            onMoveUp={(key) => images.moveByKeyboard(key, "up")}
-            onMoveDown={(key) => images.moveByKeyboard(key, "down")}
-          />
-        ) : (
-          <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            Aún no hay imágenes. Puedes subir una o varias.
-          </div>
-        )}
-      </section>
-
-      <section className={adminSlideOverSectionClassName}>
-        <header className="space-y-1">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground">
-            Manual PDF (opcional)
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {"Sube el PDF del manual. Al guardar se registrará su URL pública."}
-          </p>
-        </header>
-
-        <div className="rounded-lg border border-border/70 bg-muted/30 p-4 sm:p-5">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <svg
-              className="mt-0.5 h-9 w-9 shrink-0 text-red-500/90 sm:h-10 sm:w-10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+            <div className="grid grid-cols-1 gap-4 border-t border-border/50 pt-4">
+              <FormSelectField<ProductFormValues>
+                name="brandId"
+                label="Marca"
+                required
+                instanceId="product-brand"
+                options={brandOptions}
+                placeholder="Selecciona una marca"
+                isDisabled={isPending}
               />
-            </svg>
+              <FormSelectField<ProductFormValues>
+                name="brandTypeId"
+                label="Tipo por marca"
+                instanceId="product-brand-type"
+                options={brandTypeOptions}
+                placeholder={
+                  brandTypeOptions.length === 0
+                    ? "No hay tipos para esta marca"
+                    : "Selecciona un tipo"
+                }
+                isDisabled={isPending || brandTypeOptions.length === 0}
+              />
+            </div>
 
-            <div className="min-w-0 flex-1">
-              {!manualPdfFile ? (
-                <div className="space-y-2">
-                  <Label htmlFor="product-manual-pdf" className="sr-only">
-                    Subir PDF del manual
-                  </Label>
-                  <label
-                    htmlFor="product-manual-pdf"
-                    className="inline-flex cursor-pointer items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
-                  >
-                    Subir PDF
-                  </label>
-                  <Input
-                    id="product-manual-pdf"
-                    type="file"
-                    accept="application/pdf"
-                    disabled={isPending}
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      setManualPdfFile(f);
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Formato PDF. Máximo 10 MB.
+            <header className="space-y-1 border-t border-border/50 pt-4">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                Categoría en catálogo
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Selecciona la categoría y, si existe, marca una subcategoría. Si
+                no marcas ninguna subcategoría, el producto queda solo en la
+                categoría.
+              </p>
+            </header>
+
+            <div className="space-y-4">
+              <FormSelectField<ProductFormValues>
+                name="placementCategoryId"
+                label="Categoría"
+                required
+                instanceId="product-category"
+                options={categoryOptions}
+                placeholder={
+                  categoryOptions.length === 0
+                    ? "No hay categorías"
+                    : "Selecciona una categoría"
+                }
+                isDisabled={isPending || categoryOptions.length === 0}
+                isSearchable
+                useMenuPortal
+              />
+
+              <div className="space-y-2">
+                <Label
+                  id="product-subcategory-group-label"
+                  className="text-sm font-medium"
+                >
+                  Subcategoría
+                </Label>
+                {!watchedPlacementCategoryId ? (
+                  <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                    Primero elige una categoría para ver las subcategorías.
                   </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    id="product-manual-pdf"
-                    type="file"
-                    accept="application/pdf"
-                    disabled={isPending}
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      setManualPdfFile(f);
-                    }}
-                  />
-                  <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3">
-                    <span className="truncate text-sm text-foreground">
-                      {manualPdfFile.name}
-                    </span>
-                    <TooltipProvider delayDuration={120}>
-                      <div className="flex items-center gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <label
-                              htmlFor="product-manual-pdf"
-                              className="cursor-pointer inline-flex items-center justify-center rounded-md p-1 text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-                            >
-                              <RefreshCcw className="h-4 w-4" aria-hidden />
-                              <span className="sr-only">Reemplazar</span>
+                ) : subcategoriesForCategory.length === 0 ? (
+                  <p className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                    Esta categoría no tiene subcategorías; el producto se
+                    clasificará únicamente en la categoría elegida.
+                  </p>
+                ) : (
+                  <Controller
+                    name="placementSubcategoryId"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="product-subcategory-group-label"
+                        className={adminSlideOverNestedScrollClassName}
+                      >
+                        <div className="rounded-lg border border-border/60 p-3">
+                          <label className="flex cursor-pointer items-start gap-3">
+                            <Input
+                              type="radio"
+                              name="product-placement-subcategory"
+                              checked={field.value === ""}
+                              onChange={() => field.onChange("")}
+                              disabled={isPending}
+                              className="mt-0.5 h-4 w-4"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground">
+                                Solo en esta categoría
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Sin subcategoría
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                        {subcategoriesForCategory.map((sub) => (
+                          <div
+                            key={sub.id}
+                            className="rounded-lg border border-border/60 p-3"
+                          >
+                            <label className="flex cursor-pointer items-start gap-3">
+                              <Input
+                                type="radio"
+                                name="product-placement-subcategory"
+                                checked={field.value === sub.id}
+                                onChange={() => field.onChange(sub.id)}
+                                disabled={isPending}
+                                className="mt-0.5 h-4 w-4"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-foreground">
+                                  {sub.name}
+                                </p>
+                              </div>
                             </label>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="top"
-                            align="center"
-                            className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
-                          >
-                            Reemplazar
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => setManualPdfFile(null)}
-                              className="inline-flex items-center justify-center rounded-md p-1 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden />
-                              <span className="sr-only">Eliminar</span>
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="top"
-                            align="center"
-                            className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
-                          >
-                            Eliminar
-                          </TooltipContent>
-                        </Tooltip>
+                          </div>
+                        ))}
                       </div>
-                    </TooltipProvider>
-                  </div>
+                    )}
+                  />
+                )}
+              </div>
+              {errors.placementSubcategoryId?.message ? (
+                <p className="text-sm text-destructive">
+                  {String(errors.placementSubcategoryId.message)}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<ProductFormValues>
+                name="active"
+                label="Activo en catálogo"
+                description="Si está desactivado, el producto no se mostrará en el catálogo público."
+              />
+            </div>
+          </section>
+        )}
+
+        {activeTab === "description" && (
+          <section className={adminSlideOverSectionClassName}>
+            <Controller
+              name="description"
+              control={form.control}
+              render={({ field }) => (
+                <ProductDescriptionEditor
+                  id="product-description-rich"
+                  label="Descripción"
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={isPending}
+                  error={errors.description?.message}
+                />
+              )}
+            />
+          </section>
+        )}
+
+        {activeTab === "pricing" && (
+          <section className={adminSlideOverSectionClassName}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                name="stock"
+                label="Stock"
+                type="number"
+                required
+                disabled={isPending}
+                error={errors.stock?.message}
+                className={adminServiceLikeInputClassName}
+                min={0}
+              />
+              <FormField
+                name="price"
+                label="Precio"
+                type="number"
+                step="0.01"
+                required
+                disabled={isPending}
+                error={errors.price?.message}
+                className={adminServiceLikeInputClassName}
+                min={0}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                name="discountBusinessPct"
+                label="Descuento empresa (%)"
+                type="number"
+                step="0.01"
+                required
+                disabled={isPending}
+                error={errors.discountBusinessPct?.message}
+                className={adminServiceLikeInputClassName}
+                min={0}
+                max={100}
+              />
+              <FormField
+                name="discountClient"
+                label="Descuento cliente (%)"
+                type="number"
+                step="0.01"
+                required
+                disabled={isPending}
+                error={errors.discountClient?.message}
+                className={adminServiceLikeInputClassName}
+                min={0}
+                max={100}
+              />
+            </div>
+          </section>
+        )}
+
+        {activeTab === "media" && (
+          <>
+            <section className={adminSlideOverSectionClassName}>
+              <header className="space-y-1">
+                <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                  Imágenes
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Reordena por drag & drop, define una principal y elimina las
+                  que no necesites.
+                </p>
+              </header>
+
+              <Dropzone onFilesAdded={images.addFiles} />
+
+              {images.items.length > 0 ? (
+                <ImageGrid
+                  items={images.items}
+                  onReorder={images.moveImage}
+                  onRemove={images.removeImage}
+                  onSetPrimary={images.markPrimary}
+                  onMoveUp={(key) => images.moveByKeyboard(key, "up")}
+                  onMoveDown={(key) => images.moveByKeyboard(key, "down")}
+                />
+              ) : (
+                <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                  Aún no hay imágenes. Puedes subir una o varias.
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
 
-      <section className={adminSlideOverSectionClassName}>
-        <div className="grid grid-cols-1 gap-4">
-          <FormSelectField<ProductFormValues>
-            name="brandId"
-            label="Marca"
-            required
-            instanceId="product-brand"
-            options={brandOptions}
-            placeholder="Selecciona una marca"
-            isDisabled={isPending}
-          />
-          <FormSelectField<ProductFormValues>
-            name="brandTypeId"
-            label="Tipo por marca"
-            instanceId="product-brand-type"
-            options={brandTypeOptions}
-            placeholder={
-              brandTypeOptions.length === 0
-                ? "No hay tipos para esta marca"
-                : "Selecciona un tipo"
-            }
-            isDisabled={isPending || brandTypeOptions.length === 0}
-          />
-        </div>
-      </section>
+            <section className={adminSlideOverSectionClassName}>
+              <header className="space-y-1">
+                <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                  Manual PDF (opcional)
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {
+                    "Sube el PDF del manual. Al guardar se registrará su URL pública."
+                  }
+                </p>
+              </header>
 
-      <section className={adminSlideOverSectionClassName}>
-        <header className="space-y-1">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground">
-            Características específicas
-          </h2>
-          {/* <p className="text-xs text-muted-foreground">
+              <div className="rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <svg
+                    className="mt-0.5 h-9 w-9 shrink-0 text-red-500/90 sm:h-10 sm:w-10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+                    />
+                  </svg>
+
+                  <div className="min-w-0 flex-1">
+                    {!manualPdfFile ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="product-manual-pdf" className="sr-only">
+                          Subir PDF del manual
+                        </Label>
+                        <label
+                          htmlFor="product-manual-pdf"
+                          className="inline-flex cursor-pointer items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
+                        >
+                          Subir PDF
+                        </label>
+                        <Input
+                          id="product-manual-pdf"
+                          type="file"
+                          accept="application/pdf"
+                          disabled={isPending}
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            setManualPdfFile(f);
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Formato PDF. Máximo 10 MB.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Input
+                          id="product-manual-pdf"
+                          type="file"
+                          accept="application/pdf"
+                          disabled={isPending}
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            setManualPdfFile(f);
+                          }}
+                        />
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3">
+                          <span className="truncate text-sm text-foreground">
+                            {manualPdfFile.name}
+                          </span>
+                          <TooltipProvider delayDuration={120}>
+                            <div className="flex items-center gap-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <label
+                                    htmlFor="product-manual-pdf"
+                                    className="cursor-pointer inline-flex items-center justify-center rounded-md p-1 text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
+                                  >
+                                    <RefreshCcw
+                                      className="h-4 w-4"
+                                      aria-hidden
+                                    />
+                                    <span className="sr-only">Reemplazar</span>
+                                  </label>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="top"
+                                  align="center"
+                                  className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
+                                >
+                                  Reemplazar
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualPdfFile(null)}
+                                    className="inline-flex items-center justify-center rounded-md p-1 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" aria-hidden />
+                                    <span className="sr-only">Eliminar</span>
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="top"
+                                  align="center"
+                                  className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
+                                >
+                                  Eliminar
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeTab === "characteristics" && (
+          <section className={adminSlideOverSectionClassName}>
+            <header className="space-y-1">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                Características específicas
+              </h2>
+              {/* <p className="text-xs text-muted-foreground">
             Marca las características que aplican al producto y, si quieres,
             añade un valor extra.
           </p> */}
-          <p className="text-xs text-muted-foreground">
-            Marca las características que aplican al producto.
-          </p>
-        </header>
+              <p className="text-xs text-muted-foreground">
+                Marca las características que aplican al producto.
+              </p>
+            </header>
 
-        <div className="space-y-2">
-          <Label htmlFor="specific-general-filter" className="text-sm font-medium">
-            Filtrar por característica general
-          </Label>
-          <Select<GeneralFilterOption, false>
-            instanceId="specific-general-filter"
-            inputId="specific-general-filter"
-            styles={appSelectStyles}
-            options={specificGeneralOptions}
-            value={
-              specificGeneralOptions.find(
-                (option) => option.value === selectedGeneralId,
-              ) ?? specificGeneralOptions[0]
-            }
-            onChange={(option) => {
-              if (option) setSelectedGeneralId(option.value);
-            }}
-            isClearable={false}
-            isSearchable={false}
-            isDisabled={isPending || specificGeneralOptions.length === 0}
-            noOptionsMessage={() => "Sin coincidencias"}
-            className="w-full"
-          />
-        </div>
-
-        <div className={adminSlideOverNestedScrollClassName}>
-          {visibleSpecificOptions.map((item) => {
-            const selected = selectedSet.has(item.id);
-
-            return (
-              <div
-                key={item.id}
-                className="rounded-lg border border-border/60 p-3"
+            <div className="space-y-2">
+              <Label
+                htmlFor="specific-general-filter"
+                className="text-sm font-medium"
               >
-                <label className="flex items-start gap-3">
-                  <Input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => toggleCharacteristic(item.id)}
-                    disabled={isPending}
-                    className="mt-0.5 h-4 w-4"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.generalName}
-                    </p>
-                  </div>
-                </label>
+                Filtrar por característica general
+              </Label>
+              <Select<GeneralFilterOption, false>
+                instanceId="specific-general-filter"
+                inputId="specific-general-filter"
+                styles={appSelectStyles}
+                options={specificGeneralOptions}
+                value={
+                  specificGeneralOptions.find(
+                    (option) => option.value === selectedGeneralId,
+                  ) ?? specificGeneralOptions[0]
+                }
+                onChange={(option) => {
+                  if (option) setSelectedGeneralId(option.value);
+                }}
+                isClearable={false}
+                isSearchable={false}
+                isDisabled={isPending || specificGeneralOptions.length === 0}
+                noOptionsMessage={() => "Sin coincidencias"}
+                className="w-full"
+              />
+            </div>
 
-                {/* Temporalmente oculto: valor opcional por característica específica. */}
-                {/* {selected ? (
+            <div className={adminSlideOverNestedScrollClassName}>
+              {visibleSpecificOptions.map((item) => {
+                const selected = selectedSet.has(item.id);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-border/60 p-3"
+                  >
+                    <label className="flex items-start gap-3">
+                      <Input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleCharacteristic(item.id)}
+                        disabled={isPending}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.generalName}
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Temporalmente oculto: valor opcional por característica específica. */}
+                    {/* {selected ? (
                   <div className="mt-3 space-y-1">
                     <Label htmlFor={`specific-${item.id}`} className="text-xs">
                       Valor (opcional)
@@ -948,16 +1010,18 @@ function ProductFormBody({
                     />
                   </div>
                 ) : null} */}
-              </div>
-            );
-          })}
-          {visibleSpecificOptions.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-              No hay características específicas para este filtro.
-            </p>
-          ) : null}
-        </div>
-      </section>
+                  </div>
+                );
+              })}
+              {visibleSpecificOptions.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                  No hay características específicas para este filtro.
+                </p>
+              ) : null}
+            </div>
+          </section>
+        )}
+      </div>
     </Form>
   );
 }

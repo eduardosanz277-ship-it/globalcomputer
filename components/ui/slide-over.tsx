@@ -82,7 +82,7 @@ export function SlideOver({
             panelClassName,
           )}
         >
-          <header className="relative shrink-0 border-b border-border/70 bg-background px-6 pb-4 pt-4">
+          <header className="relative shrink-0 border-b border-border/70 bg-background px-4 py-4">
             <DialogPrimitive.Close asChild>
               <Button
                 type="button"
@@ -111,7 +111,7 @@ export function SlideOver({
 
           <div
             className={cn(
-              "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5",
+              "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4",
               "overscroll-y-contain",
               contentClassName,
             )}

@@ -32,7 +32,6 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { deleteProductAction } from "./actions";
 import { ProductFormDialog } from "./ProductFormDialog";
 import { ProductDetailDrawer } from "./ProductDetailDrawer";
-import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
@@ -69,9 +68,30 @@ function formatCurrency(value: number): string {
 }
 
 function stockBadgeClass(stock: number): string {
-  return stock <= 0
-    ? "inline-flex items-center rounded-full bg-neutral-600 px-2.5 py-1 text-xs font-medium text-white"
-    : "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700";
+  /** Misma caja que `activeBadgeClass` + borde de color acorde al nivel de stock. */
+  const base =
+    "inline-flex items-center justify-center gap-0.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium";
+  if (stock <= 0) {
+    return `${base} border-red-200/90 bg-red-100 text-red-800 dark:border-red-800/50 dark:bg-red-950/45 dark:text-red-200`;
+  }
+  if (stock <= 10) {
+    return `${base} border-amber-200/90 bg-amber-100 text-amber-900 dark:border-amber-800/45 dark:bg-amber-950/40 dark:text-amber-200`;
+  }
+  return `${base} border-emerald-200/90 bg-emerald-100 text-emerald-700 dark:border-emerald-800/45 dark:bg-emerald-950/35 dark:text-emerald-200`;
+}
+
+/** Texto categoría / subcategoría a partir de `catalogLabel` («Padre › Hijo» o solo categoría). */
+function formatProductCategoryLine(catalogLabel: string): string {
+  const t = catalogLabel.trim();
+  if (!t || t === "—") return "—";
+  const parts = t
+    .split(/\s*›\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]} · ${parts[1]}`;
+  }
+  return parts[0] ?? "—";
 }
 
 function activeBadgeClass(active: boolean): string {
@@ -302,7 +322,7 @@ export function AdminProductsTable({
       {
         id: "product",
         accessorFn: (row) =>
-          `${row.name} ${row.sku} ${row.catalogLabel} ${row.description ?? ""}`,
+          `${row.name} ${row.sku} ${row.brandName} ${row.brandTypeName} ${row.catalogLabel} ${row.description ?? ""}`,
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           rowA.original.name.localeCompare(rowB.original.name, "es", {
@@ -319,11 +339,11 @@ export function AdminProductsTable({
         ),
         meta: {
           cellClassName:
-            "min-w-0 max-w-[min(28rem,65vw)] md:max-w-[min(20rem,38vw)]",
+            "min-w-0 max-w-[min(32.25rem,65vw)] md:max-w-[min(24.25rem,38vw)]",
         },
         cell: ({ row }) => {
           const p = row.original;
-          const desc = p.description?.trim();
+          const categoryLine = formatProductCategoryLine(p.catalogLabel);
           return (
             <div className="flex min-w-0 items-center gap-3">
               {p.imageUrl ? (
@@ -347,16 +367,21 @@ export function AdminProductsTable({
                   {p.name}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  SKU: {p.sku} · {p.catalogLabel} · {p.brandName} ·{" "}
-                  {p.brandTypeName}
+                  <span className="tabular-nums">{p.sku}</span>
+                  <span className="text-muted-foreground/80"> · </span>
+                  <span>{p.brandName}</span>
+                  {p.brandTypeName && p.brandTypeName !== "—" ? (
+                    <>
+                      <span className="text-muted-foreground/80"> · </span>
+                      <span>{p.brandTypeName}</span>
+                    </>
+                  ) : null}
                 </p>
-                {desc ? (
-                  <p className="line-clamp-1 text-xs text-muted-foreground">
-                    {desc}
+                {categoryLine !== "—" ? (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {categoryLine}
                   </p>
-                ) : (
-                  <AdminTableEmptyEmDash className="text-xs" />
-                )}
+                ) : null}
               </div>
             </div>
           );
@@ -366,23 +391,25 @@ export function AdminProductsTable({
         accessorKey: "stock",
         enableSorting: true,
         sortingFn: (rowA, rowB) => rowA.original.stock - rowB.original.stock,
-        meta: { cellClassName: "w-[7.5rem]" },
+        meta: { cellClassName: "w-[11.5rem] min-w-[11.5rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
             label="Stock"
             ariaLabelIdle="Ordenar por stock"
-            ariaLabelAsc="Stock menor a mayor. Clic para invertir"
-            ariaLabelDesc="Stock mayor a menor. Clic para quitar orden"
+            ariaLabelAsc="Menor a mayor stock. Clic para invertir"
+            ariaLabelDesc="Mayor a menor stock. Clic para quitar orden"
           />
         ),
-        cell: ({ row }) => (
-          <span className={stockBadgeClass(row.original.stock)}>
-            {row.original.stock <= 0
-              ? "Sin stock"
-              : `${row.original.stock} en stock`}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const n = row.original.stock;
+          return (
+            <span className={stockBadgeClass(n)}>
+              <span className="tabular-nums">{n}</span>
+              <span> en stock</span>
+            </span>
+          );
+        },
       },
       {
         id: "active",
@@ -448,7 +475,7 @@ export function AdminProductsTable({
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
-        meta: { cellClassName: "w-[10rem]" },
+        meta: { cellClassName: "w-[12rem] min-w-[12rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -464,14 +491,19 @@ export function AdminProductsTable({
           const absolute = formatDateDdMmYyyyHhMm(raw);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">{absolute}</span>
+              <span
+                className="block truncate text-sm text-muted-foreground"
+                title={absolute}
+              >
+                {absolute}
+              </span>
             );
           }
           return (
             <TooltipProvider delayDuration={120}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-sm text-muted-foreground">
+                  <span className="block max-w-full cursor-help truncate text-sm text-muted-foreground">
                     {relative}
                   </span>
                 </TooltipTrigger>
@@ -494,7 +526,11 @@ export function AdminProductsTable({
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
+        meta: {
+          align: "right",
+          cellClassName:
+            "min-w-[4.25rem] w-[4.25rem] max-w-[4.25rem] shrink-0 pl-2.5 md:pl-3",
+        },
         header: () => <span className="sr-only">Acciones</span>,
         cell: ({ row }) => (
           <RowActions

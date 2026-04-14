@@ -13,6 +13,7 @@ import type { Product } from "@/modules/admin/products/products.types";
 import { Button } from "@/components/ui/button";
 import { SlideOver } from "@/components/ui/slide-over";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 
 type Props = {
   product: Product | null;
@@ -66,6 +67,7 @@ export function ProductDetailDrawer({
         onClose={onClose}
         title="Detalles del producto"
         description="Información general y comercial del producto."
+        panelClassName="md:w-[min(90vw,42rem)] lg:w-1/2 lg:max-w-none"
         contentAriaLabel="Detalles del producto"
       >
         <p className="text-sm text-muted-foreground">
@@ -81,6 +83,7 @@ export function ProductDetailDrawer({
       onClose={onClose}
       title="Detalles del producto"
       description="Información general y comercial del producto."
+      panelClassName="md:w-[min(90vw,42rem)] lg:w-1/2 lg:max-w-none"
       contentAriaLabel="Detalles del producto"
     >
       <div className="space-y-4 md:space-y-5">
@@ -274,9 +277,9 @@ export function ProductDetailDrawer({
         <section className="rounded-xl border border-border/70 bg-card p-4">
           <h3 className="text-sm font-medium text-foreground">Descripción</h3>
           {product.description?.trim() ? (
-            <p className="mt-3 text-sm leading-6 text-foreground">
-              {product.description}
-            </p>
+            <div className="mt-3 text-sm">
+              <ProductDescriptionViewer descripcion={product.description} />
+            </div>
           ) : (
             <div className="mt-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
               Sin descripción

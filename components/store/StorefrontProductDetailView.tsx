@@ -25,6 +25,7 @@ import { stockBadgeClass } from "@/lib/storefront-stock";
 import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
 import { cn } from "@/utils/cn";
+import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -466,15 +467,13 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
             </div>
           </div>
 
-          {product.description ? (
+          {product.description?.trim() ? (
             <section className="space-y-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Descripción
               </h2>
               <div className="rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur-sm">
-                <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                  {product.description}
-                </div>
+                <ProductDescriptionViewer descripcion={product.description} />
               </div>
             </section>
           ) : null}

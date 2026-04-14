@@ -34,7 +34,7 @@ export const productFormSchema = z.object({
     .transform((s) => s.trim()),
   description: z
     .string()
-    .max(4000, "Máximo 4000 caracteres")
+    .max(200000, "La descripción HTML supera el tamaño máximo permitido")
     .transform((s) => s.trim()),
   stock: z.coerce
     .number({ invalid_type_error: "Ingresa un stock válido" })
