@@ -474,10 +474,10 @@ export function AdminProductsTable({
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <span className={discountBadgeClass("business")}>
-              Empresa {row.original.discountBusinessPct}%
+              Emp. {row.original.discountBusinessPct}%
             </span>
             <span className={discountBadgeClass("client")}>
-              Cliente {row.original.discountClient}%
+              Cte. {row.original.discountClient}%
             </span>
           </div>
         ),

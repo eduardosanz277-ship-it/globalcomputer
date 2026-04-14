@@ -432,7 +432,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
                 </>
               ) : null}
             </p>
-            <p className="mt-3 text-sm tabular-nums text-muted-foreground">
+            <p className="mt-3 text-sm tabular-nums text-muted-foreground font-medium">
               SKU: <span className="text-foreground">{product.sku}</span>
             </p>
           </div>

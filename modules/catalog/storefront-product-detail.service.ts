@@ -71,19 +71,19 @@ function relationName(
 function specificRelation(
   rel:
     | {
-        name: string;
-        product_characteristics_general:
-          | { name: string }
-          | { name: string }[]
-          | null;
-      }
+      name: string;
+      product_characteristics_general:
+      | { name: string }
+      | { name: string }[]
+      | null;
+    }
     | {
-        name: string;
-        product_characteristics_general:
-          | { name: string }
-          | { name: string }[]
-          | null;
-      }[]
+      name: string;
+      product_characteristics_general:
+      | { name: string }
+      | { name: string }[]
+      | null;
+    }[]
     | null
     | undefined,
 ) {
@@ -106,11 +106,11 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
 
   const rawCv = row.product_characteristic_values as
     | Array<{
-        id: string;
-        characteristic_specific_id: string;
-        value: string | null;
-        product_characteristics_specific: unknown;
-      }>
+      id: string;
+      characteristic_specific_id: string;
+      value: string | null;
+      product_characteristics_specific: unknown;
+    }>
     | null
     | undefined;
 
@@ -120,22 +120,22 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     .map((cv) => {
       const specific = specificRelation(
         cv.product_characteristics_specific as
-          | {
-              name: string;
-              product_characteristics_general:
-                | { name: string }
-                | { name: string }[]
-                | null;
-            }
-          | {
-              name: string;
-              product_characteristics_general:
-                | { name: string }
-                | { name: string }[]
-                | null;
-            }[]
-          | null
-          | undefined,
+        | {
+          name: string;
+          product_characteristics_general:
+          | { name: string }
+          | { name: string }[]
+          | null;
+        }
+        | {
+          name: string;
+          product_characteristics_general:
+          | { name: string }
+          | { name: string }[]
+          | null;
+        }[]
+        | null
+        | undefined,
       );
       const generalName = relationName(
         specific?.product_characteristics_general ?? null,
