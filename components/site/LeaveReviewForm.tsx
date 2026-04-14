@@ -46,6 +46,7 @@ export function LeaveReviewForm() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "same-origin",
         cache: "no-store",
       });
 
@@ -58,13 +59,19 @@ export function LeaveReviewForm() {
       setFormState(defaultFormState);
     } catch (error) {
       console.error("LeaveReviewForm submit", error);
-      setErrorMessage(error instanceof Error ? error.message : "Error inesperado.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Error inesperado.",
+      );
       setStatus("error");
     }
   };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
+      {/* <p className="text-sm text-muted-foreground">
+        No necesitas tener cuenta: puedes enviar tu reseña como invitado. Si inicias
+        sesión, la reseña puede asociarse a tu perfil.
+      </p> */}
       <div className="rounded-2xl border border-border/60 bg-white p-6 shadow-sm dark:bg-card">
         <div className="grid gap-4">
           <Input
