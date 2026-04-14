@@ -28,7 +28,10 @@ export function LeaveReviewForm() {
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleChange = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+  const handleChange = <K extends keyof FormState>(
+    field: K,
+    value: FormState[K],
+  ) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -100,7 +103,10 @@ export function LeaveReviewForm() {
             )}
             value={formState.rating}
             onChange={(event) =>
-              handleChange("rating", Number(event.target.value) as FormState["rating"])
+              handleChange(
+                "rating",
+                Number(event.target.value) as FormState["rating"],
+              )
             }
             required
           >
@@ -128,7 +134,10 @@ export function LeaveReviewForm() {
       ) : null}
 
       {status === "error" && errorMessage ? (
-        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <p
+          className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
