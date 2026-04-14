@@ -353,15 +353,8 @@ export function AdminProductsTable({
                   {p.name}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
+                  <span className="font-medium">SKU:</span>{" "}
                   <span className="tabular-nums">{p.sku}</span>
-                  <span className="text-muted-foreground/80"> · </span>
-                  <span>{p.brandName}</span>
-                  {p.brandTypeName && p.brandTypeName !== "—" ? (
-                    <>
-                      <span className="text-muted-foreground/80"> · </span>
-                      <span>{p.brandTypeName}</span>
-                    </>
-                  ) : null}
                 </p>
                 {categoryLine !== "—" ? (
                   <p className="truncate text-xs text-muted-foreground">
@@ -372,6 +365,60 @@ export function AdminProductsTable({
             </div>
           );
         },
+      },
+      {
+        id: "brand",
+        accessorFn: (row) => `${row.brandName} ${row.brandTypeName ?? ""}`,
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          rowA.original.brandName.localeCompare(rowB.original.brandName, "es", {
+            sensitivity: "base",
+          }),
+        meta: { cellClassName: "w-[10rem] min-w-[10rem]" },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Marca"
+            ariaLabelIdle="Ordenar por marca"
+            ariaLabelAsc="Marca de la A a la Z. Clic para invertir"
+            ariaLabelDesc="Marca de la Z a la A. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => {
+          const p = row.original;
+          return (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {p.brandName}
+              </p>
+              {p.brandTypeName && p.brandTypeName !== "—" ? (
+                <p className="truncate text-xs text-muted-foreground">
+                  {p.brandTypeName}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "price",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => rowA.original.price - rowB.original.price,
+        meta: { cellClassName: "w-[7.5rem]" },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label="Precio"
+            ariaLabelIdle="Ordenar por precio"
+            ariaLabelAsc="Precio menor a mayor. Clic para invertir"
+            ariaLabelDesc="Precio mayor a menor. Clic para quitar orden"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="text-base font-semibold text-foreground">
+            {formatCurrency(row.original.price)}
+          </span>
+        ),
       },
       {
         accessorKey: "stock",
@@ -416,26 +463,6 @@ export function AdminProductsTable({
         cell: ({ row }) => (
           <span className={activeBadgeClass(row.original.active)}>
             {row.original.active ? "Activo" : "Inactivo"}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "price",
-        enableSorting: true,
-        sortingFn: (rowA, rowB) => rowA.original.price - rowB.original.price,
-        meta: { cellClassName: "w-[7.5rem]" },
-        header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            label="Precio"
-            ariaLabelIdle="Ordenar por precio"
-            ariaLabelAsc="Precio menor a mayor. Clic para invertir"
-            ariaLabelDesc="Precio mayor a menor. Clic para quitar orden"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="text-base font-semibold text-foreground">
-            {formatCurrency(row.original.price)}
           </span>
         ),
       },
