@@ -5,7 +5,12 @@ import { getCurrentUserService } from "@/modules/auth/auth.service";
 
 const createReviewSchema = z.object({
   name: z.string().min(2).max(120),
-  email: z.string().email().optional(),
+  /** Opcional; vacío o solo espacios → sin email (válido para invitados). */
+  email: z.preprocess(
+    (val) =>
+      typeof val === "string" && val.trim() === "" ? undefined : val,
+    z.string().email().optional(),
+  ),
   rating: z.number().int().min(1).max(5),
   comment: z.string().min(10).max(1200),
 });
@@ -29,6 +34,7 @@ export async function POST(req: Request) {
     );
   }
 
+  /** Sesión opcional: invitados envían `user_id` null; si hay login, se asocia la reseña. */
   const user = await getCurrentUserService();
 
   try {

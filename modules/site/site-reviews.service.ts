@@ -17,8 +17,9 @@ export type CreateSiteReviewPayload = {
 };
 
 /**
- * Inserta una reseña en `public.site_reviews`. Si `userId` se proporciona,
- * se relaciona para permitir seguimiento y posibles futuros cambios del usuario.
+ * Inserta una reseña en `public.site_reviews`.
+ * `userId` puede ser null (invitado): el cliente Supabase usa rol `anon` y RLS
+ * debe permitir INSERT sin sesión (ver migraciones `site_reviews`).
  */
 export async function createSiteReview(
   payload: CreateSiteReviewPayload,
