@@ -3,8 +3,6 @@
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 
 export type ProductProfileCardProps = {
   name: string;
@@ -17,7 +15,6 @@ export type ProductProfileCardProps = {
   price: number;
   stock: number;
   active: boolean;
-  updatedAt: string;
   className?: string;
   actions?: React.ReactNode;
 };
@@ -75,22 +72,24 @@ export function ProductProfileCard({
   price,
   stock,
   active,
-  updatedAt,
   className,
   actions,
 }: ProductProfileCardProps) {
   const title = name.trim() || "—";
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
 
   const catalogOk = Boolean(catalogLabel?.trim()) && catalogLabel !== "—";
   const brandOk = Boolean(brandName?.trim()) && brandName !== "—";
   const typeOk = Boolean(brandTypeName?.trim()) && brandTypeName !== "—";
 
-  const categorySubcategoryLine =
-    catalogOk && catalogLabel
-      ? formatCategorySubcategoryLine(catalogLabel)
-      : null;
+  const categorySubcategoryLine = catalogOk && catalogLabel ? catalogLabel : null;
+  const categoryParts = categorySubcategoryLine
+    ? categorySubcategoryLine
+        .split(/\s*›\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+  const categoryName = categoryParts[0] ?? null;
+  const subcategoryName = categoryParts[1] ?? null;
   const brandTypeLine = [
     brandOk ? brandName : null,
     typeOk ? brandTypeName : null,
@@ -198,13 +197,6 @@ export function ProductProfileCard({
               {active ? "Activo" : "Inactivo"}
             </span>
           </div>
-        </div>
-
-        <div className="space-y-1 border-t border-border/60 pt-3">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
-          <p className="text-sm text-foreground" title={absolute || undefined}>
-            {relative != null ? relative : absolute}
-          </p>
         </div>
       </div>
     </div>
