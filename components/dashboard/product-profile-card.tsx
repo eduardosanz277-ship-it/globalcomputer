@@ -27,20 +27,6 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-/** Categoría · subcategoría a partir de `catalogLabel` («Padre › Hijo» o solo categoría). */
-function formatCategorySubcategoryLine(catalogLabel: string): string | null {
-  const t = catalogLabel.trim();
-  if (!t || t === "—") return null;
-  const parts = t
-    .split(/\s*›\s*/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0]} · ${parts[1]}`;
-  }
-  return parts[0] ?? null;
-}
-
 function stockBadgeClass(stock: number): string {
   /** Base compartida con `activeBadgeClass` (mismo alto visual). */
   const base =
@@ -141,7 +127,9 @@ export function ProductProfileCard({
               <h3 className="truncate text-base font-semibold leading-snug text-foreground">
                 {title}
               </h3>
-              <p className="text-xs text-muted-foreground">SKU: {sku}</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">SKU:</span> {sku}
+              </p>
               {metaLineDesktop ? (
                 <p className="hidden truncate text-xs text-muted-foreground md:block">
                   {metaLineDesktop}
@@ -171,16 +159,26 @@ export function ProductProfileCard({
         </div>
 
         <div className="space-y-2.5 border-t border-border/40 pt-3 md:hidden">
-          {categorySubcategoryLine || brandTypeLine ? (
-            <div className="space-y-1">
-              {categorySubcategoryLine ? (
+          {categoryName || subcategoryName || brandOk || typeOk ? (
+            <div className="space-y-0.5">
+              {categoryName ? (
                 <p className="truncate text-sm text-foreground">
-                  {categorySubcategoryLine}
+                  {categoryName}
                 </p>
               ) : null}
-              {brandTypeLine ? (
+              {subcategoryName ? (
+                <p className="truncate text-xs text-muted-foreground">
+                  {subcategoryName}
+                </p>
+              ) : null}
+              {brandOk ? (
                 <p className="truncate text-sm text-foreground">
-                  {brandTypeLine}
+                  {brandName}
+                </p>
+              ) : null}
+              {typeOk ? (
+                <p className="truncate text-xs text-muted-foreground">
+                  {brandTypeName}
                 </p>
               ) : null}
             </div>
