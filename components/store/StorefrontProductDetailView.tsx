@@ -122,8 +122,8 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
 
   return (
     <div className={cn(inter.className, "pb-16")}>
-      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-10">
-        <div className="space-y-4">
+      <div className="grid items-start gap-4 lg:[grid-template-columns:55%_45%] lg:gap-10">
+        <div className="min-w-0 space-y-5">
           <div
             className={cn(
               "grid gap-1 md:gap-3",
@@ -314,9 +314,20 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
               </div>
             ) : null}
           </div>
+
+          {product.description?.trim() ? (
+            <section className="hidden space-y-2 lg:block">
+              <h2 className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
+                Descripción
+              </h2>
+              <div className="rounded-2xl border border-border/70 bg-card/80 px-6 shadow-sm backdrop-blur-sm">
+                <ProductDescriptionViewer descripcion={product.description} />
+              </div>
+            </section>
+          ) : null}
         </div>
 
-        <div className="lg:sticky lg:top-28 space-y-6">
+        <div className="min-w-0 space-y-6 lg:sticky lg:top-28">
           <div>
             {pct > 0 || isNew ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -467,17 +478,6 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
             </div>
           </div>
 
-          {product.description?.trim() ? (
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Descripción
-              </h2>
-              <div className="rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur-sm">
-                <ProductDescriptionViewer descripcion={product.description} />
-              </div>
-            </section>
-          ) : null}
-
           {product.manual_pdf_url ? (
             <a
               href={product.manual_pdf_url}
@@ -490,6 +490,20 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
             </a>
           ) : null}
 
+          {product.description?.trim() ? (
+            <section className="space-y-2 lg:hidden">
+              <h2 className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
+                Descripción
+              </h2>
+              <div className="rounded-2xl border border-border/70 bg-card/80 px-6 shadow-sm backdrop-blur-sm">
+                <ProductDescriptionViewer descripcion={product.description} />
+              </div>
+            </section>
+          ) : null}
+
+          {/*
+            Sección ocultada temporalmente por solicitud.
+            Para reactivar, descomentar este bloque.
           {charGroups.length > 0 ? (
             <section className="space-y-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -524,6 +538,7 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
               </div>
             </section>
           ) : null}
+          */}
         </div>
       </div>
     </div>

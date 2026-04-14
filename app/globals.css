@@ -358,46 +358,59 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
 }
 
 /* ========== Descripción rica de productos (Tiptap + vista pública) ========== */
-.tiptap-editor-surface .ProseMirror {
+.tiptap-editor-surface.ProseMirror {
   min-height: 220px;
   outline: none;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-.tiptap-editor-surface .ProseMirror p {
+.tiptap-editor-surface.ProseMirror p {
   margin: 0.35em 0;
 }
 
-.tiptap-editor-surface .ProseMirror h1,
-.tiptap-editor-surface .ProseMirror h2,
-.tiptap-editor-surface .ProseMirror h3,
-.tiptap-editor-surface .ProseMirror h4 {
-  font-weight: 600;
+.tiptap-editor-surface.ProseMirror h1,
+.tiptap-editor-surface.ProseMirror h2,
+.tiptap-editor-surface.ProseMirror h3,
+.tiptap-editor-surface.ProseMirror h4 {
+  font-weight: 700;
   margin: 0.75em 0 0.35em;
   line-height: 1.25;
 }
 
-.tiptap-editor-surface .ProseMirror h1 {
-  font-size: 1.35rem;
+.tiptap-editor-surface.ProseMirror h1 {
+  font-size: 1.65rem;
 }
 
-.tiptap-editor-surface .ProseMirror h2 {
+.tiptap-editor-surface.ProseMirror h2 {
+  font-size: 1.375rem;
+}
+
+.tiptap-editor-surface.ProseMirror h3 {
+  font-size: 1.2rem;
+}
+
+.tiptap-editor-surface.ProseMirror h4 {
   font-size: 1.125rem;
 }
 
-.tiptap-editor-surface .ProseMirror h3 {
-  font-size: 1.05rem;
+/* Evita `bolder` en strong/b (preflight Tailwind → ~900 sobre padre 700). */
+.tiptap-editor-surface.ProseMirror h1 strong,
+.tiptap-editor-surface.ProseMirror h1 b,
+.tiptap-editor-surface.ProseMirror h2 strong,
+.tiptap-editor-surface.ProseMirror h2 b,
+.tiptap-editor-surface.ProseMirror h3 strong,
+.tiptap-editor-surface.ProseMirror h3 b,
+.tiptap-editor-surface.ProseMirror h4 strong,
+.tiptap-editor-surface.ProseMirror h4 b {
+  font-weight: inherit;
 }
 
-.tiptap-editor-surface .ProseMirror h4 {
-  font-size: 0.98rem;
-}
-
-.tiptap-editor-surface .ProseMirror u {
+.tiptap-editor-surface.ProseMirror u {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.tiptap-editor-surface .ProseMirror blockquote {
+.tiptap-editor-surface.ProseMirror blockquote {
   margin: 0.65em 0;
   border-left: 3px solid #357fd2;
   padding: 0.35em 0 0.35em 1rem;
@@ -406,75 +419,92 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
   border-radius: 0 0.375rem 0.375rem 0;
 }
 
-.tiptap-editor-surface .ProseMirror blockquote p {
+.tiptap-editor-surface.ProseMirror blockquote p {
   margin: 0.25em 0;
 }
 
-.tiptap-editor-surface .ProseMirror ul,
-.tiptap-editor-surface .ProseMirror ol {
+.tiptap-editor-surface.ProseMirror ul,
+.tiptap-editor-surface.ProseMirror ol {
   margin: 0.35em 0;
-  padding-left: 1.35rem;
+  /* Espacio para marcadores `outside` (misma lógica que .product-description-html). */
+  padding-left: 1.5rem;
 }
 
 /* Preflight de Tailwind anula list-style; restaurar marcadores como en el navegador. */
-.tiptap-editor-surface .ProseMirror ul {
+.tiptap-editor-surface.ProseMirror ul {
   list-style-type: disc;
+  /* `outside`: viñeta/número alineados al margen izquierdo del bloque de lista; el texto
+     cuelga debajo (como Word / la vista previa). `inside` mete el marcador en el flujo y
+     con `<li><p>` de Tiptap queda desalineado respecto al inicio del texto. */
   list-style-position: outside;
 }
 
-.tiptap-editor-surface .ProseMirror ol {
+.tiptap-editor-surface.ProseMirror ol {
   list-style-type: decimal;
   list-style-position: outside;
 }
 
-.tiptap-editor-surface .ProseMirror ul ul {
+.tiptap-editor-surface.ProseMirror ul ul {
   list-style-type: circle;
 }
 
-.tiptap-editor-surface .ProseMirror ul ul ul {
+.tiptap-editor-surface.ProseMirror ul ul ul {
   list-style-type: square;
 }
 
-.tiptap-editor-surface .ProseMirror ol ol {
+.tiptap-editor-surface.ProseMirror ol ol {
   list-style-type: lower-alpha;
 }
 
-.tiptap-editor-surface .ProseMirror ol ol ol {
+.tiptap-editor-surface.ProseMirror ol ol ol {
   list-style-type: lower-roman;
 }
 
-.tiptap-editor-surface .ProseMirror li {
+.tiptap-editor-surface.ProseMirror li {
   display: list-item;
 }
 
-.tiptap-editor-surface .ProseMirror table {
+/* Tiptap envuelve el texto del ítem en <p>; sin esto el margen del párrafo desplaza el texto respecto al marcador. */
+.tiptap-editor-surface.ProseMirror li > p {
+  margin: 0.2em 0;
+}
+
+.tiptap-editor-surface.ProseMirror li > p:first-child {
+  margin-top: 0;
+}
+
+.tiptap-editor-surface.ProseMirror li > p:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-editor-surface.ProseMirror table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0.75em 0;
+  margin: 10px 0;
   font-size: 0.875rem;
 }
 
-.tiptap-editor-surface .ProseMirror th,
-.tiptap-editor-surface .ProseMirror td {
+.tiptap-editor-surface.ProseMirror th,
+.tiptap-editor-surface.ProseMirror td {
   border: 1px solid rgba(216, 216, 217, 0.95);
   padding: 0.45rem 0.6rem;
   vertical-align: top;
 }
 
-.tiptap-editor-surface .ProseMirror th {
+.tiptap-editor-surface.ProseMirror th {
   background: rgba(238, 240, 244, 0.75);
   font-weight: 600;
   text-align: left;
 }
 
-.tiptap-editor-surface .ProseMirror img {
+.tiptap-editor-surface.ProseMirror img {
   max-width: 100%;
   height: auto;
   border-radius: 0.5rem;
 }
 
-.tiptap-editor-surface .ProseMirror hr {
-  margin: 1rem 0;
+.tiptap-editor-surface.ProseMirror hr {
+  margin: 0;
   border: 0;
   border-top: 1px solid rgba(216, 216, 217, 0.85);
 }
@@ -484,6 +514,7 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
  * para coherencia entre panel y catálogo.
  */
 .product-description-html {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.9375rem;
   line-height: 1.65;
   color: rgba(42, 44, 48, 0.92);
@@ -493,25 +524,36 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
 .product-description-html h2,
 .product-description-html h3,
 .product-description-html h4 {
-  font-weight: 600;
+  font-weight: 700;
   color: #2a2c30;
   margin: 1.25rem 0 0.5rem;
 }
 
 .product-description-html h1 {
-  font-size: 1.35rem;
+  font-size: 1.65rem;
 }
 
 .product-description-html h2 {
-  font-size: 1.125rem;
+  font-size: 1.375rem;
 }
 
 .product-description-html h3 {
-  font-size: 1.02rem;
+  font-size: 1.2rem;
 }
 
 .product-description-html h4 {
-  font-size: 0.98rem;
+  font-size: 1.125rem;
+}
+
+.product-description-html h1 strong,
+.product-description-html h1 b,
+.product-description-html h2 strong,
+.product-description-html h2 b,
+.product-description-html h3 strong,
+.product-description-html h3 b,
+.product-description-html h4 strong,
+.product-description-html h4 b {
+  font-weight: inherit;
 }
 
 .product-description-html u {
@@ -589,7 +631,7 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
 .product-description-html table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
+  margin: 10px 0;
   font-size: 0.875rem;
 }
 
@@ -607,7 +649,7 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
 }
 
 .product-description-html hr {
-  margin: 1.25rem 0;
+  margin: 0;
   border: 0;
   border-top: 1px solid rgba(216, 216, 217, 0.85);
 }

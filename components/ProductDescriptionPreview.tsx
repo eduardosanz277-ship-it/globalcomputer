@@ -25,7 +25,7 @@ export function ProductDescriptionPreview({ html, className }: Props) {
         Vista previa
       </p>
       <div
-        className={`rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 py-4 ${className ?? ""}`}
+        className={`rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 ${className ?? ""}`}
       >
         {safe.trim() ? (
           <div

@@ -97,6 +97,9 @@ export function ProductDescriptionEditor({
       StarterKit.configure({
         /** Encabezados H1–H4 (barra y plantillas). */
         heading: { levels: [1, 2, 3, 4] },
+        /** Evita duplicar extensiones: ya van `Link` y `Underline` abajo. */
+        link: false,
+        underline: false,
       }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
@@ -132,7 +135,7 @@ export function ProductDescriptionEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "tiptap-editor-surface px-3 py-3 sm:px-4 sm:py-4 text-sm leading-relaxed",
+          "tiptap-editor-surface font-sans px-3 sm:px-4 text-sm leading-relaxed",
           "focus:outline-none",
         ),
         "aria-label": "Área de edición de descripción",
