@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Eye, MoreVertical, Pencil, Trash2 } from "lucide-react";
 
 const MENU_MIN_WIDTH_PX = 208; // 13rem — mismo ancho que `UsersRowActionsMenu`
+const MENU_ESTIMATED_HEIGHT_PX = 170;
+const VIEWPORT_GUTTER_PX = 8;
+const TRIGGER_GAP_PX = 2;
 
 /**
  * Menú ⋮ con Editar y Eliminar, mismo patrón visual que las acciones de la tabla de Usuarios.
@@ -44,13 +47,30 @@ export function AdminEditDeleteRowMenu({
       const el = triggerRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const left = Math.max(8, r.right - MENU_MIN_WIDTH_PX);
-      setMenuPos({ top: r.bottom + 4, left });
+      const menuHeight = menuRef.current?.offsetHeight ?? MENU_ESTIMATED_HEIGHT_PX;
+      const viewportW = window.innerWidth;
+      const viewportH = window.innerHeight;
+      const left = Math.min(
+        Math.max(VIEWPORT_GUTTER_PX, r.right - MENU_MIN_WIDTH_PX),
+        viewportW - MENU_MIN_WIDTH_PX - VIEWPORT_GUTTER_PX,
+      );
+      const spaceBelow = viewportH - r.bottom - VIEWPORT_GUTTER_PX;
+      const placeAbove = spaceBelow < menuHeight;
+      const rawTop = placeAbove
+        ? r.top - menuHeight - TRIGGER_GAP_PX
+        : r.bottom + TRIGGER_GAP_PX;
+      const top = Math.min(
+        Math.max(VIEWPORT_GUTTER_PX, rawTop),
+        viewportH - menuHeight - VIEWPORT_GUTTER_PX,
+      );
+      setMenuPos({ top, left });
     };
     update();
+    const rafId = window.requestAnimationFrame(update);
     window.addEventListener("scroll", update, true);
     window.addEventListener("resize", update);
     return () => {
+      window.cancelAnimationFrame(rafId);
       window.removeEventListener("scroll", update, true);
       window.removeEventListener("resize", update);
     };
