@@ -1,10 +1,11 @@
 "use client";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
-import { ProfileForm } from "./ProfileForm";
 import { AddressesSection } from "./AddressesSection";
 import { OrdersSection } from "./OrdersSection";
+import { ProfileForm } from "./ProfileForm";
 import type { CuentaAddress, CuentaOrder } from "./types";
 
 type Props = {
@@ -46,32 +47,27 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
   );
 
   return (
-    <div className="rounded-2xl border border-border bg-background/80 p-3 shadow-sm sm:p-5">
-      <div className="flex flex-wrap gap-2">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => setTab(value as CuentaTabId)}
+      className="space-y-6 rounded-2xl  bg-white/60 shadow-sm"
+    >
+      <TabsList>
         {CUENTA_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={
-              activeTab === tab.id
-                ? "rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 transition hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                : "rounded-full border border-border/80 bg-white px-4 py-2 text-sm font-semibold text-muted-foreground shadow-sm transition hover:border-border hover:bg-muted/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
-            }
-            onClick={() => setTab(tab.id)}
-          >
+          <TabsTrigger value={tab.id} key={tab.id}>
             {tab.label}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
-      <div className="mt-6 space-y-6">
-        {activeTab === "profile" && (
-          <ProfileForm initialName={initialName} email={email} />
-        )}
-        {activeTab === "addresses" && (
-          <AddressesSection addresses={addresses} />
-        )}
-        {activeTab === "orders" && <OrdersSection orders={orders} />}
-      </div>
-    </div>
+      </TabsList>
+      <TabsContent value="profile">
+        <ProfileForm initialName={initialName} email={email} />
+      </TabsContent>
+      <TabsContent value="orders">
+        <OrdersSection orders={orders} />
+      </TabsContent>
+      <TabsContent value="addresses">
+        <AddressesSection addresses={addresses} orders={orders} />
+      </TabsContent>
+    </Tabs>
   );
 }

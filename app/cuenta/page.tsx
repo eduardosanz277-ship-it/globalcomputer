@@ -1,9 +1,10 @@
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { Card, CardContent } from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { CuentaTabs } from "./CuentaTabs";
 import { CuentaAddress, CuentaOrder } from "./types";
 
@@ -77,32 +78,34 @@ export default async function CuentaPage() {
       <AdminHeader user={headerUser} variant="standalone" brandHref="/" />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  Mi cuenta
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Tu panel personal actualizado con tendencias actuales por
-                  sección.
-                </p>
+          <Card className="overflow-hidden border border-border/70 bg-card/80 shadow-2xl shadow-primary/10">
+            <CardContent className="space-y-6 text-foreground">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight">
+                    Mi cuenta
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Tu panel personal actualizado con tendencias actuales por
+                    sección.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <Suspense
-              fallback={
-                <div className="min-h-[12rem] animate-pulse rounded-2xl border border-border bg-muted/20" />
-              }
-            >
-              <CuentaTabs
-                initialName={profile?.full_name ?? user.fullName}
-                email={user.email}
-                addresses={mappedAddresses}
-                orders={mappedOrders}
-              />
-            </Suspense>
-          </div>
+              <Suspense
+                fallback={
+                  <div className="min-h-[12rem] animate-pulse rounded-2xl border border-border bg-card/40" />
+                }
+              >
+                <CuentaTabs
+                  initialName={profile?.full_name ?? user.fullName}
+                  email={user.email}
+                  addresses={mappedAddresses}
+                  orders={mappedOrders}
+                />
+              </Suspense>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
