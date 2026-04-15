@@ -19,4 +19,14 @@ export type CuentaOrder = {
   total: number;
   createdAt: string | null;
   itemsCount: number;
+  amountSubtotal: number;
+  amountTax: number;
+  amountShipping: number;
+  stripeAmountTotal: number;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
 };

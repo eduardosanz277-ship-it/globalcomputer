@@ -62,6 +62,7 @@ function addressConfirmLabel(address: CuentaAddress): string {
 
 type Props = {
   addresses: CuentaAddress[];
+  orders?: CuentaOrder[];
 };
 
 export function AddressesSection({ addresses }: Props) {
