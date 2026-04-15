@@ -12,8 +12,11 @@ export function createSupabaseAdminClient() {
     throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL");
   }
   if (!key) {
+    console.error(
+      "SUPABASE_SERVICE_ROLE_KEY no definida en entorno del servidor; lista admin de pedidos no funcionará.",
+    );
     throw new Error(
-      "Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor (operaciones admin: eliminar usuario, etc.)"
+      "Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor (operaciones admin: eliminar usuario, etc.)",
     );
   }
 
