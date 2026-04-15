@@ -820,8 +820,14 @@ export function StorefrontProductDetailView({
                     await new Promise((resolve) =>
                       window.setTimeout(resolve, 220),
                     );
-                    gcCartAddProduct(product.id, cartQty);
+                    await gcCartAddProduct(product.id, cartQty);
                     setCartQty(1);
+                  } catch (error) {
+                    const message =
+                      error instanceof Error
+                        ? error.message
+                        : "No se pudo añadir al carrito.";
+                    toast.error(message);
                   } finally {
                     setIsAddingToCart(false);
                   }

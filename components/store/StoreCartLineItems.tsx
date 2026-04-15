@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
@@ -16,6 +17,12 @@ import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.
 import { cn } from "@/utils/cn";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { cartLineUnitPrice } from "@/components/store/cart-line-price";
+
+function toastCartError(error: unknown) {
+  const message =
+    error instanceof Error ? error.message : "No se pudo actualizar el carrito.";
+  toast.error(message);
+}
 
 function CartLineSkeleton({ dense }: { dense?: boolean }) {
   return (
@@ -46,6 +53,22 @@ function CartLineRow({
   tier: StorefrontPriceTier;
   dense?: boolean;
 }) {
+  const handleRemove = async (id: string) => {
+    try {
+      await gcCartRemoveProduct(id);
+    } catch (error) {
+      toastCartError(error);
+    }
+  };
+
+  const handleQtyChange = async (id: string, nextQty: number, maxQty?: number) => {
+    try {
+      await gcCartSetQty(id, nextQty, maxQty);
+    } catch (error) {
+      toastCartError(error);
+    }
+  };
+
   if (!product) {
     return (
       <div
@@ -62,7 +85,7 @@ function CartLineRow({
           variant="outline"
           size="sm"
           className="shrink-0"
-          onClick={() => gcCartRemoveProduct(item.productId)}
+          onClick={() => void handleRemove(item.productId)}
         >
           Quitar
         </Button>
@@ -118,7 +141,7 @@ function CartLineRow({
             size="icon"
             className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
             aria-label="Eliminar del carrito"
-            onClick={() => gcCartRemoveProduct(product.id)}
+            onClick={() => void handleRemove(product.id)}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
@@ -129,8 +152,10 @@ function CartLineRow({
             max={maxQty}
             className="h-10 rounded-lg border-border/80 bg-white shadow-none dark:bg-white [&>button]:w-8 [&>button_svg]:h-4 [&>button_svg]:w-4 [&>span]:min-w-[2rem] [&>span]:px-1 [&>span]:text-sm"
             allowDecrementAtMin
-            onDecrementAtMin={() => gcCartRemoveProduct(product.id)}
-            onChange={(nextQty) => gcCartSetQty(product.id, nextQty, product.stock)}
+            onDecrementAtMin={() => void handleRemove(product.id)}
+            onChange={(nextQty) =>
+              void handleQtyChange(product.id, nextQty, product.stock)
+            }
           />
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-xs text-muted-foreground">

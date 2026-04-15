@@ -75,7 +75,13 @@ export function StorefrontProductGrid({
     setAddingProductId(productId);
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 220));
-      gcCartAddProduct(productId, 1);
+      await gcCartAddProduct(productId, 1);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo agregar el producto al carrito.";
+      toast.error(message);
     } finally {
       setAddingProductId((current) => (current === productId ? null : current));
     }
