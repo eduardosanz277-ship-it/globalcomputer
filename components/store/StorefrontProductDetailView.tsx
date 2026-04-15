@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -18,10 +19,14 @@ import Select from "react-select";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
+import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
+import {
+  PRODUCT_REVIEW_FORM_ID,
+  ProductReviewForm,
+} from "@/components/site/ProductReviewForm";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
@@ -105,9 +110,11 @@ function StarRatingIcons({ rating }: { rating: number }) {
 function ProductReviewsSection({
   productName,
   rows,
+  onOpenForm,
 }: {
   productName: string;
   rows: ProductReviewDetailListItem[];
+  onOpenForm: () => void;
 }) {
   const [page, setPage] = useState(1);
   const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
@@ -159,16 +166,19 @@ function ProductReviewsSection({
             Reseñas del producto
           </h2>
           <p className="text-sm text-muted-foreground">
-            Opiniones verificadas sobre{" "}
+            Opiniones sobre{" "}
             <span className="font-medium text-foreground">{productName}</span>.
           </p>
         </div>
-        <Link
-          href="/leave-review"
-          className={cn(buttonVariants({ size: "lg" }), "h-11 rounded-xl px-6")}
-        >
-          Escribe una reseña
-        </Link>
+        {rows.length > 0 ? (
+          <Button
+            size="lg"
+            className="h-11 rounded-xl px-6"
+            onClick={onOpenForm}
+          >
+            Escribe una reseña
+          </Button>
+        ) : null}
       </div>
 
       {rows.length === 0 ? null : (
@@ -239,12 +249,14 @@ function ProductReviewsSection({
             Este producto todavía no tiene reseñas. Sé la primera persona en
             compartir su experiencia.
           </p>
-          <Link
-            href="/leave-review"
-            className={cn(buttonVariants(), "mt-4 inline-flex h-10 rounded-lg px-5")}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onOpenForm}
+            className="mt-4 inline-flex h-11 shrink-0 rounded-2xl border-primary/30 bg-card px-5 font-semibold text-primary hover:bg-primary/5"
           >
             Escribe la primera reseña
-          </Link>
+          </Button>
         </div>
       ) : filteredAndSortedRows.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center text-sm text-muted-foreground">
@@ -383,10 +395,13 @@ export function StorefrontProductDetailView({
   priceTier,
   initialProductReviews,
 }: Props) {
+  const router = useRouter();
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [cartQty, setCartQty] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [reviewPanelOpen, setReviewPanelOpen] = useState(false);
+  const [reviewFormPending, setReviewFormPending] = useState(false);
   const images = product.images;
   const hasImages = images.length > 0;
 
@@ -456,6 +471,11 @@ export function StorefrontProductDetailView({
     product.brand_type_id && product.brand_id
       ? `/brands/${product.brand_id}/${product.brand_type_id}`
       : null;
+
+  const handleReviewSuccess = () => {
+    setReviewPanelOpen(false);
+    router.refresh();
+  };
 
   return (
     <div className={cn(inter.className, "pb-16")}>
@@ -875,7 +895,50 @@ export function StorefrontProductDetailView({
       <ProductReviewsSection
         productName={product.name}
         rows={initialProductReviews}
+        onOpenForm={() => setReviewPanelOpen(true)}
       />
+      <SlideOver
+        open={reviewPanelOpen}
+        onClose={() => setReviewPanelOpen(false)}
+        title="Escribe una reseña"
+        description={
+          <>
+            Comparte tu experiencia con{" "}
+            <span className="font-medium text-foreground">{product.name}</span>.
+            Tu reseña ayudará a otras personas a comprar con más confianza.
+          </>
+        }
+        panelClassName="lg:max-w-[min(32rem,92vw)]"
+        contentAriaLabel="Formulario de reseña del producto"
+        footer={
+          <SlideOverFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={reviewFormPending}
+              onClick={() => setReviewPanelOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <ButtonPending
+              type="submit"
+              form={PRODUCT_REVIEW_FORM_ID}
+              pending={reviewFormPending}
+              pendingLabel="Enviando"
+            >
+              Enviar reseña
+            </ButtonPending>
+          </SlideOverFooter>
+        }
+      >
+        <ProductReviewForm
+          key={reviewPanelOpen ? "open" : "closed"}
+          productId={product.id}
+          productName={product.name}
+          onSuccess={handleReviewSuccess}
+          onPendingChange={setReviewFormPending}
+        />
+      </SlideOver>
     </div>
   );
 }

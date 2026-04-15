@@ -49,6 +49,18 @@ function relFullName(
   return n || "Cliente";
 }
 
+function reviewerLabelFromRow(row: Record<string, unknown>): string {
+  const explicitName =
+    typeof row.reviewer_name === "string" ? row.reviewer_name.trim() : "";
+  if (explicitName) return explicitName;
+  return relFullName(
+    row.profiles as
+      | { full_name?: string | null }
+      | { full_name?: string | null }[]
+      | null,
+  );
+}
+
 /**
  * Listado público de reseñas de producto (usa service role: RLS de `reviews` solo
  * permite SELECT a `authenticated`).
@@ -60,7 +72,7 @@ export async function listProductReviewsForLeaveReviewPage(): Promise<
   const { data, error } = await supabase
     .from("reviews")
     .select(
-      "id, rating, comment, created_at, products(name), profiles(full_name)",
+      "id, rating, comment, created_at, reviewer_name, products(name), profiles(full_name)",
     )
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
@@ -75,12 +87,7 @@ export async function listProductReviewsForLeaveReviewPage(): Promise<
     productName: relName(
       row.products as { name?: string } | { name?: string }[] | null,
     ),
-    reviewerLabel: relFullName(
-      row.profiles as
-        | { full_name?: string | null }
-        | { full_name?: string | null }[]
-        | null,
-    ),
+    reviewerLabel: reviewerLabelFromRow(row),
     rating: Number(row.rating ?? 0),
     comment:
       row.comment == null || String(row.comment).trim() === ""
@@ -97,7 +104,7 @@ export async function listProductReviewsByProductId(
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, rating, comment, created_at, profiles(full_name)")
+    .select("id, rating, comment, created_at, reviewer_name, profiles(full_name)")
     .eq("product_id", productId)
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
@@ -113,12 +120,7 @@ export async function listProductReviewsByProductId(
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
     id: String(row.id),
-    reviewerLabel: relFullName(
-      row.profiles as
-        | { full_name?: string | null }
-        | { full_name?: string | null }[]
-        | null,
-    ),
+    reviewerLabel: reviewerLabelFromRow(row),
     rating: Number(row.rating ?? 0),
     comment:
       row.comment == null || String(row.comment).trim() === ""

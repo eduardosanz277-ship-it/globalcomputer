@@ -10,7 +10,7 @@ export type SlideOverProps = {
   open: boolean;
   onClose: () => void;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   children: React.ReactNode;
   /** Pie con acciones (p. ej. Cancelar + Guardar). Usa `SlideOverFooter` para el layout estándar. */
   footer?: React.ReactNode;
@@ -56,7 +56,10 @@ export function SlideOver({
   side = "right",
   contentClassName,
 }: SlideOverProps) {
-  const hasDescription = Boolean(description?.trim());
+  const hasDescription =
+    typeof description === "string"
+      ? Boolean(description.trim())
+      : description != null;
   const fromLeft = side === "left";
 
   return (

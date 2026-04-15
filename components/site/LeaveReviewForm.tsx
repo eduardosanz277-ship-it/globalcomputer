@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { RatingStarsInput } from "@/components/site/RatingStarsInput";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
@@ -61,12 +62,43 @@ export function LeaveReviewForm({
     register,
     control,
     reset,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
 
   useEffect(() => {
     onPendingChange?.(isSubmitting);
   }, [isSubmitting, onPendingChange]);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createSupabaseBrowserClient();
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      const user = data.user;
+      if (!user) return;
+
+      const metaName =
+        typeof user.user_metadata?.full_name === "string"
+          ? user.user_metadata.full_name.trim()
+          : "";
+      const currentName = getValues("name").trim();
+      if (metaName && !currentName) {
+        setValue("name", metaName, { shouldValidate: true });
+      }
+
+      const email = user.email?.trim() ?? "";
+      const currentEmail = (getValues("email") ?? "").trim();
+      if (email && !currentEmail) {
+        setValue("email", email, { shouldValidate: true });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [getValues, setValue]);
 
   const onSubmit = async (values: SiteReviewFormValues) => {
     try {
