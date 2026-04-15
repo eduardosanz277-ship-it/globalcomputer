@@ -1,12 +1,20 @@
-export const GC_CART_STORAGE_KEY = "gc-store-cart";
+import {
+  ensureCartMeta,
+  extendCartExpiration,
+  getCartMeta,
+  clearCartMeta,
+} from "@/lib/cart-meta";
+import {
+  reserveCartItem as reserveCartItemSchema,
+  releaseCartReservations,
+} from "@/lib/cart-reservation";
 
-/** Se emite al añadir productos al carrito (p. ej. abrir el panel lateral). */
+export const GC_CART_STORAGE_KEY = "gc-store-cart";
 export const GC_CART_OPEN_EVENT = "gc-cart-open";
 
 export type GcCartItem = { productId: string; qty: number };
 
-export function gcCartRead(): GcCartItem[] {
-  if (typeof window === "undefined") return [];
+function readCartStorage(): GcCartItem[] {
   try {
     const raw = localStorage.getItem(GC_CART_STORAGE_KEY);
     if (!raw) return [];
@@ -31,62 +39,97 @@ export function gcCartRead(): GcCartItem[] {
   }
 }
 
-function gcCartWrite(items: GcCartItem[]): void {
-  if (typeof window === "undefined") return;
+function writeCartStorage(items: GcCartItem[]): void {
   localStorage.setItem(GC_CART_STORAGE_KEY, JSON.stringify(items));
   window.dispatchEvent(new CustomEvent("gc-cart-changed"));
 }
 
-export function gcCartAddProduct(productId: string, qty = 1): void {
-  if (typeof window === "undefined") return;
-  const items = gcCartRead();
-  const i = items.findIndex((x) => x.productId === productId);
-  const add = Math.max(1, Math.floor(qty) || 1);
-  if (i >= 0) {
-    items[i] = { ...items[i], qty: items[i].qty + add };
-    const [row] = items.splice(i, 1);
-    items.push(row);
-  } else {
-    items.push({ productId, qty: add });
+function clearCartStorage(): void {
+  localStorage.removeItem(GC_CART_STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent("gc-cart-changed"));
+}
+
+function ensureActiveCartMeta() {
+  const meta = getCartMeta();
+  if (meta && new Date(meta.expiresAt).getTime() <= Date.now()) {
+    clearCartMeta();
+    clearCartStorage();
+    void releaseCartReservations(meta.token).catch(() => undefined);
   }
-  gcCartWrite(items);
-  window.dispatchEvent(new CustomEvent(GC_CART_OPEN_EVENT));
+  return ensureCartMeta();
 }
 
-export function gcCartRemoveProduct(productId: string): void {
+export function gcCartRead(): GcCartItem[] {
+  if (typeof window === "undefined") return [];
+  const meta = getCartMeta();
+  if (meta && new Date(meta.expiresAt).getTime() <= Date.now()) {
+    clearCartMeta();
+    clearCartStorage();
+    void releaseCartReservations(meta.token).catch(() => undefined);
+    return [];
+  }
+  return readCartStorage();
+}
+
+function updateLocalLine(productId: string, qty: number): void {
+  const items = readCartStorage();
+  const index = items.findIndex((x) => x.productId === productId);
+  if (qty <= 0) {
+    if (index >= 0) {
+      items.splice(index, 1);
+      writeCartStorage(items);
+    }
+    return;
+  }
+  if (index >= 0) {
+    items[index] = { productId, qty };
+  } else {
+    items.push({ productId, qty });
+  }
+  writeCartStorage(items);
+}
+
+export async function gcCartAddProduct(productId: string, qty = 1): Promise<void> {
   if (typeof window === "undefined") return;
-  gcCartWrite(gcCartRead().filter((x) => x.productId !== productId));
+  const meta = ensureActiveCartMeta();
+  const response = await reserveCartItemSchema(meta.token, productId, qty, "add");
+  updateLocalLine(productId, response.qty);
+  extendCartExpiration(meta.token);
 }
 
-/**
- * `qty` 0 elimina la línea. Respeta stock máximo si se pasa `maxQty`.
- */
-export function gcCartSetQty(
+export async function gcCartRemoveProduct(productId: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  const meta = ensureActiveCartMeta();
+  await reserveCartItemSchema(meta.token, productId, 0, "set");
+  updateLocalLine(productId, 0);
+  extendCartExpiration(meta.token);
+}
+
+export async function gcCartSetQty(
   productId: string,
   qty: number,
   maxQty?: number,
-): void {
+): Promise<void> {
   if (typeof window === "undefined") return;
-  const q = Math.max(0, Math.floor(qty) || 0);
+  const meta = ensureActiveCartMeta();
+  const normalizedQty = Math.max(0, Math.floor(qty) || 0);
   const capped =
     maxQty != null && Number.isFinite(maxQty)
-      ? Math.min(q, Math.max(0, Math.floor(maxQty)))
-      : q;
-  const items = gcCartRead();
-  const i = items.findIndex((x) => x.productId === productId);
-  if (i < 0) return;
-  if (capped <= 0) {
-    items.splice(i, 1);
-  } else {
-    items[i] = { ...items[i], qty: capped };
-  }
-  gcCartWrite(items);
+      ? Math.min(normalizedQty, Math.max(0, Math.floor(maxQty)))
+      : normalizedQty;
+  await reserveCartItemSchema(meta.token, productId, capped, "set");
+  updateLocalLine(productId, capped);
+  extendCartExpiration(meta.token);
 }
 
-export function gcCartClear(): void {
+export async function gcCartClear(): Promise<void> {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(GC_CART_STORAGE_KEY);
-  window.dispatchEvent(new CustomEvent("gc-cart-changed"));
+  const meta = getCartMeta();
+  clearCartMeta();
+  clearCartStorage();
+  if (meta?.token) {
+    await releaseCartReservations(meta.token).catch(() => undefined);
+  }
 }
 
 export function gcCartTotalUnits(items: GcCartItem[]): number {
