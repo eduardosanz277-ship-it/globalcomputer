@@ -6,6 +6,7 @@ import { StorefrontProductDetailView } from "@/components/store/StorefrontProduc
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStorefrontProductDetailById } from "@/modules/catalog/storefront-product-detail.service";
+import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,10 @@ export default async function ProductoDetallePage({ params }: Props) {
   const { id } = await Promise.resolve(params);
   if (!UUID_RE.test(id)) notFound();
 
-  const [product, user] = await Promise.all([
+  const [product, user, productReviews] = await Promise.all([
     getStorefrontProductDetailById(id),
     getCurrentUserService(),
+    listProductReviewsByProductId(id),
   ]);
   if (!product) notFound();
 
@@ -63,7 +65,11 @@ export default async function ProductoDetallePage({ params }: Props) {
       </div>
 
       <div className="mx-auto mt-4 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <StorefrontProductDetailView product={product} priceTier={priceTier} />
+        <StorefrontProductDetailView
+          product={product}
+          priceTier={priceTier}
+          initialProductReviews={productReviews}
+        />
       </div>
     </main>
   );

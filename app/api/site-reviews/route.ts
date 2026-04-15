@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createSiteReview } from "@/modules/site/site-reviews.service";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-
-const createReviewSchema = z.object({
-  name: z.string().min(2).max(120),
-  /** Opcional; vacío o solo espacios → sin email (válido para invitados). */
-  email: z.preprocess(
-    (val) =>
-      typeof val === "string" && val.trim() === "" ? undefined : val,
-    z.string().email().optional(),
-  ),
-  rating: z.number().int().min(1).max(5),
-  comment: z.string().min(10).max(1200),
-});
+import { siteReviewFormSchema } from "@/modules/site/site-reviews.schema";
 
 export async function POST(req: Request) {
   let payload: unknown;
@@ -26,7 +14,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const parseResult = createReviewSchema.safeParse(payload);
+  const parseResult = siteReviewFormSchema.safeParse(payload);
   if (!parseResult.success) {
     return NextResponse.json(
       { error: "Datos no válidos para la reseña." },

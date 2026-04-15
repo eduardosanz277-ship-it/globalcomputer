@@ -5,16 +5,22 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileText,
   ImageOff,
+  Minus,
+  Plus,
+  Star,
   ZoomIn,
 } from "lucide-react";
+import Select from "react-select";
 import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
@@ -25,7 +31,10 @@ import {
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
+import type { ProductReviewDetailListItem } from "@/modules/site/leave-review-data.service";
 import { cn } from "@/utils/cn";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 
 const inter = Inter({
@@ -44,11 +53,290 @@ function formatUsd(price: number): string {
 type Props = {
   product: StorefrontProductDetail;
   priceTier: StorefrontPriceTier;
+  initialProductReviews: ProductReviewDetailListItem[];
 };
 
 type ProductDescriptionCollapsibleProps = {
   description: string;
 };
+
+const PRODUCT_REVIEWS_PAGE_SIZE = 6;
+const PRODUCT_REVIEWS_SELECT_WIDTH_CH = 24;
+
+type ReviewDateSort = "newest" | "oldest";
+type ReviewRatingFilter = "all" | "5" | "4" | "3" | "2" | "1";
+type ReviewDateSortOption = { value: ReviewDateSort; label: string };
+type ReviewRatingOption = { value: ReviewRatingFilter; label: string };
+
+const reviewDateSortOptions: ReviewDateSortOption[] = [
+  { value: "newest", label: "Ordenar por: Más reciente" },
+  { value: "oldest", label: "Ordenar por: Más antigua" },
+];
+
+const reviewRatingOptions: ReviewRatingOption[] = [
+  { value: "all", label: "Valoración: Todas" },
+  { value: "5", label: "Valoración: 5 estrellas" },
+  { value: "4", label: "Valoración: 4 estrellas" },
+  { value: "3", label: "Valoración: 3 estrellas" },
+  { value: "2", label: "Valoración: 2 estrellas" },
+  { value: "1", label: "Valoración: 1 estrella" },
+];
+
+function formatReviewDate(value: string | Date | null | undefined): string {
+  const relative = formatRelativeLastAccess(value);
+  if (relative != null) return relative;
+  return formatDateDdMmYyyyHhMm(value);
+}
+
+function StarRatingIcons({ rating }: { rating: number }) {
+  const r = Math.min(5, Math.max(0, Math.round(rating)));
+  return (
+    <div
+      className="flex items-center gap-0.5 text-amber-500"
+      aria-label={`${r} de 5 estrellas`}
+    >
+      {Array.from({ length: r }).map((_, i) => (
+        <Star key={i} className="h-4 w-4 fill-current" aria-hidden />
+      ))}
+    </div>
+  );
+}
+
+function ProductReviewsSection({
+  productName,
+  rows,
+}: {
+  productName: string;
+  rows: ProductReviewDetailListItem[];
+}) {
+  const [page, setPage] = useState(1);
+  const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
+  const [ratingFilter, setRatingFilter] = useState<ReviewRatingFilter>("all");
+
+  const filteredAndSortedRows = [...rows]
+    .filter((row) => {
+      if (ratingFilter === "all") return true;
+      return Math.round(row.rating) === Number(ratingFilter);
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      const safeA = Number.isNaN(dateA) ? 0 : dateA;
+      const safeB = Number.isNaN(dateB) ? 0 : dateB;
+      return dateSort === "newest" ? safeB - safeA : safeA - safeB;
+    });
+
+  const totalItems = filteredAndSortedRows.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalItems / PRODUCT_REVIEWS_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const offset = (safePage - 1) * PRODUCT_REVIEWS_PAGE_SIZE;
+  const pageRows = filteredAndSortedRows.slice(
+    offset,
+    offset + PRODUCT_REVIEWS_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateSort, ratingFilter, rows.length]);
+
+  const clearFilters = () => {
+    setDateSort("newest");
+    setRatingFilter("all");
+  };
+
+  return (
+    <section className="mt-10 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-sm sm:mt-12 sm:p-8">
+      <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            Reseñas del producto
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Opiniones verificadas sobre{" "}
+            <span className="font-medium text-foreground">{productName}</span>.
+          </p>
+        </div>
+        <Link
+          href="/leave-review"
+          className={cn(buttonVariants({ size: "lg" }), "h-11 rounded-xl px-6")}
+        >
+          Escribe una reseña
+        </Link>
+      </div>
+
+      {rows.length === 0 ? null : (
+        <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="w-full min-w-0 sm:w-auto">
+            <div
+              className="min-w-0 flex-1 sm:flex-none"
+              style={{ width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch` }}
+            >
+              <Select<ReviewDateSortOption, false>
+                instanceId="product-detail-reviews-sort"
+                inputId="product-detail-reviews-sort"
+                aria-label="Ordenar reseñas por fecha"
+                styles={appSelectStyles}
+                options={reviewDateSortOptions}
+                value={
+                  reviewDateSortOptions.find(
+                    (option) => option.value === dateSort,
+                  ) ?? reviewDateSortOptions[0]
+                }
+                onChange={(option) => {
+                  if (option) setDateSort(option.value);
+                }}
+                isClearable={false}
+                isSearchable={false}
+              />
+            </div>
+          </div>
+          <div className="w-full min-w-0 sm:w-auto">
+            <div
+              className="min-w-0 flex-1 sm:flex-none"
+              style={{ width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch` }}
+            >
+              <Select<ReviewRatingOption, false>
+                instanceId="product-detail-reviews-rating"
+                inputId="product-detail-reviews-rating"
+                aria-label="Filtrar reseñas por valoración"
+                styles={appSelectStyles}
+                options={reviewRatingOptions}
+                value={
+                  reviewRatingOptions.find(
+                    (option) => option.value === ratingFilter,
+                  ) ?? reviewRatingOptions[0]
+                }
+                onChange={(option) => {
+                  if (option) setRatingFilter(option.value);
+                }}
+                isClearable={false}
+                isSearchable={false}
+              />
+            </div>
+          </div>
+          {ratingFilter !== "all" ? (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-sm font-semibold text-black underline underline-offset-2 transition hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            >
+              Limpiar todo
+            </button>
+          ) : null}
+        </div>
+      )}
+
+      {rows.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Este producto todavía no tiene reseñas. Sé la primera persona en
+            compartir su experiencia.
+          </p>
+          <Link
+            href="/leave-review"
+            className={cn(buttonVariants(), "mt-4 inline-flex h-10 rounded-lg px-5")}
+          >
+            Escribe la primera reseña
+          </Link>
+        </div>
+      ) : filteredAndSortedRows.length === 0 ? (
+        <p className="mt-6 rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center text-sm text-muted-foreground">
+          Ninguna reseña coincide con los filtros. Ajusta los criterios para ver
+          más resultados o{" "}
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="font-semibold text-black underline underline-offset-2 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          >
+            Limpiar todo
+          </button>
+        </p>
+      ) : (
+        <>
+          <ul className="mt-6 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {pageRows.map((row) => (
+              <li key={row.id}>
+                <article className="flex h-full flex-col rounded-2xl border border-border/60 bg-background/70 p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <StarRatingIcons rating={row.rating} />
+                  </div>
+                  {row.comment ? (
+                    <blockquote className="mt-4 flex-1 border-l-2 border-primary/35 pl-4 text-sm italic leading-relaxed text-muted-foreground">
+                      {row.comment}
+                    </blockquote>
+                  ) : (
+                    <p className="mt-4 flex-1 text-sm italic text-muted-foreground">
+                      Sin comentario escrito.
+                    </p>
+                  )}
+                  <p className="mt-5 text-sm font-semibold text-foreground">
+                    {row.reviewerLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatReviewDate(row.createdAt)}
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ul>
+
+          {totalItems > PRODUCT_REVIEWS_PAGE_SIZE ? (
+            <nav
+              className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row"
+              aria-label="Paginación de reseñas del producto"
+            >
+              <p className="text-sm text-muted-foreground">
+                Mostrando{" "}
+                <span className="tabular-nums text-foreground">
+                  {offset + 1}–
+                  {Math.min(offset + PRODUCT_REVIEWS_PAGE_SIZE, totalItems)}
+                </span>{" "}
+                de{" "}
+                <span className="tabular-nums text-foreground">
+                  {totalItems}
+                </span>
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+                  Anterior
+                </Button>
+                <span className="min-w-[4.5rem] text-center text-sm tabular-nums text-muted-foreground">
+                  {safePage} / {totalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
+                </Button>
+              </div>
+            </nav>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
 
 function ProductDescriptionCollapsible({
   description,
@@ -67,13 +355,11 @@ function ProductDescriptionCollapsible({
         <span className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
           Descripción
         </span>
-        <ChevronDown
-          className={cn(
-            "h-5 w-5 text-muted-foreground transition-transform",
-            open && "rotate-180",
-          )}
-          aria-hidden
-        />
+        {open ? (
+          <Minus className="h-5 w-5 text-muted-foreground" aria-hidden />
+        ) : (
+          <Plus className="h-5 w-5 text-muted-foreground" aria-hidden />
+        )}
       </button>
 
       <div
@@ -92,7 +378,11 @@ function ProductDescriptionCollapsible({
   );
 }
 
-export function StorefrontProductDetailView({ product, priceTier }: Props) {
+export function StorefrontProductDetailView({
+  product,
+  priceTier,
+  initialProductReviews,
+}: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [cartQty, setCartQty] = useState(1);
@@ -582,6 +872,10 @@ export function StorefrontProductDetailView({ product, priceTier }: Props) {
           */}
         </div>
       </div>
+      <ProductReviewsSection
+        productName={product.name}
+        rows={initialProductReviews}
+      />
     </div>
   );
 }

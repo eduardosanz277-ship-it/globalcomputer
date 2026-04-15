@@ -15,9 +15,10 @@ export const adminSlideOverNestedScrollClassName = cn(
   "overscroll-y-contain",
 );
 
-/** Misma altura que `react-select` en formularios (`appSelectStyles`, 40px). */
+/** Misma altura que `react-select` en formularios (`appSelectStyles`, 40px). Fondo sólido como las tarjetas del panel admin. */
 export const adminServiceLikeInputClassName = cn(
-  "h-10 rounded-lg border-border/80 bg-background/80 shadow-sm transition",
+  "h-10 rounded-lg border-border/80 bg-white shadow-sm transition",
+  "dark:bg-card",
   "focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-0",
   "placeholder:text-muted-foreground/70",
 );
