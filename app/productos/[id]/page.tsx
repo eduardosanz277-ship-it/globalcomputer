@@ -64,7 +64,7 @@ export default async function ProductoDetallePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="mx-auto mt-4 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-4 max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
         <StorefrontProductDetailView
           product={product}
           priceTier={priceTier}

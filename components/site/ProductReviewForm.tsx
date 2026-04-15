@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -42,6 +42,7 @@ export function ProductReviewForm({
 }: ProductReviewFormProps) {
   const uid = useId();
   const ratingFieldId = `${uid}-rating`;
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const form = useForm<ProductReviewFormValues>({
     resolver: zodResolver(productReviewFormSchema),
@@ -71,32 +72,38 @@ export function ProductReviewForm({
   useEffect(() => {
     let active = true;
     const supabase = createSupabaseBrowserClient();
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      const user = data.user;
-      if (!user) return;
-      const metaName =
-        typeof user.user_metadata?.full_name === "string"
-          ? user.user_metadata.full_name.trim()
-          : "";
-      const currentName = getValues("name").trim();
-      if (metaName && !currentName) {
-        setValue("name", metaName, { shouldValidate: true });
-      }
-      const email = user.email?.trim() ?? "";
-      const currentEmail = (getValues("email") ?? "").trim();
-      if (email && !currentEmail) {
-        setValue("email", email, { shouldValidate: true });
-      }
-    });
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!active) return;
+        const user = data.user;
+        if (!user) return;
+        const metaName =
+          typeof user.user_metadata?.full_name === "string"
+            ? user.user_metadata.full_name.trim()
+            : "";
+        const currentName = getValues("name").trim();
+        if (metaName && !currentName) {
+          setValue("name", metaName, { shouldValidate: true });
+        }
+        const email = user.email?.trim() ?? "";
+        const currentEmail = (getValues("email") ?? "").trim();
+        if (email && !currentEmail) {
+          setValue("email", email, { shouldValidate: true });
+        }
+      })
+      .finally(() => {
+        if (!active) return;
+        setIsProfileLoading(false);
+      });
     return () => {
       active = false;
     };
   }, [getValues, setValue]);
 
   useEffect(() => {
-    onPendingChange?.(isSubmitting);
-  }, [isSubmitting, onPendingChange]);
+    onPendingChange?.(isSubmitting || isProfileLoading);
+  }, [isSubmitting, isProfileLoading, onPendingChange]);
 
   const onSubmit = async (values: ProductReviewFormValues) => {
     try {
@@ -120,8 +127,14 @@ export function ProductReviewForm({
         rating: 5,
         comment: "",
       });
-      toast.success("Reseña enviada. Gracias por valorar este producto.");
-      if (onSuccess) window.setTimeout(() => onSuccess(), 900);
+      if (onSuccess) {
+        onSuccess();
+        window.setTimeout(() => {
+          toast.success("Reseña enviada. Gracias por valorar este producto.");
+        }, 150);
+      } else {
+        toast.success("Reseña enviada. Gracias por valorar este producto.");
+      }
     } catch (error) {
       console.error("ProductReviewForm submit", error);
       const message =
@@ -131,8 +144,24 @@ export function ProductReviewForm({
   };
 
   return (
-    <Form id={PRODUCT_REVIEW_FORM_ID} form={form} onSubmit={onSubmit} className="space-y-4">
-      <section className={adminSlideOverSectionClassName}>
+    <Form
+      id={PRODUCT_REVIEW_FORM_ID}
+      form={form}
+      onSubmit={onSubmit}
+      className="space-y-4"
+    >
+      <section className={cn(adminSlideOverSectionClassName, "relative")}>
+        {isProfileLoading ? (
+          <div className="absolute inset-0 z-10 grid place-items-center rounded-xl bg-background/70 backdrop-blur-[1px]">
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm">
+              <span
+                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+                aria-hidden
+              />
+              Cargando datos
+            </div>
+          </div>
+        ) : null}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">{productName}</p>
           <p className="text-xs text-muted-foreground">
@@ -201,11 +230,17 @@ export function ProductReviewForm({
               placeholder="Cuéntanos tu experiencia con este producto."
               disabled={isSubmitting}
               aria-invalid={errors.comment ? true : undefined}
-              aria-describedby={errors.comment ? `${uid}-comment-error` : undefined}
+              aria-describedby={
+                errors.comment ? `${uid}-comment-error` : undefined
+              }
               {...register("comment")}
             />
             {errors.comment?.message ? (
-              <p id={`${uid}-comment-error`} className="text-sm text-destructive" role="alert">
+              <p
+                id={`${uid}-comment-error`}
+                className="text-sm text-destructive"
+                role="alert"
+              >
                 {errors.comment.message}
               </p>
             ) : null}

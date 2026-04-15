@@ -17,6 +17,7 @@ import {
   Sparkles,
   Star,
   Truck,
+  UserRound,
   Wrench,
 } from "lucide-react";
 import { StoreHero } from "@/components/marketing/StoreHero";
@@ -32,6 +33,7 @@ import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
+import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
 
 export const metadata: Metadata = {
   title: "Global Computers USA | Cámaras de Seguridad, Software y Tecnología",
@@ -82,10 +84,11 @@ const CATEGORIES: Array<{
 ];
 
 export default async function HomePage() {
-  const [products, user, nav] = await Promise.all([
+  const [products, user, nav, productReviews] = await Promise.all([
     listAllActiveStorefrontProducts(),
     getCurrentUserService(),
     getNavigationData(),
+    listProductReviewsForLeaveReviewPage(),
   ]);
   const featuredProducts = products.slice(0, 4);
   const priceTier = resolveStorefrontPriceTier(user?.role);
@@ -109,6 +112,16 @@ export default async function HomePage() {
       name: brand.name,
       imageUrl: brandImageById.get(brand.id) ?? null,
     }));
+  const topProductReviews = [...productReviews]
+    .sort((a, b) => {
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return (
+        (Number.isNaN(dateB) ? 0 : dateB) - (Number.isNaN(dateA) ? 0 : dateA)
+      );
+    })
+    .slice(0, 3);
 
   return (
     <main className="overflow-x-hidden">
@@ -173,7 +186,7 @@ export default async function HomePage() {
               href="/productos"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "shrink-0 rounded-2xl border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
+                "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
               )}
             >
               Ver catálogo
@@ -354,7 +367,7 @@ export default async function HomePage() {
               href="/productos"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "shrink-0 rounded-2xl border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
+                "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
               )}
             >
               Ver catálogo
@@ -451,36 +464,17 @@ export default async function HomePage() {
             titleClassName="text-3xl sm:text-4xl"
           />
           <div className="mt-6 lg:mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                quote:
-                  "Llegó rápido y la configuración fue muy sencilla. El soporte respondió en el mismo día.",
-                name: "María R.",
-                stars: 5,
-              },
-              {
-                quote:
-                  "Excelente garantía y asesoría. Me recomendaron el equipo justo para mi local.",
-                name: "Carlos G.",
-                stars: 5,
-              },
-              {
-                quote:
-                  "Montaje profesional. Se nota la experiencia cuando todo queda bien desde el primer momento.",
-                name: "Laura P.",
-                stars: 5,
-              },
-            ].map((t) => (
+            {topProductReviews.map((review) => (
               <figure
-                key={t.name}
-                className="flex flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6"
+                key={review.id}
+                className="flex h-full flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div
                     className="flex items-center gap-0.5 text-amber-500"
                     aria-hidden
                   >
-                    {Array.from({ length: t.stars }).map((_, i) => (
+                    {Array.from({ length: review.rating }).map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-current" />
                     ))}
                   </div>
@@ -489,14 +483,31 @@ export default async function HomePage() {
                     aria-hidden
                   />
                 </div>
+                <p className="mt-3 text-sm font-semibold text-foreground">
+                  {review.productName}
+                </p>
                 <blockquote className="mt-4 flex-1 border-l-2 border-primary/40 pl-4 text-sm italic leading-relaxed text-muted-foreground">
-                  {t.quote}
+                  {review.comment ?? "Sin comentario escrito."}
                 </blockquote>
                 <figcaption className="mt-5 text-sm font-bold text-foreground">
-                  {t.name}
+                  <span className="inline-flex items-center gap-1.5">
+                    <UserRound className="h-4 w-4 text-primary/85" aria-hidden />
+                    {review.reviewerLabel}
+                  </span>
                 </figcaption>
               </figure>
             ))}
+          </div>
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/leave-review"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "rounded-full border-primary/30 bg-card px-6 font-semibold hover:bg-primary/5",
+              )}
+            >
+              Ver todas reseñas
+            </Link>
           </div>
         </div>
       </section>

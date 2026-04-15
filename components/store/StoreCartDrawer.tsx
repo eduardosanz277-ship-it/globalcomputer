@@ -82,6 +82,7 @@ export function StoreCartDrawer({
             loading={loading}
             tier={tier}
             dense
+            onProductNavigate={onClose}
           />
         </div>
       )}

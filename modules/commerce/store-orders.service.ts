@@ -309,9 +309,15 @@ async function ensureStoreOrderForCheckoutSession(
     full.customer_details?.email?.trim() ||
     full.customer_email?.trim() ||
     "cliente@globalcomputer.com";
+  const shippingName =
+    (
+      full as Stripe.Response<Stripe.Checkout.Session> & {
+        shipping_details?: { name?: string | null };
+      }
+    ).shipping_details?.name?.trim() ?? null;
   const customerName =
     full.customer_details?.name?.trim() ||
-    full.shipping_details?.name?.trim() ||
+    shippingName ||
     "Cliente";
 
   const ref = full.client_reference_id?.trim();

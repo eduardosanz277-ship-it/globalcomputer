@@ -47,11 +47,13 @@ function CartLineRow({
   product,
   tier,
   dense,
+  onProductNavigate,
 }: {
   item: GcCartItem;
   product: StorefrontProduct | undefined;
   tier: StorefrontPriceTier;
   dense?: boolean;
+  onProductNavigate?: () => void;
 }) {
   const handleRemove = async (id: string) => {
     try {
@@ -106,6 +108,7 @@ function CartLineRow({
     >
       <Link
         href={`/productos/${product.id}`}
+        onClick={onProductNavigate}
         className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted/50 ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:h-24 md:w-24"
       >
         {img ? (
@@ -127,6 +130,7 @@ function CartLineRow({
           <div className="min-w-0 flex-1">
             <Link
               href={`/productos/${product.id}`}
+              onClick={onProductNavigate}
               className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary"
             >
               {product.name}
@@ -177,12 +181,14 @@ export function StoreCartLineItems({
   loading,
   tier,
   dense,
+  onProductNavigate,
 }: {
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
   loading: boolean;
   tier: StorefrontPriceTier;
   dense?: boolean;
+  onProductNavigate?: () => void;
 }) {
   if (items.length === 0) {
     return null;
@@ -208,6 +214,7 @@ export function StoreCartLineItems({
           product={productsById[line.productId]}
           tier={tier}
           dense={dense}
+          onProductNavigate={onProductNavigate}
         />
       ))}
     </>

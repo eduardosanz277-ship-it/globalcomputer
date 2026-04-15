@@ -651,7 +651,7 @@ export function DataTable<TData, TValue>({
             className="min-w-0 text-sm leading-relaxed text-muted-foreground"
           >
             {isLoading ? (
-              "Cargando datos…"
+              "Cargando datos"
             ) : filteredCount === 0 ? (
               "Sin resultados."
             ) : (

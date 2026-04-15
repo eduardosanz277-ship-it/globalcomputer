@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -51,6 +51,7 @@ export function LeaveReviewForm({
 }: LeaveReviewFormProps) {
   const uid = useId();
   const ratingFieldId = `${uid}-rating`;
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const form = useForm<SiteReviewFormValues>({
     resolver: zodResolver(siteReviewFormSchema),
@@ -68,32 +69,38 @@ export function LeaveReviewForm({
   } = form;
 
   useEffect(() => {
-    onPendingChange?.(isSubmitting);
-  }, [isSubmitting, onPendingChange]);
+    onPendingChange?.(isSubmitting || isProfileLoading);
+  }, [isSubmitting, isProfileLoading, onPendingChange]);
 
   useEffect(() => {
     let active = true;
     const supabase = createSupabaseBrowserClient();
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      const user = data.user;
-      if (!user) return;
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!active) return;
+        const user = data.user;
+        if (!user) return;
 
-      const metaName =
-        typeof user.user_metadata?.full_name === "string"
-          ? user.user_metadata.full_name.trim()
-          : "";
-      const currentName = getValues("name").trim();
-      if (metaName && !currentName) {
-        setValue("name", metaName, { shouldValidate: true });
-      }
+        const metaName =
+          typeof user.user_metadata?.full_name === "string"
+            ? user.user_metadata.full_name.trim()
+            : "";
+        const currentName = getValues("name").trim();
+        if (metaName && !currentName) {
+          setValue("name", metaName, { shouldValidate: true });
+        }
 
-      const email = user.email?.trim() ?? "";
-      const currentEmail = (getValues("email") ?? "").trim();
-      if (email && !currentEmail) {
-        setValue("email", email, { shouldValidate: true });
-      }
-    });
+        const email = user.email?.trim() ?? "";
+        const currentEmail = (getValues("email") ?? "").trim();
+        if (email && !currentEmail) {
+          setValue("email", email, { shouldValidate: true });
+        }
+      })
+      .finally(() => {
+        if (!active) return;
+        setIsProfileLoading(false);
+      });
 
     return () => {
       active = false;
@@ -118,11 +125,13 @@ export function LeaveReviewForm({
       }
 
       reset(defaultValues);
-      toast.success(
-        "Reseña enviada. Gracias por compartir tu experiencia.",
-      );
       if (onSuccess) {
-        window.setTimeout(() => onSuccess(), 900);
+        onSuccess();
+        window.setTimeout(() => {
+          toast.success("Reseña enviada. Gracias por compartir tu experiencia.");
+        }, 150);
+      } else {
+        toast.success("Reseña enviada. Gracias por compartir tu experiencia.");
       }
     } catch (error) {
       console.error("LeaveReviewForm submit", error);
@@ -192,9 +201,7 @@ export function LeaveReviewForm({
           placeholder="Cuéntanos qué te gustó o qué podemos mejorar."
           disabled={isSubmitting}
           aria-invalid={errors.comment ? true : undefined}
-          aria-describedby={
-            errors.comment ? `${uid}-comment-error` : undefined
-          }
+          aria-describedby={errors.comment ? `${uid}-comment-error` : undefined}
           {...register("comment")}
         />
         {errors.comment?.message ? (
@@ -225,7 +232,18 @@ export function LeaveReviewForm({
       ) : null}
 
       {variant === "panel" ? (
-        <section className={adminSlideOverSectionClassName}>
+        <section className={cn(adminSlideOverSectionClassName, "relative")}>
+          {isProfileLoading ? (
+            <div className="absolute inset-0 z-10 grid place-items-center rounded-xl bg-background/70 backdrop-blur-[1px]">
+              <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm">
+                <span
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+                  aria-hidden
+                />
+                Cargando datos
+              </div>
+            </div>
+          ) : null}
           <div className="space-y-4">{fields}</div>
         </section>
       ) : (

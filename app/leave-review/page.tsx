@@ -41,12 +41,10 @@ export default async function LeaveReviewPage() {
           </div>
         </div>
       </div>
-      <div className="mt-6">
-        <LeaveReviewPageClient
-          initialProductReviews={productReviews}
-          initialSiteReviews={siteReviews}
-        />
-      </div>
+      <LeaveReviewPageClient
+        initialProductReviews={productReviews}
+        initialSiteReviews={siteReviews}
+      />
     </main>
   );
 }

@@ -1,8 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, FilterX, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FilterX,
+  Star,
+  UserRound,
+} from "lucide-react";
 import Select from "react-select";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
@@ -33,35 +40,56 @@ const tabs: { id: TabId; label: string }[] = [
   { id: "site", label: "Reseñas de la tienda" },
 ];
 
-const REVIEWS_PAGE_SIZE = 6;
-const REVIEWS_SORT_SELECT_WIDTH_CH = 24;
+const REVIEWS_PAGE_SIZE_DESKTOP = 12;
+const REVIEWS_PAGE_SIZE_MOBILE_TABLET = 6;
+const REVIEWS_SORT_SELECT_WIDTH_CH = 28;
 
-type ReviewDateSort = "newest" | "oldest";
+type ReviewDateSort = "newest" | "oldest" | "best_rating" | "worst_rating";
 type ReviewRatingFilter = "all" | "5" | "4" | "3" | "2" | "1";
 
 type ReviewDateSortOption = { value: ReviewDateSort; label: string };
 type ReviewRatingOption = { value: ReviewRatingFilter; label: string };
 
 const reviewDateSortOptions: ReviewDateSortOption[] = [
-  { value: "newest", label: "Ordenar por: Más reciente" },
-  { value: "oldest", label: "Ordenar por: Más antigua" },
+  { value: "newest", label: "Más reciente" },
+  { value: "oldest", label: "Más antigua" },
+  { value: "best_rating", label: "Mejor valoración" },
+  { value: "worst_rating", label: "Peor valoración" },
 ];
 
 const reviewRatingOptions: ReviewRatingOption[] = [
-  { value: "all", label: "Valoración: Todas" },
-  { value: "5", label: "Valoración: 5 estrellas" },
-  { value: "4", label: "Valoración: 4 estrellas" },
-  { value: "3", label: "Valoración: 3 estrellas" },
-  { value: "2", label: "Valoración: 2 estrellas" },
-  { value: "1", label: "Valoración: 1 estrella" },
+  { value: "all", label: "Todas" },
+  { value: "5", label: "5 estrellas" },
+  { value: "4", label: "4 estrellas" },
+  { value: "3", label: "3 estrellas" },
+  { value: "2", label: "2 estrellas" },
+  { value: "1", label: "1 estrella" },
 ];
+
+function formatSortSelectedLabel(option: ReviewDateSortOption): string {
+  return `Ordenar por: ${option.label}`;
+}
+
+function formatRatingSelectedLabel(option: ReviewRatingOption): string {
+  return `Valoración: ${option.label}`;
+}
 
 const TABLE_LIKE_TOOLTIP_CLASS =
   "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
 
+function scrollToListStart(el: HTMLElement | null) {
+  if (!el) return;
+  const stickyHeaderOffset = 110;
+  const top = Math.max(
+    0,
+    el.getBoundingClientRect().top + window.scrollY - stickyHeaderOffset,
+  );
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
 /** Misma tarjeta que la sección «Historias reales» del home (`app/page.tsx`). */
 const reviewStoryCardClassName =
-  "flex flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6";
+  "flex h-full flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6";
 
 /** Fecha como en tablas del panel: relativa (p. ej. ayer, hace 3 horas) o absoluta si aplica. */
 function formatReviewDate(value: string | Date | null | undefined): string {
@@ -70,23 +98,45 @@ function formatReviewDate(value: string | Date | null | undefined): string {
   return formatDateDdMmYyyyHhMm(value);
 }
 
+function useResponsiveReviewsPageSize(): number {
+  const [pageSize, setPageSize] = useState(REVIEWS_PAGE_SIZE_MOBILE_TABLET);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const apply = () => {
+      setPageSize(
+        media.matches
+          ? REVIEWS_PAGE_SIZE_DESKTOP
+          : REVIEWS_PAGE_SIZE_MOBILE_TABLET,
+      );
+    };
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  return pageSize;
+}
+
 function SimplePaginationBar({
   page,
   totalPages,
   totalItems,
+  pageSize,
   onPageChange,
   idPrefix,
 }: {
   page: number;
   totalPages: number;
   totalItems: number;
+  pageSize: number;
   onPageChange: (p: number) => void;
   idPrefix: string;
 }) {
-  if (totalItems <= REVIEWS_PAGE_SIZE) return null;
+  if (totalItems <= pageSize) return null;
 
-  const start = (page - 1) * REVIEWS_PAGE_SIZE + 1;
-  const end = Math.min(page * REVIEWS_PAGE_SIZE, totalItems);
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
 
   return (
     <nav
@@ -168,11 +218,11 @@ function ReviewsFiltersToolbar({
 }) {
   return (
     <TooltipProvider delayDuration={300} disableHoverableContent>
-      <div className="mb-6 flex flex-wrap items-center gap-3 sm:gap-4">
+      <div className="mb-6 flex flex-wrap items-start gap-3 sm:items-center sm:gap-4">
         <div className="w-full min-w-0 sm:w-auto">
           <div
             className="min-w-0 flex-1 sm:flex-none"
-            style={{ width: `${REVIEWS_SORT_SELECT_WIDTH_CH}ch` }}
+            style={{ width: `${REVIEWS_SORT_SELECT_WIDTH_CH}ch`, maxWidth: "100%" }}
           >
             <Select<ReviewDateSortOption, false>
               instanceId={`${idPrefix}-toolbar-sort`}
@@ -181,12 +231,18 @@ function ReviewsFiltersToolbar({
               styles={appSelectStyles}
               options={reviewDateSortOptions}
               value={
-                reviewDateSortOptions.find((option) => option.value === dateSort) ??
-                reviewDateSortOptions[0]
+                reviewDateSortOptions.find(
+                  (option) => option.value === dateSort,
+                ) ?? reviewDateSortOptions[0]
               }
               onChange={(option) => {
                 if (option) onDateSortChange(option.value);
               }}
+              formatOptionLabel={(option, meta) =>
+                meta.context === "value"
+                  ? formatSortSelectedLabel(option)
+                  : option.label
+              }
               isClearable={false}
               isSearchable={false}
             />
@@ -195,7 +251,7 @@ function ReviewsFiltersToolbar({
         <div className="w-full min-w-0 sm:w-auto">
           <div
             className="min-w-0 flex-1 sm:flex-none"
-            style={{ width: `${REVIEWS_SORT_SELECT_WIDTH_CH}ch` }}
+            style={{ width: `${REVIEWS_SORT_SELECT_WIDTH_CH}ch`, maxWidth: "100%" }}
           >
             <Select<ReviewRatingOption, false>
               instanceId={`${idPrefix}-toolbar-rating`}
@@ -204,35 +260,47 @@ function ReviewsFiltersToolbar({
               styles={appSelectStyles}
               options={reviewRatingOptions}
               value={
-                reviewRatingOptions.find((option) => option.value === ratingFilter) ??
-                reviewRatingOptions[0]
+                reviewRatingOptions.find(
+                  (option) => option.value === ratingFilter,
+                ) ?? reviewRatingOptions[0]
               }
               onChange={(option) => {
                 if (option) onRatingFilterChange(option.value);
               }}
+              formatOptionLabel={(option, meta) =>
+                meta.context === "value"
+                  ? formatRatingSelectedLabel(option)
+                  : option.label
+              }
               isClearable={false}
               isSearchable={false}
             />
           </div>
         </div>
         {ratingFilter !== "all" ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-lg border-border/80 bg-card shadow-sm transition hover:bg-muted/50"
-                onClick={onClearRatingFilter}
-                aria-label="Limpiar filtros"
+          <div className="w-full sm:w-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-auto justify-start gap-2 rounded-lg border-border/80 bg-card px-3 text-sm shadow-sm transition hover:bg-muted/50 sm:w-10 sm:px-0 sm:justify-center sm:gap-0"
+                  onClick={onClearRatingFilter}
+                  aria-label="Limpiar filtros"
+                >
+                  <FilterX className="h-4 w-4" aria-hidden />
+                  <span className="sm:hidden">Limpiar filtros</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                align="center"
+                className={TABLE_LIKE_TOOLTIP_CLASS}
               >
-                <FilterX className="h-4 w-4" aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="center" className={TABLE_LIKE_TOOLTIP_CLASS}>
-              <span className="font-medium">Limpiar filtros</span>
-            </TooltipContent>
-          </Tooltip>
+                <span className="font-medium">Limpiar filtros</span>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         ) : null}
       </div>
     </TooltipProvider>
@@ -260,9 +328,9 @@ export function LeaveReviewPageClient({
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-9 sm:px-6 lg:px-8">
         <div
-          className="flex flex-wrap gap-2 border-b border-border/70 pb-3"
+          className="-mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-background px-4 pb-3 pt-4 shadow-sm [scrollbar-width:thin] sm:mx-0 sm:px-0"
           role="tablist"
           aria-label="Tipo de reseñas"
         >
@@ -273,7 +341,7 @@ export function LeaveReviewPageClient({
               role="tab"
               aria-selected={activeTab === t.id}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
+                "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition",
                 activeTab === t.id
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "border border-border/80 bg-white/60 text-muted-foreground shadow-sm hover:bg-muted/30 hover:text-foreground dark:bg-card",
@@ -337,7 +405,9 @@ export function LeaveReviewPageClient({
 }
 
 function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
+  const pageSize = useResponsiveReviewsPageSize();
   const [page, setPage] = useState(1);
+  const listTopRef = useRef<HTMLDivElement | null>(null);
   const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
   const [ratingFilter, setRatingFilter] = useState<ReviewRatingFilter>("all");
   const clearFilters = () => {
@@ -355,11 +425,21 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
       const dateB = new Date(b.createdAt).getTime();
       const safeA = Number.isNaN(dateA) ? 0 : dateA;
       const safeB = Number.isNaN(dateB) ? 0 : dateB;
-      return dateSort === "newest" ? safeB - safeA : safeA - safeB;
+      switch (dateSort) {
+        case "oldest":
+          return safeA - safeB;
+        case "best_rating":
+          return b.rating - a.rating;
+        case "worst_rating":
+          return a.rating - b.rating;
+        case "newest":
+        default:
+          return safeB - safeA;
+      }
     });
 
   const totalItems = filteredAndSortedRows.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / REVIEWS_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   useEffect(() => {
     setPage((p) => Math.min(p, totalPages));
@@ -373,6 +453,13 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
     setPage(1);
   }, [dateSort, ratingFilter]);
 
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    window.requestAnimationFrame(() => {
+      scrollToListStart(listTopRef.current);
+    });
+  };
+
   if (rows.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-10 text-center text-sm leading-relaxed text-muted-foreground">
@@ -383,11 +470,12 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
   }
 
   const safePage = Math.min(page, totalPages);
-  const offset = (safePage - 1) * REVIEWS_PAGE_SIZE;
-  const pageRows = filteredAndSortedRows.slice(offset, offset + REVIEWS_PAGE_SIZE);
+  const offset = (safePage - 1) * pageSize;
+  const pageRows = filteredAndSortedRows.slice(offset, offset + pageSize);
 
   return (
     <>
+      <div ref={listTopRef} />
       <ReviewsFiltersToolbar
         idPrefix="product-reviews"
         dateSort={dateSort}
@@ -424,9 +512,6 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
                   <p className="mt-3 text-sm font-semibold text-foreground">
                     {row.productName}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Por {row.reviewerLabel} · {formatReviewDate(row.createdAt)}
-                  </p>
                   {row.comment ? (
                     <blockquote className="mt-4 flex-1 border-l-2 border-primary/40 pl-4 text-sm italic leading-relaxed text-muted-foreground">
                       {row.comment}
@@ -436,6 +521,18 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
                       Sin comentario escrito.
                     </p>
                   )}
+                  <figcaption className="mt-5 text-sm font-bold text-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserRound
+                        className="h-4 w-4 text-primary/85"
+                        aria-hidden
+                      />
+                      {row.reviewerLabel}
+                    </span>
+                  </figcaption>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatReviewDate(row.createdAt)}
+                  </p>
                 </figure>
               </li>
             ))}
@@ -444,7 +541,8 @@ function ProductReviewsList({ rows }: { rows: ProductReviewListItem[] }) {
             page={safePage}
             totalPages={totalPages}
             totalItems={totalItems}
-            onPageChange={setPage}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
             idPrefix="product-reviews"
           />
         </>
@@ -460,7 +558,9 @@ function SiteReviewsSection({
   rows: SiteReviewListItem[];
   onOpenForm: () => void;
 }) {
+  const pageSize = useResponsiveReviewsPageSize();
   const [page, setPage] = useState(1);
+  const listTopRef = useRef<HTMLDivElement | null>(null);
   const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
   const [ratingFilter, setRatingFilter] = useState<ReviewRatingFilter>("all");
   const clearFilters = () => {
@@ -478,11 +578,21 @@ function SiteReviewsSection({
       const dateB = new Date(b.createdAt).getTime();
       const safeA = Number.isNaN(dateA) ? 0 : dateA;
       const safeB = Number.isNaN(dateB) ? 0 : dateB;
-      return dateSort === "newest" ? safeB - safeA : safeA - safeB;
+      switch (dateSort) {
+        case "oldest":
+          return safeA - safeB;
+        case "best_rating":
+          return b.rating - a.rating;
+        case "worst_rating":
+          return a.rating - b.rating;
+        case "newest":
+        default:
+          return safeB - safeA;
+      }
     });
 
   const totalItems = filteredAndSortedRows.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / REVIEWS_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   useEffect(() => {
     setPage((p) => Math.min(p, totalPages));
@@ -496,12 +606,20 @@ function SiteReviewsSection({
     setPage(1);
   }, [dateSort, ratingFilter]);
 
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    window.requestAnimationFrame(() => {
+      scrollToListStart(listTopRef.current);
+    });
+  };
+
   const safePage = Math.min(page, totalPages);
-  const offset = (safePage - 1) * REVIEWS_PAGE_SIZE;
-  const pageRows = filteredAndSortedRows.slice(offset, offset + REVIEWS_PAGE_SIZE);
+  const offset = (safePage - 1) * pageSize;
+  const pageRows = filteredAndSortedRows.slice(offset, offset + pageSize);
 
   return (
     <div className="space-y-5">
+      <div ref={listTopRef} />
       <div className="flex flex-col gap-3 border-b border-border/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground font-medium">
           Opiniones sobre la experiencia general en Global Computers USA.
@@ -560,7 +678,13 @@ function SiteReviewsSection({
                         {row.comment}
                       </blockquote>
                       <figcaption className="mt-5 text-sm font-bold text-foreground">
-                        {row.name}
+                        <span className="inline-flex items-center gap-1.5">
+                          <UserRound
+                            className="h-4 w-4 text-primary/85"
+                            aria-hidden
+                          />
+                          {row.name}
+                        </span>
                       </figcaption>
                       <p className="mt-1 text-xs font-normal text-muted-foreground">
                         {formatReviewDate(row.createdAt)}
@@ -573,7 +697,8 @@ function SiteReviewsSection({
                 page={safePage}
                 totalPages={totalPages}
                 totalItems={totalItems}
-                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
                 idPrefix="site-reviews"
               />
             </>

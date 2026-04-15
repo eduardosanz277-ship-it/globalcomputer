@@ -4,15 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   FileText,
+  FilterX,
   ImageOff,
   Minus,
   Plus,
   Star,
+  UserRound,
   ZoomIn,
 } from "lucide-react";
 import Select from "react-select";
@@ -22,6 +25,12 @@ import { ButtonPending } from "@/components/ui/button-pending";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
 import {
   PRODUCT_REVIEW_FORM_ID,
@@ -65,27 +74,41 @@ type ProductDescriptionCollapsibleProps = {
   description: string;
 };
 
-const PRODUCT_REVIEWS_PAGE_SIZE = 6;
-const PRODUCT_REVIEWS_SELECT_WIDTH_CH = 24;
+const PRODUCT_REVIEWS_PAGE_SIZE_DESKTOP = 12;
+const PRODUCT_REVIEWS_PAGE_SIZE_MOBILE_TABLET = 6;
+const PRODUCT_REVIEWS_SELECT_WIDTH_CH = 28;
 
-type ReviewDateSort = "newest" | "oldest";
+type ReviewDateSort = "newest" | "oldest" | "best_rating" | "worst_rating";
 type ReviewRatingFilter = "all" | "5" | "4" | "3" | "2" | "1";
 type ReviewDateSortOption = { value: ReviewDateSort; label: string };
 type ReviewRatingOption = { value: ReviewRatingFilter; label: string };
 
 const reviewDateSortOptions: ReviewDateSortOption[] = [
-  { value: "newest", label: "Ordenar por: Más reciente" },
-  { value: "oldest", label: "Ordenar por: Más antigua" },
+  { value: "newest", label: "Más reciente" },
+  { value: "oldest", label: "Más antigua" },
+  { value: "best_rating", label: "Mejor valoración" },
+  { value: "worst_rating", label: "Peor valoración" },
 ];
 
 const reviewRatingOptions: ReviewRatingOption[] = [
-  { value: "all", label: "Valoración: Todas" },
-  { value: "5", label: "Valoración: 5 estrellas" },
-  { value: "4", label: "Valoración: 4 estrellas" },
-  { value: "3", label: "Valoración: 3 estrellas" },
-  { value: "2", label: "Valoración: 2 estrellas" },
-  { value: "1", label: "Valoración: 1 estrella" },
+  { value: "all", label: "Todas" },
+  { value: "5", label: "5 estrellas" },
+  { value: "4", label: "4 estrellas" },
+  { value: "3", label: "3 estrellas" },
+  { value: "2", label: "2 estrellas" },
+  { value: "1", label: "1 estrella" },
 ];
+
+const TABLE_LIKE_TOOLTIP_CLASS =
+  "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
+
+function formatSortSelectedLabel(option: ReviewDateSortOption): string {
+  return `Ordenar por: ${option.label}`;
+}
+
+function formatRatingSelectedLabel(option: ReviewRatingOption): string {
+  return `Valoración: ${option.label}`;
+}
 
 function formatReviewDate(value: string | Date | null | undefined): string {
   const relative = formatRelativeLastAccess(value);
@@ -107,6 +130,38 @@ function StarRatingIcons({ rating }: { rating: number }) {
   );
 }
 
+function useResponsiveProductReviewsPageSize(): number {
+  const [pageSize, setPageSize] = useState(
+    PRODUCT_REVIEWS_PAGE_SIZE_MOBILE_TABLET,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const apply = () => {
+      setPageSize(
+        media.matches
+          ? PRODUCT_REVIEWS_PAGE_SIZE_DESKTOP
+          : PRODUCT_REVIEWS_PAGE_SIZE_MOBILE_TABLET,
+      );
+    };
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  return pageSize;
+}
+
+function scrollToListStart(el: HTMLElement | null) {
+  if (!el) return;
+  const stickyHeaderOffset = 110;
+  const top = Math.max(
+    0,
+    el.getBoundingClientRect().top + window.scrollY - stickyHeaderOffset,
+  );
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
 function ProductReviewsSection({
   productName,
   rows,
@@ -116,7 +171,9 @@ function ProductReviewsSection({
   rows: ProductReviewDetailListItem[];
   onOpenForm: () => void;
 }) {
+  const pageSize = useResponsiveProductReviewsPageSize();
   const [page, setPage] = useState(1);
+  const listTopRef = useRef<HTMLElement | null>(null);
   const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
   const [ratingFilter, setRatingFilter] = useState<ReviewRatingFilter>("all");
 
@@ -130,20 +187,24 @@ function ProductReviewsSection({
       const dateB = new Date(b.createdAt).getTime();
       const safeA = Number.isNaN(dateA) ? 0 : dateA;
       const safeB = Number.isNaN(dateB) ? 0 : dateB;
-      return dateSort === "newest" ? safeB - safeA : safeA - safeB;
+      switch (dateSort) {
+        case "oldest":
+          return safeA - safeB;
+        case "best_rating":
+          return b.rating - a.rating;
+        case "worst_rating":
+          return a.rating - b.rating;
+        case "newest":
+        default:
+          return safeB - safeA;
+      }
     });
 
   const totalItems = filteredAndSortedRows.length;
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalItems / PRODUCT_REVIEWS_PAGE_SIZE),
-  );
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
-  const offset = (safePage - 1) * PRODUCT_REVIEWS_PAGE_SIZE;
-  const pageRows = filteredAndSortedRows.slice(
-    offset,
-    offset + PRODUCT_REVIEWS_PAGE_SIZE,
-  );
+  const offset = (safePage - 1) * pageSize;
+  const pageRows = filteredAndSortedRows.slice(offset, offset + pageSize);
 
   useEffect(() => {
     setPage((p) => Math.min(p, totalPages));
@@ -158,8 +219,18 @@ function ProductReviewsSection({
     setRatingFilter("all");
   };
 
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    window.requestAnimationFrame(() => {
+      scrollToListStart(listTopRef.current);
+    });
+  };
+
   return (
-    <section className="mt-10 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-sm sm:mt-12 sm:p-8">
+    <section
+      ref={listTopRef}
+      className="mt-10 rounded-xl border border-border/70 bg-card/80 p-4 sm:p-6 shadow-sm"
+    >
       <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
@@ -173,7 +244,7 @@ function ProductReviewsSection({
         {rows.length > 0 ? (
           <Button
             size="lg"
-            className="h-11 rounded-xl px-6"
+            className="h-11 w-full rounded-xl px-6 sm:w-auto"
             onClick={onOpenForm}
           >
             Escribe una reseña
@@ -182,69 +253,103 @@ function ProductReviewsSection({
       </div>
 
       {rows.length === 0 ? null : (
-        <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="w-full min-w-0 sm:w-auto">
-            <div
-              className="min-w-0 flex-1 sm:flex-none"
-              style={{ width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch` }}
-            >
-              <Select<ReviewDateSortOption, false>
-                instanceId="product-detail-reviews-sort"
-                inputId="product-detail-reviews-sort"
-                aria-label="Ordenar reseñas por fecha"
-                styles={appSelectStyles}
-                options={reviewDateSortOptions}
-                value={
-                  reviewDateSortOptions.find(
-                    (option) => option.value === dateSort,
-                  ) ?? reviewDateSortOptions[0]
-                }
-                onChange={(option) => {
-                  if (option) setDateSort(option.value);
+        <TooltipProvider delayDuration={300} disableHoverableContent>
+          <div className="mt-5 flex flex-wrap items-start gap-3 sm:items-center sm:gap-4">
+            <div className="w-full min-w-0 sm:w-auto">
+              <div
+                className="min-w-0 flex-1 sm:flex-none"
+                style={{
+                  width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch`,
+                  maxWidth: "100%",
                 }}
-                isClearable={false}
-                isSearchable={false}
-              />
+              >
+                <Select<ReviewDateSortOption, false>
+                  instanceId="product-detail-reviews-sort"
+                  inputId="product-detail-reviews-sort"
+                  aria-label="Ordenar reseñas por fecha"
+                  styles={appSelectStyles}
+                  options={reviewDateSortOptions}
+                  value={
+                    reviewDateSortOptions.find(
+                      (option) => option.value === dateSort,
+                    ) ?? reviewDateSortOptions[0]
+                  }
+                  onChange={(option) => {
+                    if (option) setDateSort(option.value);
+                  }}
+                  formatOptionLabel={(option, meta) =>
+                    meta.context === "value"
+                      ? formatSortSelectedLabel(option)
+                      : option.label
+                  }
+                  isClearable={false}
+                  isSearchable={false}
+                />
+              </div>
             </div>
-          </div>
-          <div className="w-full min-w-0 sm:w-auto">
-            <div
-              className="min-w-0 flex-1 sm:flex-none"
-              style={{ width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch` }}
-            >
-              <Select<ReviewRatingOption, false>
-                instanceId="product-detail-reviews-rating"
-                inputId="product-detail-reviews-rating"
-                aria-label="Filtrar reseñas por valoración"
-                styles={appSelectStyles}
-                options={reviewRatingOptions}
-                value={
-                  reviewRatingOptions.find(
-                    (option) => option.value === ratingFilter,
-                  ) ?? reviewRatingOptions[0]
-                }
-                onChange={(option) => {
-                  if (option) setRatingFilter(option.value);
+            <div className="w-full min-w-0 sm:w-auto">
+              <div
+                className="min-w-0 flex-1 sm:flex-none"
+                style={{
+                  width: `${PRODUCT_REVIEWS_SELECT_WIDTH_CH}ch`,
+                  maxWidth: "100%",
                 }}
-                isClearable={false}
-                isSearchable={false}
-              />
+              >
+                <Select<ReviewRatingOption, false>
+                  instanceId="product-detail-reviews-rating"
+                  inputId="product-detail-reviews-rating"
+                  aria-label="Filtrar reseñas por valoración"
+                  styles={appSelectStyles}
+                  options={reviewRatingOptions}
+                  value={
+                    reviewRatingOptions.find(
+                      (option) => option.value === ratingFilter,
+                    ) ?? reviewRatingOptions[0]
+                  }
+                  onChange={(option) => {
+                    if (option) setRatingFilter(option.value);
+                  }}
+                  formatOptionLabel={(option, meta) =>
+                    meta.context === "value"
+                      ? formatRatingSelectedLabel(option)
+                      : option.label
+                  }
+                  isClearable={false}
+                  isSearchable={false}
+                />
+              </div>
             </div>
+            {ratingFilter !== "all" ? (
+              <div className="w-full sm:w-auto">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 w-auto justify-start gap-2 rounded-lg border-border/80 bg-card px-3 text-sm shadow-sm transition hover:bg-muted/50 sm:w-10 sm:px-0 sm:justify-center sm:gap-0"
+                      onClick={clearFilters}
+                      aria-label="Limpiar filtros"
+                    >
+                      <FilterX className="h-4 w-4" aria-hidden />
+                      <span className="sm:hidden">Limpiar filtros</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    align="center"
+                    className={TABLE_LIKE_TOOLTIP_CLASS}
+                  >
+                    <span className="font-medium">Limpiar filtros</span>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            ) : null}
           </div>
-          {ratingFilter !== "all" ? (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-sm font-semibold text-black underline underline-offset-2 transition hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-            >
-              Limpiar todo
-            </button>
-          ) : null}
-        </div>
+        </TooltipProvider>
       )}
 
       {rows.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
             Este producto todavía no tiene reseñas. Sé la primera persona en
             compartir su experiencia.
@@ -259,7 +364,7 @@ function ProductReviewsSection({
           </Button>
         </div>
       ) : filteredAndSortedRows.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center text-sm text-muted-foreground">
+        <p className="mt-6 rounded-xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center text-sm text-muted-foreground">
           Ninguna reseña coincide con los filtros. Ajusta los criterios para ver
           más resultados o{" "}
           <button
@@ -275,9 +380,13 @@ function ProductReviewsSection({
           <ul className="mt-6 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {pageRows.map((row) => (
               <li key={row.id}>
-                <article className="flex h-full flex-col rounded-2xl border border-border/60 bg-background/70 p-5 shadow-sm">
+                <article className="flex h-full flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6">
                   <div className="flex items-center justify-between gap-3">
                     <StarRatingIcons rating={row.rating} />
+                    <CheckCircle2
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden
+                    />
                   </div>
                   {row.comment ? (
                     <blockquote className="mt-4 flex-1 border-l-2 border-primary/35 pl-4 text-sm italic leading-relaxed text-muted-foreground">
@@ -289,7 +398,13 @@ function ProductReviewsSection({
                     </p>
                   )}
                   <p className="mt-5 text-sm font-semibold text-foreground">
-                    {row.reviewerLabel}
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserRound
+                        className="h-4 w-4 text-primary/85"
+                        aria-hidden
+                      />
+                      {row.reviewerLabel}
+                    </span>
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatReviewDate(row.createdAt)}
@@ -299,7 +414,7 @@ function ProductReviewsSection({
             ))}
           </ul>
 
-          {totalItems > PRODUCT_REVIEWS_PAGE_SIZE ? (
+          {totalItems > pageSize ? (
             <nav
               className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row"
               aria-label="Paginación de reseñas del producto"
@@ -307,8 +422,7 @@ function ProductReviewsSection({
               <p className="text-sm text-muted-foreground">
                 Mostrando{" "}
                 <span className="tabular-nums text-foreground">
-                  {offset + 1}–
-                  {Math.min(offset + PRODUCT_REVIEWS_PAGE_SIZE, totalItems)}
+                  {offset + 1}–{Math.min(offset + pageSize, totalItems)}
                 </span>{" "}
                 de{" "}
                 <span className="tabular-nums text-foreground">
@@ -322,7 +436,7 @@ function ProductReviewsSection({
                   size="sm"
                   className="gap-1"
                   disabled={safePage <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(Math.max(1, safePage - 1))}
                 >
                   <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
                   Anterior
@@ -336,7 +450,9 @@ function ProductReviewsSection({
                   size="sm"
                   className="gap-1"
                   disabled={safePage >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    handlePageChange(Math.min(totalPages, safePage + 1))
+                  }
                 >
                   Siguiente
                   <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
@@ -381,7 +497,7 @@ function ProductDescriptionCollapsible({
         )}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-border/70 px-6 py-1">
+          <div className="border-t border-border/70 px-6 pb-2">
             <ProductDescriptionViewer descripcion={description} />
           </div>
         </div>
@@ -478,7 +594,7 @@ export function StorefrontProductDetailView({
   };
 
   return (
-    <div className={cn(inter.className, "pb-16")}>
+    <div className={cn(inter.className)}>
       <div className="grid items-start gap-4 lg:[grid-template-columns:55%_45%] lg:gap-10">
         <div className="min-w-0 space-y-5">
           <div
@@ -747,7 +863,7 @@ export function StorefrontProductDetailView({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur-sm">
+          <div className="rounded-xl border border-border/70 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur-sm">
             {showCompare ? (
               <div className="flex w-full flex-col gap-2">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
@@ -843,7 +959,7 @@ export function StorefrontProductDetailView({
               href={product.manual_pdf_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-2xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
+              className="flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
             >
               <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
               <span>Descargar o ver manual (PDF)</span>

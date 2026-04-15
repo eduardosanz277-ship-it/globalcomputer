@@ -17,7 +17,7 @@ import { cn } from "@/utils/cn";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { AddressFormSlideOver } from "./AddressFormSlideOver";
 import { deleteAddressAction } from "./actions";
-import type { CuentaAddress } from "./types";
+import type { CuentaAddress, CuentaOrder } from "./types";
 
 function escapeHtmlBasic(text: string): string {
   return text
