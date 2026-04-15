@@ -16,7 +16,7 @@ if (!stripeWebhookSecret) {
 
 const stripe = new Stripe(stripeSecret, { apiVersion: "2026-03-25.dahlia" });
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const signature = req.headers.get("stripe-signature") ?? "";
