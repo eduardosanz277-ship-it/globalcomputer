@@ -208,6 +208,14 @@ export async function getCurrentUserService() {
   return repoGetSessionUser();
 }
 
+export async function ensureAdminUserService() {
+  const user = await getCurrentUserService();
+  if (!user || user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+  return user;
+}
+
 export async function logoutService() {
   await repoLogout();
   return { success: true };
