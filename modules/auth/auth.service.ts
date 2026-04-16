@@ -129,9 +129,8 @@ export async function sendLoginOtpService(rawEmail: string) {
     );
   }
 
-  const redirectTo = `${getAppBaseUrl()}/auth/callback`;
   try {
-    await repoSignInWithOtp(parsed.data.email, redirectTo);
+    await repoSignInWithOtp(parsed.data.email);
   } catch (error: unknown) {
     throw mapSignInWithOtpError(error);
   }

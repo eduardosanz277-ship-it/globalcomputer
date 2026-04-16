@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 
 import {
   AuthAlert,
@@ -50,6 +50,7 @@ function LoginPageContent() {
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
   const emailForm = useForm<EmailOtpRequestSchema>({
     resolver: zodResolver(emailOtpRequestSchema),
@@ -75,6 +76,7 @@ function LoginPageContent() {
         setEmailForCode(e);
         codeForm.reset({ code: "" });
         setStep("code");
+        setCooldown(30);
       },
     },
   );
@@ -92,6 +94,15 @@ function LoginPageContent() {
 
   const emailErrors = emailForm.formState.errors;
   const codeErrors = codeForm.formState.errors;
+  const cooldownLabel = cooldown > 0 ? ` (${cooldown}s)` : "";
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   return (
     <AuthLayout>
@@ -122,8 +133,9 @@ function LoginPageContent() {
               type="submit"
               pending={sending}
               pendingLabel="Enviando"
+              disabled={sending || cooldown > 0}
             >
-              Continuar
+              Continuar{cooldownLabel}
             </AuthPrimaryButton>
           </Form>
         ) : (
@@ -143,10 +155,10 @@ function LoginPageContent() {
                 <Label htmlFor="otp-code">Código de verificación</Label>
                 <AuthInput
                   id="otp-code"
-                  inputMode="numeric"
+                  inputMode="text"
                   autoComplete="one-time-code"
-                  placeholder="123456"
-                  maxLength={6}
+                  placeholder="123456 o token largo"
+                  maxLength={128}
                   required
                   aria-invalid={Boolean(codeErrors.code)}
                   {...codeForm.register("code")}

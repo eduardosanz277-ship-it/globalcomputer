@@ -1,5 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import {
   AuthCredentials,
   RegisterBusinessPayload,
@@ -58,16 +58,14 @@ export async function repoLogin(credentials: AuthCredentials) {
 }
 
 /**
- * Passwordless: envía enlace mágico y/o código según plantilla de email en Supabase.
- * `emailRedirectTo` debe coincidir con URL permitidas del proyecto (Site URL / Redirect URLs).
+ * Passwordless: envía un código OTP (tipo email) y crea el usuario si no existe.
  */
-export async function repoSignInWithOtp(email: string, emailRedirectTo: string) {
+export async function repoSignInWithOtp(email: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: false,
-      emailRedirectTo,
+      shouldCreateUser: true,
     },
   });
   if (error) throw error;
@@ -75,12 +73,38 @@ export async function repoSignInWithOtp(email: string, emailRedirectTo: string) 
 
 export async function repoVerifyEmailOtp(email: string, token: string) {
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email",
-  });
-  if (error) throw error;
+  const prefersMagicLink =
+    token.includes(".") || token.length > 60 || /-/g.test(token);
+
+  const attemptTypes = prefersMagicLink
+    ? ["magiclink", "email"]
+    : ["email", "magiclink"];
+
+  let lastError: Error | null = null;
+  for (const type of attemptTypes) {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: type as Parameters<
+          typeof supabase.auth.verifyOtp
+        >[0]["type"],
+      } as Parameters<typeof supabase.auth.verifyOtp>[0]);
+      if (!error) return;
+      lastError = error;
+    } catch (error) {
+      if (error instanceof Error) {
+        lastError = error;
+      } else {
+        lastError = new Error(String(error));
+      }
+    }
+  }
+
+  if (!lastError) {
+    throw new Error("Token inválido");
+  }
+  throw lastError;
 }
 
 export async function repoRegister(payload: RegisterPayload) {

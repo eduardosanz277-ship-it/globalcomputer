@@ -29,7 +29,7 @@ export const emailOtpCodeSchema = z.object({
     .string()
     .trim()
     .min(1, "El código es obligatorio")
-    .regex(/^\d{6}$/, "El código debe tener exactamente 6 dígitos"),
+    .max(128, "El código es demasiado largo"),
 });
 
 /** Verificación interna (email + código). */
