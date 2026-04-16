@@ -48,7 +48,7 @@
 }
 
 /**
- * Evita que el navegador “corrija” scrollY cuando cambia la altura del sticky header
+ * Evita que el navegador "corrija" scrollY cuando cambia la altura del sticky header
  * (colapsar/mostrar barra). Sin esto, al pasar secciones largas (p. ej. catálogo por marcas)
  * el anchoring genera saltos y desincroniza el handler de scroll del header.
  */
@@ -78,52 +78,18 @@ body {
 }
 
 /**
- * Carrusel “Productos similares”: la barra horizontal siempre reserva altura (thumb/track
- * transparentes sin hover/focus en `.group/similar`) para que no empuje el contenido inferior.
- * Solo el thumb se vuelve visible con hover/focus en la sección (como los botones).
- * Separación cards ↔ franja del scroll: `pb-2` (0.5rem).
+ * Carrusel "Productos similares": scrollbar nativo oculto.
+ * Se usa un scrollbar personalizado en React posicionado en el flujo normal del layout
+ * (ancho = área de contenido), así el track no abarca el viewport completo.
  */
 .similar-products-scroll {
   box-sizing: border-box;
-  -ms-overflow-style: auto;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .similar-products-scroll::-webkit-scrollbar {
-  height: var(--app-scrollbar-size);
-}
-
-.similar-products-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.similar-products-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-/* Anula el `*::-webkit-scrollbar-thumb:hover` global cuando el thumb aún está “oculto”. */
-.similar-products-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: transparent;
-}
-
-.group\/similar:hover .similar-products-scroll,
-.group\/similar:focus-within .similar-products-scroll {
-  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
-}
-
-.group\/similar:hover .similar-products-scroll::-webkit-scrollbar-thumb,
-.group\/similar:focus-within .similar-products-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--app-scrollbar-thumb);
-}
-
-.group\/similar:hover .similar-products-scroll::-webkit-scrollbar-thumb:hover,
-.group\/similar:focus-within .similar-products-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: var(--app-scrollbar-thumb-hover);
+  display: none;
 }
 
 /** Fondo con grano muy suave (tienda / hero) */

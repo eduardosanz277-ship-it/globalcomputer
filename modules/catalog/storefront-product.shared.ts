@@ -18,6 +18,19 @@ export type StorefrontProduct = {
   brand_id: string;
   brand_type_id: string | null;
   brand_name: string;
+  /** Categoría efectiva en catálogo (directa o padre de la subcategoría); null si no está clasificado. */
+  category_id: string | null;
+  category_name: string | null;
+  /**
+   * Características específicas asignadas al producto (una entrada por específico),
+   * con referencia a su categoría general para filtros agrupados.
+   */
+  characteristic_specifics: {
+    id: string;
+    name: string;
+    general_id: string;
+    general_name: string;
+  }[];
   product_images: {
     id: string;
     url: string;

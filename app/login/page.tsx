@@ -189,7 +189,7 @@ function LoginPageContent() {
         {step === "email" ? (
           <Form
             form={emailForm}
-            onSubmit={emailForm.handleSubmit(handleEmailSubmit)}
+            onSubmit={handleEmailSubmit}
             className="space-y-4"
           >
             <AuthField

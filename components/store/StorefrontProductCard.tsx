@@ -109,7 +109,12 @@ export function StorefrontProductCard({
   return (
     <li
       className={cn(
-        "group/card flex flex-col overflow-hidden rounded-2xl bg-card",
+        /*
+         * `overflow-hidden` se mueve al contenedor de imagen (abajo) para que no
+         * comparta elemento con `box-shadow` + `transform`. Tenerlos juntos crea un
+         * contexto de composición que recorta la sombra propia en Chrome/Safari.
+         */
+        "group/card flex flex-col rounded-2xl bg-card",
         embedPlain
           ? "border-0 shadow-sm outline-none ring-0 transition-shadow hover:translate-y-0 hover:shadow-md"
           : "border border-border/50 shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-soft-lg",
@@ -118,7 +123,11 @@ export function StorefrontProductCard({
     >
       <div
         className={cn(
-          "relative aspect-[4/3] w-full overflow-hidden",
+          /*
+           * `overflow-hidden` + `rounded-t-2xl` aquí recortan la imagen y el overlay
+           * a los bordes redondeados superiores de la tarjeta sin afectar la sombra del <li>.
+           */
+          "relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl",
           embedPlain ? "bg-[rgb(229,231,235)]" : "bg-muted/40",
         )}
       >

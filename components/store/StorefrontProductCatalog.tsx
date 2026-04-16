@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -60,6 +60,31 @@ type SortKey =
   | "date_desc"
   | "date_asc";
 type SortOption = { value: SortKey; label: string };
+type FilterSectionKey =
+  | "category"
+  | "brand"
+  | "price"
+  | "specific"
+  | "stock"
+  | "offers";
+
+const DEFAULT_EXPANDED_FILTER_SECTIONS: Record<FilterSectionKey, boolean> = {
+  category: true,
+  brand: true,
+  price: true,
+  specific: false,
+  stock: false,
+  offers: false,
+};
+
+const EMPTY_FILTER_SECTIONS_STATE: Record<FilterSectionKey, boolean> = {
+  category: false,
+  brand: false,
+  price: false,
+  specific: false,
+  stock: false,
+  offers: false,
+};
 
 const sortOptions: SortOption[] = [
   { value: "relevance", label: "Destacados" },
@@ -89,6 +114,53 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function FilterPanelSection({
+  className,
+  title,
+  description,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  className?: string;
+  title: string;
+  description?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className={className}>
+      <button
+        type="button"
+        className="w-full text-left"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+      >
+        <span className="block min-w-0">
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold tracking-wide text-foreground">
+              {title}
+            </span>
+            <span
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-xl font-medium leading-none text-muted-foreground"
+              aria-hidden
+            >
+              {isOpen ? "−" : "+"}
+            </span>
+          </span>
+          {description ? (
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+              {description}
+            </span>
+          ) : null}
+        </span>
+      </button>
+      {isOpen ? <div className="mt-4">{children}</div> : null}
+    </section>
+  );
+}
+
 type Props = {
   products: StorefrontProduct[];
   priceTier: StorefrontPriceTier;
@@ -98,6 +170,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [brandIds, setBrandIds] = useState<Record<string, boolean>>({});
+  const [categoryIds, setCategoryIds] = useState<Record<string, boolean>>({});
+  const [specificIds, setSpecificIds] = useState<Record<string, boolean>>({});
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [stockFilters, setStockFilters] = useState<
@@ -107,7 +181,80 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
   const [sortBy, setSortBy] = useState<SortKey>("relevance");
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [expandedSections, setExpandedSections] = useState<
+    Record<FilterSectionKey, boolean>
+  >(DEFAULT_EXPANDED_FILTER_SECTIONS);
+  const [stickyOpenSections, setStickyOpenSections] = useState<
+    Record<FilterSectionKey, boolean>
+  >(EMPTY_FILTER_SECTIONS_STATE);
   const pageSizeSelectId = useId();
+
+  const sectionHasActiveSelection = (key: FilterSectionKey): boolean => {
+    if (key === "category") return Object.values(categoryIds).some(Boolean);
+    if (key === "brand") return Object.values(brandIds).some(Boolean);
+    if (key === "price")
+      return priceMin.trim() !== "" || priceMax.trim() !== "";
+    if (key === "specific") return Object.values(specificIds).some(Boolean);
+    if (key === "stock") return Object.values(stockFilters).some(Boolean);
+    return discountOnly;
+  };
+
+  const currentActiveSectionMap = (): Record<FilterSectionKey, boolean> => ({
+    category: sectionHasActiveSelection("category"),
+    brand: sectionHasActiveSelection("brand"),
+    price: sectionHasActiveSelection("price"),
+    specific: sectionHasActiveSelection("specific"),
+    stock: sectionHasActiveSelection("stock"),
+    offers: sectionHasActiveSelection("offers"),
+  });
+
+  useEffect(() => {
+    if (!panelOpen) {
+      setStickyOpenSections(EMPTY_FILTER_SECTIONS_STATE);
+      return;
+    }
+    const active = currentActiveSectionMap();
+    setExpandedSections({
+      ...DEFAULT_EXPANDED_FILTER_SECTIONS,
+      category: DEFAULT_EXPANDED_FILTER_SECTIONS.category || active.category,
+      brand: DEFAULT_EXPANDED_FILTER_SECTIONS.brand || active.brand,
+      price: DEFAULT_EXPANDED_FILTER_SECTIONS.price || active.price,
+      specific: DEFAULT_EXPANDED_FILTER_SECTIONS.specific || active.specific,
+      stock: DEFAULT_EXPANDED_FILTER_SECTIONS.stock || active.stock,
+      offers: DEFAULT_EXPANDED_FILTER_SECTIONS.offers || active.offers,
+    });
+    setStickyOpenSections(active);
+  }, [panelOpen]);
+
+  useEffect(() => {
+    if (!panelOpen) return;
+    const active = currentActiveSectionMap();
+    setStickyOpenSections((prev) => ({
+      category: prev.category || active.category,
+      brand: prev.brand || active.brand,
+      price: prev.price || active.price,
+      specific: prev.specific || active.specific,
+      stock: prev.stock || active.stock,
+      offers: prev.offers || active.offers,
+    }));
+    setExpandedSections((prev) => ({
+      category: prev.category || active.category,
+      brand: prev.brand || active.brand,
+      price: prev.price || active.price,
+      specific: prev.specific || active.specific,
+      stock: prev.stock || active.stock,
+      offers: prev.offers || active.offers,
+    }));
+  }, [
+    panelOpen,
+    categoryIds,
+    brandIds,
+    priceMin,
+    priceMax,
+    specificIds,
+    stockFilters,
+    discountOnly,
+  ]);
 
   const brandOptions = useMemo(() => {
     const m = new Map<string, string>();
@@ -117,6 +264,48 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, [products]);
+
+  const categoryOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of products) {
+      if (p.category_id == null) continue;
+      const label = p.category_name?.trim() || "Categoría";
+      if (!m.has(p.category_id)) m.set(p.category_id, label);
+    }
+    return Array.from(m.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, [products]);
+
+  const specificOptionsByGeneral = useMemo(() => {
+    const generals = new Map<
+      string,
+      { id: string; name: string; specifics: Map<string, string> }
+    >();
+    for (const p of products) {
+      for (const s of p.characteristic_specifics) {
+        if (!generals.has(s.general_id)) {
+          generals.set(s.general_id, {
+            id: s.general_id,
+            name: s.general_name,
+            specifics: new Map(),
+          });
+        }
+        const g = generals.get(s.general_id)!;
+        if (!g.specifics.has(s.id)) g.specifics.set(s.id, s.name);
+      }
+    }
+    return Array.from(generals.values())
+      .map((g) => ({
+        generalId: g.id,
+        generalName: g.name,
+        specifics: Array.from(g.specifics.entries())
+          .map(([id, name]) => ({ id, name }))
+          .sort((a, b) => a.name.localeCompare(b.name, "es")),
+      }))
+      .filter((g) => g.specifics.length > 0)
+      .sort((a, b) => a.generalName.localeCompare(b.generalName, "es"));
   }, [products]);
 
   const priceBounds = useMemo(() => {
@@ -159,6 +348,16 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
       .map(([id]) => id);
     const hasBrandFilter = selectedBrands.length > 0;
 
+    const selectedCategories = Object.entries(categoryIds)
+      .filter(([, v]) => v)
+      .map(([id]) => id);
+    const hasCategoryFilter = selectedCategories.length > 0;
+
+    const selectedSpecificIds = Object.entries(specificIds)
+      .filter(([, v]) => v)
+      .map(([id]) => id);
+    const hasSpecificFilter = selectedSpecificIds.length > 0;
+
     const minN = priceMin.trim() === "" ? null : Number(priceMin);
     const maxN = priceMax.trim() === "" ? null : Number(priceMax);
     const minOk = minN !== null && Number.isFinite(minN);
@@ -176,6 +375,24 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         if (!inName && !inBrand) return false;
       }
       if (hasBrandFilter && !selectedBrands.includes(p.brand_id)) return false;
+
+      if (hasCategoryFilter) {
+        if (
+          p.category_id == null ||
+          !selectedCategories.includes(p.category_id)
+        ) {
+          return false;
+        }
+      }
+
+      if (hasSpecificFilter) {
+        const productSpecificIds = new Set(
+          p.characteristic_specifics.map((s) => s.id),
+        );
+        if (!selectedSpecificIds.some((id) => productSpecificIds.has(id))) {
+          return false;
+        }
+      }
 
       const sale = salePrice(p, priceTier);
       if (minOk && sale < minN) return false;
@@ -239,6 +456,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     priceTier,
     search,
     brandIds,
+    categoryIds,
+    specificIds,
     priceMin,
     priceMax,
     stockFilters,
@@ -248,8 +467,18 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
   const filterResetKey = useMemo(
     () =>
-      `${search}|${priceMin}|${priceMax}|${discountOnly}|${sortBy}|${JSON.stringify(brandIds)}|${JSON.stringify(stockFilters)}`,
-    [search, priceMin, priceMax, discountOnly, sortBy, brandIds, stockFilters],
+      `${search}|${priceMin}|${priceMax}|${discountOnly}|${sortBy}|${JSON.stringify(brandIds)}|${JSON.stringify(categoryIds)}|${JSON.stringify(specificIds)}|${JSON.stringify(stockFilters)}`,
+    [
+      search,
+      priceMin,
+      priceMax,
+      discountOnly,
+      sortBy,
+      brandIds,
+      categoryIds,
+      specificIds,
+      stockFilters,
+    ],
   );
 
   useEffect(() => {
@@ -301,15 +530,28 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     let n = 0;
     if (search.trim()) n += 1;
     if (Object.values(brandIds).some(Boolean)) n += 1;
+    if (Object.values(categoryIds).some(Boolean)) n += 1;
+    if (Object.values(specificIds).some(Boolean)) n += 1;
     if (priceMin.trim() || priceMax.trim()) n += 1;
     if (Object.values(stockFilters).some(Boolean)) n += 1;
     if (discountOnly) n += 1;
     return n;
-  }, [search, brandIds, priceMin, priceMax, stockFilters, discountOnly]);
+  }, [
+    search,
+    brandIds,
+    categoryIds,
+    specificIds,
+    priceMin,
+    priceMax,
+    stockFilters,
+    discountOnly,
+  ]);
 
   const clearFilters = () => {
     setSearch("");
     setBrandIds({});
+    setCategoryIds({});
+    setSpecificIds({});
     setPriceMin("");
     setPriceMax("");
     setStockFilters({});
@@ -319,6 +561,22 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
   const toggleBrand = (id: string) => {
     setBrandIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleCategory = (id: string) => {
+    setCategoryIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleSpecificCharacteristic = (id: string) => {
+    setSpecificIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleFilterSection = (key: FilterSectionKey) => {
+    setExpandedSections((prev) => {
+      if (prev[key] && (sectionHasActiveSelection(key) || stickyOpenSections[key]))
+        return prev;
+      return { ...prev, [key]: !prev[key] };
+    });
   };
 
   const toggleStockFilter = (key: StockFilterKey) => {
@@ -419,7 +677,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
         title="Filtros"
-        description="Refina el catálogo por marca, precio, disponibilidad y ofertas."
+        description="Refina el catálogo por categoría, disponibilidad, marca, características específicas, precio y ofertas."
         side="left"
         contentAriaLabel="Opciones de filtrado del catálogo"
         footer={
@@ -441,7 +699,12 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
       >
         <div id="storefront-filters-panel" className="space-y-5">
           <section
-            className={cn(adminSlideOverSectionClassName, "sm:hidden")}
+            className={cn(
+              adminSlideOverSectionClassName,
+              "sm:hidden",
+              /* Separa de Precio en móvil; Precio usa !mt-0 y no recibe el gap del panel */
+              "mb-5",
+            )}
             aria-label="Ordenar catálogo"
           >
             <header className="space-y-1">
@@ -480,16 +743,122 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
             </div>
           </section>
 
-          <section className={adminSlideOverSectionClassName}>
+          {categoryOptions.length > 0 ? (
+            <FilterPanelSection
+              className={cn(adminSlideOverSectionClassName, "!mt-0")}
+              title="Categoría"
+              description="Marca una o varias categorías para acotar el listado."
+              isOpen={expandedSections.category}
+              onToggle={() => toggleFilterSection("category")}
+            >
+              <div className={adminSlideOverNestedScrollClassName}>
+                {categoryOptions.map(({ id, name }) => (
+                  <div
+                    key={id}
+                    className="rounded-lg border border-border/60 p-3"
+                  >
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(categoryIds[id])}
+                        onChange={() => toggleCategory(id)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium leading-snug text-foreground">
+                        {name}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </FilterPanelSection>
+          ) : null}
+
+          {/* <section className={adminSlideOverSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Precio
+                Búsqueda y orden
               </h2>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Rango según tu precio de venta (USD, con descuento de perfil).
+                Filtra por texto y elige cómo ordenar los resultados.
               </p>
             </header>
-            <div className="mt-4 space-y-2">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="filter-search" className="text-sm font-medium">
+                  Buscar
+                </Label>
+                <Input
+                  id="filter-search"
+                  placeholder="Nombre o marca…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="filter-sort" className="text-sm font-medium">
+                  Ordenar por
+                </Label>
+                <Select<SortOption, false>
+                  instanceId="filter-sort"
+                  inputId="filter-sort"
+                  styles={appSelectStyles}
+                  options={sortOptions}
+                  value={
+                    sortOptions.find((option) => option.value === sortBy) ??
+                    sortOptions[0]
+                  }
+                  onChange={(option) => {
+                    if (option) setSortBy(option.value);
+                  }}
+                  isClearable={false}
+                  isSearchable={false}
+                />
+              </div>
+            </div>
+          </section> */}
+
+          {brandOptions.length > 0 ? (
+            <FilterPanelSection
+              className={adminSlideOverSectionClassName}
+              title="Marca"
+              description="Marca una o varias marcas para acotar el listado."
+              isOpen={expandedSections.brand}
+              onToggle={() => toggleFilterSection("brand")}
+            >
+              <div className={adminSlideOverNestedScrollClassName}>
+                {brandOptions.map(({ id, name }) => (
+                  <div
+                    key={id}
+                    className="rounded-lg border border-border/60 p-3"
+                  >
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(brandIds[id])}
+                        onChange={() => toggleBrand(id)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium leading-snug text-foreground">
+                        {name}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </FilterPanelSection>
+          ) : null}
+
+          <FilterPanelSection
+            className={adminSlideOverSectionClassName}
+            title="Precio"
+            description="Rango según tu precio de venta (USD, con descuento de perfil)."
+            isOpen={expandedSections.price}
+            onToggle={() => toggleFilterSection("price")}
+          >
+            <div className="space-y-2">
               <div className="rounded-xl border border-border/60 bg-card/60 px-4 py-4 shadow-sm">
                 <div className="relative h-6">
                   <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted" />
@@ -571,14 +940,55 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 />
               </div>
             </div>
-          </section>
+          </FilterPanelSection>
 
-          <section className={adminSlideOverSectionClassName}>
-            <header className="space-y-1">
-              <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Disponibilidad
-              </h2>
-            </header>
+          {specificOptionsByGeneral.length > 0 ? (
+            <FilterPanelSection
+              className={adminSlideOverSectionClassName}
+              title="Características específicas"
+              description="Agrupadas por categoría general. Puedes marcar varias: se muestran productos que cumplan al menos una de las elegidas."
+              isOpen={expandedSections.specific}
+              onToggle={() => toggleFilterSection("specific")}
+            >
+              <div className="space-y-5">
+                {specificOptionsByGeneral.map((group) => (
+                  <div key={group.generalId} className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {group.generalName}
+                    </h3>
+                    <div className={adminSlideOverNestedScrollClassName}>
+                      {group.specifics.map(({ id, name }) => (
+                        <div
+                          key={id}
+                          className="rounded-lg border border-border/60 p-3"
+                        >
+                          <label className="flex cursor-pointer items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(specificIds[id])}
+                              onChange={() => toggleSpecificCharacteristic(id)}
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+                            />
+                            <span className="text-sm font-medium leading-snug text-foreground">
+                              {name}
+                            </span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </FilterPanelSection>
+          ) : null}
+
+          <FilterPanelSection
+            className={adminSlideOverSectionClassName}
+            title="Disponibilidad"
+            description="Elige el estado de inventario para encontrar productos disponibles, con poco stock o agotados."
+            isOpen={expandedSections.stock}
+            onToggle={() => toggleFilterSection("stock")}
+          >
             <div className="space-y-2">
               <div className="rounded-lg border border-border/60 p-3">
                 <label className="flex cursor-pointer items-start gap-3">
@@ -620,96 +1030,15 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 </label>
               </div>
             </div>
-          </section>
+          </FilterPanelSection>
 
-          {/* <section className={adminSlideOverSectionClassName}>
-            <header className="space-y-1">
-              <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Búsqueda y orden
-              </h2>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Filtra por texto y elige cómo ordenar los resultados.
-              </p>
-            </header>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="filter-search" className="text-sm font-medium">
-                  Buscar
-                </Label>
-                <Input
-                  id="filter-search"
-                  placeholder="Nombre o marca…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  autoComplete="off"
-                  className={adminServiceLikeInputClassName}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="filter-sort" className="text-sm font-medium">
-                  Ordenar por
-                </Label>
-                <Select<SortOption, false>
-                  instanceId="filter-sort"
-                  inputId="filter-sort"
-                  styles={appSelectStyles}
-                  options={sortOptions}
-                  value={
-                    sortOptions.find((option) => option.value === sortBy) ??
-                    sortOptions[0]
-                  }
-                  onChange={(option) => {
-                    if (option) setSortBy(option.value);
-                  }}
-                  isClearable={false}
-                  isSearchable={false}
-                />
-              </div>
-            </div>
-          </section> */}
-
-          {brandOptions.length > 0 ? (
-            <section className={adminSlideOverSectionClassName}>
-              <header className="space-y-1">
-                <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                  Marca
-                </h2>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Marca una o varias marcas para acotar el listado.
-                </p>
-              </header>
-              <div className={adminSlideOverNestedScrollClassName}>
-                {brandOptions.map(({ id, name }) => (
-                  <div
-                    key={id}
-                    className="rounded-lg border border-border/60 p-3"
-                  >
-                    <label className="flex cursor-pointer items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(brandIds[id])}
-                        onChange={() => toggleBrand(id)}
-                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium leading-snug text-foreground">
-                        {name}
-                      </span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          <section className={adminSlideOverSectionClassName}>
-            <header className="space-y-1">
-              <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Ofertas
-              </h2>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Solo productos con descuento aplicable a tu perfil.
-              </p>
-            </header>
+          <FilterPanelSection
+            className={adminSlideOverSectionClassName}
+            title="Ofertas"
+            description="Solo productos con descuento aplicable a tu perfil."
+            isOpen={expandedSections.offers}
+            onToggle={() => toggleFilterSection("offers")}
+          >
             <div className="rounded-lg border border-border/60 p-3">
               <label
                 htmlFor="filter-discount"
@@ -732,7 +1061,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 </span>
               </label>
             </div>
-          </section>
+          </FilterPanelSection>
         </div>
       </SlideOver>
 
