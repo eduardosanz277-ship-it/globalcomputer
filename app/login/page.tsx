@@ -189,7 +189,7 @@ function LoginPageContent() {
         {step === "email" ? (
           <Form
             form={emailForm}
-            onSubmit={(v) => sendOtp(v.email)}
+            onSubmit={emailForm.handleSubmit(handleEmailSubmit)}
             className="space-y-4"
           >
             <AuthField
@@ -204,10 +204,31 @@ function LoginPageContent() {
               type="submit"
               pending={sending}
               pendingLabel="Enviando"
-              disabled={sending || cooldown > 0}
+              disabled={sending || isCooldownActive}
             >
-              Continuar{cooldownLabel}
+              {isCooldownActive
+                ? `Verificar OTP (${cooldownSeconds}s)`
+                : "Continuar"}
             </AuthPrimaryButton>
+            {isCooldownActive ? (
+              <div className="space-y-2 text-sm text-muted-foreground">
+                {!isFetchingCooldown ? (
+                  <p>Reenviar disponible en {cooldownSeconds} segundos.</p>
+                ) : (
+                  <p>Comprobando disponibilidad…</p>
+                )}
+                <AuthInlineLinkRow>
+                  <span>¿Ya tienes un código?</span>
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+                    onClick={handleGoToVerify}
+                  >
+                    Verificar OTP
+                  </button>
+                </AuthInlineLinkRow>
+              </div>
+            ) : null}
           </Form>
         ) : (
           <div className="space-y-4">
@@ -226,10 +247,10 @@ function LoginPageContent() {
                 <Label htmlFor="otp-code">Código de verificación</Label>
                 <AuthInput
                   id="otp-code"
-                  inputMode="text"
+                  inputMode="numeric"
                   autoComplete="one-time-code"
-                  placeholder="123456 o token largo"
-                  maxLength={128}
+                  placeholder="123456"
+                  maxLength={6}
                   required
                   aria-invalid={Boolean(codeErrors.code)}
                   {...codeForm.register("code")}
