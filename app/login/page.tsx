@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   AuthAlert,
@@ -39,6 +39,9 @@ const loginErrorMessages: Record<string, string> = {
     "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
 };
 
+const OTP_COOLDOWN_SECONDS = 60;
+const OTP_COOLDOWN_MS = OTP_COOLDOWN_SECONDS * 1000;
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +53,9 @@ function LoginPageContent() {
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
-  const [cooldown, setCooldown] = useState(0);
+  const [blockedUntil, setBlockedUntil] = useState<Date | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [isFetchingCooldown, setIsFetchingCooldown] = useState(false);
 
   const emailForm = useForm<EmailOtpRequestSchema>({
     resolver: zodResolver(emailOtpRequestSchema),
@@ -61,6 +66,34 @@ function LoginPageContent() {
     resolver: zodResolver(emailOtpCodeSchema),
     defaultValues: { code: "" },
   });
+
+  const watchedEmail = emailForm.watch("email") ?? "";
+  const normalizedEmail = useMemo(
+    () => watchedEmail.trim().toLowerCase(),
+    [watchedEmail],
+  );
+
+  const fetchCooldown = useCallback(async (email: string) => {
+    if (!email) {
+      setBlockedUntil(null);
+      return;
+    }
+    setIsFetchingCooldown(true);
+    try {
+      const res = await fetch(`/api/otp/cooldown?email=${encodeURIComponent(email)}`);
+      if (!res.ok) {
+        setBlockedUntil(null);
+        return;
+      }
+      const data: { blockedUntil: string | null } = await res.json();
+      setBlockedUntil(data.blockedUntil ? new Date(data.blockedUntil) : null);
+    } catch (error) {
+      console.error("fetchCooldown:", error);
+      setBlockedUntil(null);
+    } finally {
+      setIsFetchingCooldown(false);
+    }
+  }, []);
 
   const { execute: sendOtp, isPending: sending } = useServerAction(
     async (email: string) => {
@@ -76,10 +109,56 @@ function LoginPageContent() {
         setEmailForCode(e);
         codeForm.reset({ code: "" });
         setStep("code");
-        setCooldown(30);
+        setBlockedUntil(new Date(Date.now() + OTP_COOLDOWN_MS));
       },
     },
   );
+
+  const handleGoToVerify = useCallback(() => {
+    if (!normalizedEmail) return;
+    setEmailForCode(normalizedEmail);
+    setStep("code");
+  }, [normalizedEmail]);
+
+  const handleEmailSubmit = async (values: EmailOtpRequestSchema) => {
+    const email = values.email.trim().toLowerCase();
+    if (blockedUntil && blockedUntil.getTime() > Date.now()) {
+      setEmailForCode(email);
+      setStep("code");
+      return;
+    }
+    await sendOtp(email);
+  };
+
+  useEffect(() => {
+    if (!normalizedEmail) {
+      setBlockedUntil(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchCooldown(normalizedEmail);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [normalizedEmail, fetchCooldown]);
+
+  useEffect(() => {
+    if (!blockedUntil) {
+      setCooldownSeconds(0);
+      return;
+    }
+    const update = () => {
+      const remainingMs = blockedUntil.getTime() - Date.now();
+      if (remainingMs <= 0) {
+        setBlockedUntil(null);
+        setCooldownSeconds(0);
+        return;
+      }
+      setCooldownSeconds(Math.ceil(remainingMs / 1000));
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [blockedUntil]);
 
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
     verifyLoginOtpAction,
@@ -94,15 +173,7 @@ function LoginPageContent() {
 
   const emailErrors = emailForm.formState.errors;
   const codeErrors = codeForm.formState.errors;
-  const cooldownLabel = cooldown > 0 ? ` (${cooldown}s)` : "";
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => {
-      setCooldown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [cooldown]);
+  const isCooldownActive = Boolean(blockedUntil && cooldownSeconds > 0);
 
   return (
     <AuthLayout>
