@@ -95,6 +95,7 @@ export async function gcCartAddProduct(productId: string, qty = 1): Promise<void
   const response = await reserveCartItemSchema(meta.token, productId, qty, "add");
   updateLocalLine(productId, response.qty);
   extendCartExpiration(meta.token);
+  window.dispatchEvent(new CustomEvent(GC_CART_OPEN_EVENT));
 }
 
 export async function gcCartRemoveProduct(productId: string): Promise<void> {

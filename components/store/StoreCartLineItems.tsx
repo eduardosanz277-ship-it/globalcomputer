@@ -48,16 +48,18 @@ function CartLineRow({
   tier,
   dense,
   onProductNavigate,
+  runCartMutation,
 }: {
   item: GcCartItem;
   product: StorefrontProduct | undefined;
   tier: StorefrontPriceTier;
   dense?: boolean;
   onProductNavigate?: () => void;
+  runCartMutation: (fn: () => Promise<void>) => Promise<void>;
 }) {
   const handleRemove = async (id: string) => {
     try {
-      await gcCartRemoveProduct(id);
+      await runCartMutation(() => gcCartRemoveProduct(id));
     } catch (error) {
       toastCartError(error);
     }
@@ -65,7 +67,7 @@ function CartLineRow({
 
   const handleQtyChange = async (id: string, nextQty: number, maxQty?: number) => {
     try {
-      await gcCartSetQty(id, nextQty, maxQty);
+      await runCartMutation(() => gcCartSetQty(id, nextQty, maxQty));
     } catch (error) {
       toastCartError(error);
     }
@@ -179,6 +181,8 @@ export function StoreCartLineItems({
   items,
   productsById,
   loading,
+  mutationPending,
+  runCartMutation,
   tier,
   dense,
   onProductNavigate,
@@ -186,6 +190,8 @@ export function StoreCartLineItems({
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
   loading: boolean;
+  mutationPending: boolean;
+  runCartMutation: (fn: () => Promise<void>) => Promise<void>;
   tier: StorefrontPriceTier;
   dense?: boolean;
   onProductNavigate?: () => void;
@@ -194,11 +200,15 @@ export function StoreCartLineItems({
     return null;
   }
 
-  if (loading) {
+  const showSkeleton = loading || mutationPending;
+
+  if (showSkeleton) {
+    const skeletonCount = Math.max(items.length, 2);
     return (
       <>
-        <CartLineSkeleton dense={dense} />
-        <CartLineSkeleton dense={dense} />
+        {Array.from({ length: skeletonCount }, (_, i) => (
+          <CartLineSkeleton key={i} dense={dense} />
+        ))}
       </>
     );
   }
@@ -215,6 +225,7 @@ export function StoreCartLineItems({
           tier={tier}
           dense={dense}
           onProductNavigate={onProductNavigate}
+          runCartMutation={runCartMutation}
         />
       ))}
     </>

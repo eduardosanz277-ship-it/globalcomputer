@@ -9,11 +9,14 @@ import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
+import { useRunCartMutation } from "@/components/store/useRunCartMutation";
 
 export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
   const { productsById, loading } = useCartProductsMap(ids);
+  const { mutationPending, runCartMutation } = useRunCartMutation();
+  const listBusy = loading || mutationPending;
 
   if (items.length === 0) {
     return (
@@ -32,7 +35,10 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
         </p>
         <Link
           href="/productos"
-          className={cn(buttonVariants({ variant: "default" }), "mt-6 rounded-xl")}
+          className={cn(
+            buttonVariants({ variant: "default" }),
+            "mt-6 h-11 rounded-xl px-6",
+          )}
         >
           Seguir comprando
         </Link>
@@ -47,6 +53,8 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           items={items}
           productsById={productsById}
           loading={loading}
+          mutationPending={mutationPending}
+          runCartMutation={runCartMutation}
           tier={tier}
         />
         <div
@@ -60,7 +68,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
         <StoreCartOrderSummary
           items={items}
           productsById={productsById}
-          loading={loading}
+          loading={listBusy}
           tier={tier}
           variant="page"
         />

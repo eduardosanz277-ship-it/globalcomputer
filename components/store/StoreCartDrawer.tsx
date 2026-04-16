@@ -11,6 +11,7 @@ import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
+import { useRunCartMutation } from "@/components/store/useRunCartMutation";
 
 export function StoreCartDrawer({
   open,
@@ -24,6 +25,8 @@ export function StoreCartDrawer({
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
   const { productsById, loading } = useCartProductsMap(ids);
+  const { mutationPending, runCartMutation } = useRunCartMutation();
+  const listBusy = loading || mutationPending;
 
   /** Solo el carrito vacío real; no mezclar con `loading` (evita skeleton + pie inconsistente al borrar). */
   const isCartEmpty = items.length === 0;
@@ -43,7 +46,7 @@ export function StoreCartDrawer({
             <StoreCartOrderSummary
               items={items}
               productsById={productsById}
-              loading={loading}
+              loading={listBusy}
               tier={tier}
               variant="drawer"
               onContinueShopping={onClose}
@@ -69,7 +72,10 @@ export function StoreCartDrawer({
           <Link
             href="/productos"
             onClick={onClose}
-            className={cn(buttonVariants({ variant: "default" }), "mt-5 rounded-xl")}
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "mt-5 h-11 rounded-xl px-6",
+            )}
           >
             Seguir comprando
           </Link>
@@ -80,6 +86,8 @@ export function StoreCartDrawer({
             items={items}
             productsById={productsById}
             loading={loading}
+            mutationPending={mutationPending}
+            runCartMutation={runCartMutation}
             tier={tier}
             dense
             onProductNavigate={onClose}

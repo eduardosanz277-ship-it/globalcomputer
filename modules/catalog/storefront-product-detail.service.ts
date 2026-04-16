@@ -21,6 +21,9 @@ export type StorefrontProductDetail = {
   brand_type_id: string | null;
   brand_name: string;
   brand_type_name: string;
+  /** Clasificación catálogo (para productos similares, SEO, etc.) */
+  category_id: string | null;
+  subcategory_id: string | null;
   created_at: string;
   updated_at: string;
   images: {
@@ -44,6 +47,8 @@ const DETAIL_SELECT = `
   manual_pdf_url,
   brand_id,
   brand_type_id,
+  category_id,
+  subcategory_id,
   created_at,
   updated_at,
   brands ( name ),
@@ -176,6 +181,14 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     brand_type_name: relationName(
       row.brand_types as Parameters<typeof relationName>[0],
     ),
+    category_id:
+      row.category_id != null && String(row.category_id).trim() !== ""
+        ? String(row.category_id)
+        : null,
+    subcategory_id:
+      row.subcategory_id != null && String(row.subcategory_id).trim() !== ""
+        ? String(row.subcategory_id)
+        : null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
     images,

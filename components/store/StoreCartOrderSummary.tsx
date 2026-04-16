@@ -141,16 +141,27 @@ export function StoreCartOrderSummary({
 
       {variant === "drawer" && items.length > 0 ? (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Link
-            href="/carrito"
-            onClick={onContinueShopping}
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "w-full rounded-xl sm:flex-1",
-            )}
-          >
-            Ver carrito
-          </Link>
+          {loading ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled
+              className="w-full rounded-xl sm:flex-1"
+            >
+              Ver carrito
+            </Button>
+          ) : (
+            <Link
+              href="/carrito"
+              onClick={onContinueShopping}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "w-full rounded-xl sm:flex-1",
+              )}
+            >
+              Ver carrito
+            </Link>
+          )}
           <Button
             type="button"
             className="w-full rounded-xl sm:flex-1"

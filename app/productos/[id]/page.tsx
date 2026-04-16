@@ -6,6 +6,7 @@ import { StorefrontProductDetailView } from "@/components/store/StorefrontProduc
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStorefrontProductDetailById } from "@/modules/catalog/storefront-product-detail.service";
+import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 
 export const dynamic = "force-dynamic";
@@ -40,12 +41,21 @@ export default async function ProductoDetallePage({ params }: Props) {
   const { id } = await Promise.resolve(params);
   if (!UUID_RE.test(id)) notFound();
 
-  const [product, user, productReviews] = await Promise.all([
-    getStorefrontProductDetailById(id),
+  const product = await getStorefrontProductDetailById(id);
+  if (!product) notFound();
+
+  const [user, productReviews, similarProducts] = await Promise.all([
     getCurrentUserService(),
     listProductReviewsByProductId(id),
+    listSimilarStorefrontProducts({
+      productId: product.id,
+      categoriaId: product.category_id,
+      subcategoryId: product.subcategory_id,
+      marcaId: product.brand_id,
+      tipoProductoId: product.brand_type_id,
+      precio: product.price,
+    }),
   ]);
-  if (!product) notFound();
 
   const priceTier = resolveStorefrontPriceTier(user?.role);
 
@@ -69,6 +79,7 @@ export default async function ProductoDetallePage({ params }: Props) {
           product={product}
           priceTier={priceTier}
           initialProductReviews={productReviews}
+          similarProducts={similarProducts}
         />
       </div>
     </main>

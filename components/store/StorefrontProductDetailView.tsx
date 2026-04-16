@@ -44,7 +44,9 @@ import {
 } from "@/lib/storefront-pricing";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
+import { SimilarProducts } from "@/components/SimilarProducts";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
+import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import type { ProductReviewDetailListItem } from "@/modules/site/leave-review-data.service";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
@@ -68,6 +70,7 @@ type Props = {
   product: StorefrontProductDetail;
   priceTier: StorefrontPriceTier;
   initialProductReviews: ProductReviewDetailListItem[];
+  similarProducts: StorefrontProduct[];
 };
 
 type ProductDescriptionCollapsibleProps = {
@@ -510,6 +513,7 @@ export function StorefrontProductDetailView({
   product,
   priceTier,
   initialProductReviews,
+  similarProducts,
 }: Props) {
   const router = useRouter();
   const [activeIdx, setActiveIdx] = useState(0);
@@ -595,8 +599,8 @@ export function StorefrontProductDetailView({
 
   return (
     <div className={cn(inter.className)}>
-      <div className="grid items-start gap-4 lg:[grid-template-columns:55%_45%] lg:gap-10">
-        <div className="min-w-0 space-y-5">
+      <div className="grid w-full items-start gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,9fr)] lg:gap-10">
+        <div className="min-w-0 w-full space-y-5">
           <div
             className={cn(
               "grid gap-1 md:gap-3",
@@ -797,7 +801,7 @@ export function StorefrontProductDetailView({
           ) : null}
         </div>
 
-        <div className="min-w-0 space-y-6 lg:sticky lg:top-28">
+        <div className="min-w-0 w-full space-y-6 lg:sticky lg:top-28">
           <div>
             {pct > 0 || isNew ? (
               <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -949,7 +953,7 @@ export function StorefrontProductDetailView({
                   }
                 }}
               >
-                Añadir al carrito
+                {canBuy ? "Añadir al carrito" : "Agotado"}
               </ButtonPending>
             </div>
           </div>
@@ -1014,6 +1018,25 @@ export function StorefrontProductDetailView({
           */}
         </div>
       </div>
+      {similarProducts.length > 0 ? (
+        <div
+          className={cn(
+            "mt-12 bg-[rgb(229,231,235)] shadow-none ring-0 sm:mt-14",
+            "-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+          )}
+        >
+          <SimilarProducts
+            productId={product.id}
+            categoriaId={product.category_id}
+            subcategoryId={product.subcategory_id}
+            marcaId={product.brand_id}
+            tipoProductoId={product.brand_type_id}
+            precio={product.price}
+            products={similarProducts}
+            priceTier={priceTier}
+          />
+        </div>
+      ) : null}
       <ProductReviewsSection
         productName={product.name}
         rows={initialProductReviews}
