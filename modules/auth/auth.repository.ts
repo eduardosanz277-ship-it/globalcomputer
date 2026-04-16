@@ -45,6 +45,40 @@ function isPostgresUniqueViolation(err: unknown): boolean {
   );
 }
 
+const OTP_COOLDOWN_SECONDS = 60;
+
+export async function repoGetOtpCooldown(email: string): Promise<Date | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("otp_resend_locks")
+    .select("blocked_until")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  if (error) {
+    console.error("repoGetOtpCooldown:", error.message);
+    return null;
+  }
+  return data?.blocked_until ? new Date(data.blocked_until) : null;
+}
+
+export async function repoUpsertOtpCooldown(email: string, blockedUntil: Date) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("otp_resend_locks")
+    .upsert(
+      {
+        email: normalizedEmail,
+        blocked_until: blockedUntil.toISOString(),
+      },
+      { onConflict: "email" },
+    );
+  if (error) {
+    console.error("repoUpsertOtpCooldown:", error.message);
+  }
+}
+
 export async function repoLogin(credentials: AuthCredentials) {
   const supabase = await createSupabaseServerClient();
 
