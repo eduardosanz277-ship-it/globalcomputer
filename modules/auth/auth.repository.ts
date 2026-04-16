@@ -95,14 +95,29 @@ export async function repoLogin(credentials: AuthCredentials) {
  * Passwordless: envía un código OTP (tipo email) y crea el usuario si no existe.
  */
 export async function repoSignInWithOtp(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const blockUntil = await repoGetOtpCooldown(normalizedEmail);
+  const now = Date.now();
+  if (blockUntil && blockUntil.getTime() > now) {
+    const remainingSeconds = Math.ceil((blockUntil.getTime() - now) / 1000);
+    const timeLabel =
+      remainingSeconds === 1 ? "segundo" : `${remainingSeconds} segundos`;
+    throw new Error(
+      `Ya enviaste un código recientemente. Intenta de nuevo en ${timeLabel}.`,
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
-    email,
+    email: normalizedEmail,
     options: {
       shouldCreateUser: true,
     },
   });
   if (error) throw error;
+
+  const nextBlock = new Date(now + OTP_COOLDOWN_SECONDS * 1000);
+  await repoUpsertOtpCooldown(normalizedEmail, nextBlock);
 }
 
 export async function repoVerifyEmailOtp(email: string, token: string) {
