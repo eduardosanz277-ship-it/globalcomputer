@@ -15,6 +15,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { toast } from "react-toastify";
 import { ProductDescriptionToolbar } from "@/components/ProductDescriptionToolbar";
 import { ProductDescriptionPreview } from "@/components/ProductDescriptionPreview";
+import { SpecAccordionBlockExtension } from "@/components/editor/SpecAccordionBlock";
 import { uploadProductDescriptionImage } from "@/lib/uploadImage";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
@@ -129,6 +130,7 @@ export function ProductDescriptionEditor({
       TableRow,
       TableHeader,
       TableCell,
+      SpecAccordionBlockExtension,
     ],
     content: value || "",
     editable: !disabled,
@@ -202,6 +204,25 @@ export function ProductDescriptionEditor({
     editor.chain().focus().insertContent(TABLA_ESPECIFICACIONES_HTML).run();
   }, [editor, disabled]);
 
+  const insertSpecAccordionBlock = useCallback(() => {
+    if (!editor || disabled) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "specAccordionBlock",
+        attrs: {
+          groupTitle: "Lente",
+          open: true,
+            rows: [
+              { name: "Tipo", detail: "Dual lens" },
+              { name: "Focal Length", detail: "4 mm" },
+            ],
+        },
+      })
+      .run();
+  }, [editor, disabled]);
+
   return (
     <div className={cn("space-y-2", className)}>
       <div className="space-y-1.5">
@@ -237,6 +258,7 @@ export function ProductDescriptionEditor({
           onInsertCharacteristicsBlock={insertCharacteristics}
           onInsertSpecificationsSection={insertSpecificationsSection}
           onInsertSpecificationsTable={insertSpecificationsTable}
+          onInsertSpecAccordionBlock={insertSpecAccordionBlock}
         />
         {/*
           Altura máxima del área de texto: el scroll es interno para que la

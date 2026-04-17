@@ -80,7 +80,9 @@ function LoginPageContent() {
     }
     setIsFetchingCooldown(true);
     try {
-      const res = await fetch(`/api/otp/cooldown?email=${encodeURIComponent(email)}`);
+      const res = await fetch(
+        `/api/otp/cooldown?email=${encodeURIComponent(email)}`,
+      );
       if (!res.ok) {
         setBlockedUntil(null);
         return;
@@ -264,7 +266,7 @@ function LoginPageContent() {
               <AuthPrimaryButton
                 type="submit"
                 pending={verifying}
-                pendingLabel="Verificando…"
+                pendingLabel="Verificando"
               >
                 Entrar
               </AuthPrimaryButton>

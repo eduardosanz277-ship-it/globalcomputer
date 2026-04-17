@@ -19,12 +19,15 @@ export type Product = {
   sku: string;
   name: string;
   description: string | null;
+  specifications: string | null;
   stock: number;
   price: number;
   discountBusinessPct: number;
   discountClient: number;
   manualPdfUrl: string | null;
   active: boolean;
+  /** Prioridad para bloques de destacados en la tienda (columna `featured`). */
+  featured: boolean;
   brandId: string;
   brandName: string;
   brandTypeId: string;
@@ -53,12 +56,14 @@ export type ProductInsert = {
   sku: string;
   name: string;
   description: string;
+  specifications: string;
   stock: number;
   price: number;
   discountBusinessPct: number;
   discountClient: number;
   manualPdfUrl: string;
   active: boolean;
+  featured: boolean;
   brandId: string;
   brandTypeId: string;
   /** Categoría (padre si eliges subcategoría). */

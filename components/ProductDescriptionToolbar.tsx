@@ -61,6 +61,8 @@ type Props = {
   onInsertSpecificationsSection: () => void;
   /** Inserta solo la tabla de especificaciones con filas predefinidas. */
   onInsertSpecificationsTable: () => void;
+  /** Inserta un bloque acordeón de especificaciones reutilizable. */
+  onInsertSpecAccordionBlock: () => void;
 };
 
 function toolbarBtnClass(active?: boolean) {
@@ -311,6 +313,7 @@ export function ProductDescriptionToolbar({
   onInsertCharacteristicsBlock,
   onInsertSpecificationsSection,
   onInsertSpecificationsTable,
+  onInsertSpecAccordionBlock,
 }: Props) {
   const [, tick] = useReducer((n: number) => n + 1, 0);
 
@@ -726,6 +729,21 @@ export function ProductDescriptionToolbar({
               >
                 <Table2 className="h-3.5 w-3.5" />
                 Tabla espec.
+              </Button>
+            </EditorTooltip>
+
+            <EditorTooltip title="Bloque acordeón de especificaciones">
+              <Button
+                type="button"
+                onMouseDown={preventEditorBlurMouseDown}
+                variant="secondary"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 px-2.5 text-xs whitespace-nowrap"
+                disabled={disabled}
+                onClick={() => run(onInsertSpecAccordionBlock)}
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+                Acordeón espec.
               </Button>
             </EditorTooltip>
           </div>

@@ -35,6 +35,8 @@ function mapRowsToSettings(
       typeof map.support_email === "string" ? map.support_email : "",
     supportPhone:
       typeof map.support_phone === "string" ? map.support_phone : "",
+    supportAddress:
+      typeof map.support_address === "string" ? map.support_address : "",
     lowStockNotificationsEnabled: lowStockOn,
     lowStockThreshold: Number.isFinite(threshold) ? threshold : 5,
   };
@@ -58,6 +60,7 @@ export async function updateAppConfigSettingsService(input: AppConfigFormValues)
   await repoUpsertAppConfigEntries([
     { key: "support_email", value: parsed.supportEmail },
     { key: "support_phone", value: parsed.supportPhone },
+    { key: "support_address", value: parsed.supportAddress },
     {
       key: "low_stock_notifications_enabled",
       value: parsed.lowStockNotificationsEnabled,

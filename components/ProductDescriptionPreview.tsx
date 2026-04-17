@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { sanitizeProductDescriptionHtml } from "@/lib/sanitizeProductDescriptionHtml";
+import { setupSpecAccordionAnimations } from "@/lib/setupSpecAccordionAnimations";
 
 type Props = {
   /** HTML crudo del editor (se sanea antes de pintar). */
@@ -18,6 +19,7 @@ export function ProductDescriptionPreview({ html, className }: Props) {
     () => sanitizeProductDescriptionHtml(html ?? ""),
     [html],
   );
+
   const hasRenderableContent = useMemo(() => {
     const textOnly = safe
       .replace(/<[^>]*>/g, "")
@@ -26,6 +28,14 @@ export function ProductDescriptionPreview({ html, className }: Props) {
       .trim();
     if (textOnly.length > 0) return true;
     return /<(img|table|ul|ol|blockquote|hr|iframe)\b/i.test(safe);
+  }, [safe]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    return setupSpecAccordionAnimations(el);
   }, [safe]);
 
   return (
@@ -38,8 +48,8 @@ export function ProductDescriptionPreview({ html, className }: Props) {
       >
         {hasRenderableContent ? (
           <div
+            ref={containerRef}
             className="product-description-html max-w-none"
-            // HTML ya filtrado con DOMPurify
             dangerouslySetInnerHTML={{ __html: safe }}
           />
         ) : (

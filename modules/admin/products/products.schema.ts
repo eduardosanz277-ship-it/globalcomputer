@@ -13,6 +13,12 @@ const moneySchema = z.coerce
   .number({ invalid_type_error: "Ingresa un precio válido" })
   .min(0, "El precio no puede ser negativo");
 
+/** Mismo tope que descripción: HTML enriquecido (`RICH_HTML_DESCRIPTION_MAX_LENGTH`). */
+const richHtmlDescriptionField = z
+  .string()
+  .max(RICH_HTML_DESCRIPTION_MAX_LENGTH, RICH_HTML_DESCRIPTION_MAX_ERROR)
+  .transform((s) => s.trim());
+
 export const productCharacteristicValueInputSchema = z.object({
   specificId: z
     .string()
@@ -36,10 +42,8 @@ export const productFormSchema = z.object({
     .min(1, "El nombre es obligatorio")
     .max(200, "Máximo 200 caracteres")
     .transform((s) => s.trim()),
-  description: z
-    .string()
-    .max(RICH_HTML_DESCRIPTION_MAX_LENGTH, RICH_HTML_DESCRIPTION_MAX_ERROR)
-    .transform((s) => s.trim()),
+  description: richHtmlDescriptionField,
+  specifications: richHtmlDescriptionField,
   stock: z.coerce
     .number({ invalid_type_error: "Ingresa un stock válido" })
     .int("El stock debe ser entero")
@@ -48,6 +52,7 @@ export const productFormSchema = z.object({
   discountBusinessPct: percentSchema,
   discountClient: percentSchema,
   active: z.boolean(),
+  featured: z.boolean(),
   manualPdfUrl: z
     .string()
     .max(2000, "URL demasiado larga")

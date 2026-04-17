@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Phone } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 
 import { ButtonPending } from "@/components/ui/button-pending";
@@ -35,6 +35,7 @@ export function AdminSettingsForm({ initial }: Props) {
     defaultValues: {
       supportEmail: initial.supportEmail,
       supportPhone: initial.supportPhone,
+      supportAddress: initial.supportAddress,
       lowStockNotificationsEnabled: initial.lowStockNotificationsEnabled,
       lowStockThreshold: initial.lowStockThreshold,
     },
@@ -101,6 +102,36 @@ export function AdminSettingsForm({ initial }: Props) {
               {errors.supportPhone && (
                 <p className="text-sm text-destructive">
                   {errors.supportPhone.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="supportAddress" className="text-sm font-medium">
+                Dirección
+                <RequiredMark />
+              </Label>
+              <div className="relative">
+                <MapPin
+                  className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
+                <textarea
+                  id="supportAddress"
+                  rows={3}
+                  autoComplete="street-address"
+                  className={cn(
+                    /* Misma base que `Input` (email): borde `border-input/90` + anillo foco */
+                    "w-full rounded-lg border border-input/90 bg-background px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
+                    adminServiceLikeInputClassName,
+                    "h-auto min-h-[5.5rem] resize-y pl-9 pr-3 leading-relaxed",
+                  )}
+                  aria-required
+                  {...form.register("supportAddress")}
+                />
+              </div>
+              {errors.supportAddress && (
+                <p className="text-sm text-destructive">
+                  {errors.supportAddress.message}
                 </p>
               )}
             </div>

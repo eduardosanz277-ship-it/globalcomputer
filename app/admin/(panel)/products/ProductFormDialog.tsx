@@ -84,11 +84,13 @@ export function ProductFormDialog({
       sku: "",
       name: "",
       description: "",
+      specifications: "",
       stock: 0,
       price: 0,
       discountBusinessPct: 0,
       discountClient: 0,
       active: true,
+      featured: false,
       manualPdfUrl: "",
       brandId: "",
       brandTypeId: "",
@@ -134,11 +136,13 @@ export function ProductFormDialog({
         sku: product.sku,
         name: product.name,
         description: product.description ?? "",
+        specifications: product.specifications ?? "",
         stock: product.stock,
         price: product.price,
         discountBusinessPct: product.discountBusinessPct,
         discountClient: product.discountClient,
         active: product.active,
+        featured: product.featured,
         manualPdfUrl: product.manualPdfUrl ?? "",
         brandId: product.brandId,
         brandTypeId: product.brandTypeId,
@@ -157,11 +161,13 @@ export function ProductFormDialog({
         sku: "",
         name: "",
         description: "",
+        specifications: "",
         stock: 0,
         price: 0,
         discountBusinessPct: 0,
         discountClient: 0,
         active: true,
+        featured: false,
         manualPdfUrl: "",
         brandId: "",
         brandTypeId: "",
@@ -442,7 +448,8 @@ function ProductFormBody({
     | "description"
     | "pricing"
     | "media"
-    | "characteristics";
+    | "characteristics"
+    | "specifications";
 
   const PRODUCT_FORM_TABS: { id: ProductFormTabId; label: string }[] = [
     { id: "general", label: "Información general" },
@@ -450,6 +457,7 @@ function ProductFormBody({
     { id: "pricing", label: "Precios e inventario" },
     { id: "media", label: "Multimedia" },
     { id: "characteristics", label: "Características" },
+    { id: "specifications", label: "Especificaciones" },
   ];
 
   const [activeTab, setActiveTab] = useState<ProductFormTabId>("general");
@@ -683,6 +691,13 @@ function ProductFormBody({
                 name="active"
                 label="Activo en catálogo"
                 description="Si está desactivado, el producto no se mostrará en el catálogo público."
+              />
+            </div>
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<ProductFormValues>
+                name="featured"
+                label="Producto destacado"
+                description="Actívalo para que este producto pueda mostrarse en los bloques de destacados de la tienda (por ejemplo en la página de inicio)."
               />
             </div>
           </section>
@@ -1020,6 +1035,25 @@ function ProductFormBody({
                 </p>
               ) : null}
             </div>
+          </section>
+        )}
+
+        {activeTab === "specifications" && (
+          <section className={adminSlideOverSectionClassName}>
+            <Controller
+              name="specifications"
+              control={form.control}
+              render={({ field }) => (
+                <ProductDescriptionEditor
+                  id="product-specifications-rich"
+                  label="Especificaciones"
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={isPending}
+                  error={errors.specifications?.message}
+                />
+              )}
+            />
           </section>
         )}
       </div>

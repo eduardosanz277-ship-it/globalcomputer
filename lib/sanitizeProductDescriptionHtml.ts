@@ -11,6 +11,8 @@ const PURIFY_CONFIG: NonNullable<
 > = {
   ADD_TAGS: [
     "blockquote",
+    "details",
+    "summary",
     "table",
     "thead",
     "tbody",
@@ -21,7 +23,7 @@ const PURIFY_CONFIG: NonNullable<
     "colgroup",
     "col",
   ],
-  ADD_ATTR: ["target", "rel", "class", "style"],
+  ADD_ATTR: ["target", "rel", "class", "style", "open"],
   ALLOW_DATA_ATTR: false,
 };
 

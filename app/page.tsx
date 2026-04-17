@@ -21,6 +21,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { StoreHero } from "@/components/marketing/StoreHero";
+import { SimilarProducts } from "@/components/SimilarProducts";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,10 @@ import { ServicesSection } from "@/components/marketing/ServicesSection";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
+import {
+  listAllActiveStorefrontProducts,
+  listFeaturedStorefrontProducts,
+} from "@/modules/catalog/storefront-products.service";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
 
@@ -84,13 +88,14 @@ const CATEGORIES: Array<{
 ];
 
 export default async function HomePage() {
-  const [products, user, nav, productReviews] = await Promise.all([
-    listAllActiveStorefrontProducts(),
-    getCurrentUserService(),
-    getNavigationData(),
-    listProductReviewsForLeaveReviewPage(),
-  ]);
-  const featuredProducts = products.slice(0, 4);
+  const [products, featuredProducts, user, nav, productReviews] =
+    await Promise.all([
+      listAllActiveStorefrontProducts(),
+      listFeaturedStorefrontProducts(8),
+      getCurrentUserService(),
+      getNavigationData(),
+      listProductReviewsForLeaveReviewPage(),
+    ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
     (p) => p.discount_client > 0 || p.discount_business_pct > 0,
@@ -194,11 +199,17 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-6 lg:mt-8">
-            <StorefrontProductGrid
-              products={featuredProducts}
-              priceTier={priceTier}
-              gridClassName="lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4"
-            />
+            {featuredProducts.length > 0 ? (
+              <SimilarProducts
+                hideHeading
+                products={featuredProducts}
+                priceTier={priceTier}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Pronto añadiremos productos destacados a esta sección.
+              </p>
+            )}
           </div>
         </div>
       </section>

@@ -30,16 +30,19 @@ const similarCarouselNavBtnClass =
   "absolute top-1/2 z-[20] inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary pointer-events-auto";
 
 export type SimilarProductsProps = {
-  productId: string;
-  categoriaId: string | null;
-  subcategoryId: string | null;
-  marcaId: string;
-  tipoProductoId: string | null;
-  precio: number;
-  /** Resultado resuelto en el servidor con {@link listSimilarStorefrontProducts}. */
+  /** Metadatos de contexto (detalle de producto); opcionales si solo se usa el carrusel. */
+  productId?: string;
+  categoriaId?: string | null;
+  subcategoryId?: string | null;
+  marcaId?: string;
+  tipoProductoId?: string | null;
+  precio?: number;
+  /** Resultado resuelto en el servidor (p. ej. {@link listSimilarStorefrontProducts} o destacados). */
   products: StorefrontProduct[];
   priceTier: StorefrontPriceTier;
   className?: string;
+  /** Oculta el título interno cuando la página ya define el encabezado de sección (p. ej. home). */
+  hideHeading?: boolean;
 };
 
 /**
@@ -50,6 +53,7 @@ export function SimilarProducts({
   products,
   priceTier,
   className,
+  hideHeading = false,
 }: SimilarProductsProps) {
   /** Fila del título: mismo borde izquierdo que el contenido principal (referencia de alineación). */
   const alignRef = useRef<HTMLDivElement>(null);
@@ -208,22 +212,27 @@ export function SimilarProducts({
   return (
     <section
       className={cn("group/similar w-full", className)}
-      aria-labelledby="similar-products-heading"
+      aria-labelledby={hideHeading ? undefined : "similar-products-heading"}
+      aria-label={hideHeading ? "Productos destacados" : undefined}
     >
-      <div
-        ref={alignRef}
-        className="mb-4 flex items-end justify-between gap-3"
-      >
-        <h2
-          id="similar-products-heading"
-          className={cn(
-            inter.className,
-            "text-lg font-semibold tracking-tight text-foreground sm:text-xl",
-          )}
+      {!hideHeading ? (
+        <div
+          ref={alignRef}
+          className="mb-4 flex items-end justify-between gap-3"
         >
-          Productos similares
-        </h2>
-      </div>
+          <h2
+            id="similar-products-heading"
+            className={cn(
+              inter.className,
+              "text-lg font-semibold tracking-tight text-foreground sm:text-xl",
+            )}
+          >
+            Productos similares
+          </h2>
+        </div>
+      ) : (
+        <div ref={alignRef} className="w-full" aria-hidden />
+      )}
 
       {/*
        * Wrapper del carrusel.

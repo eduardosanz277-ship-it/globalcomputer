@@ -669,6 +669,169 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
   border-top: 1px solid rgba(216, 216, 217, 0.85);
 }
 
+/* ─── Spec Accordion Block (vista previa del editor + ficha pública) ─── */
+
+/*
+ * El indicador +/− se pinta via ::after en el summary para funcionar
+ * con cualquier versión del HTML serializado (antiguo o nuevo).
+ * Los spans .spec-accordion-plus / .spec-accordion-minus del HTML nuevo
+ * se ocultan para evitar duplicados.
+ */
+
+.product-description-html details.spec-accordion-block {
+  margin: 1rem 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(42, 44, 48, 0.12);
+  box-sizing: border-box;
+}
+
+.product-description-html details.spec-accordion-block > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  /* Misma referencia horizontal que las filas (.spec-accordion-row) */
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #2a2c30;
+}
+
+.product-description-html
+  details.spec-accordion-block
+  > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Ocultar los spans del HTML nuevo para no duplicar con el ::after */
+.product-description-html
+  details.spec-accordion-block
+  > summary
+  .spec-accordion-indicator,
+.product-description-html
+  details.spec-accordion-block
+  > summary
+  .spec-accordion-plus,
+.product-description-html
+  details.spec-accordion-block
+  > summary
+  .spec-accordion-minus {
+  display: none !important;
+}
+
+/* Indicador universal vía pseudo-elemento */
+.product-description-html details.spec-accordion-block > summary::after {
+  content: "+";
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(42, 44, 48, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(42, 44, 48, 0.55);
+  transition: none;
+}
+
+.product-description-html details.spec-accordion-block[open] > summary::after {
+  content: "−";
+}
+
+/*
+ * La animación del cuerpo la maneja JS (setupSpecAccordionAnimations).
+ * Solo ponemos border-top; las propiedades de grid/opacity
+ * se inyectan como estilos inline por el script.
+ */
+.product-description-html details.spec-accordion-block > :not(summary) {
+  border-top: 1px solid rgba(42, 44, 48, 0.1);
+}
+
+/* Filas de especificaciones */
+.product-description-html .spec-accordion-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 0.5rem 1rem;
+  /* Misma referencia horizontal que el summary */
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  border-bottom: 1px solid rgba(42, 44, 48, 0.08);
+  font-size: 0.875rem;
+}
+
+.product-description-html .spec-accordion-row:last-child {
+  border-bottom: none;
+}
+
+.product-description-html .spec-accordion-row-name {
+  font-weight: 500;
+  color: #2a2c30;
+}
+
+.product-description-html .spec-accordion-row-detail {
+  color: rgba(42, 44, 48, 0.72);
+}
+
+/*
+ * Ficha pública — pestaña Especificaciones: quitar padding tipo px-4/py-3
+ * del cuerpo del acordeón (incl. HTML antiguo con utilidades Tailwind).
+ */
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  > :not(summary) {
+  padding: 0 !important;
+}
+
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  .spec-accordion-body {
+  padding: 0 !important;
+}
+
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  .spec-accordion-body
+  > div {
+  padding: 0 !important;
+}
+
+/* No anular padding en filas/celdas del acordeón (rompe la alineación con el título) */
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  .spec-accordion-body
+  [class~="px-4"]:not(.spec-accordion-row):not(.spec-accordion-row-name):not(
+    .spec-accordion-row-detail
+  ) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  .spec-accordion-body
+  [class~="py-3"]:not(.spec-accordion-row):not(.spec-accordion-row-name):not(
+    .spec-accordion-row-detail
+  ) {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Refuerzo: mismo inset horizontal que el summary (HTML antiguo con utilidades) */
+.product-description-html.storefront-product-specs
+  details.spec-accordion-block
+  .spec-accordion-row {
+  padding-inline: 1rem !important;
+}
+
 /* Panel admin: todos los campos de entrada con fondo blanco (incluye portales). */
 :is(.admin-panel, body.admin-panel-theme)
   :is(

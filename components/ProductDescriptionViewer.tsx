@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { sanitizeProductDescriptionHtml } from "@/lib/sanitizeProductDescriptionHtml";
+import { setupSpecAccordionAnimations } from "@/lib/setupSpecAccordionAnimations";
 import { cn } from "@/utils/cn";
 
 type Props = {
@@ -20,12 +21,21 @@ export function ProductDescriptionViewer({ descripcion, className }: Props) {
     [descripcion],
   );
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    return setupSpecAccordionAnimations(el);
+  }, [safe]);
+
   if (!safe.trim()) {
     return null;
   }
 
   return (
     <div
+      ref={containerRef}
       className={cn("product-description-html max-w-none", className)}
       dangerouslySetInnerHTML={{ __html: safe }}
     />

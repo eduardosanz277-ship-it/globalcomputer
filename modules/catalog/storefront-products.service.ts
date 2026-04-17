@@ -370,6 +370,27 @@ export async function listAllActiveStorefrontProducts(): Promise<
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
+/**
+ * Productos activos marcados como destacados (`featured`), para bloques como el home.
+ * Orden: actualización reciente primero.
+ */
+export async function listFeaturedStorefrontProducts(
+  limit: number,
+): Promise<StorefrontProduct[]> {
+  const cap = Math.min(Math.max(1, Math.floor(limit)), 8);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .eq("featured", true)
+    .order("updated_at", { ascending: false })
+    .limit(cap);
+
+  if (error || !data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 export async function listProductsByBrandId(
   brandId: string,
 ): Promise<StorefrontProduct[]> {

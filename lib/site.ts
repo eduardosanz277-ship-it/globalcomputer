@@ -2,7 +2,7 @@
 export const SITE_BRAND_NAME = "Global Computers USA";
 export const SITE_BRAND_TAGLINE = "Soluciones de seguridad y vigilancia";
 
-/** Contacto público (footer, /contact, etc.). */
+/** Contacto público (footer, /contact, etc.). Fallback si falta `support_address` en app_config. */
 export const SITE_CONTACT_ADDRESS = "11629 SW 216th St, Miami, FL 33170";
 export const SITE_CONTACT_PHONE_DISPLAY = "786-395-1076";
 /** Para enlaces `tel:` (E.164 sin espacios). */
@@ -16,6 +16,6 @@ export type PublicSiteContact = {
   phoneTel: string;
 };
 
-export function siteContactMapsUrl(): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE_CONTACT_ADDRESS)}`;
+export function siteContactMapsUrl(address: string = SITE_CONTACT_ADDRESS): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }

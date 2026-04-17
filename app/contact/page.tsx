@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { SITE_CONTACT_ADDRESS, siteContactMapsUrl } from "@/lib/site";
+import { siteContactMapsUrl } from "@/lib/site";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 
 const inter = Inter({
@@ -64,13 +64,13 @@ export default async function ContactPage() {
             <h4 className="text-sm font-semibold">Dirección</h4>
             <p className="mt-1">
               <a
-                href={siteContactMapsUrl()}
+                href={siteContactMapsUrl(contact.address)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-foreground underline-offset-4 transition hover:text-primary hover:underline"
-                aria-label={`Abrir ${SITE_CONTACT_ADDRESS} en Google Maps`}
+                aria-label={`Abrir ${contact.address} en Google Maps`}
               >
-                {SITE_CONTACT_ADDRESS}
+                {contact.address}
               </a>
             </p>
           </div>

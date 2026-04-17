@@ -75,7 +75,10 @@ type Props = {
 
 type ProductDescriptionCollapsibleProps = {
   description: string;
+  /** Encabezado del acordeón (p. ej. Descripción o Especificaciones). */
+  title?: string;
 };
+type ProductInfoTabId = "technical_specs" | "downloads" | "faq";
 
 const PRODUCT_REVIEWS_PAGE_SIZE_DESKTOP = 12;
 const PRODUCT_REVIEWS_PAGE_SIZE_MOBILE_TABLET = 6;
@@ -104,6 +107,11 @@ const reviewRatingOptions: ReviewRatingOption[] = [
 
 const TABLE_LIKE_TOOLTIP_CLASS =
   "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
+const productInfoTabs: { id: ProductInfoTabId; label: string }[] = [
+  { id: "technical_specs", label: "Especificaciones Técnicas" },
+  { id: "downloads", label: "Descargas" },
+  { id: "faq", label: "Preguntas Frecuentes" },
+];
 
 function formatSortSelectedLabel(option: ReviewDateSortOption): string {
   return `Ordenar por: ${option.label}`;
@@ -471,8 +479,10 @@ function ProductReviewsSection({
 
 function ProductDescriptionCollapsible({
   description,
+  title = "Descripción",
 }: ProductDescriptionCollapsibleProps) {
   const [open, setOpen] = useState(false);
+  const titleLower = title.toLowerCase();
 
   return (
     <section className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
@@ -480,11 +490,11 @@ function ProductDescriptionCollapsible({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-label={open ? "Contraer descripción" : "Expandir descripción"}
+        aria-label={open ? `Contraer ${titleLower}` : `Expandir ${titleLower}`}
         className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:py-4 text-left transition hover:bg-card/80"
       >
         <span className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
-          Descripción
+          {title}
         </span>
         {open ? (
           <Minus className="h-5 w-5 text-muted-foreground" aria-hidden />
@@ -504,6 +514,112 @@ function ProductDescriptionCollapsible({
             <ProductDescriptionViewer descripcion={description} />
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductInformationTabsSection({
+  specifications,
+  manualPdfUrl,
+}: {
+  specifications: string | null;
+  manualPdfUrl: string | null;
+}) {
+  const [activeTab, setActiveTab] =
+    useState<ProductInfoTabId>("technical_specs");
+
+  return (
+    <section className="mt-10 rounded-xl border border-border/70 bg-card/80 p-4 shadow-sm sm:mt-14 sm:p-6">
+      <div
+        className="-mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-transparent px-4 pb-3 pt-1 shadow-[0_1px_0_0_rgba(0,0,0,0.08)] [scrollbar-width:thin] sm:mx-0 sm:px-0 sm:pt-0"
+        role="tablist"
+        aria-label="Información del producto"
+      >
+        {productInfoTabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.id}
+            className={cn(
+              "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition",
+              activeTab === t.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "border border-border/80 bg-white/60 text-muted-foreground shadow-sm hover:bg-muted/30 hover:text-foreground dark:bg-card",
+            )}
+            onClick={() => setActiveTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 min-h-[10rem]" role="tabpanel">
+        {activeTab === "technical_specs" ? (
+          specifications?.trim() ? (
+            <ProductDescriptionViewer
+              descripcion={specifications}
+              className="storefront-product-specs"
+            />
+          ) : (
+            <p className="rounded-xl border border-dashed border-border/70 bg-muted/25 px-5 py-8 text-sm text-muted-foreground">
+              Este producto no tiene especificaciones técnicas publicadas aún.
+            </p>
+          )
+        ) : null}
+
+        {activeTab === "downloads" ? (
+          manualPdfUrl ? (
+            <a
+              href={manualPdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
+            >
+              <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+              <span>Descargar o ver manual (PDF)</span>
+            </a>
+          ) : (
+            <p className="rounded-xl border border-dashed border-border/70 bg-muted/25 px-5 py-8 text-sm text-muted-foreground">
+              No hay archivos de descarga disponibles para este producto.
+            </p>
+          )
+        ) : null}
+
+        {activeTab === "faq" ? (
+          <div className="space-y-3">
+            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                ¿Qué incluye la compra de este producto?
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Incluye el equipo principal y sus accesorios básicos. Revisa la
+                sección de descargas para consultar el manual cuando esté
+                disponible.
+              </p>
+            </article>
+            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                ¿Cómo verifico compatibilidad e instalación?
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Te recomendamos revisar las especificaciones técnicas publicadas
+                y validar requisitos eléctricos, de red y espacio de
+                instalación.
+              </p>
+            </article>
+            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                ¿Puedo solicitar soporte para este producto?
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sí. Si tienes dudas previas o posteriores a la compra, nuestro
+                equipo puede orientarte en configuración y uso.
+              </p>
+            </article>
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -576,16 +692,6 @@ export function StorefrontProductDetailView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxOpen, canNavigateImages, imageCount]);
-
-  const charGroups = useMemo(() => {
-    const m = new Map<string, typeof product.characteristics>();
-    for (const c of product.characteristics) {
-      const list = m.get(c.generalName) ?? [];
-      list.push(c);
-      m.set(c.generalName, list);
-    }
-    return Array.from(m.entries());
-  }, [product.characteristics]);
 
   const brandTypeHref =
     product.brand_type_id && product.brand_id
@@ -1037,6 +1143,12 @@ export function StorefrontProductDetailView({
           />
         </div>
       ) : null}
+
+      <ProductInformationTabsSection
+        specifications={product.specifications}
+        manualPdfUrl={product.manual_pdf_url}
+      />
+
       <ProductReviewsSection
         productName={product.name}
         rows={initialProductReviews}

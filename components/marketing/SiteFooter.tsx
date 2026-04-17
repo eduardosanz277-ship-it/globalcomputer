@@ -8,11 +8,7 @@ import {
   Music2,
   Phone,
 } from "lucide-react";
-import {
-  type PublicSiteContact,
-  SITE_CONTACT_ADDRESS,
-  siteContactMapsUrl,
-} from "@/lib/site";
+import { type PublicSiteContact, siteContactMapsUrl } from "@/lib/site";
 
 export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
   return (
@@ -119,17 +115,17 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
               <span>{contact.email}</span>
             </a>
             <a
-              href={siteContactMapsUrl()}
+              href={siteContactMapsUrl(contact.address)}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
-              aria-label={`Abrir ${SITE_CONTACT_ADDRESS} en Google Maps`}
+              aria-label={`Abrir ${contact.address} en Google Maps`}
             >
               <MapPin
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
                 aria-hidden
               />
-              <span>{SITE_CONTACT_ADDRESS}</span>
+              <span>{contact.address}</span>
             </a>
             <p className="flex items-start gap-3">
               <Clock

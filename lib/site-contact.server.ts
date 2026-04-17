@@ -19,7 +19,11 @@ function normalizePhoneTel(value: string): string {
 
 export const getPublicSiteContact = cache(async (): Promise<PublicSiteContact> => {
   try {
-    const rows = await repoGetAppConfigByKeys(["support_phone", "support_email"]);
+    const rows = await repoGetAppConfigByKeys([
+      "support_phone",
+      "support_email",
+      "support_address",
+    ]);
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
     const phoneDisplay =
@@ -32,8 +36,13 @@ export const getPublicSiteContact = cache(async (): Promise<PublicSiteContact> =
         ? map.support_email.trim()
         : SITE_CONTACT_EMAIL;
 
+    const address =
+      typeof map.support_address === "string" && map.support_address.trim().length > 0
+        ? map.support_address.trim()
+        : SITE_CONTACT_ADDRESS;
+
     return {
-      address: SITE_CONTACT_ADDRESS,
+      address,
       email,
       phoneDisplay,
       phoneTel: normalizePhoneTel(phoneDisplay),
