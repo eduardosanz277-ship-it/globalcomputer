@@ -251,24 +251,6 @@ function SpecAccordionBlockView({
             </div>
           </div>
         </div>
-
-        <div className="flex items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
-          <span>Bloque reutilizable de especificaciones técnicas.</span>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => patchAttrs({ open: !attrs.open })}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-primary transition hover:bg-primary/5"
-          >
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 transition",
-                attrs.open && "rotate-180",
-              )}
-            />
-            {attrs.open ? "Colapsar" : "Expandir"}
-          </button>
-        </div>
       </div>
     </NodeViewWrapper>
   );
