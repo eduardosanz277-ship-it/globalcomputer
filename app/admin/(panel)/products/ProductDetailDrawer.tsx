@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   Clock3,
@@ -62,7 +62,18 @@ export function ProductDetailDrawer({
   onDelete,
 }: Props) {
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [specificCharacteristicsOpen, setSpecificCharacteristicsOpen] =
+    useState(false);
+  const [specificationsOpen, setSpecificationsOpen] = useState(false);
   const open = Boolean(product);
+
+  useEffect(() => {
+    if (!open) return;
+    setDescriptionOpen(false);
+    setSpecificCharacteristicsOpen(false);
+    setSpecificationsOpen(false);
+  }, [open, product?.id]);
+
   const characteristicGroups = useMemo(() => {
     if (!product) return [];
     const groups = new Map<string, typeof product.characteristicValues>();
