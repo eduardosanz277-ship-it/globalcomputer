@@ -713,14 +713,18 @@ export function StorefrontProductDetailView({
           <div
             className={cn(
               "grid gap-1 md:gap-3",
-              hasImages && "md:grid-cols-[5rem_minmax(0,1fr)] md:items-stretch",
+              hasImages &&
+                canNavigateImages &&
+                "md:grid-cols-[5rem_minmax(0,1fr)] md:items-stretch",
             )}
           >
-            {/* Imagen principal: arriba en móvil; columna derecha desde md */}
+            {/* Imagen principal: arriba en móvil; columna derecha desde md si hay galería */}
             <div
               className={cn(
                 "min-w-0 max-md:order-1",
-                hasImages && "md:col-start-2 md:row-start-1",
+                hasImages &&
+                  canNavigateImages &&
+                  "md:col-start-2 md:row-start-1",
               )}
             >
               {hasImages ? (
@@ -866,7 +870,7 @@ export function StorefrontProductDetailView({
               )}
             </div>
 
-            {hasImages ? (
+            {hasImages && canNavigateImages ? (
               <div
                 className={cn(
                   "flex w-full min-w-0 gap-2",
