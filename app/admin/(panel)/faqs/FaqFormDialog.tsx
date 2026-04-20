@@ -11,7 +11,7 @@ import {
 import type { FaqAdmin } from "@/modules/admin/faqs/faqs.types";
 import { createFaqAdminAction, updateFaqAdminAction } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
-import { Form } from "@/components/ui/form";
+import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
@@ -116,25 +116,15 @@ export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
       <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
         <section className={adminSlideOverSectionClassName}>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="question">
-                Pregunta
-                <RequiredMark />
-              </Label>
-              <input
-                id="question"
-                type="text"
-                disabled={isPending}
-                autoComplete="off"
-                {...register("question")}
-                className={adminServiceLikeInputClassName}
-              />
-              {errors.question?.message ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {errors.question.message}
-                </p>
-              ) : null}
-            </div>
+            <FormField
+              name="question"
+              label="Pregunta"
+              required
+              disabled={isPending}
+              error={errors.question?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="answer">

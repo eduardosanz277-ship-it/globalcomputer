@@ -30,28 +30,31 @@ export function FAQSection({ items }: Props) {
   }
 
   return (
-    <section className="border-t border-border/60 bg-background py-20 sm:py-24">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <HomeSectionHeading
-          title="Preguntas frecuentes"
-          description="Aquí respondemos las dudas más comunes para ayudarte a elegir y comprar con confianza."
-          titleClassName="text-3xl sm:text-4xl"
-        />
+    <section className="border-t border-border/60 bg-gradient-to-b from-background via-muted/25 to-background py-20 sm:py-24">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-5 shadow-soft backdrop-blur-sm sm:p-8 lg:p-10">
+          <HomeSectionHeading
+            title="Preguntas frecuentes"
+            description="Respuestas claras a las dudas más comunes para ayudarte a elegir mejor y comprar con total confianza."
+            titleClassName="text-3xl sm:text-4xl"
+            descriptionClassName="max-w-2xl"
+          />
 
-        <div className="mt-8 space-y-3 sm:mt-10">
-          {normalizedItems.map((item) => {
-            const isOpen = openId === item.id;
-            return (
-              <FAQItem
-                key={item.id}
-                id={`faq-${item.id}`}
-                question={item.question}
-                answer={item.answer}
-                isOpen={isOpen}
-                onToggle={() => setOpenId(isOpen ? null : item.id)}
-              />
-            );
-          })}
+          <div className="mt-8 space-y-3 sm:mt-10">
+            {normalizedItems.map((item) => {
+              const isOpen = openId === item.id;
+              return (
+                <FAQItem
+                  key={item.id}
+                  id={`faq-${item.id}`}
+                  question={item.question}
+                  answer={item.answer}
+                  isOpen={isOpen}
+                  onToggle={() => setOpenId(isOpen ? null : item.id)}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

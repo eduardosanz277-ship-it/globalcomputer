@@ -16,7 +16,14 @@ export function FAQItem({ id, question, answer, isOpen, onToggle }: Props) {
   const buttonId = `${id}-trigger`;
 
   return (
-    <article className="rounded-2xl border border-border/60 bg-card shadow-soft">
+    <article
+      className={cn(
+        "overflow-hidden rounded-2xl border bg-background/90 shadow-sm transition-all duration-200",
+        isOpen
+          ? "border-primary/30 shadow-soft ring-1 ring-primary/15"
+          : "border-border/60 hover:border-primary/25 hover:shadow-soft",
+      )}
+    >
       <h3>
         <button
           id={buttonId}
@@ -24,18 +31,36 @@ export function FAQItem({ id, question, answer, isOpen, onToggle }: Props) {
           aria-controls={contentId}
           aria-expanded={isOpen}
           onClick={onToggle}
-          className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/35 sm:px-6"
+          className={cn(
+            "group flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors sm:px-6",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset",
+            isOpen ? "bg-primary/[0.04]" : "hover:bg-muted/40",
+          )}
         >
-          <span className="text-base font-semibold text-foreground sm:text-lg">
+          <span
+            className={cn(
+              "text-base font-semibold sm:text-lg",
+              isOpen ? "text-primary" : "text-foreground",
+            )}
+          >
             {question}
           </span>
-          <ChevronDown
+          <span
             className={cn(
-              "h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200",
-              isOpen && "rotate-180 text-primary",
+              "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
+              isOpen
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : "border-border/70 bg-muted/50 text-muted-foreground group-hover:border-primary/20 group-hover:text-primary",
             )}
-            aria-hidden
-          />
+          >
+            <ChevronDown
+              className={cn(
+                "h-4.5 w-4.5 transition-transform duration-300",
+                isOpen && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </span>
         </button>
       </h3>
 
@@ -44,12 +69,18 @@ export function FAQItem({ id, question, answer, isOpen, onToggle }: Props) {
         role="region"
         aria-labelledby={buttonId}
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+          "grid transition-[grid-template-rows,opacity] duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]",
           isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-70",
         )}
       >
         <div className="overflow-hidden">
-          <p className="border-t border-border/50 px-5 pb-5 pt-3 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:text-base">
+          <p
+            className={cn(
+              "border-t border-border/50 bg-muted/30 px-5 pb-5 pt-3 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:text-base",
+              "transition-all duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              isOpen ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-85",
+            )}
+          >
             {answer}
           </p>
         </div>

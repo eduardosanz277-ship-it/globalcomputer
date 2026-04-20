@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FaqAdmin } from "@/modules/admin/faqs/faqs.types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { Plus } from "lucide-react";
@@ -13,7 +13,16 @@ import { deleteFaqAdminAction } from "./actions";
 import { FaqFormDialog } from "./FaqFormDialog";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
+import { FaqProfileCard } from "@/components/dashboard/faq-profile-card";
 import { cn } from "@/utils/cn";
+import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   faqs: FaqAdmin[];
@@ -64,6 +73,30 @@ function RowActions({ row, onEdit }: { row: FaqAdmin; onEdit: () => void }) {
 export function AdminFaqsTable({ faqs, isLoading = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<FaqAdmin | null>(null);
+
+  const renderMobileRow = useCallback((row: Row<FaqAdmin>) => {
+    const r = row.original;
+    return (
+      <li key={row.id}>
+        <FaqProfileCard
+          question={r.question}
+          answer={r.answer}
+          active={r.active}
+          updatedAt={r.updatedAt}
+          className="hover:bg-muted/50 transition-colors duration-150"
+          actions={
+            <RowActions
+              row={r}
+              onEdit={() => {
+                setEditing(r);
+                setDialogOpen(true);
+              }}
+            />
+          }
+        />
+      </li>
+    );
+  }, []);
 
   const columns = useMemo<ColumnDef<FaqAdmin>[]>(
     () => [
@@ -142,11 +175,37 @@ export function AdminFaqsTable({ faqs, isLoading = false }: Props) {
             ariaLabelDesc="Más reciente primero. Clic para quitar orden"
           />
         ),
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {new Date(row.original.updatedAt).toLocaleDateString("es-ES")}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const raw = row.original.updatedAt;
+          const relative = formatRelativeLastAccess(raw);
+          const absolute = formatDateDdMmYyyyHhMm(raw);
+          if (relative == null) {
+            return (
+              <span className="text-sm text-muted-foreground">{absolute}</span>
+            );
+          }
+          return (
+            <TooltipProvider delayDuration={120}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help text-sm text-muted-foreground">
+                    {relative}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
+                >
+                  <span className="block font-medium">Última actualización</span>
+                  <span className="mt-0.5 block text-muted-foreground">
+                    {absolute}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        },
       },
       {
         id: "actions",
@@ -181,6 +240,7 @@ export function AdminFaqsTable({ faqs, isLoading = false }: Props) {
         getRowClassName={() =>
           "hover:bg-muted/50 transition-colors duration-150"
         }
+        renderMobileRow={renderMobileRow}
         toolbarActions={
           <Button
             type="button"
