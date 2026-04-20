@@ -391,6 +391,25 @@ export async function listFeaturedStorefrontProducts(
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
+/**
+ * Todos los productos activos marcados como destacados (`featured`).
+ * Orden: actualización reciente primero.
+ */
+export async function listAllFeaturedStorefrontProducts(): Promise<
+  StorefrontProduct[]
+> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .eq("featured", true)
+    .order("updated_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 export async function listProductsByBrandId(
   brandId: string,
 ): Promise<StorefrontProduct[]> {
