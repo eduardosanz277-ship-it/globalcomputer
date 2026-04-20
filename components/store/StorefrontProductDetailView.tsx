@@ -622,6 +622,7 @@ function ProductInformationTabsSection({
             </article>
           </div>
         ) : null}
+        */}
       </div>
     </section>
   );
