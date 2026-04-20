@@ -186,7 +186,7 @@ export default async function HomePage() {
               titleClassName="text-3xl sm:text-4xl"
             />
             <Link
-              href="/productos"
+              href="/productos/destacados"
               className={cn(
                 buttonVariants({ variant: "outline" }),
                 "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
