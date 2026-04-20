@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import { Node, mergeAttributes } from "@tiptap/core";
-import { ChevronDown, Minus, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
 import { cn } from "@/utils/cn";
 
