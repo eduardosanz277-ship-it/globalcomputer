@@ -79,51 +79,43 @@ export function SpecRow({
   removeDisabled?: boolean;
 }) {
   return (
-    <div className="grid gap-2 border-t border-border/60 px-4 py-3 first:border-t-0 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] sm:gap-4">
-      <div className="space-y-1">
-        <label className="text-[11px] font-semibold tracking-wide text-muted-foreground">
-          Nombre de la especificación
-        </label>
-        <input
-          value={row.name}
-          disabled={disabled}
-          onChange={(e) => onChange({ ...row, name: e.target.value })}
-          placeholder="Ej. Resolución"
-          className={cn(
-            "h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm outline-none transition",
-            "focus:border-primary focus:ring-0 focus-visible:ring-0",
-            disabled && "opacity-60",
-          )}
-        />
-      </div>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <label className="text-[11px] font-semibold tracking-wide text-muted-foreground">
-            Detalle
-          </label>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onRemove}
-            disabled={disabled || removeDisabled}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden />
-            Quitar
-          </button>
-        </div>
-        <input
-          value={row.detail}
-          disabled={disabled}
-          onChange={(e) => onChange({ ...row, detail: e.target.value })}
-          placeholder="Ej. 4 mm"
-          className={cn(
-            "h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm outline-none transition",
-            "focus:border-primary focus:ring-0 focus-visible:ring-0",
-            disabled && "opacity-60",
-          )}
-        />
-      </div>
+    <div className="grid max-sm:pt-2.5 max-sm:pb-0 max-sm:first:pt-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-2 sm:py-0">
+      <input
+        value={row.name}
+        disabled={disabled}
+        onChange={(e) => onChange({ ...row, name: e.target.value })}
+        placeholder="Nombre"
+        aria-label="Nombre de la especificación"
+        className={cn(
+          "h-8 w-full rounded-md border border-border/40 bg-background/80 px-2.5 text-sm outline-none transition",
+          "placeholder:text-muted-foreground/70",
+          "focus:border-primary/60 focus:ring-0 focus-visible:ring-0",
+          disabled && "opacity-60",
+        )}
+      />
+      <input
+        value={row.detail}
+        disabled={disabled}
+        onChange={(e) => onChange({ ...row, detail: e.target.value })}
+        placeholder="Valor"
+        aria-label="Detalle"
+        className={cn(
+          "h-8 w-full rounded-md border border-border/40 bg-background/80 px-2.5 text-sm outline-none transition",
+          "placeholder:text-muted-foreground/70",
+          "focus:border-primary/60 focus:ring-0 focus-visible:ring-0",
+          disabled && "opacity-60",
+        )}
+      />
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onRemove}
+        disabled={disabled || removeDisabled}
+        aria-label="Quitar fila"
+        className="inline-flex h-8 w-8 max-sm:-mt-1 max-sm:justify-self-end shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted/80 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+      </button>
     </div>
   );
 }
