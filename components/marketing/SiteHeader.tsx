@@ -1635,7 +1635,7 @@ export function SiteHeader({ user }: Props) {
                                 Sistema de Seguridad
                               </span>
                             </button>
-                            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-3">
+                            <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
                               {navLoading ? (
                                 <div
                                   className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground"
@@ -1648,18 +1648,27 @@ export function SiteHeader({ user }: Props) {
                                 </div>
                               ) : (
                                 (navData?.characteristicsGeneral ?? []).map(
-                                  (general) => (
-                                    <div key={general.id} className="space-y-1">
-                                      <div
-                                        className={cn(
-                                          "px-3 py-2 text-left",
-                                          mobileNavCatalogHeadingClass,
-                                        )}
+                                  (general) =>
+                                    general.specifics.length > 0 ? (
+                                      <details
+                                        key={general.id}
+                                        className="group rounded-lg"
                                       >
-                                        Ver por {general.name}
-                                      </div>
-                                      {general.specifics.length > 0 ? (
-                                        <div className="grid gap-0.5">
+                                        <summary
+                                          className={cn(
+                                            "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
+                                            mobileNavCatalogHeadingClass,
+                                          )}
+                                        >
+                                          <span className="truncate">
+                                            Ver por {general.name}
+                                          </span>
+                                          <ChevronDown
+                                            className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
+                                            aria-hidden
+                                          />
+                                        </summary>
+                                        <div className="grid gap-0.5 pl-4 pt-0.5">
                                           {general.specifics.map((specific) => (
                                             <Link
                                               key={specific.id}
@@ -1676,9 +1685,18 @@ export function SiteHeader({ user }: Props) {
                                             </Link>
                                           ))}
                                         </div>
-                                      ) : null}
-                                    </div>
-                                  ),
+                                      </details>
+                                    ) : (
+                                      <div
+                                        key={general.id}
+                                        className={cn(
+                                          "rounded-lg px-3 py-2 text-left",
+                                          mobileNavCatalogHeadingClass,
+                                        )}
+                                      >
+                                        Ver por {general.name}
+                                      </div>
+                                    ),
                                 )
                               )}
                             </div>
