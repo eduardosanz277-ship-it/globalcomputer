@@ -107,11 +107,6 @@ const reviewRatingOptions: ReviewRatingOption[] = [
 
 const TABLE_LIKE_TOOLTIP_CLASS =
   "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
-const productInfoTabs: { id: ProductInfoTabId; label: string }[] = [
-  { id: "technical_specs", label: "Especificaciones Técnicas" },
-  { id: "downloads", label: "Descargas" },
-  { id: "faq", label: "Preguntas Frecuentes" },
-];
 
 function formatSortSelectedLabel(option: ReviewDateSortOption): string {
   return `Ordenar por: ${option.label}`;
@@ -529,6 +524,18 @@ function ProductInformationTabsSection({
   const [activeTab, setActiveTab] =
     useState<ProductInfoTabId>("technical_specs");
 
+  const productInfoTabs = useMemo(() => {
+    const tabs: { id: ProductInfoTabId; label: string }[] = [
+      { id: "technical_specs", label: "Especificaciones Técnicas" },
+    ];
+    if (manualPdfUrl?.trim()) {
+      tabs.push({ id: "downloads", label: "Descargas" });
+    }
+    // Tab FAQ oculta: descomenta la siguiente línea y el panel FAQ más abajo.
+    // tabs.push({ id: "faq", label: "Preguntas Frecuentes" });
+    return tabs;
+  }, [manualPdfUrl]);
+
   return (
     <section className="mt-10 rounded-xl border border-border/70 bg-card/80 p-4 shadow-sm sm:mt-14 sm:p-6">
       <div
@@ -569,24 +576,19 @@ function ProductInformationTabsSection({
           )
         ) : null}
 
-        {activeTab === "downloads" ? (
-          manualPdfUrl ? (
-            <a
-              href={manualPdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
-            >
-              <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-              <span>Descargar o ver manual (PDF)</span>
-            </a>
-          ) : (
-            <p className="rounded-xl border border-dashed border-border/70 bg-muted/25 px-5 py-8 text-sm text-muted-foreground">
-              No hay archivos de descarga disponibles para este producto.
-            </p>
-          )
+        {activeTab === "downloads" && manualPdfUrl?.trim() ? (
+          <a
+            href={manualPdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
+          >
+            <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+            <span>Descargar o ver manual (PDF)</span>
+          </a>
         ) : null}
 
+        {/*
         {activeTab === "faq" ? (
           <div className="space-y-3">
             <article className="rounded-xl border border-border/70 bg-background/70 p-4">
