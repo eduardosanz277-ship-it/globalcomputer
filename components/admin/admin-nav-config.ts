@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
+  CircleHelp,
   House,
   BriefcaseBusiness,
   FolderTree,
@@ -59,6 +60,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/services",
     label: "Servicios",
     icon: BriefcaseBusiness,
+  },
+  {
+    href: "/admin/faqs",
+    label: "FAQs",
+    icon: CircleHelp,
   },
   { href: "/admin/products", label: "Productos", icon: Package },
   { href: "/admin/orders", label: "Pedidos", icon: ListChecks },

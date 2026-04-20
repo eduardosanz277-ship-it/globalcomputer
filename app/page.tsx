@@ -28,6 +28,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
 import { ServicesSection } from "@/components/marketing/ServicesSection";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { FAQSection } from "@/components/marketing/FAQSection";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
@@ -36,6 +37,7 @@ import {
 } from "@/modules/catalog/storefront-products.service";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
+import { listActiveSiteFaqs } from "@/modules/site/faqs.service";
 
 export const metadata: Metadata = {
   title: "Global Computers USA | Cámaras de Seguridad, Software y Tecnología",
@@ -86,13 +88,14 @@ const CATEGORIES: Array<{
 ];
 
 export default async function HomePage() {
-  const [products, featuredProducts, user, nav, productReviews] =
+  const [products, featuredProducts, user, nav, productReviews, siteFaqs] =
     await Promise.all([
       listAllActiveStorefrontProducts(),
       listFeaturedStorefrontProducts(8),
       getCurrentUserService(),
       getNavigationData(),
       listProductReviewsForLeaveReviewPage(),
+      listActiveSiteFaqs(),
     ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
@@ -581,6 +584,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <FAQSection items={siteFaqs} />
 
       {/*
       Sección Newsletter (oculta temporalmente — descomenta para mostrarla).
