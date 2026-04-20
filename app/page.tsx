@@ -24,10 +24,8 @@ import { StoreHero } from "@/components/marketing/StoreHero";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
-import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
-import { Input } from "@/components/ui/input";
 import { ServicesSection } from "@/components/marketing/ServicesSection";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
@@ -584,7 +582,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Newsletter */}
+      {/*
+      Sección Newsletter (oculta temporalmente — descomenta para mostrarla).
+      Si la reactivas, vuelve a importar: Button desde @/components/ui/button e Input desde @/components/ui/input.
       <section className="border-t border-border/60 bg-muted/50 py-16 sm:py-20">
         <div className="mx-auto max-w-lg px-4 sm:px-6">
           <div className="rounded-3xl border border-border/50 bg-card p-8 text-center shadow-soft sm:p-10">
@@ -614,6 +614,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      */}
     </main>
   );
 }
