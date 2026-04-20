@@ -383,47 +383,110 @@ export function ProductDetailDrawer({
           </div>
         </section>
 
-        <section className="rounded-xl border border-border/70 bg-card p-4">
-          <h3 className="text-sm font-medium text-foreground">
-            Características específicas
-          </h3>
-          {characteristicGroups.length > 0 ? (
-            <div className="mt-3 space-y-3">
-              {characteristicGroups.map(([generalName, rows]) => (
-                <article
-                  key={generalName}
-                  className="overflow-hidden rounded-lg border border-border/70 bg-muted/20"
-                >
-                  <header className="border-b border-border/70 bg-muted/40 px-3 py-2">
-                    <p className="text-xs font-medium tracking-wide text-foreground">
-                      {generalName}
-                    </p>
-                  </header>
-                  <div className="flex flex-wrap gap-2 p-3">
-                    {rows.map((item) => (
-                      <div
-                        key={item.id}
-                        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5"
-                      >
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {item.specificName}
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <button
+            type="button"
+            onClick={() => setSpecificCharacteristicsOpen((prev) => !prev)}
+            aria-expanded={specificCharacteristicsOpen}
+            aria-label={
+              specificCharacteristicsOpen
+                ? "Contraer características específicas"
+                : "Expandir características específicas"
+            }
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/20"
+          >
+            <span className="text-sm font-medium text-foreground">
+              Características específicas
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${specificCharacteristicsOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-out ${specificCharacteristicsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden border-t border-border/70">
+              {characteristicGroups.length > 0 ? (
+                <div className="space-y-3 p-4">
+                  {characteristicGroups.map(([generalName, rows]) => (
+                    <article
+                      key={generalName}
+                      className="overflow-hidden rounded-lg border border-border/70 bg-muted/20"
+                    >
+                      <header className="border-b border-border/70 bg-muted/40 px-3 py-2">
+                        <p className="text-xs font-medium tracking-wide text-foreground">
+                          {generalName}
                         </p>
-                        {item.value?.trim() ? (
-                          <p className="truncate text-xs text-muted-foreground">
-                            · {item.value}
-                          </p>
-                        ) : null}
+                      </header>
+                      <div className="flex flex-wrap gap-2 p-3">
+                        {rows.map((item) => (
+                          <div
+                            key={item.id}
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5"
+                          >
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {item.specificName}
+                            </p>
+                            {item.value?.trim() ? (
+                              <p className="truncate text-xs text-muted-foreground">
+                                · {item.value}
+                              </p>
+                            ) : null}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </article>
-              ))}
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  Sin características específicas
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="mt-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              Sin características específicas
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <button
+            type="button"
+            onClick={() => setSpecificationsOpen((prev) => !prev)}
+            aria-expanded={specificationsOpen}
+            aria-label={
+              specificationsOpen
+                ? "Contraer especificaciones técnicas"
+                : "Expandir especificaciones técnicas"
+            }
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/20"
+          >
+            <span className="text-sm font-medium text-foreground">
+              Especificaciones técnicas
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${specificationsOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-out ${specificationsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden border-t border-border/70">
+              {product.specifications?.trim() ? (
+                <div className="px-4 text-sm">
+                  <ProductDescriptionViewer
+                    descripcion={product.specifications}
+                  />
+                </div>
+              ) : (
+                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  Sin especificaciones técnicas
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </section>
 
         <section className="rounded-xl border border-border/70 bg-card p-4">
