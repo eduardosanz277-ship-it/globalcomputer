@@ -1757,7 +1757,7 @@ export function SiteHeader({ user }: Props) {
                                           aria-hidden
                                         />
                                       </summary>
-                                      <div className="grid gap-0.5 pt-0.5">
+                                      <div className="grid gap-0.5 pl-4 pt-0.5">
                                         {brand.brandTypes.map((type) => (
                                           <Link
                                             key={type.id}
@@ -1827,18 +1827,7 @@ export function SiteHeader({ user }: Props) {
                                   </span>
                                 </div>
                               ) : (
-                                <>
-                                  <Link
-                                    href="/categorias"
-                                    onClick={() => setMobileNavOpen(false)}
-                                    className={cn(
-                                      "rounded-lg px-3 py-2 transition hover:bg-muted",
-                                      mobileNavCatalogHeadingClass,
-                                    )}
-                                  >
-                                    Ver todas las categorías
-                                  </Link>
-                                  {(navData?.catalogCategories ?? []).map(
+                                (navData?.catalogCategories ?? []).map(
                                     (cat) => {
                                       const hasSubs =
                                         cat.subcategories.length > 0;
@@ -1861,7 +1850,7 @@ export function SiteHeader({ user }: Props) {
                                               aria-hidden
                                             />
                                           </summary>
-                                          <div className="grid gap-0.5 pt-0.5">
+                                          <div className="grid gap-0.5 pl-4 pt-0.5">
                                             {cat.subcategories.map((sub) => (
                                               <Link
                                                 key={sub.id}
@@ -1894,9 +1883,7 @@ export function SiteHeader({ user }: Props) {
                                           {cat.name}
                                         </Link>
                                       );
-                                    },
-                                  )}
-                                </>
+                                    })
                               )}
                             </div>
                           </>
