@@ -27,29 +27,36 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   ] = await Promise.all([
     supabase
       .from("product_characteristics_general")
-      .select("id, name")
+      .select("id, name, name_en")
       .eq("active", true)
       .order("name"),
     supabase
       .from("product_characteristics_specific")
-      .select("id, name, general_id")
+      .select("id, name, name_en, general_id")
       .eq("active", true)
       .order("name"),
-    supabase.from("brands").select("id, name").eq("active", true).order("name"),
+    supabase
+      .from("brands")
+      .select("id, name, name_en")
+      .eq("active", true)
+      .order("name"),
     supabase
       .from("brand_types")
-      .select("id, name, brand_id")
+      .select("id, name, name_en, brand_id")
       .eq("active", true)
       .order("name"),
-    supabase.from("services").select("id, name, description").order("name"),
+    supabase
+      .from("services")
+      .select("id, name, name_en, description")
+      .order("name"),
     supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, name_en")
       .is("deleted_at", null)
       .order("name"),
     supabase
       .from("subcategories")
-      .select("id, name, category_id")
+      .select("id, name, name_en, category_id")
       .is("deleted_at", null)
       .order("name"),
   ]);
@@ -94,6 +101,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     generalMap.set(row.id, {
       id: row.id,
       name: row.name,
+      nameEn: row.name_en ?? null,
       specifics: [],
     });
   }
@@ -102,7 +110,11 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   for (const row of specificRows) {
     const general = generalMap.get(row.general_id);
     if (general) {
-      general.specifics.push({ id: row.id, name: row.name });
+      general.specifics.push({
+        id: row.id,
+        name: row.name,
+        nameEn: row.name_en ?? null,
+      });
     }
   }
 
@@ -112,6 +124,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     brandsMap.set(row.id, {
       id: row.id,
       name: row.name,
+      nameEn: row.name_en ?? null,
       brandTypes: [],
     });
   }
@@ -120,7 +133,11 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   for (const row of brandTypeRows) {
     const brand = brandsMap.get(row.brand_id);
     if (brand) {
-      brand.brandTypes.push({ id: row.id, name: row.name });
+      brand.brandTypes.push({
+        id: row.id,
+        name: row.name,
+        nameEn: row.name_en ?? null,
+      });
     }
   }
 
@@ -128,6 +145,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   const services: NavigationService[] = servicesRows.map((row) => ({
     id: row.id,
     name: row.name,
+    nameEn: row.name_en ?? null,
     description: row.description,
   }));
 
@@ -137,6 +155,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     categoriesMap.set(row.id, {
       id: row.id,
       name: row.name,
+      nameEn: row.name_en ?? null,
       subcategories: [],
     });
   }
@@ -144,7 +163,11 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   for (const row of subcategoryRows) {
     const cat = categoriesMap.get(row.category_id);
     if (cat) {
-      cat.subcategories.push({ id: row.id, name: row.name });
+      cat.subcategories.push({
+        id: row.id,
+        name: row.name,
+        nameEn: row.name_en ?? null,
+      });
     }
   }
 

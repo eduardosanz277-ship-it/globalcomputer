@@ -1,38 +1,39 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppLogo } from "@/components/brand/AppLogo";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
+import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
+import { useGcCart } from "@/components/store/useGcCart";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
+import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import type { SessionUser } from "@/modules/auth/auth.types";
+import type { NavigationData } from "@/modules/navigation/navigation.types";
+import { cn } from "@/utils/cn";
 import {
-  ChevronLeft,
-  UserRound,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
-  Loader2,
   LayoutDashboard,
+  Loader2,
   LogIn,
   LogOut,
   MapPin,
   Menu,
   Package,
-  UserRoundPlus,
   Search,
   ShoppingCart,
+  UserRound,
+  UserRoundPlus,
   X,
 } from "lucide-react";
-import { AppLogo } from "@/components/brand/AppLogo";
-import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
-import { cn } from "@/utils/cn";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
-import type { SessionUser } from "@/modules/auth/auth.types";
-import type { NavigationData } from "@/modules/navigation/navigation.types";
-import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
-import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
-import { useGcCart } from "@/components/store/useGcCart";
-import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
-import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const SITE_NAME = "Global Computers USA";
 
@@ -51,6 +52,23 @@ function NavMegaMenuLoading() {
       <span className="text-xs uppercase tracking-[0.35em] text-white/55">
         Cargando
       </span>
+    </div>
+  );
+}
+
+function LanguageSelector({ className }: { className?: string }) {
+  const { locale, setLocale, supportedLocales, t } = useI18n();
+  const nextLocale =
+    supportedLocales[(supportedLocales.indexOf(locale) + 1) % supportedLocales.length];
+  return (
+    <div className={cn("flex items-center", className)}>
+      <button
+        type="button"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-transparent text-[10px] font-bold uppercase tracking-[0.2em] leading-none text-black transition hover:border-black hover:text-foreground p-0 pt-1"
+        onClick={() => setLocale(nextLocale)}
+      >
+        {locale.toUpperCase()}
+      </button>
     </div>
   );
 }
@@ -315,6 +333,9 @@ export function SiteHeader({ user }: Props) {
   }, []);
 
   const prevPathnameForNavRef = useRef<string | null>(null);
+  const { t, locale } = useI18n();
+  const localizeName = (value: { name: string; nameEn?: string | null }) =>
+    locale === "en" ? value.nameEn ?? value.name : value.name;
   useLayoutEffect(() => {
     setMobileNavOpen(false);
     setAccountOpen(false);
@@ -376,9 +397,7 @@ export function SiteHeader({ user }: Props) {
                 onClick={() => setMobileNavOpen((v) => !v)}
                 className="row-start-1 col-start-1 rounded-lg pl-1 text-foreground transition hover:bg-muted/80"
                 aria-label={
-                  mobileNavOpen
-                    ? "Cerrar menú principal"
-                    : "Abrir menú principal"
+                  mobileNavOpen ? t("header.closeMenu") : t("header.openMenu")
                 }
                 aria-expanded={mobileNavOpen}
               >
@@ -405,7 +424,7 @@ export function SiteHeader({ user }: Props) {
               </Link>
 
               <label className="relative col-span-4 row-start-2 block min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1">
-                <span className="sr-only">Buscar productos</span>
+                <span className="sr-only">{t("header.searchLabel")}</span>
                 <Search
                   className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                   aria-hidden
@@ -413,11 +432,14 @@ export function SiteHeader({ user }: Props) {
                 <input
                   type="search"
                   name="q"
-                  placeholder="Buscar cámaras, kits, marcas..."
+                  placeholder={t("header.searchPlaceholder")}
                   autoComplete="off"
                   className="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
                 />
               </label>
+              <div className="row-start-1 col-start-4 flex items-center gap-1 sm:hidden">
+                <LanguageSelector className="gap-1" />
+              </div>
 
               <div
                 ref={accountRefMobile}
@@ -571,7 +593,7 @@ export function SiteHeader({ user }: Props) {
                 size="icon"
                 type="button"
                 className="relative -ml-1.5 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
-                aria-label={`Carrito (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
                 onClick={handleCartIconClick}
               >
                 <span className="relative inline-flex">
@@ -642,12 +664,13 @@ export function SiteHeader({ user }: Props) {
               </div>
 
               <div className="flex min-w-0 justify-self-end gap-0.5 sm:gap-2">
+                <LanguageSelector className="hidden gap-1 sm:flex" />
                 <Button
                   variant="ghost"
                   size="sm"
                   type="button"
                   className="shrink-0 gap-2 rounded-xl px-2.5 hover:bg-transparent hover:text-foreground md:order-2 md:px-3"
-                  aria-label={`Carrito (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
                   onClick={handleCartIconClick}
                 >
                   <span className="relative inline-flex">
@@ -661,7 +684,7 @@ export function SiteHeader({ user }: Props) {
                     </span>
                   </span>
                   <span className="hidden text-sm font-medium md:inline">
-                    Carrito
+                    {t("header.nav.cart")}
                   </span>
                 </Button>
 
@@ -902,7 +925,7 @@ export function SiteHeader({ user }: Props) {
             "hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:grid lg:grid-rows-[1fr] lg:overflow-visible",
             /* Solo `pointer-events-none` en el padre no corta :hover en hijos; hay que anular hits en todo el subárbol (y ! para vencer group-hover:*:pointer-events-auto del mega). */
             suppressDesktopNavHover &&
-              "pointer-events-none [&_*]:!pointer-events-none",
+            "pointer-events-none [&_*]:!pointer-events-none",
           )}
         >
           <div className="min-h-0 overflow-visible lg:min-h-0">
@@ -918,7 +941,7 @@ export function SiteHeader({ user }: Props) {
                 )}
                 onClick={handleScrollToTopOnHome}
               >
-                Inicio
+                {t("header.nav.home")}
               </Link>
 
               <div className="group/cat relative">
@@ -928,35 +951,35 @@ export function SiteHeader({ user }: Props) {
                     navPrimaryLabelClass,
                   )}
                 >
-                  Categorías
+                  {t("header.nav.categories")}
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading ||
                   (navData?.catalogCategories?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
-                    <div
-                      className={cn(
-                        megaPanelClass,
-                        "flex items-stretch font-roboto",
-                        categoryPanelHasSubs
-                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                      )}
-                      onMouseLeave={() => setHoveredCategoryId(null)}
-                    >
-                      {navLoading ? (
-                        <NavMegaMenuLoading />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "shrink-0 overflow-y-auto py-2",
-                              categoryPanelHasSubs
-                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                : "w-full max-h-[70vh]",
-                            )}
-                          >
+                    <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
+                      <div className={navMegaMenuBridgeClass} aria-hidden />
+                      <div
+                        className={cn(
+                          megaPanelClass,
+                          "flex items-stretch font-roboto",
+                          categoryPanelHasSubs
+                            ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
+                            : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
+                        )}
+                        onMouseLeave={() => setHoveredCategoryId(null)}
+                      >
+                        {navLoading ? (
+                          <NavMegaMenuLoading />
+                        ) : (
+                          <>
+                            <div
+                              className={cn(
+                                "shrink-0 overflow-y-auto py-2",
+                                categoryPanelHasSubs
+                                  ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                                  : "w-full max-h-[70vh]",
+                              )}
+                            >
                             {navData!.catalogCategories.map((cat) => {
                               const rowActive = hoveredCategoryId === cat.id;
                               const hasSubs = cat.subcategories.length > 0;
@@ -975,7 +998,9 @@ export function SiteHeader({ user }: Props) {
                                     rowActive && "bg-white/10",
                                   )}
                                 >
-                                  <span className="truncate">{cat.name}</span>
+                                  <span className="truncate">
+                                    {localizeName(cat)}
+                                  </span>
                                   {hasSubs ? (
                                     <ChevronRight
                                       className="h-4 w-4 shrink-0 text-white"
@@ -985,34 +1010,34 @@ export function SiteHeader({ user }: Props) {
                                 </Link>
                               );
                             })}
-                          </div>
-                          {categoryPanelHasSubs && activeCategory ? (
-                            <div className="min-w-0 flex-1 py-2">
-                              <ul className="py-1">
-                                {activeCategory.subcategories.map((sub) => (
-                                  <li key={sub.id}>
-                                    <Link
-                                      href={`/catalogo/${activeCategory.id}/${sub.id}`}
-                                      onClick={armDesktopNavStripSuppress}
-                                      className={cn(
-                                        navMegaRowClass,
-                                        "hover:bg-white/10",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {sub.name}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
                             </div>
-                          ) : null}
-                        </>
-                      )}
+                            {categoryPanelHasSubs && activeCategory ? (
+                              <div className="min-w-0 flex-1 py-2">
+                                <ul className="py-1">
+                                  {activeCategory.subcategories.map((sub) => (
+                                    <li key={sub.id}>
+                                      <Link
+                                        href={`/catalogo/${activeCategory.id}/${sub.id}`}
+                                        onClick={armDesktopNavStripSuppress}
+                                        className={cn(
+                                          navMegaRowClass,
+                                          "hover:bg-white/10",
+                                        )}
+                                      >
+                                        <span className="truncate">
+                                          {localizeName(sub)}
+                                        </span>
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               <div className="group/nav relative">
@@ -1022,91 +1047,91 @@ export function SiteHeader({ user }: Props) {
                     navPrimaryLabelClass,
                   )}
                 >
-                  Sistemas de Seguridad
+                  {t("header.nav.securitySystems")}
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading ||
                   (navData?.characteristicsGeneral?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
-                    <div
-                      className={cn(
-                        megaPanelClass,
-                        "flex items-stretch font-roboto",
-                        generalPanelHasSubs
-                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                      )}
-                      onMouseLeave={() => setHoveredGeneralId(null)}
-                    >
-                      {navLoading ? (
-                        <NavMegaMenuLoading />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "shrink-0 overflow-y-auto py-2",
-                              generalPanelHasSubs
-                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                : "w-full max-h-[70vh]",
-                            )}
-                          >
-                            {navData!.characteristicsGeneral.map((general) => {
-                              const rowActive = hoveredGeneralId === general.id;
-                              const hasSubs = general.specifics.length > 0;
-                              return (
-                                <div
-                                  key={general.id}
-                                  role="presentation"
-                                  onMouseEnter={() =>
-                                    setHoveredGeneralId(general.id)
-                                  }
-                                  className={cn(
-                                    navMegaRowClass,
-                                    "cursor-default justify-between select-none",
-                                    "hover:bg-white/10",
-                                    rowActive && "bg-white/10",
-                                  )}
-                                >
-                                  <span className="truncate">
-                                    Ver por {general.name}
-                                  </span>
-                                  {hasSubs ? (
-                                    <ChevronRight
-                                      className="h-4 w-4 shrink-0 text-white"
-                                      aria-hidden
-                                    />
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {generalPanelHasSubs && activeGeneral ? (
-                            <div className="min-w-0 flex-1 py-2">
-                              <ul className="py-1">
-                                {activeGeneral.specifics.map((specific) => (
-                                  <li key={specific.id}>
-                                    <Link
-                                      href={`/security-system/${activeGeneral.id}/${specific.id}`}
-                                      className={cn(
-                                        navMegaRowClass,
-                                        "hover:bg-white/10",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {specific.name}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
+                    <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
+                      <div className={navMegaMenuBridgeClass} aria-hidden />
+                      <div
+                        className={cn(
+                          megaPanelClass,
+                          "flex items-stretch font-roboto",
+                          generalPanelHasSubs
+                            ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
+                            : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
+                        )}
+                        onMouseLeave={() => setHoveredGeneralId(null)}
+                      >
+                        {navLoading ? (
+                          <NavMegaMenuLoading />
+                        ) : (
+                          <>
+                            <div
+                              className={cn(
+                                "shrink-0 overflow-y-auto py-2",
+                                generalPanelHasSubs
+                                  ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                                  : "w-full max-h-[70vh]",
+                              )}
+                            >
+                              {navData!.characteristicsGeneral.map((general) => {
+                                const rowActive = hoveredGeneralId === general.id;
+                                const hasSubs = general.specifics.length > 0;
+                                return (
+                                  <div
+                                    key={general.id}
+                                    role="presentation"
+                                    onMouseEnter={() =>
+                                      setHoveredGeneralId(general.id)
+                                    }
+                                    className={cn(
+                                      navMegaRowClass,
+                                      "cursor-default justify-between select-none",
+                                      "hover:bg-white/10",
+                                      rowActive && "bg-white/10",
+                                    )}
+                                  >
+                                    <span className="truncate">
+                                      Ver por {localizeName(general)}
+                                    </span>
+                                    {hasSubs ? (
+                                      <ChevronRight
+                                        className="h-4 w-4 shrink-0 text-white"
+                                        aria-hidden
+                                      />
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          ) : null}
-                        </>
-                      )}
+                            {generalPanelHasSubs && activeGeneral ? (
+                              <div className="min-w-0 flex-1 py-2">
+                                <ul className="py-1">
+                                  {activeGeneral.specifics.map((specific) => (
+                                    <li key={specific.id}>
+                                      <Link
+                                        href={`/security-system/${activeGeneral.id}/${specific.id}`}
+                                        className={cn(
+                                          navMegaRowClass,
+                                          "hover:bg-white/10",
+                                        )}
+                                      >
+                                  <span className="truncate">
+                                    {localizeName(specific)}
+                                  </span>
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               <div className="group/shop relative">
@@ -1116,7 +1141,7 @@ export function SiteHeader({ user }: Props) {
                     navPrimaryLabelClass,
                   )}
                 >
-                  Ver Marcas
+                  {t("header.nav.brands")}
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading || (navData?.brands?.length ?? 0) > 0) && (
@@ -1161,7 +1186,9 @@ export function SiteHeader({ user }: Props) {
                                     rowActive && "bg-white/10",
                                   )}
                                 >
-                                  <span className="truncate">{brand.name}</span>
+                                  <span className="truncate">
+                                    {localizeName(brand)}
+                                  </span>
                                   {hasSubs ? (
                                     <ChevronRight
                                       className="h-4 w-4 shrink-0 text-white"
@@ -1184,9 +1211,9 @@ export function SiteHeader({ user }: Props) {
                                         "hover:bg-white/10",
                                       )}
                                     >
-                                      <span className="truncate">
-                                        {type.name}
-                                      </span>
+                                  <span className="truncate">
+                                    {localizeName(type)}
+                                  </span>
                                     </Link>
                                   </li>
                                 ))}
@@ -1207,7 +1234,7 @@ export function SiteHeader({ user }: Props) {
                     navPrimaryLabelClass,
                   )}
                 >
-                  Servicios
+                  {t("header.nav.services")}
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 </span>
                 {(navLoading || (navData?.services?.length ?? 0) > 0) && (
@@ -1232,7 +1259,9 @@ export function SiteHeader({ user }: Props) {
                                   "hover:bg-white/10",
                                 )}
                               >
-                                <span className="truncate">{service.name}</span>
+                                <span className="truncate">
+                                  {localizeName(service)}
+                                </span>
                               </Link>
                             </li>
                           ))}
@@ -1250,7 +1279,7 @@ export function SiteHeader({ user }: Props) {
                   navPrimaryLabelClass,
                 )}
               >
-                Contacto
+                {t("header.nav.contact")}
               </Link>
 
               {/*
@@ -1293,11 +1322,11 @@ export function SiteHeader({ user }: Props) {
                 "fixed inset-y-0 left-0 z-[101] w-full border-r border-border/70 bg-[#e4e7ec] text-foreground shadow-2xl transition-transform duration-300 ease-out sm:w-[min(92vw,26rem)]",
                 mobileNavOpen ? "translate-x-0" : "-translate-x-full",
               )}
-              aria-label="Menú principal móvil"
+              aria-label={t("header.mobileMenuLabel")}
             >
               <div className="flex items-center justify-between border-b border-border/70 bg-[#e4e7ec] px-4 py-3">
                 <span className="font-roboto text-[15px] font-medium uppercase tracking-[1px]">
-                  Menú
+                  {t("header.menuTitle")}
                 </span>
                 <button
                   type="button"
@@ -1632,7 +1661,7 @@ export function SiteHeader({ user }: Props) {
                                   navPrimaryLabelClass,
                                 )}
                               >
-                                Sistema de Seguridad
+                                {t("header.nav.securitySystems")}
                               </span>
                             </button>
                             <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
@@ -1661,7 +1690,7 @@ export function SiteHeader({ user }: Props) {
                                           )}
                                         >
                                           <span className="truncate">
-                                            Ver por {general.name}
+                                            Ver por {localizeName(general)}
                                           </span>
                                           <ChevronDown
                                             className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
@@ -1681,7 +1710,7 @@ export function SiteHeader({ user }: Props) {
                                                 mobileNavCatalogRowClass,
                                               )}
                                             >
-                                              {specific.name}
+                                              {localizeName(specific)}
                                             </Link>
                                           ))}
                                         </div>
@@ -1689,13 +1718,13 @@ export function SiteHeader({ user }: Props) {
                                     ) : (
                                       <div
                                         key={general.id}
-                                        className={cn(
-                                          "rounded-lg px-3 py-2 text-left",
-                                          mobileNavCatalogHeadingClass,
-                                        )}
-                                      >
-                                        Ver por {general.name}
-                                      </div>
+                                      className={cn(
+                                        "rounded-lg px-3 py-2 text-left",
+                                        mobileNavCatalogHeadingClass,
+                                      )}
+                                    >
+                                      Ver por {localizeName(general)}
+                                    </div>
                                     ),
                                 )
                               )}
@@ -1721,7 +1750,7 @@ export function SiteHeader({ user }: Props) {
                                   navPrimaryLabelClass,
                                 )}
                               >
-                                Ver Marcas
+                                {t("header.nav.brands")}
                               </span>
                             </button>
                             <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
@@ -1750,7 +1779,7 @@ export function SiteHeader({ user }: Props) {
                                         )}
                                       >
                                         <span className="truncate">
-                                          {brand.name}
+                                          {localizeName(brand)}
                                         </span>
                                         <ChevronDown
                                           className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
@@ -1770,7 +1799,7 @@ export function SiteHeader({ user }: Props) {
                                               mobileNavCatalogRowClass,
                                             )}
                                           >
-                                            {type.name}
+                                          {localizeName(type)}
                                           </Link>
                                         ))}
                                       </div>
@@ -1785,7 +1814,7 @@ export function SiteHeader({ user }: Props) {
                                         mobileNavCatalogHeadingClass,
                                       )}
                                     >
-                                      {brand.name}
+                                      {localizeName(brand)}
                                     </Link>
                                   );
                                 })
@@ -1812,7 +1841,7 @@ export function SiteHeader({ user }: Props) {
                                   navPrimaryLabelClass,
                                 )}
                               >
-                                Categorías
+                                {t("header.nav.categories")}
                               </span>
                             </button>
                             <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
@@ -1828,62 +1857,62 @@ export function SiteHeader({ user }: Props) {
                                 </div>
                               ) : (
                                 (navData?.catalogCategories ?? []).map(
-                                    (cat) => {
-                                      const hasSubs =
-                                        cat.subcategories.length > 0;
-                                      return hasSubs ? (
-                                        <details
-                                          key={cat.id}
-                                          className="group rounded-lg"
-                                        >
-                                          <summary
-                                            className={cn(
-                                              "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
-                                              mobileNavCatalogHeadingClass,
-                                            )}
-                                          >
-                                            <span className="truncate">
-                                              {cat.name}
-                                            </span>
-                                            <ChevronDown
-                                              className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
-                                              aria-hidden
-                                            />
-                                          </summary>
-                                          <div className="grid gap-0.5 pl-4 pt-0.5">
-                                            {cat.subcategories.map((sub) => (
-                                              <Link
-                                                key={sub.id}
-                                                href={`/catalogo/${cat.id}/${sub.id}`}
-                                                onClick={() =>
-                                                  setMobileNavOpen(false)
-                                                }
-                                                className={cn(
-                                                  "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                                  mobileNavCatalogRowClass,
-                                                )}
-                                              >
-                                                {sub.name}
-                                              </Link>
-                                            ))}
-                                          </div>
-                                        </details>
-                                      ) : (
-                                        <Link
-                                          key={cat.id}
-                                          href={`/catalogo/${cat.id}`}
-                                          onClick={() =>
-                                            setMobileNavOpen(false)
-                                          }
+                                  (cat) => {
+                                    const hasSubs =
+                                      cat.subcategories.length > 0;
+                                    return hasSubs ? (
+                                      <details
+                                        key={cat.id}
+                                        className="group rounded-lg"
+                                      >
+                                        <summary
                                           className={cn(
-                                            "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                            "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
                                             mobileNavCatalogHeadingClass,
                                           )}
                                         >
-                                          {cat.name}
-                                        </Link>
-                                      );
-                                    })
+                                          <span className="truncate">
+                                            {localizeName(cat)}
+                                          </span>
+                                          <ChevronDown
+                                            className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
+                                            aria-hidden
+                                          />
+                                        </summary>
+                                        <div className="grid gap-0.5 pl-4 pt-0.5">
+                                          {cat.subcategories.map((sub) => (
+                                            <Link
+                                              key={sub.id}
+                                              href={`/catalogo/${cat.id}/${sub.id}`}
+                                              onClick={() =>
+                                                setMobileNavOpen(false)
+                                              }
+                                              className={cn(
+                                                "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                                mobileNavCatalogRowClass,
+                                              )}
+                                            >
+                                              {localizeName(sub)}
+                                            </Link>
+                                          ))}
+                                        </div>
+                                      </details>
+                                    ) : (
+                                      <Link
+                                        key={cat.id}
+                                        href={`/catalogo/${cat.id}`}
+                                        onClick={() =>
+                                          setMobileNavOpen(false)
+                                        }
+                                        className={cn(
+                                          "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                          mobileNavCatalogHeadingClass,
+                                        )}
+                                      >
+                                        {localizeName(cat)}
+                                      </Link>
+                                    );
+                                  })
                               )}
                             </div>
                           </>
@@ -1907,7 +1936,7 @@ export function SiteHeader({ user }: Props) {
                                   navPrimaryLabelClass,
                                 )}
                               >
-                                Servicios
+                                {t("header.nav.services")}
                               </span>
                             </button>
                             <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
@@ -1932,7 +1961,7 @@ export function SiteHeader({ user }: Props) {
                                       mobileNavCatalogHeadingClass,
                                     )}
                                   >
-                                    {service.name}
+                                    {localizeName(service)}
                                   </Link>
                                 ))
                               )}

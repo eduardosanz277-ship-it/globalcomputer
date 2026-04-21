@@ -1,11 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
+import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
 import {
   AuthAlert,
   AuthBrandHeader,
@@ -18,6 +19,8 @@ import {
   AuthLayout,
   AuthPrimaryButton,
 } from "@/components/auth";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
@@ -27,29 +30,39 @@ import {
   type EmailOtpCodeSchema,
   type EmailOtpRequestSchema,
 } from "@/modules/auth/auth.schema";
-import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
 
-const loginErrorMessages: Record<string, string> = {
-  admin:
-    "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
-  auth: "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
-  pending_business:
-    "Tu cuenta de empresa está pendiente de aprobación. Te avisaremos por correo cuando puedas entrar.",
-  rejected_business:
-    "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
+const loginErrorMessages: Record<string, Record<Locale, string>> = {
+  admin: {
+    es: "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
+    en: "Admin accounts must log in via the admin access page.",
+  },
+  auth: {
+    es: "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
+    en: "Sign-in failed. Request a new link or code via your email.",
+  },
+  pending_business: {
+    es: "Tu cuenta de empresa está pendiente de aprobación. Te avisaremos por correo cuando puedas entrar.",
+    en: "Your business account is pending admin approval. We'll notify you once it's ready.",
+  },
+  rejected_business: {
+    es: "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
+    en: "Your business application was rejected. Contact support for more details.",
+  },
 };
 
 const OTP_COOLDOWN_SECONDS = 60;
 const OTP_COOLDOWN_MS = OTP_COOLDOWN_SECONDS * 1000;
+const languageLabelKey = LANGUAGE_LABEL_KEY;
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale, t, supportedLocales, setLocale } = useI18n();
   const loginError = useMemo(() => {
     const code = searchParams.get("error");
     if (!code) return null;
-    return loginErrorMessages[code] ?? loginErrorMessages.auth;
-  }, [searchParams]);
+    return loginErrorMessages[code]?.[locale] ?? t("login.errors.default");
+  }, [searchParams, locale, t]);
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
@@ -104,8 +117,7 @@ function LoginPageContent() {
       return res;
     },
     {
-      successMessage:
-        "Revisa tu correo: abre el enlace para entrar o usa el código de verificación.",
+      successMessage: t("login.toast.otpSent"),
       onSuccess: () => {
         const e = emailForm.getValues("email").trim().toLowerCase();
         setEmailForCode(e);
@@ -165,7 +177,7 @@ function LoginPageContent() {
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
     verifyLoginOtpAction,
     {
-      successMessage: "Sesión iniciada",
+      successMessage: t("login.toast.signedIn"),
       onSuccess: () => {
         router.push("/");
         router.refresh();
@@ -176,14 +188,37 @@ function LoginPageContent() {
   const emailErrors = emailForm.formState.errors;
   const codeErrors = codeForm.formState.errors;
   const isCooldownActive = Boolean(blockedUntil && cooldownSeconds > 0);
+  const cooldownRetryMessage = t("login.cooldown.retry").replace(
+    "{seconds}",
+    String(cooldownSeconds),
+  );
 
   return (
     <AuthLayout>
       <AuthBrandHeader />
       <AuthCard>
+        <div className="mb-4 flex justify-end gap-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+          {supportedLocales.map((lang: Locale) => {
+            const isActive = lang === locale;
+            return (
+              <button
+                key={lang}
+                type="button"
+                className={`rounded-full px-3 py-1 transition ${isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                  }`}
+                onClick={() => setLocale(lang)}
+                aria-pressed={isActive}
+              >
+                {t(LANGUAGE_LABEL_KEY[lang])}
+              </button>
+            );
+          })}
+        </div>
         <AuthHeading
-          title="Iniciar sesión"
-          description="Accede con tu correo electrónico."
+          title={t("login.heading.title")}
+          description={t("login.heading.description")}
         />
 
         {loginError ? <AuthAlert>{loginError}</AuthAlert> : null}
@@ -196,7 +231,7 @@ function LoginPageContent() {
           >
             <AuthField
               name="email"
-              label="Correo electrónico"
+              label={t("login.emailLabel")}
               type="email"
               autoComplete="email"
               required
@@ -205,28 +240,28 @@ function LoginPageContent() {
             <AuthPrimaryButton
               type="submit"
               pending={sending}
-              pendingLabel="Enviando"
+              pendingLabel={t("login.buttons.sending")}
               disabled={sending || isCooldownActive}
             >
               {isCooldownActive
-                ? `Verificar OTP (${cooldownSeconds}s)`
-                : "Continuar"}
+                ? `${t("login.buttons.verifyOtp")} (${cooldownSeconds}s)`
+                : t("login.buttons.continue")}
             </AuthPrimaryButton>
             {isCooldownActive ? (
               <div className="space-y-2 text-sm text-muted-foreground">
-                {!isFetchingCooldown ? (
-                  <p>Reenviar disponible en {cooldownSeconds} segundos.</p>
-                ) : (
-                  <p>Comprobando disponibilidad…</p>
-                )}
+                <p>
+                  {isFetchingCooldown
+                    ? t("login.cooldown.checking")
+                    : cooldownRetryMessage}
+                </p>
                 <AuthInlineLinkRow>
-                  <span>¿Ya tienes un código?</span>
+                  <span>{t("login.links.alreadyHaveCode")}</span>
                   <button
                     type="button"
                     className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
                     onClick={handleGoToVerify}
                   >
-                    Verificar OTP
+                    {t("login.buttons.verifyOtp")}
                   </button>
                 </AuthInlineLinkRow>
               </div>
@@ -235,7 +270,9 @@ function LoginPageContent() {
         ) : (
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">Código enviado a </span>
+              <span className="text-muted-foreground">
+                {t("login.codeSentPrefix")}
+              </span>
               <span className="font-medium text-foreground">
                 {emailForCode}
               </span>
@@ -246,7 +283,7 @@ function LoginPageContent() {
               className="space-y-4"
             >
               <div className="space-y-2">
-                <Label htmlFor="otp-code">Código de verificación</Label>
+                <Label htmlFor="otp-code">{t("login.codeLabel")}</Label>
                 <AuthInput
                   id="otp-code"
                   inputMode="numeric"
@@ -266,13 +303,13 @@ function LoginPageContent() {
               <AuthPrimaryButton
                 type="submit"
                 pending={verifying}
-                pendingLabel="Verificando"
+                pendingLabel={t("login.buttons.verifying")}
               >
-                Entrar
+                {t("login.buttons.submitCode")}
               </AuthPrimaryButton>
               <div className="text-center text-sm leading-relaxed text-muted-foreground">
                 <AuthInlineLinkRow>
-                  <span>¿No es tu correo?</span>
+                  <span>{t("login.links.notYourEmail")}</span>
                   <button
                     type="button"
                     className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
@@ -281,7 +318,7 @@ function LoginPageContent() {
                       codeForm.reset({ code: "" });
                     }}
                   >
-                    Cambiar correo
+                    {t("login.links.changeEmail")}
                   </button>
                 </AuthInlineLinkRow>
               </div>
@@ -292,21 +329,21 @@ function LoginPageContent() {
         {step === "email" ? (
           <AuthFooterLinks>
             <AuthInlineLinkRow>
-              <span>¿Eres empresa?</span>
+              <span>{t("login.links.businessPrompt")}</span>
               <Link
                 href="/register/empresa"
                 className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
               >
-                Crear cuenta empresarial
+                {t("login.links.businessLink")}
               </Link>
             </AuthInlineLinkRow>
             <AuthInlineLinkRow>
-              <span>¿Administrador?</span>
+              <span>{t("login.links.adminPrompt")}</span>
               <Link
                 href="/admin/login"
                 className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
               >
-                Acceso administrativo
+                {t("login.links.adminLink")}
               </Link>
             </AuthInlineLinkRow>
           </AuthFooterLinks>

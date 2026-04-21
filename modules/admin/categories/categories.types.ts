@@ -2,12 +2,14 @@
 export type AdminCategory = {
   id: string;
   name: string;
+  nameEn: string | null;
 };
 
 /** Fila en la tabla de administración de categorías. */
 export type CategoryAdmin = {
   id: string;
   name: string;
+  nameEn: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -15,6 +17,7 @@ export type CategoryAdmin = {
 
 export type CategoryAdminInsert = {
   name: string;
+  nameEn: string;
   active: boolean;
 };
 

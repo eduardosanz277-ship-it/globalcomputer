@@ -7,6 +7,7 @@ import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
 import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
+import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import type { ReactNode } from "react";
@@ -57,12 +58,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <ScrollToTopOnPathname />
-        <ConditionalSiteHeader user={user} />
-        <main className="flex-1">{children}</main>
-        <ConditionalSiteFooter contact={contact} />
-        <HomeBackToTopButton />
-        <ToastContainer position="top-right" autoClose={3000} />
+        <I18nProvider>
+          <ScrollToTopOnPathname />
+          <ConditionalSiteHeader user={user} />
+          <main className="flex-1">{children}</main>
+          <ConditionalSiteFooter contact={contact} />
+          <HomeBackToTopButton />
+          <ToastContainer position="top-right" autoClose={3000} />
+        </I18nProvider>
       </body>
     </html>
   );
