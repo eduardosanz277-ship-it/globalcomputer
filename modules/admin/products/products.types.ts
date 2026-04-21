@@ -50,6 +50,7 @@ export type Product = {
   characteristicValues: ProductCharacteristicValue[];
   createdAt: string;
   updatedAt: string;
+  slug: string;
 };
 
 export type ProductInsert = {
@@ -70,6 +71,7 @@ export type ProductInsert = {
   placementCategoryId: string;
   /** Vacío = producto en la categoría; UUID = producto en esa subcategoría. */
   placementSubcategoryId: string;
+  slug?: string;
 };
 
 export type ProductUpdate = ProductInsert;

@@ -10,6 +10,7 @@ type CategoryRow = {
   id: string;
   name: string;
   name_en?: string | null;
+  slug: string;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -20,6 +21,7 @@ function mapCategoryAdminRow(row: CategoryRow): CategoryAdmin {
     id: row.id,
     name: row.name,
     nameEn: row.name_en ?? null,
+    slug: row.slug,
     active: row.deleted_at == null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -52,7 +54,9 @@ function deletedAtFromActive(active: boolean): string | null {
 export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
   const supabase = createSupabaseAdminClient();
   const includeNameEn = await ensureNameEnColumnExists();
-  const selectFields = includeNameEn ? "id, name, name_en" : "id, name";
+  const selectFields = includeNameEn
+    ? "id, name, name_en, slug"
+    : "id, name, slug";
   const { data, error } = await supabase
     .from("categories")
     .select(selectFields)
@@ -64,6 +68,7 @@ export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
     id: row.id as string,
     name: row.name as string,
     nameEn: includeNameEn ? (row as CategoryRow).name_en ?? null : null,
+    slug: (row as CategoryRow).slug,
   }));
 }
 
@@ -72,8 +77,8 @@ export async function repoListAllCategoriesAdmin(): Promise<CategoryAdmin[]> {
   const supabase = createSupabaseAdminClient();
   const includeNameEn = await ensureNameEnColumnExists();
   const selectFields = includeNameEn
-    ? "id, name, name_en, deleted_at, created_at, updated_at"
-    : "id, name, deleted_at, created_at, updated_at";
+    ? "id, name, name_en, slug, deleted_at, created_at, updated_at"
+    : "id, name, slug, deleted_at, created_at, updated_at";
   const { data, error } = await supabase
     .from("categories")
     .select(selectFields)
@@ -90,6 +95,7 @@ export async function repoCreateCategoryAdmin(
   const includeNameEn = await ensureNameEnColumnExists();
   const insertPayload: Record<string, unknown> = {
     name: payload.name,
+    slug: payload.slug,
     deleted_at: deletedAtFromActive(payload.active),
   };
   if (includeNameEn) {
@@ -116,6 +122,7 @@ export async function repoUpdateCategoryAdmin(
   const includeNameEn = await ensureNameEnColumnExists();
   const updatePayload: Record<string, unknown> = {
     name: payload.name,
+    slug: payload.slug,
     deleted_at: deletedAtFromActive(payload.active),
   };
   if (includeNameEn) {

@@ -8,6 +8,7 @@ import {
 } from "./brand-types.repository";
 import type { BrandTypeInsert, BrandTypeUpdate } from "./brand-types.types";
 import { brandTypeFormSchema } from "./brand-types.schema";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -43,8 +44,9 @@ export async function createBrandTypeService(payload: BrandTypeInsert) {
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    return await repoCreateBrandType(parsed.data);
+    return await repoCreateBrandType({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear el tipo");
   }
@@ -65,8 +67,9 @@ export async function updateBrandTypeService(
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    await repoUpdateBrandType(id, parsed.data);
+    await repoUpdateBrandType(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar el tipo");
   }

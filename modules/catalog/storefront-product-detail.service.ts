@@ -1,4 +1,5 @@
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { slugify } from "@/lib/slugify";
 
 export type StorefrontProductCharacteristicRow = {
   id: string;
@@ -11,6 +12,7 @@ export type StorefrontProductDetail = {
   id: string;
   sku: string;
   name: string;
+  slug: string;
   description: string | null;
   /** HTML enriquecido (mismo tratamiento que `description`). */
   specifications: string | null;
@@ -23,6 +25,8 @@ export type StorefrontProductDetail = {
   brand_type_id: string | null;
   brand_name: string;
   brand_type_name: string;
+  brand_slug: string;
+  brand_type_slug: string | null;
   /** Clasificación catálogo (para productos similares, SEO, etc.) */
   category_id: string | null;
   subcategory_id: string | null;
@@ -37,10 +41,34 @@ export type StorefrontProductDetail = {
   characteristics: StorefrontProductCharacteristicRow[];
 };
 
+type DetailRelation = {
+  name?: unknown;
+  slug?: unknown;
+};
+
+function relationSlug(
+  rel: DetailRelation | DetailRelation[] | null | undefined,
+  fallbackName: string,
+): string {
+  const row = Array.isArray(rel) ? rel[0] : rel;
+  if (row && typeof row === "object") {
+    const slugValue = row.slug;
+    if (typeof slugValue === "string" && slugValue.trim() !== "") {
+      return slugValue;
+    }
+    const nameValue = row.name;
+    if (typeof nameValue === "string" && nameValue.trim() !== "") {
+      return slugify(nameValue);
+    }
+  }
+  return slugify(fallbackName);
+}
+
 const DETAIL_SELECT = `
   id,
   sku,
   name,
+  slug,
   description,
   specifications,
   stock,
@@ -54,8 +82,8 @@ const DETAIL_SELECT = `
   subcategory_id,
   created_at,
   updated_at,
-  brands ( name ),
-  brand_types ( name ),
+  brands ( name, slug ),
+  brand_types ( name, slug ),
   product_images ( id, url, is_primary, sort_order ),
   product_characteristic_values (
     id,
@@ -161,10 +189,28 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
       return a.specificName.localeCompare(b.specificName, "es");
     });
 
+  const brandName = relationName(row.brands as Parameters<typeof relationName>[0]);
+  const brandTypeName = relationName(
+    row.brand_types as Parameters<typeof relationName>[0],
+  );
+  const brandSlug = relationSlug(
+    row.brands as DetailRelation | DetailRelation[] | null | undefined,
+    brandName,
+  );
+  const brandTypeSlug = relationSlug(
+    row.brand_types as DetailRelation | DetailRelation[] | null | undefined,
+    brandTypeName,
+  );
+  const productSlug =
+    typeof row.slug === "string" && row.slug.trim() !== ""
+      ? row.slug
+      : slugify(String(row.name ?? ""));
+
   return {
     id: String(row.id),
     sku: String(row.sku),
     name: String(row.name),
+    slug: productSlug,
     description:
       row.description != null && String(row.description).trim() !== ""
         ? String(row.description)
@@ -184,10 +230,11 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     brand_id: String(row.brand_id),
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,
-    brand_name: relationName(row.brands as Parameters<typeof relationName>[0]),
-    brand_type_name: relationName(
-      row.brand_types as Parameters<typeof relationName>[0],
-    ),
+    brand_name: brandName,
+    brand_type_name: brandTypeName,
+    brand_slug: brandSlug,
+    brand_type_slug:
+      row.brand_type_id != null ? brandTypeSlug : null,
     category_id:
       row.category_id != null && String(row.category_id).trim() !== ""
         ? String(row.category_id)
@@ -216,6 +263,26 @@ export async function getStorefrontProductDetailById(
 
   if (error) {
     console.warn("[storefront] getStorefrontProductDetailById", id, error.message);
+    return null;
+  }
+  if (!data) return null;
+  return mapDetailRow(data as Record<string, unknown>);
+}
+
+export async function getStorefrontProductDetailBySlug(
+  slug: string,
+): Promise<StorefrontProductDetail | null> {
+  const normalizedSlug = slugify(slug);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(DETAIL_SELECT)
+    .eq("slug", normalizedSlug)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[storefront] getStorefrontProductDetailBySlug", slug, error.message);
     return null;
   }
   if (!data) return null;

@@ -27,12 +27,12 @@ export default async function SecuritySystemPage() {
           />
         </div>
       </div>
-      <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+          <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {generals.map((g) => (
             <Link
               key={g.id}
-              href={`/security-system/${g.id}`}
+              href={`/security-system/${g.slug}`}
               className="group flex flex-col items-start gap-3 rounded-2xl border border-border/50 bg-card p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-soft-lg"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">

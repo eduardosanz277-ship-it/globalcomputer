@@ -108,6 +108,7 @@ export default async function HomePage() {
     .map((brand) => ({
       id: brand.id,
       name: brand.name,
+      slug: brand.slug,
       imageUrl: brandImageById.get(brand.id) ?? null,
     }));
   const topProductReviews = [...productReviews]
@@ -142,7 +143,7 @@ export default async function HomePage() {
               {brands.map((b) => (
                 <Link
                   key={b.id}
-                  href={`/brands/${b.id}`}
+                  href={`/brands/${b.slug}`}
                   className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/50 bg-muted/30 p-6 shadow-soft transition hover:-translate-y-1.5 hover:shadow-soft-lg"
                 >
                   <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-card text-primary shadow-lg shadow-primary/10 ring-1 ring-border/40 transition group-hover:scale-105 group-hover:ring-primary/25">
@@ -531,12 +532,12 @@ export default async function HomePage() {
 
           <div className="mt-6 lg:mt-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {featuredBrands.map((brand) => (
-              <article
-                key={brand.id}
-                className="group overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
-              >
-                <Link
-                  href={`/brands/${brand.id}`}
+                <article
+                  key={brand.id}
+                  className="group overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
+                >
+                  <Link
+                    href={`/brands/${brand.slug}`}
                   className="block"
                   aria-label={`Ver productos de ${brand.name}`}
                 >
@@ -560,8 +561,8 @@ export default async function HomePage() {
                   <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground break-words">
                     {brand.name}
                   </h3>
-                  <Link
-                    href={`/brands/${brand.id}`}
+                    <Link
+                      href={`/brands/${brand.slug}`}
                     aria-label={`Ver productos de ${brand.name}`}
                     className={cn(
                       buttonVariants({ variant: "outline", size: "sm" }),

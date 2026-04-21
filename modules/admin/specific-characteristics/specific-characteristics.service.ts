@@ -11,6 +11,7 @@ import type {
   SpecificCharacteristicUpdate,
 } from "./specific-characteristics.types";
 import { specificCharacteristicFormSchema } from "./specific-characteristics.schema";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -49,7 +50,8 @@ export async function createSpecificCharacteristicService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    return await repoCreateSpecificCharacteristic(parsed.data);
+    const slug = slugify(parsed.data.name);
+    return await repoCreateSpecificCharacteristic({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear la característica específica");
   }
@@ -66,7 +68,8 @@ export async function updateSpecificCharacteristicService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    await repoUpdateSpecificCharacteristic(id, parsed.data);
+    const slug = slugify(parsed.data.name);
+    await repoUpdateSpecificCharacteristic(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar la característica específica");
   }

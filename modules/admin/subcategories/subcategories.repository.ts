@@ -10,6 +10,7 @@ type SubcategoryRow = {
   id: string;
   category_id: string;
   name: string;
+  slug: string;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -29,6 +30,7 @@ function mapSubcategoryAdminRow(row: SubcategoryRow): SubcategoryAdmin {
     categoryId: row.category_id,
     categoryName: categoryNameFromRow(row),
     name: row.name,
+    slug: row.slug,
     active: row.deleted_at == null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -46,7 +48,7 @@ export async function repoListSubcategoriesForProductForm(): Promise<
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("subcategories")
-    .select("id, name, category_id")
+    .select("id, name, slug, category_id")
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
@@ -55,6 +57,7 @@ export async function repoListSubcategoriesForProductForm(): Promise<
     id: row.id as string,
     name: row.name as string,
     categoryId: row.category_id as string,
+    slug: row.slug as string,
   }));
 }
 
@@ -81,7 +84,7 @@ export async function repoListAllSubcategoriesAdmin(): Promise<
   const { data, error } = await supabase
     .from("subcategories")
     .select(
-      "id, category_id, name, deleted_at, created_at, updated_at, categories ( name )",
+      "id, category_id, name, slug, deleted_at, created_at, updated_at, categories ( name )",
     )
     .order("name", { ascending: true });
 
@@ -103,6 +106,7 @@ export async function repoCreateSubcategoryAdmin(
     .insert({
       category_id: payload.categoryId,
       name: payload.name,
+      slug: payload.slug,
       deleted_at: deletedAtFromActive(payload.active),
     })
     .select(
@@ -124,6 +128,7 @@ export async function repoUpdateSubcategoryAdmin(
     .update({
       category_id: payload.categoryId,
       name: payload.name,
+      slug: payload.slug,
       deleted_at: deletedAtFromActive(payload.active),
     })
     .eq("id", id);

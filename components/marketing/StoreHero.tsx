@@ -158,7 +158,7 @@ export async function StoreHero() {
                   {categories.map((c) => (
                     <li key={c.id} className="max-w-full">
                       <Link
-                        href={`/catalog/${c.id}`}
+                        href={`/catalog/${c.slug}`}
                         prefetch={false}
                         aria-label={`Ver productos en ${c.name}`}
                         className={cn(

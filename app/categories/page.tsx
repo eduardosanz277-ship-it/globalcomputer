@@ -55,7 +55,7 @@ export default async function CategoriasPage() {
               >
                 <h2 className="font-display text-lg font-semibold text-foreground">
                   <Link
-                    href={`/categories/${cat.id}`}
+                    href={`/categories/${cat.slug}`}
                     className="transition hover:text-primary"
                   >
                     {cat.name}
@@ -66,7 +66,7 @@ export default async function CategoriasPage() {
                     {cat.subcategories.map((sub) => (
                       <li key={sub.id}>
                         <Link
-                          href={`/categories/${cat.id}/${sub.id}`}
+                          href={`/categories/${cat.slug}/${sub.slug}`}
                           className={`inline-flex rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-sm text-foreground transition hover:border-primary/40 hover:bg-primary/5 ${inter.className}`}
                         >
                           {sub.name}

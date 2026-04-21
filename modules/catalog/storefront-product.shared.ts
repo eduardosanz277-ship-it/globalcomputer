@@ -15,8 +15,11 @@ export type StorefrontProduct = {
   stock: number;
   discount_business_pct: number;
   discount_client: number;
+  slug: string;
   brand_id: string;
   brand_type_id: string | null;
+  brand_slug: string;
+  brand_type_slug: string | null;
   brand_name: string;
   /** Categoría efectiva en catálogo (directa o padre de la subcategoría); null si no está clasificado. */
   category_id: string | null;

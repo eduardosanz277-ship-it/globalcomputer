@@ -26,6 +26,7 @@ import type {
   ProductInsert,
   ProductUpdate,
 } from "./products.types";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -116,6 +117,11 @@ function mergeProductPayloadForManualPdfUpload(
   const hasUpload = Boolean(manualPdfFile && manualPdfFile.size > 0);
   if (!hasUpload) return data;
   return { ...data, manualPdfUrl: "" };
+}
+
+function resolveProductSlug(name: string): string {
+  const normalized = slugify(name);
+  return normalized || crypto.randomUUID();
 }
 
 const PRODUCT_IMAGES_BUCKET = "global_bucket";
@@ -255,12 +261,19 @@ export async function createProductService(
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
 
   try {
+    const payloadWithSlug = {
+      ...parsed.data,
+      slug: resolveProductSlug(parsed.data.name),
+    };
     const created = await repoCreateProduct(
-      mergeProductPayloadForManualPdfUpload(parsed.data, manualPdfFile ?? null),
+      mergeProductPayloadForManualPdfUpload(payloadWithSlug, manualPdfFile ?? null),
     );
 
     if (parsedCharacteristics.length > 0) {
-      await repoReplaceProductCharacteristicValues(created.id, parsedCharacteristics);
+      await repoReplaceProductCharacteristicValues(
+        created.id,
+        parsedCharacteristics,
+      );
     }
 
     const validFiles = (imageFiles ?? []).filter((f) => f && f.size > 0);
@@ -306,10 +319,15 @@ export async function updateProductService(
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
 
   try {
-    await repoUpdateProduct(
-      id,
-      mergeProductPayloadForManualPdfUpload(parsed.data, manualPdfFile ?? null),
+    const payloadWithSlug = {
+      ...parsed.data,
+      slug: resolveProductSlug(parsed.data.name),
+    };
+    const mergedPayload = mergeProductPayloadForManualPdfUpload(
+      payloadWithSlug,
+      manualPdfFile ?? null,
     );
+    await repoUpdateProduct(id, mergedPayload);
 
     if ((removedImageIds ?? []).length > 0) {
       const removedUrls = await repoListProductImageUrlsByIds(id, removedImageIds ?? []);
@@ -349,6 +367,7 @@ export async function updateProductService(
     }
 
     await repoReplaceProductCharacteristicValues(id, parsedCharacteristics);
+
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar el producto");
   }

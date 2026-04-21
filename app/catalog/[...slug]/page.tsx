@@ -4,8 +4,8 @@ import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCa
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
-  getStorefrontCategoryById,
-  getStorefrontSubcategoryInCategory,
+  getStorefrontCategoryBySlug,
+  getStorefrontSubcategoryInCategoryBySlug,
 } from "@/modules/catalog/storefront-categories.service";
 import {
   listProductsByCategoryId,
@@ -22,9 +22,6 @@ type PageParams = { slug: string[] };
 type Props = {
   params: Promise<PageParams> | PageParams;
 };
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,39 +40,40 @@ async function slugSegments(
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const segments = await slugSegments(params);
   if (segments.length === 1) {
-    const cat = await getStorefrontCategoryById(segments[0]);
-    if (!cat) return { title: "Catálogo" };
+    const category = await getStorefrontCategoryBySlug(segments[0]);
+    if (!category) return { title: "Catálogo" };
     return {
-      title: `${cat.name} | Catálogo`,
-      description: `Productos en la categoría ${cat.name}.`,
+      title: `${category.name} | Catálogo`,
+      description: `Productos en la categoría ${category.name}.`,
     };
   }
+
   if (segments.length === 2) {
-    const [categoryId, subId] = segments;
-    const sub = await getStorefrontSubcategoryInCategory(categoryId, subId);
-    if (!sub) return { title: "Catálogo" };
-    const cat = await getStorefrontCategoryById(categoryId);
-    if (!cat) return { title: "Catálogo" };
+    const category = await getStorefrontCategoryBySlug(segments[0]);
+    if (!category) return { title: "Catálogo" };
+    const subcategory = await getStorefrontSubcategoryInCategoryBySlug(
+      category.id,
+      segments[1],
+    );
+    if (!subcategory) return { title: "Catálogo" };
     return {
-      title: `${cat.name} — ${sub.name} | Catálogo`,
-      description: `Productos en ${sub.name} (${cat.name}).`,
+      title: `${category.name} — ${subcategory.name} | Catálogo`,
+      description: `Productos en ${subcategory.name} (${category.name}).`,
     };
   }
+
   return { title: "Catálogo" };
 }
 
 export default async function CatalogoSlugPage({ params }: Props) {
   const segments = await slugSegments(params);
-
   if (segments.length === 1) {
-    const categoryId = segments[0];
-    if (!UUID_RE.test(categoryId)) notFound();
-
-    const category = await getStorefrontCategoryById(categoryId);
+    const categorySlug = segments[0];
+    const category = await getStorefrontCategoryBySlug(categorySlug);
     if (!category) notFound();
 
     const [products, user] = await Promise.all([
-      listProductsByCategoryId(categoryId),
+      listProductsByCategoryId(category.id),
       getCurrentUserService(),
     ]);
     const priceTier = resolveStorefrontPriceTier(user?.role);
@@ -110,27 +108,22 @@ export default async function CatalogoSlugPage({ params }: Props) {
   }
 
   if (segments.length === 2) {
-    const [categoryId, subcategoryId] = segments;
-    if (
-      !categoryId ||
-      !subcategoryId ||
-      !UUID_RE.test(categoryId) ||
-      !UUID_RE.test(subcategoryId)
-    ) {
+    const [categorySlug, subcategorySlug] = segments;
+    if (!categorySlug || !subcategorySlug) {
       notFound();
     }
 
-    const category = await getStorefrontCategoryById(categoryId);
+    const category = await getStorefrontCategoryBySlug(categorySlug);
     if (!category) notFound();
 
-    const subcategory = await getStorefrontSubcategoryInCategory(
-      categoryId,
-      subcategoryId,
+    const subcategory = await getStorefrontSubcategoryInCategoryBySlug(
+      category.id,
+      subcategorySlug,
     );
     if (!subcategory) notFound();
 
     const [products, user] = await Promise.all([
-      listProductsBySubcategoryId(subcategoryId),
+      listProductsBySubcategoryId(subcategory.id),
       getCurrentUserService(),
     ]);
     const priceTier = resolveStorefrontPriceTier(user?.role);
@@ -146,9 +139,12 @@ export default async function CatalogoSlugPage({ params }: Props) {
                 { label: "Catálogo", href: "/products" },
                 {
                   label: category.name,
-                  href: `/catalog/${categoryId}`,
+                  href: `/catalog/${category.slug}`,
                 },
-                { label: subcategory.name },
+                {
+                  label: subcategory.name,
+                  href: `/catalog/${category.slug}/${subcategory.slug}`,
+                },
               ]}
             />
             <div className="mt-4">

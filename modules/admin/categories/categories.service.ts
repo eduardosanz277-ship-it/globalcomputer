@@ -15,6 +15,7 @@ import type {
   CategoryAdminInsert,
   CategoryAdminUpdate,
 } from "./categories.types";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -59,8 +60,9 @@ export async function createCategoryAdminService(payload: CategoryAdminInsert) {
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    return await repoCreateCategoryAdmin(parsed.data);
+    return await repoCreateCategoryAdmin({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear la categoría");
   }
@@ -76,8 +78,9 @@ export async function updateCategoryAdminService(
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    await repoUpdateCategoryAdmin(id, parsed.data);
+    await repoUpdateCategoryAdmin(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar la categoría");
   }

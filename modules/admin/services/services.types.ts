@@ -12,6 +12,7 @@ export type Service = {
   description: string | null;
   imageUrl: string | null;
   images: ServiceImage[];
+  slug: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -19,11 +20,13 @@ export type Service = {
 export type ServiceInsert = {
   name: string;
   description: string;
+  slug?: string;
 };
 
 export type ServiceUpdate = {
   name: string;
   description: string;
+  slug?: string;
 };
 
 export type ExistingServiceImageOutput = {

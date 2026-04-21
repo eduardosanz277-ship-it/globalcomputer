@@ -4,6 +4,7 @@ export type BrandType = {
   brandId: string;
   brandName: string;
   name: string;
+  slug: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -12,11 +13,13 @@ export type BrandType = {
 export type BrandTypeInsert = {
   brandId: string;
   name: string;
+  slug: string;
   active: boolean;
 };
 
 export type BrandTypeUpdate = {
   brandId: string;
   name: string;
+  slug: string;
   active: boolean;
 };

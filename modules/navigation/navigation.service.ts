@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { slugify } from "@/lib/slugify";
 import {
   NavigationBrand,
   NavigationBrandType,
@@ -8,6 +9,9 @@ import {
   NavigationData,
   NavigationService,
 } from "./navigation.types";
+
+const normalizeSlug = (name: string, slug: string | null | undefined) =>
+  slug && slug.trim() ? slug : slugify(name);
 
 /**
  * Una sola ejecución por petición: evita duplicar consultas cuando varios
@@ -27,36 +31,36 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
   ] = await Promise.all([
     supabase
       .from("product_characteristics_general")
-      .select("id, name, name_en")
+      .select("id, name, name_en, slug")
       .eq("active", true)
       .order("name"),
     supabase
       .from("product_characteristics_specific")
-      .select("id, name, name_en, general_id")
+      .select("id, name, name_en, slug, general_id")
       .eq("active", true)
       .order("name"),
     supabase
       .from("brands")
-      .select("id, name, name_en")
+      .select("id, name, name_en, slug")
       .eq("active", true)
       .order("name"),
     supabase
       .from("brand_types")
-      .select("id, name, name_en, brand_id")
+      .select("id, name, name_en, brand_id, slug")
       .eq("active", true)
       .order("name"),
     supabase
       .from("services")
-      .select("id, name, name_en, description")
+      .select("id, name, name_en, description, slug")
       .order("name"),
     supabase
       .from("categories")
-      .select("id, name, name_en")
+      .select("id, name, name_en, slug")
       .is("deleted_at", null)
       .order("name"),
     supabase
       .from("subcategories")
-      .select("id, name, name_en, category_id")
+      .select("id, name, name_en, slug, category_id")
       .is("deleted_at", null)
       .order("name"),
   ]);
@@ -101,6 +105,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     generalMap.set(row.id, {
       id: row.id,
       name: row.name,
+      slug: normalizeSlug(row.name, row.slug ?? null),
       nameEn: row.name_en ?? null,
       specifics: [],
     });
@@ -113,6 +118,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
       general.specifics.push({
         id: row.id,
         name: row.name,
+        slug: normalizeSlug(row.name, row.slug ?? null),
         nameEn: row.name_en ?? null,
       });
     }
@@ -124,6 +130,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     brandsMap.set(row.id, {
       id: row.id,
       name: row.name,
+      slug: normalizeSlug(row.name, row.slug ?? null),
       nameEn: row.name_en ?? null,
       brandTypes: [],
     });
@@ -136,6 +143,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
       brand.brandTypes.push({
         id: row.id,
         name: row.name,
+        slug: normalizeSlug(row.name, row.slug ?? null),
         nameEn: row.name_en ?? null,
       });
     }
@@ -147,6 +155,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     name: row.name,
     nameEn: row.name_en ?? null,
     description: row.description,
+    slug: normalizeSlug(row.name, row.slug),
   }));
 
   const categoriesMap = new Map<string, NavigationCatalogCategory>();
@@ -155,6 +164,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     categoriesMap.set(row.id, {
       id: row.id,
       name: row.name,
+      slug: normalizeSlug(row.name, row.slug),
       nameEn: row.name_en ?? null,
       subcategories: [],
     });
@@ -166,6 +176,7 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
       cat.subcategories.push({
         id: row.id,
         name: row.name,
+        slug: normalizeSlug(row.name, row.slug),
         nameEn: row.name_en ?? null,
       });
     }

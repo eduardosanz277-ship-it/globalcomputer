@@ -19,6 +19,7 @@ import type {
 } from "./services.types";
 import { serviceFormSchema } from "./services.schema";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -117,7 +118,8 @@ export async function createServiceService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    const created = await repoCreateService(parsed.data);
+    const slug = slugify(parsed.data.name);
+    const created = await repoCreateService({ ...parsed.data, slug });
     const validFiles = (imageFiles ?? []).filter((f) => f && f.size > 0);
     if (validFiles.length > 0) {
       const primaryIndex =
@@ -147,7 +149,8 @@ export async function updateServiceService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    await repoUpdateService(id, parsed.data);
+    const slug = slugify(parsed.data.name);
+    await repoUpdateService(id, { ...parsed.data, slug });
 
     /**
      * Eliminar filas antes de actualizar orden/principal evita violar el índice único

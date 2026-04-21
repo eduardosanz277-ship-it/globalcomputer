@@ -24,6 +24,7 @@ type ServiceRow = {
   id: string;
   name: string;
   description: string | null;
+  slug?: string | null;
   service_images?: Array<{
     id: string;
     url: string;
@@ -92,7 +93,7 @@ export async function ServicesSection() {
   const { data } = await supabase
     .from("services")
     .select(
-      "id, name, description, service_images(id, url, is_primary, sort_order)",
+      "id, name, slug, description, service_images(id, url, is_primary, sort_order)",
     )
     .limit(6);
 
@@ -105,7 +106,7 @@ export async function ServicesSection() {
           name: s.name,
           description: s.description ?? "",
           imageUrl: resolvePrimaryServiceImage(s.service_images),
-          href: `/services/${s.id}`,
+          href: `/services/${s.slug ?? s.id}`,
         }))
       : fallbackServices.map((s, idx) => ({
           id: `fallback-${idx}`,

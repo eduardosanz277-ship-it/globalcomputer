@@ -8,6 +8,7 @@ import {
 } from "./brands.repository";
 import type { BrandInsert, BrandUpdate } from "./brands.types";
 import { brandFormSchema } from "./brands.schema";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -41,8 +42,9 @@ export async function createBrandService(payload: BrandInsert) {
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    return await repoCreateBrand(parsed.data);
+    return await repoCreateBrand({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear la marca");
   }
@@ -55,8 +57,9 @@ export async function updateBrandService(id: string, payload: BrandUpdate) {
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    await repoUpdateBrand(id, parsed.data);
+    await repoUpdateBrand(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar la marca");
   }

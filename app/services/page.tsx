@@ -51,7 +51,7 @@ export default async function ServicesPage() {
               ) : null}
               <div className="mt-4">
                 <Link
-                  href={`/services/${s.id}`}
+                href={`/services/${s.slug ?? s.id}`}
                   className="inline-flex items-center rounded-xl bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground"
                 >
                   Ver servicio

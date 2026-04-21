@@ -11,6 +11,7 @@ import type {
   SubcategoryAdminInsert,
   SubcategoryAdminUpdate,
 } from "./subcategories.types";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -48,8 +49,9 @@ export async function createSubcategoryAdminService(
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    return await repoCreateSubcategoryAdmin(parsed.data);
+    return await repoCreateSubcategoryAdmin({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear la subcategoría");
   }
@@ -65,8 +67,9 @@ export async function updateSubcategoryAdminService(
   if (!parsed.success) {
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
+  const slug = slugify(parsed.data.name);
   try {
-    await repoUpdateSubcategoryAdmin(id, parsed.data);
+    await repoUpdateSubcategoryAdmin(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar la subcategoría");
   }

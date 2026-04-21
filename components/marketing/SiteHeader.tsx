@@ -10,8 +10,16 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
 import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { slugify } from "@/lib/slugify";
 import type { SessionUser } from "@/modules/auth/auth.types";
-import type { NavigationData } from "@/modules/navigation/navigation.types";
+import type {
+  NavigationBrand,
+  NavigationBrandType,
+  NavigationCatalogCategory,
+  NavigationCatalogSubcategory,
+  NavigationData,
+  NavigationService,
+} from "@/modules/navigation/navigation.types";
 import { cn } from "@/utils/cn";
 import {
   ChevronDown,
@@ -76,6 +84,39 @@ function LanguageSelector({ className }: { className?: string }) {
 type Props = {
   user: SessionUser | null;
 };
+
+const ensureSlug = (name: string, slug?: string | null) =>
+  slug?.trim() ? slug : slugify(name);
+
+const catalogCategoryUrl = (category: NavigationCatalogCategory) =>
+  `/catalog/${ensureSlug(category.name, category.slug)}`;
+
+const catalogSubcategoryUrl = (
+  category: NavigationCatalogCategory,
+  subcategory: NavigationCatalogSubcategory,
+) =>
+  `${catalogCategoryUrl(category)}/${ensureSlug(subcategory.name, subcategory.slug)}`;
+
+const catalogBrandUrl = (brand: NavigationBrand) =>
+  `/brands/${ensureSlug(brand.name, brand.slug)}`;
+
+const catalogBrandTypeUrl = (
+  brand: NavigationBrand,
+  type: NavigationBrandType,
+) =>
+  `${catalogBrandUrl(brand)}/${ensureSlug(type.name, type.slug)}`;
+
+const catalogGeneralUrl = (general: NavigationCharacteristicGeneral) =>
+  `/security-system/${ensureSlug(general.name, general.slug)}`;
+
+const catalogSpecificUrl = (
+  general: NavigationCharacteristicGeneral,
+  specific: NavigationCharacteristicSpecific,
+) =>
+  `${catalogGeneralUrl(general)}/${ensureSlug(specific.name, specific.slug)}`;
+
+const catalogServiceUrl = (service: NavigationService) =>
+  `/services/${ensureSlug(service.name, service.slug)}`;
 
 /** Paneles del menú móvil (deslizamiento horizontal). Subopciones van en `<details>` dentro del nivel 2. */
 type MobileNavPanel =
@@ -986,7 +1027,7 @@ export function SiteHeader({ user }: Props) {
                                 return (
                                   <Link
                                     key={cat.id}
-                                    href={`/catalog/${cat.id}`}
+                                    href={catalogCategoryUrl(cat)}
                                     onMouseEnter={() =>
                                       setHoveredCategoryId(cat.id)
                                     }
@@ -1017,7 +1058,7 @@ export function SiteHeader({ user }: Props) {
                                   {activeCategory.subcategories.map((sub) => (
                                     <li key={sub.id}>
                                       <Link
-                                        href={`/catalog/${activeCategory.id}/${sub.id}`}
+                                        href={catalogSubcategoryUrl(activeCategory, sub)}
                                         onClick={armDesktopNavStripSuppress}
                                         className={cn(
                                           navMegaRowClass,
@@ -1111,8 +1152,8 @@ export function SiteHeader({ user }: Props) {
                                 <ul className="py-1">
                                   {activeGeneral.specifics.map((specific) => (
                                     <li key={specific.id}>
-                                      <Link
-                                        href={`/security-system/${activeGeneral.id}/${specific.id}`}
+                                          <Link
+                                            href={catalogSpecificUrl(activeGeneral, specific)}
                                         className={cn(
                                           navMegaRowClass,
                                           "hover:bg-white/10",
@@ -1175,7 +1216,7 @@ export function SiteHeader({ user }: Props) {
                               return (
                                 <Link
                                   key={brand.id}
-                                  href={`/brands/${brand.id}`}
+                                  href={catalogBrandUrl(brand)}
                                   onMouseEnter={() =>
                                     setHoveredBrandId(brand.id)
                                   }
@@ -1205,7 +1246,7 @@ export function SiteHeader({ user }: Props) {
                                 {activeBrand.brandTypes.map((type) => (
                                   <li key={type.id}>
                                     <Link
-                                      href={`/brands/${activeBrand.id}/${type.id}`}
+                                      href={catalogBrandTypeUrl(activeBrand, type)}
                                       className={cn(
                                         navMegaRowClass,
                                         "hover:bg-white/10",
@@ -1253,7 +1294,7 @@ export function SiteHeader({ user }: Props) {
                           {navData!.services.map((service) => (
                             <li key={service.id}>
                               <Link
-                                href={`/services/${service.id}`}
+                                href={catalogServiceUrl(service)}
                                 className={cn(
                                   navMegaRowClass,
                                   "hover:bg-white/10",
@@ -1699,9 +1740,9 @@ export function SiteHeader({ user }: Props) {
                                         </summary>
                                         <div className="grid gap-0.5 pl-4 pt-0.5">
                                           {general.specifics.map((specific) => (
-                                            <Link
-                                              key={specific.id}
-                                              href={`/security-system/${general.id}/${specific.id}`}
+                                          <Link
+                                            key={specific.id}
+                                            href={catalogSpecificUrl(general, specific)}
                                               onClick={() =>
                                                 setMobileNavOpen(false)
                                               }
@@ -1790,7 +1831,7 @@ export function SiteHeader({ user }: Props) {
                                         {brand.brandTypes.map((type) => (
                                           <Link
                                             key={type.id}
-                                            href={`/brands/${brand.id}/${type.id}`}
+                                            href={catalogBrandTypeUrl(brand, type)}
                                             onClick={() =>
                                               setMobileNavOpen(false)
                                             }
@@ -1807,7 +1848,7 @@ export function SiteHeader({ user }: Props) {
                                   ) : (
                                     <Link
                                       key={brand.id}
-                                      href={`/brands/${brand.id}`}
+                                      href={catalogBrandUrl(brand)}
                                       onClick={() => setMobileNavOpen(false)}
                                       className={cn(
                                         "rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1881,9 +1922,9 @@ export function SiteHeader({ user }: Props) {
                                         </summary>
                                         <div className="grid gap-0.5 pl-4 pt-0.5">
                                           {cat.subcategories.map((sub) => (
-                                            <Link
-                                              key={sub.id}
-                                              href={`/catalog/${cat.id}/${sub.id}`}
+                                          <Link
+                                            key={sub.id}
+                                            href={catalogSubcategoryUrl(cat, sub)}
                                               onClick={() =>
                                                 setMobileNavOpen(false)
                                               }
@@ -1900,7 +1941,7 @@ export function SiteHeader({ user }: Props) {
                                     ) : (
                                       <Link
                                         key={cat.id}
-                                        href={`/catalog/${cat.id}`}
+                                        href={catalogCategoryUrl(cat)}
                                         onClick={() =>
                                           setMobileNavOpen(false)
                                         }
@@ -1952,9 +1993,9 @@ export function SiteHeader({ user }: Props) {
                                 </div>
                               ) : (
                                 (navData?.services ?? []).map((service) => (
-                                  <Link
-                                    key={service.id}
-                                    href={`/services/${service.id}`}
+                                    <Link
+                                      key={service.id}
+                                      href={catalogServiceUrl(service)}
                                     onClick={() => setMobileNavOpen(false)}
                                     className={cn(
                                       "rounded-lg px-3 py-2 transition hover:bg-muted",

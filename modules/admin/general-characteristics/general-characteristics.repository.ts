@@ -8,6 +8,7 @@ import type {
 type GeneralCharacteristicRow = {
   id: string;
   name: string;
+  slug: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -20,6 +21,7 @@ function mapRow(row: GeneralCharacteristicRow): GeneralCharacteristic {
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    slug: row.slug,
   };
 }
 
@@ -29,7 +31,7 @@ export async function repoListGeneralCharacteristics(): Promise<
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("product_characteristics_general")
-    .select("id, name, active, created_at, updated_at")
+    .select("id, name, slug, active, created_at, updated_at")
     .order("name", { ascending: true });
 
   if (error) throw error;
@@ -44,9 +46,10 @@ export async function repoCreateGeneralCharacteristic(
     .from("product_characteristics_general")
     .insert({
       name: payload.name,
+      slug: payload.slug,
       active: payload.active,
     })
-    .select("id, name, active, created_at, updated_at")
+    .select("id, name, slug, active, created_at, updated_at")
     .single();
 
   if (error) throw error;
@@ -62,6 +65,7 @@ export async function repoUpdateGeneralCharacteristic(
     .from("product_characteristics_general")
     .update({
       name: payload.name,
+      slug: payload.slug,
       active: payload.active,
     })
     .eq("id", id);

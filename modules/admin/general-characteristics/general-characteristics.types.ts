@@ -5,14 +5,17 @@ export type GeneralCharacteristic = {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  slug: string;
 };
 
 export type GeneralCharacteristicInsert = {
   name: string;
   active: boolean;
+  slug?: string;
 };
 
 export type GeneralCharacteristicUpdate = {
   name: string;
   active: boolean;
+  slug?: string;
 };

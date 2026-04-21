@@ -11,6 +11,7 @@ import type {
   GeneralCharacteristicUpdate,
 } from "./general-characteristics.types";
 import { generalCharacteristicFormSchema } from "./general-characteristics.schema";
+import { slugify } from "@/lib/slugify";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -47,7 +48,8 @@ export async function createGeneralCharacteristicService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    return await repoCreateGeneralCharacteristic(parsed.data);
+    const slug = slugify(parsed.data.name);
+    return await repoCreateGeneralCharacteristic({ ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo crear la característica");
   }
@@ -64,7 +66,8 @@ export async function updateGeneralCharacteristicService(
     throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
   }
   try {
-    await repoUpdateGeneralCharacteristic(id, parsed.data);
+    const slug = slugify(parsed.data.name);
+    await repoUpdateGeneralCharacteristic(id, { ...parsed.data, slug });
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar la característica");
   }

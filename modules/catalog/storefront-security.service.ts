@@ -1,3 +1,4 @@
+import { slugify } from "@/lib/slugify";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import {
   mapStorefrontProductRow,
@@ -17,11 +18,11 @@ function looksLikeMissingColumnError(error: { message?: string } | null): boolea
 
 export async function getCharacteristicGeneralById(
   generalId: string,
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; slug: string } | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("product_characteristics_general")
-    .select("id, name, active")
+    .select("id, name, slug, active")
     .eq("id", generalId)
     .maybeSingle();
 
@@ -41,7 +42,11 @@ export async function getCharacteristicGeneralById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
-  return { id: data.id, name: data.name };
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug ?? slugify(data.name),
+  };
 }
 
 export async function listSpecificsForGeneral(
@@ -79,11 +84,11 @@ export async function listSpecificsForGeneral(
  */
 export async function getCharacteristicSpecificById(
   specificId: string,
-): Promise<{ id: string; name: string; general_id: string } | null> {
+): Promise<{ id: string; name: string; general_id: string; slug: string } | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("product_characteristics_specific")
-    .select("id, name, general_id, active")
+    .select("id, name, slug, general_id, active")
     .eq("id", specificId)
     .maybeSingle();
 
@@ -106,8 +111,98 @@ export async function getCharacteristicSpecificById(
   return {
     id: data.id,
     name: data.name,
+    slug: data.slug ?? slugify(data.name),
     general_id: data.general_id,
   };
+}
+
+export async function getCharacteristicGeneralBySlug(
+  slug: string,
+): Promise<{ id: string; name: string; slug: string } | null> {
+  const normalizedSlug = slugify(slug);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("product_characteristics_general")
+    .select("id, name, slug, active")
+    .eq("slug", normalizedSlug)
+    .maybeSingle();
+  if (error) {
+    if (looksLikeMissingColumnError(error)) return null;
+    console.warn("[storefront-security] getCharacteristicGeneralBySlug", slug, error.message);
+    return null;
+  }
+  if (!data) return null;
+  if ("active" in data && data.active === false) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug ?? normalizedSlug,
+  };
+}
+
+export async function getCharacteristicSpecificBySlug(
+  generalId: string,
+  slug: string,
+): Promise<{ id: string; name: string; slug: string; general_id: string } | null> {
+  const normalizedSlug = slugify(slug);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("product_characteristics_specific")
+    .select("id, name, slug, general_id, active")
+    .eq("slug", normalizedSlug)
+    .eq("general_id", generalId)
+    .maybeSingle();
+  if (error) {
+    if (looksLikeMissingColumnError(error)) return null;
+    console.warn(
+      "[storefront-security] getCharacteristicSpecificBySlug",
+      generalId,
+      slug,
+      error.message,
+    );
+    return null;
+  }
+  if (!data) return null;
+  if ("active" in data && data.active === false) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug ?? normalizedSlug,
+    general_id: data.general_id,
+  };
+}
+
+export async function getCharacteristicGeneralBySlugOrId(
+  param: string,
+): Promise<{ general: { id: string; name: string; slug: string }; source: "slug" | "id" } | null> {
+  const slugResult = await getCharacteristicGeneralBySlug(param);
+  if (slugResult) return { general: slugResult, source: "slug" };
+
+  const idRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!idRe.test(param)) return null;
+
+  const idResult = await getCharacteristicGeneralById(param);
+  if (!idResult) return null;
+  return { general: idResult, source: "id" };
+}
+
+export async function getCharacteristicSpecificBySlugOrId(
+  generalId: string,
+  param: string,
+): Promise<
+  { specific: { id: string; name: string; slug: string; general_id: string }; source: "slug" | "id" } | null
+> {
+  const slugResult = await getCharacteristicSpecificBySlug(generalId, param);
+  if (slugResult) return { specific: slugResult, source: "slug" };
+
+  const idRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!idRe.test(param)) return null;
+
+  const idResult = await getCharacteristicSpecificById(param);
+  if (!idResult || idResult.general_id !== generalId) return null;
+  return { specific: idResult, source: "id" };
 }
 
 /**

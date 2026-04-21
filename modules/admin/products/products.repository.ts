@@ -64,6 +64,7 @@ type ProductRow = {
         }[]
       | null;
   }>;
+  slug: string;
 };
 
 function relationName(
@@ -222,11 +223,12 @@ function mapRow(row: ProductRow): Product {
     characteristicValues,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    slug: row.slug,
   };
 }
 
 const PRODUCT_SELECT =
-  "id, sku, name, description, specifications, stock, price, active, featured, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name), brand_types(name), categories(name), subcategories(name, category_id, categories(name)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
+  "id, sku, slug, name, description, specifications, stock, price, active, featured, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name), brand_types(name), categories(name), subcategories(name, category_id, categories(name)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
 
 function placementToDbColumns(payload: ProductInsert): {
   category_id: string | null;
@@ -256,6 +258,7 @@ export async function repoCreateProduct(payload: ProductInsert): Promise<Product
     .from("products")
     .insert({
       sku: payload.sku,
+      slug: payload.slug,
       name: payload.name,
       description: payload.description || null,
       specifications: payload.specifications || null,
@@ -285,6 +288,7 @@ export async function repoUpdateProduct(
   const { error } = await supabase
     .from("products")
     .update({
+      slug: payload.slug,
       sku: payload.sku,
       name: payload.name,
       description: payload.description || null,

@@ -9,6 +9,7 @@ type BrandTypeRow = {
   id: string;
   brand_id: string;
   name: string;
+  slug: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -28,6 +29,7 @@ function mapRow(row: BrandTypeRow): BrandType {
     brandId: row.brand_id,
     brandName: brandNameFromRow(row),
     name: row.name,
+    slug: row.slug,
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -39,7 +41,7 @@ export async function repoListBrandTypes(): Promise<BrandType[]> {
   const { data, error } = await supabase
     .from("brand_types")
     .select(
-      "id, brand_id, name, active, created_at, updated_at, brands ( name )"
+      "id, brand_id, name, slug, active, created_at, updated_at, brands ( name )"
     )
     .order("name", { ascending: true });
 
@@ -61,9 +63,12 @@ export async function repoCreateBrandType(
     .insert({
       brand_id: payload.brandId,
       name: payload.name,
+      slug: payload.slug,
       active: payload.active,
     })
-    .select("id, brand_id, name, active, created_at, updated_at, brands ( name )")
+    .select(
+      "id, brand_id, name, slug, active, created_at, updated_at, brands ( name )",
+    )
     .single();
 
   if (error) throw error;
@@ -80,6 +85,7 @@ export async function repoUpdateBrandType(
     .update({
       brand_id: payload.brandId,
       name: payload.name,
+      slug: payload.slug,
       active: payload.active,
     })
     .eq("id", id);

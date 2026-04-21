@@ -132,7 +132,7 @@ export function StorefrontProductCard({
         )}
       >
         <Link
-          href={`/products/${p.id}`}
+          href={`/products/${p.slug}`}
           className="absolute inset-0 z-0 block outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary"
         >
           {img ? (
@@ -265,7 +265,7 @@ export function StorefrontProductCard({
 
       <div className="flex flex-1 flex-col p-4">
         <Link
-          href={`/products/${p.id}`}
+          href={`/products/${p.slug}`}
           className="min-w-0 outline-none ring-offset-2 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary"
         >
           <h3

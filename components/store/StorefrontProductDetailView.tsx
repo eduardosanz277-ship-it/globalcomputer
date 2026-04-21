@@ -696,9 +696,11 @@ export function StorefrontProductDetailView({
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxOpen, canNavigateImages, imageCount]);
 
+  const brandSlug = product.brand_slug;
+  const brandHref = `/brands/${brandSlug}`;
   const brandTypeHref =
-    product.brand_type_id && product.brand_id
-      ? `/brands/${product.brand_id}/${product.brand_type_id}`
+    product.brand_type_id && product.brand_type_slug
+      ? `${brandHref}/${product.brand_type_slug}`
       : null;
 
   const handleReviewSuccess = () => {
@@ -950,10 +952,7 @@ export function StorefrontProductDetailView({
               {product.name}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-2 text-left text-[13px] font-medium leading-tight text-muted-foreground sm:text-sm">
-              <Link
-                href={`/brands/${product.brand_id}`}
-                className="transition hover:text-primary"
-              >
+              <Link href={brandHref} className="transition hover:text-primary">
                 {product.brand_name}
               </Link>
               {product.brand_type_name && product.brand_type_name !== "—" ? (
@@ -963,10 +962,10 @@ export function StorefrontProductDetailView({
                     aria-hidden
                   />
                   {brandTypeHref ? (
-                    <Link
-                      href={brandTypeHref}
-                      className="transition hover:text-primary"
-                    >
+                      <Link
+                        href={brandTypeHref}
+                        className="transition hover:text-primary"
+                      >
                       {product.brand_type_name}
                     </Link>
                   ) : (

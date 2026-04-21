@@ -109,7 +109,7 @@ function CartLineRow({
       )}
     >
       <Link
-        href={`/products/${product.id}`}
+        href={`/products/${product.slug}`}
         onClick={onProductNavigate}
         className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted/50 ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:h-24 md:w-24"
       >
@@ -131,7 +131,7 @@ function CartLineRow({
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">
             <Link
-              href={`/products/${product.id}`}
+              href={`/products/${product.slug}`}
               onClick={onProductNavigate}
               className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary"
             >

@@ -2,12 +2,16 @@ import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb"
 import { StorefrontProductDetailView } from "@/components/store/StorefrontProductDetailView";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { getStorefrontProductDetailById } from "@/modules/catalog/storefront-product-detail.service";
+import {
+  getStorefrontProductDetailById,
+  getStorefrontProductDetailBySlug,
+  type StorefrontProductDetail,
+} from "@/modules/catalog/storefront-product-detail.service";
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +25,24 @@ const inter = Inter({
 });
 
 type Props = {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ productSlug: string }> | { productSlug: string };
 };
 
+async function resolveProductBySlugParam(
+  productSlug: string,
+): Promise<{ product: StorefrontProductDetail | null; fromId: boolean }> {
+  let product = await getStorefrontProductDetailBySlug(productSlug);
+  let fromId = false;
+  if (!product && UUID_RE.test(productSlug)) {
+    product = await getStorefrontProductDetailById(productSlug);
+    fromId = Boolean(product);
+  }
+  return { product, fromId };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await Promise.resolve(params);
-  if (!UUID_RE.test(id)) return { title: "Producto" };
-  const product = await getStorefrontProductDetailById(id);
+  const { productSlug } = await Promise.resolve(params);
+  const { product } = await resolveProductBySlugParam(productSlug);
   if (!product) return { title: "Producto no encontrado" };
   return {
     title: product.name,
@@ -38,15 +53,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductoDetallePage({ params }: Props) {
-  const { id } = await Promise.resolve(params);
-  if (!UUID_RE.test(id)) notFound();
-
-  const product = await getStorefrontProductDetailById(id);
+  const { productSlug } = await Promise.resolve(params);
+  const { product, fromId } = await resolveProductBySlugParam(productSlug);
   if (!product) notFound();
+  if (fromId || product.slug !== productSlug) {
+    redirect(`/products/${product.slug}`);
+  }
 
   const [user, productReviews, similarProducts] = await Promise.all([
     getCurrentUserService(),
-    listProductReviewsByProductId(id),
+    listProductReviewsByProductId(product.id),
     listSimilarStorefrontProducts({
       productId: product.id,
       categoriaId: product.category_id,

@@ -1,10 +1,35 @@
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { slugify } from "@/lib/slugify";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+
+type RelationRecord = {
+  name?: unknown;
+  slug?: unknown;
+};
+
+function relationSlug(
+  rel: RelationRecord | RelationRecord[] | null | undefined,
+  fallbackName: string,
+): string {
+  const row = Array.isArray(rel) ? rel[0] : rel;
+  if (row && typeof row === "object") {
+    const slugValue = row.slug;
+    if (typeof slugValue === "string" && slugValue.trim() !== "") {
+      return slugValue;
+    }
+    const nameValue = row.name;
+    if (typeof nameValue === "string" && nameValue.trim() !== "") {
+      return slugify(nameValue);
+    }
+  }
+  return slugify(fallbackName);
+}
 
 /** Select de producto para tienda (reutilizable en otros módulos del catálogo). */
 export const STOREFRONT_PRODUCT_SELECT = `
   id,
   name,
+  slug,
   created_at,
   updated_at,
   price,
@@ -15,9 +40,10 @@ export const STOREFRONT_PRODUCT_SELECT = `
   brand_type_id,
   category_id,
   subcategory_id,
-  brands ( name ),
+  brands ( name, slug ),
   categories ( id, name ),
   subcategories ( category_id, categories ( id, name ) ),
+  brand_types ( name, slug ),
   product_characteristic_values (
     id,
     characteristic_specific_id,
@@ -52,6 +78,19 @@ function brandNameFromProductRow(row: Record<string, unknown>): string {
   }
   if (Array.isArray(b) && b[0] && typeof b[0] === "object" && "name" in b[0]) {
     const n = (b[0] as { name?: unknown }).name;
+    return n != null && String(n).trim() !== "" ? String(n) : "—";
+  }
+  return "—";
+}
+
+function brandTypeNameFromProductRow(row: Record<string, unknown>): string {
+  const t = row.brand_types;
+  if (t && typeof t === "object" && !Array.isArray(t) && "name" in t) {
+    const n = (t as { name?: unknown }).name;
+    return n != null && String(n).trim() !== "" ? String(n) : "—";
+  }
+  if (Array.isArray(t) && t[0] && typeof t[0] === "object" && "name" in t[0]) {
+    const n = (t[0] as { name?: unknown }).name;
     return n != null && String(n).trim() !== "" ? String(n) : "—";
   }
   return "—";
@@ -222,6 +261,20 @@ export function mapStorefrontProductRow(
   row: Record<string, unknown>,
 ): StorefrontProduct {
   const chars = parseProductCharacteristicsFromRow(row);
+  const brandName = brandNameFromProductRow(row);
+  const brandTypeName = brandTypeNameFromProductRow(row);
+  const brandSlug = relationSlug(
+    row.brands as RelationRecord | RelationRecord[] | null | undefined,
+    brandName,
+  );
+  const brandTypeSlug = relationSlug(
+    row.brand_types as RelationRecord | RelationRecord[] | null | undefined,
+    brandTypeName !== "—" ? brandTypeName : brandName,
+  );
+  const productSlug =
+    typeof row.slug === "string" && row.slug.trim() !== ""
+      ? row.slug
+      : slugify(String(row.name ?? ""));
   return {
     id: String(row.id),
     name: String(row.name),
@@ -234,7 +287,10 @@ export function mapStorefrontProductRow(
     brand_id: String(row.brand_id),
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,
-    brand_name: brandNameFromProductRow(row),
+    brand_name: brandName,
+    brand_slug: brandSlug,
+    brand_type_slug: row.brand_type_id != null ? brandTypeSlug : null,
+    slug: productSlug,
     ...(() => {
       const cat = effectiveCatalogCategory(row);
       return {
@@ -261,18 +317,18 @@ function looksLikeMissingColumnError(error: { message?: string } | null): boolea
 
 export async function getBrandById(
   brandId: string,
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; slug: string } | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brands")
-    .select("id, name, active")
+    .select("id, name, slug, active")
     .eq("id", brandId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("brands")
-      .select("id, name")
+      .select("id, name, slug")
       .eq("id", brandId)
       .maybeSingle();
     data = r.data as typeof data;
@@ -285,7 +341,27 @@ export async function getBrandById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
-  return { id: data.id, name: data.name };
+  return { id: data.id, name: data.name, slug: data.slug ?? slugify(data.name) };
+}
+
+export async function getBrandBySlug(
+  slug: string,
+): Promise<{ id: string; name: string; slug: string } | null> {
+  const normalizedSlug = slugify(slug);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id, name, slug, active")
+    .eq("slug", normalizedSlug)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[storefront] getBrandBySlug", slug, error.message);
+    return null;
+  }
+  if (!data) return null;
+  if ("active" in data && data.active === false) return null;
+  return { id: data.id, name: data.name, slug: data.slug ?? slugify(data.name) };
 }
 
 /**
@@ -294,18 +370,20 @@ export async function getBrandById(
  */
 export async function getBrandTypeById(
   brandTypeId: string,
-): Promise<{ id: string; name: string; brand_id: string } | null> {
+): Promise<
+  { id: string; name: string; brand_id: string; slug: string } | null
+> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brand_types")
-    .select("id, name, brand_id, active")
+    .select("id, name, brand_id, slug, active")
     .eq("id", brandTypeId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("brand_types")
-      .select("id, name, brand_id")
+      .select("id, name, brand_id, slug")
       .eq("id", brandTypeId)
       .maybeSingle();
     data = r.data as typeof data;
@@ -322,16 +400,49 @@ export async function getBrandTypeById(
     id: data.id,
     name: data.name,
     brand_id: data.brand_id,
+    slug: data.slug ?? slugify(data.name),
+  };
+}
+
+export async function getBrandTypeBySlug(
+  brandId: string,
+  slug: string,
+): Promise<{ id: string; name: string; brand_id: string; slug: string } | null> {
+  const normalizedSlug = slugify(slug);
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("brand_types")
+    .select("id, name, brand_id, slug, active")
+    .eq("brand_id", brandId)
+    .eq("slug", normalizedSlug)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(
+      "[storefront] getBrandTypeBySlug",
+      brandId,
+      slug,
+      error.message,
+    );
+    return null;
+  }
+  if (!data) return null;
+  if ("active" in data && data.active === false) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    brand_id: data.brand_id,
+    slug: data.slug ?? slugify(data.name),
   };
 }
 
 export async function listBrandTypesForBrand(
   brandId: string,
-): Promise<{ id: string; name: string }[]> {
+): Promise<{ id: string; name: string; slug: string }[]> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brand_types")
-    .select("id, name, active")
+    .select("id, name, slug, active")
     .eq("brand_id", brandId)
     .order("name");
 
@@ -352,7 +463,14 @@ export async function listBrandTypesForBrand(
   if (!data) return [];
   return data
     .filter((r) => !("active" in r) || r.active !== false)
-    .map((r) => ({ id: r.id, name: r.name }));
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug:
+        typeof r.slug === "string" && r.slug.trim() !== ""
+          ? r.slug
+          : slugify(r.name),
+    }));
 }
 
 /** Todos los productos activos del catálogo público (tienda). */
