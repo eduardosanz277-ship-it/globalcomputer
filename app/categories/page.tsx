@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { Inter } from "next/font/google";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { getStorefrontCategoriesWithSubcategories } from "@/modules/catalog/storefront-categories.service";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Categorías",
@@ -55,7 +55,7 @@ export default async function CategoriasPage() {
               >
                 <h2 className="font-display text-lg font-semibold text-foreground">
                   <Link
-                    href={`/catalogo/${cat.id}`}
+                    href={`/categories/${cat.id}`}
                     className="transition hover:text-primary"
                   >
                     {cat.name}
@@ -66,7 +66,7 @@ export default async function CategoriasPage() {
                     {cat.subcategories.map((sub) => (
                       <li key={sub.id}>
                         <Link
-                          href={`/catalogo/${cat.id}/${sub.id}`}
+                          href={`/categories/${cat.id}/${sub.id}`}
                           className={`inline-flex rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-sm text-foreground transition hover:border-primary/40 hover:bg-primary/5 ${inter.className}`}
                         >
                           {sub.name}

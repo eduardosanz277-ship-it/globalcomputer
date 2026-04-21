@@ -1,9 +1,9 @@
+import { CartCheckoutSuccessClient } from "@/components/store/CartCheckoutSuccessClient";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/utils/cn";
+import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { CartCheckoutSuccessClient } from "@/components/store/CartCheckoutSuccessClient";
-import { cn } from "@/utils/cn";
 
 export const metadata: Metadata = {
   title: "Pago recibido",
@@ -27,7 +27,7 @@ export default function CarritoExitoPage() {
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
-            href="/productos"
+            href="/products"
             className={cn(buttonVariants({ variant: "default" }), "rounded-xl")}
           >
             Seguir comprando

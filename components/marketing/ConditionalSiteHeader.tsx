@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import type { SessionUser } from "@/modules/auth/auth.types";
+import { usePathname } from "next/navigation";
 import { SiteHeader } from "./SiteHeader";
 
 /**
@@ -11,7 +11,7 @@ import { SiteHeader } from "./SiteHeader";
 function shouldShowMarketingHeader(pathname: string | null): boolean {
   if (!pathname) return true;
   if (pathname.startsWith("/admin")) return false;
-  if (pathname.startsWith("/cuenta")) return false;
+  if (pathname.startsWith("/profile")) return false;
   if (pathname.startsWith("/login")) return false;
   if (pathname.startsWith("/register")) return false;
   return true;

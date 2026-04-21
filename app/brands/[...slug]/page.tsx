@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { notFound, redirect } from "next/navigation";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
@@ -12,6 +9,9 @@ import {
   listProductsByBrandAndType,
   listProductsByBrandId,
 } from "@/modules/catalog/storefront-products.service";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +87,7 @@ export default async function BrandsSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/productos" },
+                { label: "Catálogo", href: "/products" },
                 { label: brand.name },
               ]}
             />
@@ -146,7 +146,7 @@ export default async function BrandsSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/productos" },
+                { label: "Catálogo", href: "/products" },
                 { label: brand.name, href: `/brands/${brandId}` },
                 { label: typeRow.name },
               ]}

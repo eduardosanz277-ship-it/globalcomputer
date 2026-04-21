@@ -130,7 +130,7 @@ export function SiteHeader({ user }: Props) {
   const storefrontPriceTier = resolveStorefrontPriceTier(user?.role);
 
   const handleCartIconClick = () => {
-    if (pathname === "/carrito") {
+    if (pathname === "/cart") {
       window.scrollTo({ top: 0, behavior: "smooth" });
       const cartHero = document.getElementById("cart-page-hero");
       if (cartHero) {
@@ -520,7 +520,7 @@ export function SiteHeader({ user }: Props) {
                           ) : (
                             <>
                               <Link
-                                href="/cuenta"
+                                href="/profile"
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                 onClick={() => setAccountOpen(false)}
                               >
@@ -532,7 +532,7 @@ export function SiteHeader({ user }: Props) {
                                 Mi cuenta
                               </Link>
                               <Link
-                                href="/cuenta?tab=orders"
+                                href="/profile?tab=orders"
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                 onClick={() => setAccountOpen(false)}
                               >
@@ -544,7 +544,7 @@ export function SiteHeader({ user }: Props) {
                                 Pedidos
                               </Link>
                               <Link
-                                href="/cuenta?tab=addresses"
+                                href="/profile?tab=addresses"
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                 onClick={() => setAccountOpen(false)}
                               >
@@ -670,7 +670,7 @@ export function SiteHeader({ user }: Props) {
                   size="sm"
                   type="button"
                   className="shrink-0 gap-2 rounded-xl px-2.5 hover:bg-transparent hover:text-foreground md:order-2 md:px-3"
-                aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                  aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
                   onClick={handleCartIconClick}
                 >
                   <span className="relative inline-flex">
@@ -775,7 +775,7 @@ export function SiteHeader({ user }: Props) {
                             ) : (
                               <>
                                 <Link
-                                  href="/cuenta"
+                                  href="/profile"
                                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                   role="menuitem"
                                   onClick={() => setAccountOpen(false)}
@@ -787,7 +787,7 @@ export function SiteHeader({ user }: Props) {
                                   Mi cuenta
                                 </Link>
                                 <Link
-                                  href="/cuenta?tab=orders"
+                                  href="/profile?tab=orders"
                                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                   role="menuitem"
                                   onClick={() => setAccountOpen(false)}
@@ -800,7 +800,7 @@ export function SiteHeader({ user }: Props) {
                                   Pedidos
                                 </Link>
                                 <Link
-                                  href="/cuenta?tab=addresses"
+                                  href="/profile?tab=addresses"
                                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                                   role="menuitem"
                                   onClick={() => setAccountOpen(false)}
@@ -888,7 +888,7 @@ export function SiteHeader({ user }: Props) {
                               aria-hidden
                             />
                             <Link
-                              href="/cuenta?tab=orders"
+                              href="/profile?tab=orders"
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                               role="menuitem"
                               onClick={() => setAccountOpen(false)}
@@ -897,7 +897,7 @@ export function SiteHeader({ user }: Props) {
                               Pedidos
                             </Link>
                             <Link
-                              href="/cuenta?tab=addresses"
+                              href="/profile?tab=addresses"
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                               role="menuitem"
                               onClick={() => setAccountOpen(false)}
@@ -980,36 +980,36 @@ export function SiteHeader({ user }: Props) {
                                   : "w-full max-h-[70vh]",
                               )}
                             >
-                            {navData!.catalogCategories.map((cat) => {
-                              const rowActive = hoveredCategoryId === cat.id;
-                              const hasSubs = cat.subcategories.length > 0;
-                              return (
-                                <Link
-                                  key={cat.id}
-                                  href={`/catalogo/${cat.id}`}
-                                  onMouseEnter={() =>
-                                    setHoveredCategoryId(cat.id)
-                                  }
-                                  onClick={armDesktopNavStripSuppress}
-                                  className={cn(
-                                    navMegaRowClass,
-                                    "justify-between",
-                                    "hover:bg-white/10",
-                                    rowActive && "bg-white/10",
-                                  )}
-                                >
-                                  <span className="truncate">
-                                    {localizeName(cat)}
-                                  </span>
-                                  {hasSubs ? (
-                                    <ChevronRight
-                                      className="h-4 w-4 shrink-0 text-white"
-                                      aria-hidden
-                                    />
-                                  ) : null}
-                                </Link>
-                              );
-                            })}
+                              {navData!.catalogCategories.map((cat) => {
+                                const rowActive = hoveredCategoryId === cat.id;
+                                const hasSubs = cat.subcategories.length > 0;
+                                return (
+                                  <Link
+                                    key={cat.id}
+                                    href={`/catalog/${cat.id}`}
+                                    onMouseEnter={() =>
+                                      setHoveredCategoryId(cat.id)
+                                    }
+                                    onClick={armDesktopNavStripSuppress}
+                                    className={cn(
+                                      navMegaRowClass,
+                                      "justify-between",
+                                      "hover:bg-white/10",
+                                      rowActive && "bg-white/10",
+                                    )}
+                                  >
+                                    <span className="truncate">
+                                      {localizeName(cat)}
+                                    </span>
+                                    {hasSubs ? (
+                                      <ChevronRight
+                                        className="h-4 w-4 shrink-0 text-white"
+                                        aria-hidden
+                                      />
+                                    ) : null}
+                                  </Link>
+                                );
+                              })}
                             </div>
                             {categoryPanelHasSubs && activeCategory ? (
                               <div className="min-w-0 flex-1 py-2">
@@ -1017,7 +1017,7 @@ export function SiteHeader({ user }: Props) {
                                   {activeCategory.subcategories.map((sub) => (
                                     <li key={sub.id}>
                                       <Link
-                                        href={`/catalogo/${activeCategory.id}/${sub.id}`}
+                                        href={`/catalog/${activeCategory.id}/${sub.id}`}
                                         onClick={armDesktopNavStripSuppress}
                                         className={cn(
                                           navMegaRowClass,
@@ -1118,9 +1118,9 @@ export function SiteHeader({ user }: Props) {
                                           "hover:bg-white/10",
                                         )}
                                       >
-                                  <span className="truncate">
-                                    {localizeName(specific)}
-                                  </span>
+                                        <span className="truncate">
+                                          {localizeName(specific)}
+                                        </span>
                                       </Link>
                                     </li>
                                   ))}
@@ -1211,9 +1211,9 @@ export function SiteHeader({ user }: Props) {
                                         "hover:bg-white/10",
                                       )}
                                     >
-                                  <span className="truncate">
-                                    {localizeName(type)}
-                                  </span>
+                                      <span className="truncate">
+                                        {localizeName(type)}
+                                      </span>
                                     </Link>
                                   </li>
                                 ))}
@@ -1514,7 +1514,7 @@ export function SiteHeader({ user }: Props) {
                                 ) : (
                                   <>
                                     <Link
-                                      href="/cuenta"
+                                      href="/profile"
                                       onClick={() => setMobileNavOpen(false)}
                                       className={cn(
                                         "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1529,7 +1529,7 @@ export function SiteHeader({ user }: Props) {
                                       Mi cuenta
                                     </Link>
                                     <Link
-                                      href="/cuenta?tab=orders"
+                                      href="/profile?tab=orders"
                                       onClick={() => setMobileNavOpen(false)}
                                       className={cn(
                                         "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1544,7 +1544,7 @@ export function SiteHeader({ user }: Props) {
                                       Pedidos
                                     </Link>
                                     <Link
-                                      href="/cuenta?tab=addresses"
+                                      href="/profile?tab=addresses"
                                       onClick={() => setMobileNavOpen(false)}
                                       className={cn(
                                         "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1609,7 +1609,7 @@ export function SiteHeader({ user }: Props) {
                                   aria-hidden
                                 />
                                 <Link
-                                  href="/cuenta?tab=orders"
+                                  href="/profile?tab=orders"
                                   onClick={() => setMobileNavOpen(false)}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1624,7 +1624,7 @@ export function SiteHeader({ user }: Props) {
                                   Pedidos
                                 </Link>
                                 <Link
-                                  href="/cuenta?tab=addresses"
+                                  href="/profile?tab=addresses"
                                   onClick={() => setMobileNavOpen(false)}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1718,13 +1718,13 @@ export function SiteHeader({ user }: Props) {
                                     ) : (
                                       <div
                                         key={general.id}
-                                      className={cn(
-                                        "rounded-lg px-3 py-2 text-left",
-                                        mobileNavCatalogHeadingClass,
-                                      )}
-                                    >
-                                      Ver por {localizeName(general)}
-                                    </div>
+                                        className={cn(
+                                          "rounded-lg px-3 py-2 text-left",
+                                          mobileNavCatalogHeadingClass,
+                                        )}
+                                      >
+                                        Ver por {localizeName(general)}
+                                      </div>
                                     ),
                                 )
                               )}
@@ -1799,7 +1799,7 @@ export function SiteHeader({ user }: Props) {
                                               mobileNavCatalogRowClass,
                                             )}
                                           >
-                                          {localizeName(type)}
+                                            {localizeName(type)}
                                           </Link>
                                         ))}
                                       </div>
@@ -1883,7 +1883,7 @@ export function SiteHeader({ user }: Props) {
                                           {cat.subcategories.map((sub) => (
                                             <Link
                                               key={sub.id}
-                                              href={`/catalogo/${cat.id}/${sub.id}`}
+                                              href={`/catalog/${cat.id}/${sub.id}`}
                                               onClick={() =>
                                                 setMobileNavOpen(false)
                                               }
@@ -1900,7 +1900,7 @@ export function SiteHeader({ user }: Props) {
                                     ) : (
                                       <Link
                                         key={cat.id}
-                                        href={`/catalogo/${cat.id}`}
+                                        href={`/catalog/${cat.id}`}
                                         onClick={() =>
                                           setMobileNavOpen(false)
                                         }

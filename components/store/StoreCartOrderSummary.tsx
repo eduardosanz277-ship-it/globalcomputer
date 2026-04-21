@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { computeCartSubtotal } from "@/components/store/cart-line-price";
+import { formatUsd } from "@/components/store/store-cart-format";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
-import { formatUsd } from "@/components/store/store-cart-format";
-import { computeCartSubtotal } from "@/components/store/cart-line-price";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "react-toastify";
 
 export function StoreCartOrderSummary({
   items,
@@ -71,7 +71,7 @@ export function StoreCartOrderSummary({
       className={cn(
         "space-y-4",
         variant === "page" &&
-          "lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card lg:p-6 lg:shadow-soft",
+        "lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card lg:p-6 lg:shadow-soft",
         variant === "drawer" && "px-0",
       )}
     >
@@ -128,7 +128,7 @@ export function StoreCartOrderSummary({
             )}
           </Button>
           <Link
-            href="/productos"
+            href="/products"
             className={cn(
               buttonVariants({ variant: "outline" }),
               "w-full rounded-xl",
@@ -152,7 +152,7 @@ export function StoreCartOrderSummary({
             </Button>
           ) : (
             <Link
-              href="/carrito"
+              href="/cart"
               onClick={onContinueShopping}
               className={cn(
                 buttonVariants({ variant: "outline" }),

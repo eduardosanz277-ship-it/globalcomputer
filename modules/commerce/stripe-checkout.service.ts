@@ -1,15 +1,14 @@
-import Stripe from "stripe";
+import { getAppBaseUrl } from "@/lib/app-url";
+import type { GcCartItem } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
   priceAfterDiscount,
   resolveStorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import { getAppBaseUrl } from "@/lib/app-url";
-import type { GcCartItem } from "@/lib/store-cart";
-import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
-import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { SessionUser } from "@/modules/auth/auth.types";
+import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
 import {
   repoGetDefaultShippingAddressForUser,
   repoGetProfileStripeCustomerId,
@@ -17,6 +16,7 @@ import {
   type CheckoutShippingAddressRow,
 } from "@/modules/commerce/checkout-address.repository";
 import { countryToStripeIso2 } from "@/modules/commerce/country-to-stripe-iso";
+import Stripe from "stripe";
 
 export class CheckoutSessionError extends Error {
   constructor(
@@ -280,8 +280,8 @@ export async function createHostedCheckoutSession(
     mode: "payment",
     locale: "es",
     line_items: lineItems,
-    success_url: `${base}/carrito/exito?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/carrito`,
+    success_url: `${base}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${base}/cart`,
     client_reference_id: user?.id,
     ...identity,
     automatic_tax: { enabled: true },

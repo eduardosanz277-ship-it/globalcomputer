@@ -1,6 +1,3 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { notFound } from "next/navigation";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { StorefrontProductDetailView } from "@/components/store/StorefrontProductDetailView";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
@@ -8,6 +5,9 @@ import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStorefrontProductDetailById } from "@/modules/catalog/storefront-product-detail.service";
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +67,7 @@ export default async function ProductoDetallePage({ params }: Props) {
             className={inter.className}
             items={[
               { label: "Inicio", href: "/" },
-              { label: "Productos", href: "/productos" },
+              { label: "Productos", href: "/products" },
               { label: product.name },
             ]}
           />

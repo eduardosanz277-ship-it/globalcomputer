@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { notFound } from "next/navigation";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
@@ -14,6 +11,9 @@ import {
   listProductsByCategoryId,
   listProductsBySubcategoryId,
 } from "@/modules/catalog/storefront-products.service";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +88,7 @@ export default async function CatalogoSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/productos" },
+                { label: "Catálogo", href: "/products" },
                 { label: category.name },
               ]}
             />
@@ -143,10 +143,10 @@ export default async function CatalogoSlugPage({ params }: Props) {
               className={inter.className}
               items={[
                 { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/productos" },
+                { label: "Catálogo", href: "/products" },
                 {
                   label: category.name,
-                  href: `/catalogo/${categoryId}`,
+                  href: `/catalog/${categoryId}`,
                 },
                 { label: subcategory.name },
               ]}

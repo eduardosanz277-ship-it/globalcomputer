@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllFeaturedStorefrontProducts } from "@/modules/catalog/storefront-products.service";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,7 @@ export default async function ProductosDestacadosPage() {
           <MarketingBreadcrumb
             items={[
               { label: "Inicio", href: "/" },
-              { label: "Catálogo", href: "/productos" },
+              { label: "Catálogo", href: "/products" },
               { label: "Destacados" },
             ]}
             className={inter.className}

@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { ShoppingBasket } from "lucide-react";
-import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { cn } from "@/utils/cn";
-import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
 import { useRunCartMutation } from "@/components/store/useRunCartMutation";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
+import { cn } from "@/utils/cn";
+import { ShoppingBasket } from "lucide-react";
+import Link from "next/link";
 
 export function StoreCartDrawer({
   open,
@@ -70,7 +69,7 @@ export function StoreCartDrawer({
             Añade productos desde el catálogo para verlos aquí.
           </p>
           <Link
-            href="/productos"
+            href="/products"
             onClick={onClose}
             className={cn(
               buttonVariants({ variant: "default" }),

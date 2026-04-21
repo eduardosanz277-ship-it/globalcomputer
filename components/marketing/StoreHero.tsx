@@ -1,18 +1,17 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Poppins } from "next/font/google";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
+import { cn } from "@/utils/cn";
 import {
-  ChevronRight,
   Headphones,
   Phone,
   ShieldCheck,
   Star,
-  Truck,
+  Truck
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { cn } from "@/utils/cn";
-import { getPublicSiteContact } from "@/lib/site-contact.server";
+import { Poppins } from "next/font/google";
+import Image from "next/image";
+import Link from "next/link";
 
 const TRUST_PILLS = [
   { Icon: Truck, label: "Envío a EE. UU." },
@@ -107,7 +106,7 @@ export async function StoreHero() {
 
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link
-                  href="/productos"
+                  href="/products"
                   className={cn(
                     buttonVariants({ size: "lg" }),
                     "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-primary/90 sm:w-auto",
@@ -159,7 +158,7 @@ export async function StoreHero() {
                   {categories.map((c) => (
                     <li key={c.id} className="max-w-full">
                       <Link
-                        href={`/catalogo/${c.id}`}
+                        href={`/catalog/${c.id}`}
                         prefetch={false}
                         aria-label={`Ver productos en ${c.name}`}
                         className={cn(

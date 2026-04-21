@@ -1,43 +1,35 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  Camera,
-  Cable,
-  CheckCircle2,
-  HardDrive,
-  Headphones,
-  Heart,
-  LayoutGrid,
-  Package,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Truck,
-  UserRound,
-  Wrench,
-} from "lucide-react";
+import { FAQSection } from "@/components/marketing/FAQSection";
+import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { ServicesSection } from "@/components/marketing/ServicesSection";
 import { StoreHero } from "@/components/marketing/StoreHero";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
-import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { cn } from "@/utils/cn";
-import { ServicesSection } from "@/components/marketing/ServicesSection";
-import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { FAQSection } from "@/components/marketing/FAQSection";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import {
   listAllActiveStorefrontProducts,
   listFeaturedStorefrontProducts,
 } from "@/modules/catalog/storefront-products.service";
-import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
-import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
+import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { listActiveSiteFaqs } from "@/modules/site/faqs.service";
+import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
+import { cn } from "@/utils/cn";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Cable,
+  Camera,
+  CheckCircle2,
+  HardDrive,
+  LayoutGrid,
+  Star,
+  UserRound
+} from "lucide-react";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Global Computers USA | Cámaras de Seguridad, Software y Tecnología",
@@ -53,39 +45,39 @@ const CATEGORIES: Array<{
   chip: string;
   tint: string;
 }> = [
-  {
-    title: "Cámaras IP",
-    desc: "Color nocturno, PoE y 4K",
-    href: "#destacados",
-    Icon: Camera,
-    chip: "Popular",
-    tint: "from-primary/12 via-card to-primary/[0.02]",
-  },
-  {
-    title: "Grabadoras NVR/DVR",
-    desc: "Desde 4 hasta 32 canales",
-    href: "#destacados",
-    Icon: HardDrive,
-    chip: "Pro",
-    tint: "from-cyan-500/10 via-card to-card",
-  },
-  {
-    title: "Kits completos",
-    desc: "Todo para empezar ya",
-    href: "#destacados",
-    Icon: LayoutGrid,
-    chip: "Pack",
-    tint: "from-secondary/15 via-card to-card",
-  },
-  {
-    title: "Accesorios",
-    desc: "Cables, discos y más",
-    href: "#destacados",
-    Icon: Cable,
-    chip: "Extra",
-    tint: "from-violet-500/10 via-card to-card",
-  },
-];
+    {
+      title: "Cámaras IP",
+      desc: "Color nocturno, PoE y 4K",
+      href: "#destacados",
+      Icon: Camera,
+      chip: "Popular",
+      tint: "from-primary/12 via-card to-primary/[0.02]",
+    },
+    {
+      title: "Grabadoras NVR/DVR",
+      desc: "Desde 4 hasta 32 canales",
+      href: "#destacados",
+      Icon: HardDrive,
+      chip: "Pro",
+      tint: "from-cyan-500/10 via-card to-card",
+    },
+    {
+      title: "Kits completos",
+      desc: "Todo para empezar ya",
+      href: "#destacados",
+      Icon: LayoutGrid,
+      chip: "Pack",
+      tint: "from-secondary/15 via-card to-card",
+    },
+    {
+      title: "Accesorios",
+      desc: "Cables, discos y más",
+      href: "#destacados",
+      Icon: Cable,
+      chip: "Extra",
+      tint: "from-violet-500/10 via-card to-card",
+    },
+  ];
 
 export default async function HomePage() {
   const [products, featuredProducts, user, nav, productReviews, siteFaqs] =
@@ -189,7 +181,7 @@ export default async function HomePage() {
               titleClassName="text-3xl sm:text-4xl"
             />
             <Link
-              href="/productos/destacados"
+              href="/products/featured"
               className={cn(
                 buttonVariants({ variant: "outline" }),
                 "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
@@ -287,7 +279,7 @@ export default async function HomePage() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <Link
-                  href="/productos"
+                  href="/products"
                   className={cn(
                     buttonVariants({ variant: "secondary", size: "default" }),
                     "w-full rounded-2xl font-semibold sm:w-auto",
@@ -376,7 +368,7 @@ export default async function HomePage() {
               descriptionClassName="text-white/80"
             />
             <Link
-              href="/productos"
+              href="/products"
               className={cn(
                 buttonVariants({ variant: "outline" }),
                 "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",

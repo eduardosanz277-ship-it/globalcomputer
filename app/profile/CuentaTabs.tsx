@@ -41,7 +41,7 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
 
   const setTab = useCallback(
     (id: CuentaTabId) => {
-      router.replace(`/cuenta?tab=${id}`, { scroll: false });
+      router.replace(`/profile?tab=${id}`, { scroll: false });
     },
     [router],
   );

@@ -1,15 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { ShoppingBasket } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button-variants";
-import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
-import { cn } from "@/utils/cn";
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
 import { useRunCartMutation } from "@/components/store/useRunCartMutation";
+import { buttonVariants } from "@/components/ui/button-variants";
+import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
+import { cn } from "@/utils/cn";
+import { ShoppingBasket } from "lucide-react";
+import Link from "next/link";
 
 export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const items = useGcCart();
@@ -34,7 +34,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           Explora el catálogo y añade productos para verlos aquí.
         </p>
         <Link
-          href="/productos"
+          href="/products"
           className={cn(
             buttonVariants({ variant: "default" }),
             "mt-6 h-11 rounded-xl px-6",
