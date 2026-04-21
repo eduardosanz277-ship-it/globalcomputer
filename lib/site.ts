@@ -8,6 +8,7 @@ export const SITE_CONTACT_PHONE_DISPLAY = "786-395-1076";
 /** Para enlaces `tel:` (E.164 sin espacios). */
 export const SITE_CONTACT_PHONE_TEL = "+17863951076";
 export const SITE_CONTACT_EMAIL = "globalcomputer1024@gmail.com";
+export const SITE_CONTACT_SUPPORT_HOURS = "Lun–Vie: 8 AM – 5 PM";
 
 export type PublicSiteContact = {
   address: string;

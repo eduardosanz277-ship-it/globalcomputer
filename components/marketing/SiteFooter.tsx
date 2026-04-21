@@ -8,7 +8,11 @@ import {
   Music2,
   Phone,
 } from "lucide-react";
-import { type PublicSiteContact, siteContactMapsUrl } from "@/lib/site";
+import {
+  type PublicSiteContact,
+  siteContactMapsUrl,
+  SITE_CONTACT_SUPPORT_HOURS,
+} from "@/lib/site";
 
 export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
   return (
@@ -132,7 +136,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
                 aria-hidden
               />
-              <span>Lun–Vie: 8 AM – 5 PM</span>
+              <span>{SITE_CONTACT_SUPPORT_HOURS}</span>
             </p>
           </div>
           <div>
