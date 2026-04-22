@@ -183,7 +183,7 @@ export function BusinessProfileCard({
             </p>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 border-t border-border/60 pt-3">
             <p className="text-sm text-muted-foreground">Fecha de registro</p>
             <p className="text-sm leading-snug text-foreground">
               {createdAt ? formatDateDdMmYyyyHhMm(createdAt) : "—"}
