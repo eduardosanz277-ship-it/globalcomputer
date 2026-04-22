@@ -356,7 +356,10 @@ export default async function HomePage() {
       </section> */}
 
       {/* Ofertas */}
-      <section className="border-t border-white/10 bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to py-20 sm:py-24">
+      <section
+        id="ofertas"
+        className="scroll-mt-32 border-t border-white/10 bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to py-20 sm:scroll-mt-36 sm:py-24"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <HomeSectionHeading
@@ -518,7 +521,10 @@ export default async function HomePage() {
       </section>
 
       {/* Marcas */}
-      <section className="border-t border-border/60 bg-background py-20 sm:py-24">
+      <section
+        id="marcas"
+        className="scroll-mt-32 border-t border-border/60 bg-background py-20 sm:scroll-mt-36 sm:py-24"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <HomeSectionHeading

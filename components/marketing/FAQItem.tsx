@@ -76,9 +76,11 @@ export function FAQItem({ id, question, answer, isOpen, onToggle }: Props) {
         <div className="overflow-hidden">
           <p
             className={cn(
-              "border-t border-border/50 bg-muted/30 px-5 pb-5 pt-3 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:text-base",
+              "border-t border-border/50 bg-white/50 px-5 pb-5 pt-3 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:text-base",
               "transition-all duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]",
-              isOpen ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-85",
+              isOpen
+                ? "translate-y-0 opacity-100"
+                : "-translate-y-1 opacity-85",
             )}
           >
             {answer}

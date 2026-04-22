@@ -4,6 +4,7 @@ import {
   useId,
   useMemo,
   useState,
+  type MouseEvent,
   type ReactNode,
   type SetStateAction,
 } from "react";
@@ -118,6 +119,8 @@ interface DataTableProps<TData, TValue> {
   enableSorting?: boolean;
   /** Clases por fila (p. ej. fondo según estado). Si no se pasa, se usa hover por defecto. */
   getRowClassName?: (row: TData) => string | undefined;
+  /** Handler opcional para hacer clickeable cada fila. */
+  onRowClick?: (row: TData) => void;
   /**
    * Si se define, sustituye el `<article>` por fila en vista móvil (`md:hidden`).
    * Debe devolver el `<li>` completo (con `key`). Útil para tarjetas personalizadas (p. ej. `UserProfileCard`).
@@ -160,6 +163,7 @@ export function DataTable<TData, TValue>({
   paginationButtonVariant = "outline",
   enableSorting = false,
   getRowClassName,
+  onRowClick,
   renderMobileRow,
 }: DataTableProps<TData, TValue>) {
   const pageSizeSelectId = useId();
@@ -272,6 +276,19 @@ export function DataTable<TData, TValue>({
       />
     </>
   );
+
+  const handleRowClick = (event: MouseEvent<HTMLElement>, rowData: TData) => {
+    if (!onRowClick) return;
+    const target = event.target as HTMLElement | null;
+    if (
+      target?.closest(
+        "button, a, input, textarea, select, [role='button'], [role='menuitem']",
+      )
+    ) {
+      return;
+    }
+    onRowClick(rowData);
+  };
 
   return (
     <div className={cn("w-full min-w-0 space-y-4", className)}>
@@ -446,8 +463,10 @@ export function DataTable<TData, TValue>({
                     key={row.id}
                     className={cn(
                       "transition-colors duration-150",
+                      onRowClick && "cursor-pointer",
                       getRowClassName?.(row.original) ?? "hover:bg-muted/45",
                     )}
+                    onClick={(event) => handleRowClick(event, row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td

@@ -33,14 +33,6 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
             <ul className="mt-4 space-y-3 text-sm">
               <li>
                 <Link
-                  href="/#marcas"
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  Marcas
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/#destacados"
                   className="text-zinc-400 transition hover:text-white"
                 >
@@ -57,10 +49,18 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href="/#ofertas"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Contacto
+                  Ofertas
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#marcas"
+                  className="text-zinc-400 transition hover:text-white"
+                >
+                  Marcas
                 </Link>
               </li>
               <li>
@@ -91,6 +91,14 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
               </li>
               <li>
                 <span className="text-zinc-500">Garantía</span>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-zinc-400 transition hover:text-white"
+                >
+                  Contacto
+                </Link>
               </li>
             </ul>
           </div>

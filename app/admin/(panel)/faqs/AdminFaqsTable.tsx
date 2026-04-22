@@ -34,12 +34,6 @@ function updatedAtSortMs(row: FaqAdmin): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
-function answerExcerpt(answer: string): string {
-  const text = answer.trim();
-  if (text.length <= 120) return text;
-  return `${text.slice(0, 119)}…`;
-}
-
 function RowActions({ row, onEdit }: { row: FaqAdmin; onEdit: () => void }) {
   const router = useRouter();
   const { executeAsync, isPending } = useServerAction(deleteFaqAdminAction, {
@@ -127,7 +121,7 @@ export function AdminFaqsTable({ faqs, isLoading = false }: Props) {
               {row.original.question}
             </p>
             <p className="line-clamp-2 text-sm text-muted-foreground">
-              {answerExcerpt(row.original.answer)}
+              {row.original.answer}
             </p>
           </div>
         ),
@@ -197,7 +191,9 @@ export function AdminFaqsTable({ faqs, isLoading = false }: Props) {
                   align="start"
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
-                  <span className="block font-medium">Última actualización</span>
+                  <span className="block font-medium">
+                    Última actualización
+                  </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
                   </span>

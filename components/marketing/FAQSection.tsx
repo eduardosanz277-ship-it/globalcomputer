@@ -30,7 +30,7 @@ export function FAQSection({ items }: Props) {
   }
 
   return (
-    <section className="border-t border-border/60 bg-gradient-to-b from-background via-muted/25 to-background py-20 sm:py-24">
+    <section className="border-t border-border/60 bg-muted/70 py-20 sm:py-24">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5 shadow-soft backdrop-blur-sm sm:p-8 lg:p-10">
           <HomeSectionHeading
