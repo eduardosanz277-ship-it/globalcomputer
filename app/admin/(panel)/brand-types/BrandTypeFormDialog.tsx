@@ -21,6 +21,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { slugify } from "@/lib/slugify";
 
 const BRAND_TYPE_FORM_ID = "brand-type-form-slide-over";
 
@@ -95,16 +96,20 @@ export function BrandTypeFormDialog({
   }, [open, brandType, form]);
 
   const onSubmit = (values: BrandTypeFormValues) => {
+    const slug = slugify(values.name);
+
     if (brandType) {
       executeUpdate(brandType.id, {
         brandId: values.brandId,
         name: values.name,
+        slug,
         active: values.active,
       });
     } else {
       executeCreate({
         brandId: values.brandId,
         name: values.name,
+        slug,
         active: values.active,
       });
     }

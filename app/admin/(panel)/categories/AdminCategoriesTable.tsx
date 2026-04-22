@@ -22,12 +22,7 @@ import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { FilterX, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import Select from "react-select";
 import { softDeleteCategoryAdminAction } from "./actions";
 import { CategoryFormDialog } from "./CategoryFormDialog";
@@ -54,7 +49,7 @@ function RowActions({
   const router = useRouter();
   const { t, locale } = useI18n();
   const localizedRowName =
-    locale === "en" ? row.nameEn ?? row.name : row.name;
+    locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
     softDeleteCategoryAdminAction,
     {
@@ -89,10 +84,7 @@ function RowActions({
   );
 }
 
-export function AdminCategoriesTable({
-  categories,
-  isLoading = false,
-}: Props) {
+export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
   const { t, locale } = useI18n();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,9 +92,18 @@ export function AdminCategoriesTable({
 
   const statusFilterOptions = useMemo(
     () => [
-      { value: "all" as const, label: t("admin.categories.filters.status.all") },
-      { value: "active" as const, label: t("admin.categories.filters.status.active") },
-      { value: "inactive" as const, label: t("admin.categories.filters.status.inactive") },
+      {
+        value: "all" as const,
+        label: t("admin.categories.filters.status.all"),
+      },
+      {
+        value: "active" as const,
+        label: t("admin.categories.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.categories.filters.status.inactive"),
+      },
     ],
     [t],
   );
@@ -129,13 +130,17 @@ export function AdminCategoriesTable({
       {
         id: "name",
         accessorFn: (row) =>
-          locale === "en" ? row.nameEn ?? row.name : row.name,
+          locale === "en" ? (row.nameEn ?? row.name) : row.name,
         enableSorting: true,
         sortingFn: (rowA, rowB) => {
           const a =
-            locale === "en" ? rowA.original.nameEn ?? rowA.original.name : rowA.original.name;
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
           const b =
-            locale === "en" ? rowB.original.nameEn ?? rowB.original.name : rowB.original.name;
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
           return a.localeCompare(b, locale === "en" ? "en" : "es", {
             sensitivity: "base",
           });
@@ -155,7 +160,9 @@ export function AdminCategoriesTable({
         },
         cell: ({ row }) => {
           const name =
-            locale === "en" ? row.original.nameEn ?? row.original.name : row.original.name;
+            locale === "en"
+              ? (row.original.nameEn ?? row.original.name)
+              : row.original.name;
           const trimmed = name.trim();
           return (
             <div className="min-w-0">
@@ -266,8 +273,7 @@ export function AdminCategoriesTable({
   const renderMobileRow = useCallback(
     (row: Row<CategoryAdmin>) => {
       const r = row.original;
-      const localizedName =
-        locale === "en" ? r.nameEn ?? r.name : r.name;
+      const localizedName = locale === "en" ? (r.nameEn ?? r.name) : r.name;
       return (
         <li key={row.id}>
           <CategoryProfileCard

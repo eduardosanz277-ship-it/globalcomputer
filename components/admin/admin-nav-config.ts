@@ -31,6 +31,7 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/home", label: "Home", icon: House },
+  { href: "/admin/products", label: "Productos", icon: Package },
   {
     href: "/admin/categories",
     label: "Categorías",
@@ -54,13 +55,20 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     href: "/admin/specific-characteristics",
-    label: "Características específicas",
+    label: "Características especificas",
     icon: ListTodo,
   },
+  { href: "/admin/orders", label: "Pedidos", icon: ListChecks },
   {
-    href: "/admin/services",
-    label: "Servicios",
-    icon: BriefcaseBusiness,
+    href: "/admin/suscripciones-empresas",
+    label: "Suscripciones",
+    icon: BadgeCheck,
+  },
+  { href: "/admin/users", label: "Usuarios", icon: Users },
+  {
+    href: "/admin/contacts",
+    label: "Mensajes de contacto",
+    icon: MessageSquare,
   },
   {
     href: "/admin/faqs",
@@ -68,17 +76,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: CircleHelp,
   },
   {
-    href: "/admin/contacts",
-    label: "Mensajes de contacto",
-    icon: MessageSquare,
-  },
-  { href: "/admin/products", label: "Productos", icon: Package },
-  { href: "/admin/orders", label: "Pedidos", icon: ListChecks },
-  { href: "/admin/users", label: "Usuarios", icon: Users },
-  {
-    href: "/admin/suscripciones-empresas",
-    label: "Suscripciones de Empresas",
-    icon: BadgeCheck,
+    href: "/admin/services",
+    label: "Servicios",
+    icon: BriefcaseBusiness,
   },
   { href: "/admin/settings", label: "Configuración", icon: Settings },
 ];

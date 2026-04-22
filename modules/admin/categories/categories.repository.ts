@@ -54,21 +54,34 @@ function deletedAtFromActive(active: boolean): string | null {
 export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
   const supabase = createSupabaseAdminClient();
   const includeNameEn = await ensureNameEnColumnExists();
-  const selectFields = includeNameEn
-    ? "id, name, name_en, slug"
-    : "id, name, slug";
+  if (includeNameEn) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id,name,name_en,slug")
+      .is("deleted_at", null)
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      nameEn: row.name_en ?? null,
+      slug: row.slug,
+    }));
+  }
+
   const { data, error } = await supabase
     .from("categories")
-    .select(selectFields)
+    .select("id,name,slug")
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
   if (error) throw error;
   return (data ?? []).map((row) => ({
-    id: row.id as string,
-    name: row.name as string,
-    nameEn: includeNameEn ? (row as CategoryRow).name_en ?? null : null,
-    slug: (row as CategoryRow).slug,
+    id: row.id,
+    name: row.name,
+    nameEn: null,
+    slug: row.slug,
   }));
 }
 
@@ -76,16 +89,25 @@ export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
 export async function repoListAllCategoriesAdmin(): Promise<CategoryAdmin[]> {
   const supabase = createSupabaseAdminClient();
   const includeNameEn = await ensureNameEnColumnExists();
-  const selectFields = includeNameEn
-    ? "id, name, name_en, slug, deleted_at, created_at, updated_at"
-    : "id, name, slug, deleted_at, created_at, updated_at";
+  if (includeNameEn) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id,name,name_en,slug,deleted_at,created_at,updated_at")
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map((row) => mapCategoryAdminRow(row as CategoryRow));
+  }
+
   const { data, error } = await supabase
     .from("categories")
-    .select(selectFields)
+    .select("id,name,slug,deleted_at,created_at,updated_at")
     .order("name", { ascending: true });
 
   if (error) throw error;
-  return (data as CategoryRow[]).map(mapCategoryAdminRow);
+  return (data ?? []).map((row) =>
+    mapCategoryAdminRow({ ...(row as CategoryRow), name_en: null }),
+  );
 }
 
 export async function repoCreateCategoryAdmin(
@@ -101,17 +123,25 @@ export async function repoCreateCategoryAdmin(
   if (includeNameEn) {
     insertPayload.name_en = payload.nameEn;
   }
-  const selectFields = includeNameEn
-    ? "id, name, name_en, deleted_at, created_at, updated_at"
-    : "id, name, deleted_at, created_at, updated_at";
+  if (includeNameEn) {
+    const { data, error } = await supabase
+      .from("categories")
+      .insert(insertPayload)
+      .select("id,name,name_en,slug,deleted_at,created_at,updated_at")
+      .single();
+
+    if (error) throw error;
+    return mapCategoryAdminRow(data as CategoryRow);
+  }
+
   const { data, error } = await supabase
     .from("categories")
     .insert(insertPayload)
-    .select(selectFields)
+    .select("id,name,slug,deleted_at,created_at,updated_at")
     .single();
 
   if (error) throw error;
-  return mapCategoryAdminRow(data as CategoryRow);
+  return mapCategoryAdminRow({ ...(data as CategoryRow), name_en: null });
 }
 
 export async function repoUpdateCategoryAdmin(

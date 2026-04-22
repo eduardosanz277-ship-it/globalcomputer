@@ -24,6 +24,7 @@ import {
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { slugify } from "@/lib/slugify";
 
 const FORM_ID = "admin-category-form-slide-over";
 
@@ -81,10 +82,12 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
   }, [open, category, form]);
 
   const onSubmit = (values: CategoryFormValues) => {
+    const slug = slugify(values.name);
+
     if (category) {
-      executeUpdate(category.id, values);
+      executeUpdate(category.id, { ...values, slug });
     } else {
-      executeCreate(values);
+      executeCreate({ ...values, slug });
     }
   };
 

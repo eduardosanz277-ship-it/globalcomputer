@@ -24,6 +24,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { slugify } from "@/lib/slugify";
 
 const FORM_ID = "admin-subcategory-form-slide-over";
 
@@ -105,10 +106,12 @@ export function SubcategoryFormDialog({
   }, [open, subcategory, form]);
 
   const onSubmit = (values: SubcategoryFormValues) => {
+    const slug = slugify(values.name);
+
     if (subcategory) {
-      executeUpdate(subcategory.id, values);
+      executeUpdate(subcategory.id, { ...values, slug });
     } else {
-      executeCreate(values);
+      executeCreate({ ...values, slug });
     }
   };
 

@@ -143,10 +143,12 @@ export function AdminSubcategoriesTable({
     STATUS_FILTER_OPTIONS[0];
 
   const categoryFilterValue =
-    categoryOptions.find((o) => o.value === categoryFilter) ?? categoryOptions[0];
+    categoryOptions.find((o) => o.value === categoryFilter) ??
+    categoryOptions[0];
 
   const draftCategoryFilterValue =
-    categoryOptions.find((o) => o.value === draftCategory) ?? categoryOptions[0];
+    categoryOptions.find((o) => o.value === draftCategory) ??
+    categoryOptions[0];
 
   const draftStatusFilterValue =
     STATUS_FILTER_OPTIONS.find((o) => o.value === draftStatus) ??

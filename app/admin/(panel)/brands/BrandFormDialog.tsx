@@ -20,6 +20,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { slugify } from "@/lib/slugify";
 
 const BRAND_FORM_ID = "brand-form-slide-over";
 
@@ -73,10 +74,12 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   }, [open, brand, form]);
 
   const onSubmit = (values: BrandFormValues) => {
+    const slug = slugify(values.name);
+
     if (brand) {
-      executeUpdate(brand.id, values);
+      executeUpdate(brand.id, { ...values, slug });
     } else {
-      executeCreate(values);
+      executeCreate({ ...values, slug });
     }
   };
 
