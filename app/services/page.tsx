@@ -1,8 +1,12 @@
 import { Inter } from "next/font/google";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { getNavigationData } from "@/modules/navigation/navigation.service";
-import Link from "next/link";
+import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
+import {
+  resolvePrimaryServiceImage,
+  type ServiceRow,
+} from "@/components/marketing/service-card-shared";
+import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,8 +15,15 @@ const inter = Inter({
 });
 
 export default async function ServicesPage() {
-  const nav = await getNavigationData();
-  const services = nav?.services ?? [];
+  const supabase = await getCatalogSupabase();
+  const { data } = await supabase
+    .from("services")
+    .select(
+      "id, name, slug, description, service_images(id, url, is_primary, sort_order)",
+    )
+    .order("name", { ascending: true });
+
+  const rows = (data ?? []) as ServiceRow[];
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -36,28 +47,14 @@ export default async function ServicesPage() {
       </div>
       <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((s) => (
-            <article
+          {rows.map((s) => (
+            <ServiceCardLink
               key={s.id}
-              className="rounded-2xl border border-border/50 bg-card p-6 shadow-sm"
-            >
-              <h3 className="font-display text-lg font-semibold text-foreground">
-                {s.name}
-              </h3>
-              {s.description ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {s.description}
-                </p>
-              ) : null}
-              <div className="mt-4">
-                <Link
-                href={`/services/${s.slug ?? s.id}`}
-                  className="inline-flex items-center rounded-xl bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground"
-                >
-                  Ver servicio
-                </Link>
-              </div>
-            </article>
+              name={s.name}
+              description={s.description}
+              imageUrl={resolvePrimaryServiceImage(s.service_images)}
+              href={`/services/${s.slug ?? s.id}`}
+            />
           ))}
         </div>
       </div>
