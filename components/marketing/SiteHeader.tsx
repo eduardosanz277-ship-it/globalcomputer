@@ -17,6 +17,8 @@ import type {
   NavigationBrandType,
   NavigationCatalogCategory,
   NavigationCatalogSubcategory,
+  NavigationCharacteristicGeneral,
+  NavigationCharacteristicSpecific,
   NavigationData,
   NavigationService,
 } from "@/modules/navigation/navigation.types";
@@ -64,15 +66,26 @@ function NavMegaMenuLoading() {
   );
 }
 
-function LanguageSelector({ className }: { className?: string }) {
+function LanguageSelector({
+  className,
+  buttonClassName,
+}: {
+  className?: string;
+  buttonClassName?: string;
+}) {
   const { locale, setLocale, supportedLocales, t } = useI18n();
   const nextLocale =
-    supportedLocales[(supportedLocales.indexOf(locale) + 1) % supportedLocales.length];
+    supportedLocales[
+      (supportedLocales.indexOf(locale) + 1) % supportedLocales.length
+    ];
   return (
     <div className={cn("flex items-center", className)}>
       <button
         type="button"
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-transparent text-[10px] font-bold uppercase tracking-[0.2em] leading-none text-black transition hover:border-black hover:text-foreground p-0 pt-1"
+        className={cn(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-transparent p-0 text-center text-[10px] font-bold uppercase leading-[1] text-black transition hover:border-black hover:text-foreground",
+          buttonClassName,
+        )}
         onClick={() => setLocale(nextLocale)}
       >
         {locale.toUpperCase()}
@@ -103,8 +116,7 @@ const catalogBrandUrl = (brand: NavigationBrand) =>
 const catalogBrandTypeUrl = (
   brand: NavigationBrand,
   type: NavigationBrandType,
-) =>
-  `${catalogBrandUrl(brand)}/${ensureSlug(type.name, type.slug)}`;
+) => `${catalogBrandUrl(brand)}/${ensureSlug(type.name, type.slug)}`;
 
 const catalogGeneralUrl = (general: NavigationCharacteristicGeneral) =>
   `/security-system/${ensureSlug(general.name, general.slug)}`;
@@ -376,7 +388,7 @@ export function SiteHeader({ user }: Props) {
   const prevPathnameForNavRef = useRef<string | null>(null);
   const { t, locale } = useI18n();
   const localizeName = (value: { name: string; nameEn?: string | null }) =>
-    locale === "en" ? value.nameEn ?? value.name : value.name;
+    locale === "en" ? (value.nameEn ?? value.name) : value.name;
   useLayoutEffect(() => {
     setMobileNavOpen(false);
     setAccountOpen(false);
@@ -478,10 +490,6 @@ export function SiteHeader({ user }: Props) {
                   className="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
                 />
               </label>
-              <div className="row-start-1 col-start-4 flex items-center gap-1 sm:hidden">
-                <LanguageSelector className="gap-1" />
-              </div>
-
               <div
                 ref={accountRefMobile}
                 className="relative row-start-1 col-start-3 justify-self-end sm:col-start-4"
@@ -705,7 +713,10 @@ export function SiteHeader({ user }: Props) {
               </div>
 
               <div className="flex min-w-0 justify-self-end gap-0.5 sm:gap-2">
-                <LanguageSelector className="hidden gap-1 sm:flex" />
+                <LanguageSelector
+                  className="hidden gap-1 sm:flex"
+                  buttonClassName="bg-muted/80"
+                />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -966,7 +977,7 @@ export function SiteHeader({ user }: Props) {
             "hidden border-t border-primary/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:grid lg:grid-rows-[1fr] lg:overflow-visible",
             /* Solo `pointer-events-none` en el padre no corta :hover en hijos; hay que anular hits en todo el subárbol (y ! para vencer group-hover:*:pointer-events-auto del mega). */
             suppressDesktopNavHover &&
-            "pointer-events-none [&_*]:!pointer-events-none",
+              "pointer-events-none [&_*]:!pointer-events-none",
           )}
         >
           <div className="min-h-0 overflow-visible lg:min-h-0">
@@ -997,88 +1008,91 @@ export function SiteHeader({ user }: Props) {
                 </span>
                 {(navLoading ||
                   (navData?.catalogCategories?.length ?? 0) > 0) && (
-                    <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
-                      <div className={navMegaMenuBridgeClass} aria-hidden />
-                      <div
-                        className={cn(
-                          megaPanelClass,
-                          "flex items-stretch font-roboto",
-                          categoryPanelHasSubs
-                            ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                            : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                        )}
-                        onMouseLeave={() => setHoveredCategoryId(null)}
-                      >
-                        {navLoading ? (
-                          <NavMegaMenuLoading />
-                        ) : (
-                          <>
-                            <div
-                              className={cn(
-                                "shrink-0 overflow-y-auto py-2",
-                                categoryPanelHasSubs
-                                  ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                  : "w-full max-h-[70vh]",
-                              )}
-                            >
-                              {navData!.catalogCategories.map((cat) => {
-                                const rowActive = hoveredCategoryId === cat.id;
-                                const hasSubs = cat.subcategories.length > 0;
-                                return (
-                                  <Link
-                                    key={cat.id}
-                                    href={catalogCategoryUrl(cat)}
-                                    onMouseEnter={() =>
-                                      setHoveredCategoryId(cat.id)
-                                    }
-                                    onClick={armDesktopNavStripSuppress}
-                                    className={cn(
-                                      navMegaRowClass,
-                                      "justify-between",
-                                      "hover:bg-white/10",
-                                      rowActive && "bg-white/10",
-                                    )}
-                                  >
-                                    <span className="truncate">
-                                      {localizeName(cat)}
-                                    </span>
-                                    {hasSubs ? (
-                                      <ChevronRight
-                                        className="h-4 w-4 shrink-0 text-white"
-                                        aria-hidden
-                                      />
-                                    ) : null}
-                                  </Link>
-                                );
-                              })}
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
+                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                    <div
+                      className={cn(
+                        megaPanelClass,
+                        "flex items-stretch font-roboto",
+                        categoryPanelHasSubs
+                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
+                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
+                      )}
+                      onMouseLeave={() => setHoveredCategoryId(null)}
+                    >
+                      {navLoading ? (
+                        <NavMegaMenuLoading />
+                      ) : (
+                        <>
+                          <div
+                            className={cn(
+                              "shrink-0 overflow-y-auto py-2",
+                              categoryPanelHasSubs
+                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                                : "w-full max-h-[70vh]",
+                            )}
+                          >
+                            {navData!.catalogCategories.map((cat) => {
+                              const rowActive = hoveredCategoryId === cat.id;
+                              const hasSubs = cat.subcategories.length > 0;
+                              return (
+                                <Link
+                                  key={cat.id}
+                                  href={catalogCategoryUrl(cat)}
+                                  onMouseEnter={() =>
+                                    setHoveredCategoryId(cat.id)
+                                  }
+                                  onClick={armDesktopNavStripSuppress}
+                                  className={cn(
+                                    navMegaRowClass,
+                                    "justify-between",
+                                    "hover:bg-white/10",
+                                    rowActive && "bg-white/10",
+                                  )}
+                                >
+                                  <span className="truncate">
+                                    {localizeName(cat)}
+                                  </span>
+                                  {hasSubs ? (
+                                    <ChevronRight
+                                      className="h-4 w-4 shrink-0 text-white"
+                                      aria-hidden
+                                    />
+                                  ) : null}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                          {categoryPanelHasSubs && activeCategory ? (
+                            <div className="min-w-0 flex-1 py-2">
+                              <ul className="py-1">
+                                {activeCategory.subcategories.map((sub) => (
+                                  <li key={sub.id}>
+                                    <Link
+                                      href={catalogSubcategoryUrl(
+                                        activeCategory,
+                                        sub,
+                                      )}
+                                      onClick={armDesktopNavStripSuppress}
+                                      className={cn(
+                                        navMegaRowClass,
+                                        "hover:bg-white/10",
+                                      )}
+                                    >
+                                      <span className="truncate">
+                                        {localizeName(sub)}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            {categoryPanelHasSubs && activeCategory ? (
-                              <div className="min-w-0 flex-1 py-2">
-                                <ul className="py-1">
-                                  {activeCategory.subcategories.map((sub) => (
-                                    <li key={sub.id}>
-                                      <Link
-                                        href={catalogSubcategoryUrl(activeCategory, sub)}
-                                        onClick={armDesktopNavStripSuppress}
-                                        className={cn(
-                                          navMegaRowClass,
-                                          "hover:bg-white/10",
-                                        )}
-                                      >
-                                        <span className="truncate">
-                                          {localizeName(sub)}
-                                        </span>
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </>
-                        )}
-                      </div>
+                          ) : null}
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
 
               <div className="group/nav relative">
@@ -1093,86 +1107,89 @@ export function SiteHeader({ user }: Props) {
                 </span>
                 {(navLoading ||
                   (navData?.characteristicsGeneral?.length ?? 0) > 0) && (
-                    <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
-                      <div className={navMegaMenuBridgeClass} aria-hidden />
-                      <div
-                        className={cn(
-                          megaPanelClass,
-                          "flex items-stretch font-roboto",
-                          generalPanelHasSubs
-                            ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                            : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                        )}
-                        onMouseLeave={() => setHoveredGeneralId(null)}
-                      >
-                        {navLoading ? (
-                          <NavMegaMenuLoading />
-                        ) : (
-                          <>
-                            <div
-                              className={cn(
-                                "shrink-0 overflow-y-auto py-2",
-                                generalPanelHasSubs
-                                  ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                  : "w-full max-h-[70vh]",
-                              )}
-                            >
-                              {navData!.characteristicsGeneral.map((general) => {
-                                const rowActive = hoveredGeneralId === general.id;
-                                const hasSubs = general.specifics.length > 0;
-                                return (
-                                  <div
-                                    key={general.id}
-                                    role="presentation"
-                                    onMouseEnter={() =>
-                                      setHoveredGeneralId(general.id)
-                                    }
-                                    className={cn(
-                                      navMegaRowClass,
-                                      "cursor-default justify-between select-none",
-                                      "hover:bg-white/10",
-                                      rowActive && "bg-white/10",
-                                    )}
-                                  >
-                                    <span className="truncate">
-                                      Ver por {localizeName(general)}
-                                    </span>
-                                    {hasSubs ? (
-                                      <ChevronRight
-                                        className="h-4 w-4 shrink-0 text-white"
-                                        aria-hidden
-                                      />
-                                    ) : null}
-                                  </div>
-                                );
-                              })}
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
+                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                    <div
+                      className={cn(
+                        megaPanelClass,
+                        "flex items-stretch font-roboto",
+                        generalPanelHasSubs
+                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
+                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
+                      )}
+                      onMouseLeave={() => setHoveredGeneralId(null)}
+                    >
+                      {navLoading ? (
+                        <NavMegaMenuLoading />
+                      ) : (
+                        <>
+                          <div
+                            className={cn(
+                              "shrink-0 overflow-y-auto py-2",
+                              generalPanelHasSubs
+                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
+                                : "w-full max-h-[70vh]",
+                            )}
+                          >
+                            {navData!.characteristicsGeneral.map((general) => {
+                              const rowActive = hoveredGeneralId === general.id;
+                              const hasSubs = general.specifics.length > 0;
+                              return (
+                                <div
+                                  key={general.id}
+                                  role="presentation"
+                                  onMouseEnter={() =>
+                                    setHoveredGeneralId(general.id)
+                                  }
+                                  className={cn(
+                                    navMegaRowClass,
+                                    "cursor-default justify-between select-none",
+                                    "hover:bg-white/10",
+                                    rowActive && "bg-white/10",
+                                  )}
+                                >
+                                  <span className="truncate">
+                                    Ver por {localizeName(general)}
+                                  </span>
+                                  {hasSubs ? (
+                                    <ChevronRight
+                                      className="h-4 w-4 shrink-0 text-white"
+                                      aria-hidden
+                                    />
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {generalPanelHasSubs && activeGeneral ? (
+                            <div className="min-w-0 flex-1 py-2">
+                              <ul className="py-1">
+                                {activeGeneral.specifics.map((specific) => (
+                                  <li key={specific.id}>
+                                    <Link
+                                      href={catalogSpecificUrl(
+                                        activeGeneral,
+                                        specific,
+                                      )}
+                                      className={cn(
+                                        navMegaRowClass,
+                                        "hover:bg-white/10",
+                                      )}
+                                    >
+                                      <span className="truncate">
+                                        {localizeName(specific)}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            {generalPanelHasSubs && activeGeneral ? (
-                              <div className="min-w-0 flex-1 py-2">
-                                <ul className="py-1">
-                                  {activeGeneral.specifics.map((specific) => (
-                                    <li key={specific.id}>
-                                          <Link
-                                            href={catalogSpecificUrl(activeGeneral, specific)}
-                                        className={cn(
-                                          navMegaRowClass,
-                                          "hover:bg-white/10",
-                                        )}
-                                      >
-                                        <span className="truncate">
-                                          {localizeName(specific)}
-                                        </span>
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </>
-                        )}
-                      </div>
+                          ) : null}
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
 
               <div className="group/shop relative">
@@ -1246,7 +1263,10 @@ export function SiteHeader({ user }: Props) {
                                 {activeBrand.brandTypes.map((type) => (
                                   <li key={type.id}>
                                     <Link
-                                      href={catalogBrandTypeUrl(activeBrand, type)}
+                                      href={catalogBrandTypeUrl(
+                                        activeBrand,
+                                        type,
+                                      )}
                                       className={cn(
                                         navMegaRowClass,
                                         "hover:bg-white/10",
@@ -1369,14 +1389,20 @@ export function SiteHeader({ user }: Props) {
                 <span className="font-roboto text-[15px] font-medium uppercase tracking-[1px]">
                   {t("header.menuTitle")}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="rounded-lg p-2 transition hover:bg-muted"
-                  aria-label="Cerrar menú principal"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <LanguageSelector
+                    className="rounded-full bg-muted/80 p-0 shadow-sm"
+                    buttonClassName="h-8 w-8 text-[11px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-lg p-2 transition hover:bg-muted"
+                    aria-label="Cerrar menú principal"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               <nav
                 className="flex h-[calc(100dvh-57px)] flex-col overflow-hidden overscroll-contain bg-[#e4e7ec]"
@@ -1740,9 +1766,12 @@ export function SiteHeader({ user }: Props) {
                                         </summary>
                                         <div className="grid gap-0.5 pl-4 pt-0.5">
                                           {general.specifics.map((specific) => (
-                                          <Link
-                                            key={specific.id}
-                                            href={catalogSpecificUrl(general, specific)}
+                                            <Link
+                                              key={specific.id}
+                                              href={catalogSpecificUrl(
+                                                general,
+                                                specific,
+                                              )}
                                               onClick={() =>
                                                 setMobileNavOpen(false)
                                               }
@@ -1831,7 +1860,10 @@ export function SiteHeader({ user }: Props) {
                                         {brand.brandTypes.map((type) => (
                                           <Link
                                             key={type.id}
-                                            href={catalogBrandTypeUrl(brand, type)}
+                                            href={catalogBrandTypeUrl(
+                                              brand,
+                                              type,
+                                            )}
                                             onClick={() =>
                                               setMobileNavOpen(false)
                                             }
@@ -1922,9 +1954,12 @@ export function SiteHeader({ user }: Props) {
                                         </summary>
                                         <div className="grid gap-0.5 pl-4 pt-0.5">
                                           {cat.subcategories.map((sub) => (
-                                          <Link
-                                            key={sub.id}
-                                            href={catalogSubcategoryUrl(cat, sub)}
+                                            <Link
+                                              key={sub.id}
+                                              href={catalogSubcategoryUrl(
+                                                cat,
+                                                sub,
+                                              )}
                                               onClick={() =>
                                                 setMobileNavOpen(false)
                                               }
@@ -1942,9 +1977,7 @@ export function SiteHeader({ user }: Props) {
                                       <Link
                                         key={cat.id}
                                         href={catalogCategoryUrl(cat)}
-                                        onClick={() =>
-                                          setMobileNavOpen(false)
-                                        }
+                                        onClick={() => setMobileNavOpen(false)}
                                         className={cn(
                                           "rounded-lg px-3 py-2 transition hover:bg-muted",
                                           mobileNavCatalogHeadingClass,
@@ -1953,7 +1986,8 @@ export function SiteHeader({ user }: Props) {
                                         {localizeName(cat)}
                                       </Link>
                                     );
-                                  })
+                                  },
+                                )
                               )}
                             </div>
                           </>
@@ -1993,9 +2027,9 @@ export function SiteHeader({ user }: Props) {
                                 </div>
                               ) : (
                                 (navData?.services ?? []).map((service) => (
-                                    <Link
-                                      key={service.id}
-                                      href={catalogServiceUrl(service)}
+                                  <Link
+                                    key={service.id}
+                                    href={catalogServiceUrl(service)}
                                     onClick={() => setMobileNavOpen(false)}
                                     className={cn(
                                       "rounded-lg px-3 py-2 transition hover:bg-muted",
