@@ -2,14 +2,38 @@
 -- FAQ: rename legacy Spanish columns and add English content
 -- =============================================
 
-ALTER TABLE public.faqs
-  RENAME COLUMN IF EXISTS pregunta TO question;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'faqs'
+      AND column_name = 'pregunta'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.faqs RENAME COLUMN pregunta TO question';
+  END IF;
 
-ALTER TABLE public.faqs
-  RENAME COLUMN IF EXISTS respuesta TO answer;
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'faqs'
+      AND column_name = 'respuesta'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.faqs RENAME COLUMN respuesta TO answer';
+  END IF;
 
-ALTER TABLE public.faqs
-  RENAME COLUMN IF EXISTS activo TO active;
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'faqs'
+      AND column_name = 'activo'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.faqs RENAME COLUMN activo TO active';
+  END IF;
+END $$;
 
 ALTER TABLE public.faqs
   ADD COLUMN IF NOT EXISTS question_en text,
