@@ -47,6 +47,11 @@ type FilterOption = { value: string; label: string };
 /** Ancho del select «Todas las características» en barra escritorio (xl+): texto de referencia + margen (`ch`). */
 const GENERAL_FILTER_TOOLBAR_WIDE_CH = "Todas las características".length + 7;
 const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
+const NAME_COLUMN_CLASS =
+  "min-w-[18rem] max-w-[min(30rem,44vw)] md:max-w-[min(24rem,36vw)]";
+const STATUS_COLUMN_CLASS = "w-[8.75rem] min-w-[8.75rem] max-w-[8.75rem]";
+const UPDATED_AT_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 
 interface Props {
   generalCharacteristics: GeneralCharacteristic[];
@@ -257,8 +262,7 @@ export function AdminSpecificCharacteristicsTable({
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+          cellClassName: NAME_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const r = row.original;
@@ -299,6 +303,9 @@ export function AdminSpecificCharacteristicsTable({
             ariaLabelDesc={t("admin.specificCharacteristics.table.statusSortDesc")}
           />
         ),
+        meta: {
+          cellClassName: STATUS_COLUMN_CLASS,
+        },
         cell: ({ row }) => (
           <span
             className={cn(
@@ -333,20 +340,25 @@ export function AdminSpecificCharacteristicsTable({
             )}
           />
         ),
+        meta: {
+          cellClassName: UPDATED_AT_COLUMN_CLASS,
+        },
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
           const relative = formatRelativeLastAccess(raw, locale);
           const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">{absolute}</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
+                {absolute}
+              </span>
             );
           }
           return (
             <TooltipProvider delayDuration={120}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-sm text-muted-foreground">
+                  <span className="cursor-help text-sm text-muted-foreground whitespace-nowrap tabular-nums">
                     {relative}
                   </span>
                 </TooltipTrigger>
@@ -369,7 +381,7 @@ export function AdminSpecificCharacteristicsTable({
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
         header: () => (
           <span className="sr-only">{t("admin.specificCharacteristics.table.actions")}</span>
         ),
@@ -678,6 +690,7 @@ export function AdminSpecificCharacteristicsTable({
         hideToolbar
         externalGlobalFilter={globalFilter}
         onExternalGlobalFilterChange={setGlobalFilter}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"

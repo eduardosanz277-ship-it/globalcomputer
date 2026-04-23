@@ -6,6 +6,7 @@ import { SlideOver } from "@/components/ui/slide-over";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import type { ContactMessageAdmin } from "@/modules/admin/contact-messages/contact-messages.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   message: ContactMessageAdmin | null;
@@ -37,15 +38,16 @@ function DetailItem({
 }
 
 export function ContactMessageDetailDrawer({ message, onClose }: Props) {
+  const { t, locale } = useI18n();
   const open = Boolean(message);
 
   return (
     <SlideOver
       open={open}
       onClose={onClose}
-      title="Detalle del mensaje"
-      description="Información enviada desde el formulario de contacto."
-      contentAriaLabel="Detalle del mensaje de contacto"
+      title={t("admin.contacts.drawer.title")}
+      description={t("admin.contacts.drawer.description")}
+      contentAriaLabel={t("admin.contacts.drawer.ariaLabel")}
     >
       {message ? (
         <div className="space-y-4">
@@ -62,7 +64,7 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
             </article>
 
             <DetailItem
-              label="Contacto"
+              label={t("admin.contacts.drawer.contact")}
               labelClassName="inline-flex items-center gap-2 text-sm font-medium text-foreground"
               value={
                 <div className="space-y-2">
@@ -88,12 +90,12 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
             />
 
             <DetailItem
-              label="Metadatos"
+              label={t("admin.contacts.drawer.metadata")}
               labelClassName="inline-flex items-center gap-2 text-sm font-medium text-foreground"
               value={
                 <p className="inline-flex items-center gap-2 text-muted-foreground">
                   <Clock3 className="h-4 w-4" aria-hidden />
-                  {formatDateDdMmYyyyHhMm(message.createdAt)}
+                  {formatDateDdMmYyyyHhMm(message.createdAt, locale).replace(", ", " ")}
                 </p>
               }
             />

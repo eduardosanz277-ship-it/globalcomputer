@@ -7,9 +7,11 @@ import type {
 
 type FaqRow = {
   id: string;
-  pregunta: string;
-  respuesta: string;
-  activo: boolean;
+  question: string;
+  question_en: string;
+  answer: string;
+  answer_en: string;
+  active: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -17,9 +19,11 @@ type FaqRow = {
 function mapRow(row: FaqRow): FaqAdmin {
   return {
     id: row.id,
-    question: row.pregunta,
-    answer: row.respuesta,
-    active: row.activo,
+    question: row.question,
+    questionEn: row.question_en,
+    answer: row.answer,
+    answerEn: row.answer_en,
+    active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -29,7 +33,9 @@ export async function repoListAllFaqsAdmin(): Promise<FaqAdmin[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("faqs")
-    .select("id, pregunta, respuesta, activo, created_at, updated_at")
+    .select(
+      "id, question, question_en, answer, answer_en, active, created_at, updated_at",
+    )
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
@@ -43,11 +49,15 @@ export async function repoCreateFaqAdmin(
   const { data, error } = await supabase
     .from("faqs")
     .insert({
-      pregunta: payload.question,
-      respuesta: payload.answer,
-      activo: payload.active,
+      question: payload.question,
+      question_en: payload.questionEn,
+      answer: payload.answer,
+      answer_en: payload.answerEn,
+      active: payload.active,
     })
-    .select("id, pregunta, respuesta, activo, created_at, updated_at")
+    .select(
+      "id, question, question_en, answer, answer_en, active, created_at, updated_at",
+    )
     .single();
 
   if (error) throw error;
@@ -62,9 +72,11 @@ export async function repoUpdateFaqAdmin(
   const { error } = await supabase
     .from("faqs")
     .update({
-      pregunta: payload.question,
-      respuesta: payload.answer,
-      activo: payload.active,
+      question: payload.question,
+      question_en: payload.questionEn,
+      answer: payload.answer,
+      answer_en: payload.answerEn,
+      active: payload.active,
     })
     .eq("id", id);
 

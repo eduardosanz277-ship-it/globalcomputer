@@ -5,6 +5,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminFaqsTable } from "./AdminFaqsTable";
+import { FaqsPageHeader } from "./FaqsPageHeader";
 
 async function AdminFaqsTableSection() {
   const items = await getAllFaqsAdminService();
@@ -20,15 +21,7 @@ export default async function AdminFaqsPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Preguntas frecuentes
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Crea y administra las preguntas frecuentes mostradas en el home. Al
-            desactivarlas, dejan de mostrarse sin perder el contenido.
-          </p>
-        </header>
+        <FaqsPageHeader />
 
         <hr className="border-border" />
 

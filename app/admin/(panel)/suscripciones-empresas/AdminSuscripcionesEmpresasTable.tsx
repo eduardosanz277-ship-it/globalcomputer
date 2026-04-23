@@ -125,6 +125,13 @@ function createdAtTimestampMs(row: AdminBusinessProfileRow): number | null {
   return Number.isNaN(t) ? null : t;
 }
 
+function formatCreatedAtForTable(
+  value: string | null | undefined,
+  locale: "es" | "en",
+): string {
+  return formatDateDdMmYyyyHhMm(value, locale).replace(", ", " ");
+}
+
 function approvalStatusSortValue(
   s: BusinessRegistrationStatus | null | undefined,
 ): number {
@@ -750,7 +757,7 @@ export function AdminSuscripcionesEmpresasTable({
         },
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
-            {formatDateDdMmYyyyHhMm(row.original.createdAt, locale)}
+            {formatCreatedAtForTable(row.original.createdAt, locale)}
           </span>
         ),
       },

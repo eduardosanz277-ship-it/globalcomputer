@@ -88,7 +88,9 @@ function formatOrderDate(raw: string | null | undefined, locale: "es" | "en") {
   if (!raw) return <AdminTableEmptyEmDash />;
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return <AdminTableEmptyEmDash />;
-  return parsed.toLocaleString(locale === "en" ? "en-US" : "es-ES");
+  return parsed
+    .toLocaleString(locale === "en" ? "en-US" : "es-ES")
+    .replace(", ", " ");
 }
 
 function createdAtSortMs(row: AdminStoreOrderRow): number {
@@ -505,7 +507,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           cellClassName: CREATED_AT_COLUMN_CLASS,
         },
         cell: ({ row }) => (
-          <span className="whitespace-nowrap tabular-nums">
+          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
             {formatOrderDate(row.original.created_at, locale)}
           </span>
         ),

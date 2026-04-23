@@ -156,15 +156,8 @@ function UserDetailContent({
     : "—";
 
   return (
-    <div className={cn("space-y-6", subscriptionContext && "space-y-4 md:space-y-5")}>
-      <header
-        className={cn(
-          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6",
-          subscriptionContext
-            ? "rounded-xl border border-border/70 bg-card p-4 sm:p-5"
-            : "border-b border-border/60 pb-6",
-        )}
-      >
+    <div className="space-y-4 md:space-y-5">
+      <header className="flex flex-col gap-4 rounded-xl border border-border/70 bg-card p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:p-5">
         <div className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -190,7 +183,7 @@ function UserDetailContent({
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${roleBadgeClass(user.role)}`}
               >
-                {t("admin.userDetail.roleLabel")}: {roleLabel(user.role, t)}
+                {roleLabel(user.role, t)}
               </span>
             )}
             {showCompanyStatusBadge ? (
@@ -258,18 +251,8 @@ function UserDetailContent({
         ) : null}
       </header>
 
-      <section
-        className={cn(
-          "space-y-4",
-          subscriptionContext && "rounded-xl border border-border/70 bg-card p-4 sm:p-5",
-        )}
-      >
-        <h3
-          className={cn(
-            "text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-            subscriptionContext && "text-sm font-medium normal-case tracking-normal text-foreground",
-          )}
-        >
+      <section className="space-y-4 rounded-xl border border-border/70 bg-card p-4 sm:p-5">
+        <h3 className="text-sm font-medium text-foreground">
           {detailSectionTitle}
         </h3>
         <div className="grid gap-y-4">
@@ -312,19 +295,17 @@ function UserDetailContent({
         </div>
       </section>
 
-      {subscriptionContext ? (
-        <section className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
-          <h3 className="text-sm font-medium text-foreground">
-            {t("admin.userDetail.metadata.title")}
-          </h3>
-          <div className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock3 className="h-4 w-4" aria-hidden />
-            <span>
-              {t("admin.userDetail.metadata.registeredPrefix")} {registrationDate}
-            </span>
-          </div>
-        </section>
-      ) : null}
+      <section className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
+        <h3 className="text-sm font-medium text-foreground">
+          {t("admin.userDetail.metadata.title")}
+        </h3>
+        <div className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock3 className="h-4 w-4" aria-hidden />
+          <span>
+            {t("admin.userDetail.metadata.registeredPrefix")} {registrationDate}
+          </span>
+        </div>
+      </section>
     </div>
   );
 }
@@ -451,7 +432,8 @@ export function UserDetailDrawer({
       detail?.businessRegistrationStatus == null ||
       detail?.businessRegistrationStatus === "approved");
 
-  const showDeleteButton = Boolean(detail && userId && subscriptionContext);
+  const showDeleteButton =
+    Boolean(detail && userId) && detail?.role !== "ADMIN";
 
   const slideTitle = subscriptionContext
     ? t("admin.userDetail.slide.subscriptionTitle")

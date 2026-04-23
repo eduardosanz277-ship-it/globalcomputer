@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { UserRole } from "@/modules/auth/auth.types";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 
@@ -11,6 +12,7 @@ export type UserProfileCardProps = {
   role: UserRole;
   /** ISO string o `null` / ausente si no hay dato */
   lastSignInAt?: string | null;
+  locale?: "es" | "en";
   className?: string;
   /** Esquina superior derecha de la tarjeta (p. ej. menú ⋮ en admin); no compite con el nombre. */
   actions?: ReactNode;
@@ -24,10 +26,10 @@ function userInitial(fullName: string | null | undefined, email: string): string
   return "?";
 }
 
-function roleLabel(role: UserRole): string {
-  if (role === "BUSINESS") return "Empresa";
-  if (role === "CLIENT") return "Cliente";
-  if (role === "ADMIN") return "Administrador";
+function roleLabel(role: UserRole, t: (key: string) => string): string {
+  if (role === "BUSINESS") return t("admin.users.roles.business");
+  if (role === "CLIENT") return t("admin.users.roles.client");
+  if (role === "ADMIN") return t("admin.users.roles.admin");
   return role;
 }
 
@@ -60,15 +62,20 @@ export function UserProfileCard({
   fullName,
   role,
   lastSignInAt,
+  locale,
   className,
   actions,
 }: UserProfileCardProps) {
+  const { t, locale: i18nLocale } = useI18n();
+  const effectiveLocale = locale ?? i18nLocale;
   const name = fullName?.trim();
   const em = email.trim();
   const title = name || em;
   const showEmailLine = Boolean(name && em);
 
-  const exactDate = lastSignInAt ? formatDateDdMmYyyyHhMm(lastSignInAt) : null;
+  const exactDate = lastSignInAt
+    ? formatDateDdMmYyyyHhMm(lastSignInAt, effectiveLocale)
+    : null;
 
   return (
     <div
@@ -119,7 +126,7 @@ export function UserProfileCard({
                     roleBadgeClass(role),
                   )}
                 >
-                  {roleLabel(role)}
+                  {roleLabel(role, t)}
                 </span>
               </div>
             </div>
@@ -127,7 +134,9 @@ export function UserProfileCard({
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Último acceso</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.users.table.lastSignIn")}
+          </p>
           <p className="text-sm leading-snug text-foreground">
             {exactDate != null ? (
               exactDate

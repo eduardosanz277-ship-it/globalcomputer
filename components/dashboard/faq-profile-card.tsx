@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type FaqProfileCardProps = {
   question: string;
@@ -34,9 +35,10 @@ export function FaqProfileCard({
   className,
   actions,
 }: FaqProfileCardProps) {
+  const { t, locale } = useI18n();
   const title = question.trim() || "—";
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
+  const relative = formatRelativeLastAccess(updatedAt, locale);
+  const absolute = formatDateDdMmYyyyHhMm(updatedAt, locale).replace(", ", " ");
 
   return (
     <div
@@ -69,12 +71,16 @@ export function FaqProfileCard({
               statusBadgeClass(active),
             )}
           >
-            {active ? "Activa" : "Inactiva"}
+            {active
+              ? t("admin.faqs.table.statusActive")
+              : t("admin.faqs.table.statusInactive")}
           </span>
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.faqs.table.updatedTooltip")}
+          </p>
           <p className="text-sm text-foreground" title={absolute || undefined}>
             {relative != null ? relative : absolute}
           </p>

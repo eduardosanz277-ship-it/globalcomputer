@@ -20,6 +20,7 @@ import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useServerAction } from "@/hooks/use-server-action";
 import { rejectBusinessRegistrationAction, deleteUserAction } from "./actions";
 import { UserDetailDrawer } from "./UserDetailDrawer";
@@ -27,32 +28,26 @@ import type { UserRole } from "@/modules/auth/auth.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { cn } from "@/utils/cn";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
-import {
-  Eye,
-  FilterX,
-  MoreVertical,
-  Trash2,
-  XCircle,
-} from "lucide-react";
-
-const ROLE_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los roles" },
-  { value: "CLIENT" as const, label: "Cliente" },
-  { value: "BUSINESS" as const, label: "Empresa" },
-] as const;
+import { Eye, FilterX, MoreVertical, Trash2, XCircle } from "lucide-react";
+const ROLE_FILTER_VALUES = ["all", "CLIENT", "BUSINESS"] as const;
 
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
-const ROLE_FILTER_WIDE_CH = ROLE_FILTER_OPTIONS[0].label.length + 7;
+const ROLE_FILTER_WIDE_CH = "Todos los roles".length + 7;
+const USER_COLUMN_CLASS =
+  "min-w-[16.5rem] max-w-[min(28rem,42vw)] md:max-w-[min(23rem,36vw)]";
+const ROLE_COLUMN_CLASS = "w-[8.75rem] min-w-[8.75rem] max-w-[8.75rem]";
+const LAST_SIGN_IN_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 
-type RoleFilter = (typeof ROLE_FILTER_OPTIONS)[number]["value"];
+type RoleFilter = (typeof ROLE_FILTER_VALUES)[number];
 
 interface Props {
   users: AdminUser[];
   isLoading?: boolean;
 }
 
-function userDisplayName(user: AdminUser): string {
-  return user.fullName?.trim() || user.email?.trim() || "Sin nombre";
+function userDisplayName(user: AdminUser, t: (key: string) => string): string {
+  return user.fullName?.trim() || user.email?.trim() || t("admin.users.table.noName");
 }
 
 /** Valor estable para ordenar la columna Usuario (nombre + email, locale es). */
@@ -94,10 +89,10 @@ function roleBadgeClass(role: UserRole): string {
   return "border border-secondary/35 bg-secondary/10 text-secondary";
 }
 
-function roleLabel(role: UserRole): string {
-  if (role === "BUSINESS") return "Empresa";
-  if (role === "CLIENT") return "Cliente";
-  if (role === "ADMIN") return "Administrador";
+function roleLabel(role: UserRole, t: (key: string) => string): string {
+  if (role === "BUSINESS") return t("admin.users.roles.business");
+  if (role === "CLIENT") return t("admin.users.roles.client");
+  if (role === "ADMIN") return t("admin.users.roles.admin");
   return role;
 }
 
@@ -112,6 +107,7 @@ function UsersRowActionsMenu({
   onViewDetail: () => void;
   onDeleteSuccess: () => void;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -124,8 +120,8 @@ function UsersRowActionsMenu({
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
-      successMessage: "Solicitud de empresa rechazada.",
-      errorMessage: "No se pudo rechazar la solicitud",
+      successMessage: t("admin.users.toast.rejected"),
+      errorMessage: t("admin.users.toast.rejectError"),
       onSuccess: () => {
         onDeleteSuccess();
         setOpen(false);
@@ -135,8 +131,8 @@ function UsersRowActionsMenu({
 
   const { executeAsync: deleteUserAsync, isPending: deletingUser } =
     useServerAction(deleteUserAction, {
-      successMessage: "Usuario eliminado",
-      errorMessage: "No se pudo eliminar el usuario",
+      successMessage: t("admin.users.toast.deleted"),
+      errorMessage: t("admin.users.toast.deleteError"),
       onSuccess: () => {
         onDeleteSuccess();
         setOpen(false);
@@ -196,11 +192,11 @@ function UsersRowActionsMenu({
     const label = user.fullName?.trim() || user.email || user.id;
     const wasApproved = user.businessRegistrationStatus === "approved";
     await swalSaasConfirmAsync({
-      title: "¿Rechazar solicitud?",
+      title: t("admin.users.confirm.rejectTitle"),
       html: wasApproved
-        ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa (aunque antes estuviera aprobada).`
-        : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>.`,
-      confirmButtonText: "Rechazar",
+        ? `${t("admin.users.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.users.confirm.rejectApprovedSuffix")}`
+        : `${t("admin.users.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.users.confirm.rejectPendingSuffix")}`,
+      confirmButtonText: t("admin.users.confirm.rejectConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(user.id),
@@ -211,9 +207,9 @@ function UsersRowActionsMenu({
     if (isAdminUser) return;
     const label = user.fullName?.trim() || user.email || user.id;
     await swalSaasConfirmAsync({
-      title: "¿Eliminar usuario?",
-      html: `Vas a eliminar a <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.users.confirm.deleteTitle"),
+      html: `${t("admin.users.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.users.confirm.deleteMessageSuffix")}`,
+      confirmButtonText: t("admin.users.confirm.deleteConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => deleteUserAsync(user.id),
@@ -240,7 +236,7 @@ function UsersRowActionsMenu({
           }}
         >
           <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          Ver detalles
+          {t("admin.users.menu.viewDetails")}
         </button>
         {showReject ? (
           <>
@@ -255,7 +251,7 @@ function UsersRowActionsMenu({
               }}
             >
               <XCircle className="h-4 w-4 shrink-0" aria-hidden />
-              Rechazar solicitud
+              {t("admin.users.menu.rejectRequest")}
             </button>
           </>
         ) : null}
@@ -276,7 +272,9 @@ function UsersRowActionsMenu({
           }}
         >
           <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-          {deletingUser ? "Eliminando" : "Eliminar"}
+          {deletingUser
+            ? t("admin.users.menu.deleting")
+            : t("admin.users.menu.delete")}
         </button>
       </div>
     ) : null;
@@ -291,7 +289,7 @@ function UsersRowActionsMenu({
         className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground md:rounded-md md:border md:border-border/80 md:bg-background md:hover:bg-muted/60"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Abrir menú de acciones"
+        aria-label={t("admin.users.menu.openActions")}
         disabled={busy}
         onClick={() => setOpen((v) => !v)}
       >
@@ -305,8 +303,18 @@ function UsersRowActionsMenu({
 }
 
 export function AdminUsersTable({ users, isLoading = false }: Props) {
+  const { t, locale } = useI18n();
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const roleFilterOptions = useMemo(
+    () =>
+      [
+        { value: "all" as const, label: t("admin.users.filters.allRoles") },
+        { value: "CLIENT" as const, label: t("admin.users.roles.client") },
+        { value: "BUSINESS" as const, label: t("admin.users.roles.business") },
+      ] as const,
+    [t],
+  );
 
   const filteredUsers = useMemo(() => {
     if (roleFilter === "all") return users;
@@ -314,8 +322,8 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
   }, [users, roleFilter]);
 
   const filterValue =
-    ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter) ??
-    ROLE_FILTER_OPTIONS[0];
+    roleFilterOptions.find((o) => o.value === roleFilter) ??
+    roleFilterOptions[0];
 
   const clearRoleFilter = useCallback(() => {
     setRoleFilter("all");
@@ -339,31 +347,35 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
    * }
    */
 
-  const renderMobileRow = useCallback((row: Row<AdminUser>) => {
-    const u = row.original;
-    return (
-      <li key={row.id}>
-        <UserProfileCard
-          email={u.email ?? ""}
-          fullName={u.fullName}
-          role={u.role}
-          lastSignInAt={u.lastSignInAt}
-          className="hover:bg-muted/50 transition-colors duration-150"
-          actions={
-            <UsersRowActionsMenu
-              user={u}
-              onViewDetail={() => setDetailUserId(u.id)}
-              onDeleteSuccess={() => {
-                setDetailUserId((current) =>
-                  current === u.id ? null : current,
-                );
-              }}
-            />
-          }
-        />
-      </li>
-    );
-  }, []);
+  const renderMobileRow = useCallback(
+    (row: Row<AdminUser>) => {
+      const u = row.original;
+      return (
+        <li key={row.id}>
+          <UserProfileCard
+            email={u.email ?? ""}
+            fullName={u.fullName}
+            role={u.role}
+            lastSignInAt={u.lastSignInAt}
+            locale={locale}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <UsersRowActionsMenu
+                user={u}
+                onViewDetail={() => setDetailUserId(u.id)}
+                onDeleteSuccess={() => {
+                  setDetailUserId((current) =>
+                    current === u.id ? null : current,
+                  );
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [locale],
+  );
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
@@ -374,25 +386,24 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         sortingFn: (rowA, rowB) =>
           userSortValue(rowA.original).localeCompare(
             userSortValue(rowB.original),
-            "es",
+            locale,
             { sensitivity: "base" },
           ),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Usuario"
-            ariaLabelIdle="Ordenar por usuario"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.users.table.user")}
+            ariaLabelIdle={t("admin.users.table.userSortIdle")}
+            ariaLabelAsc={t("admin.users.table.userSortAsc")}
+            ariaLabelDesc={t("admin.users.table.userSortDesc")}
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+          cellClassName: USER_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const u = row.original;
-          const name = userDisplayName(u);
+          const name = userDisplayName(u, t);
           const email = u.email?.trim();
           return (
             <div className="flex min-w-0 items-start gap-3">
@@ -424,7 +435,10 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
       {
         id: "role",
         accessorKey: "role",
-        header: "Rol",
+        header: t("admin.users.table.role"),
+        meta: {
+          cellClassName: ROLE_COLUMN_CLASS,
+        },
         cell: ({ row }) => (
           <span
             className={cn(
@@ -432,7 +446,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
               roleBadgeClass(row.original.role),
             )}
           >
-            {roleLabel(row.original.role)}
+            {roleLabel(row.original.role, t)}
           </span>
         ),
       },
@@ -451,27 +465,28 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Último acceso"
-            ariaLabelIdle="Ordenar por último acceso"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.users.table.lastSignIn")}
+            ariaLabelIdle={t("admin.users.table.lastSignInSortIdle")}
+            ariaLabelAsc={t("admin.users.table.lastSignInSortAsc")}
+            ariaLabelDesc={t("admin.users.table.lastSignInSortDesc")}
           />
         ),
+        meta: {
+          cellClassName: LAST_SIGN_IN_COLUMN_CLASS,
+        },
         cell: ({ row }) => {
           const raw = row.original.lastSignInAt;
           if (!raw) {
             return <AdminTableEmptyEmDash />;
           }
-          const absolute = formatDateDdMmYyyyHhMm(raw);
-          return (
-            <span className="text-sm text-muted-foreground">{absolute}</span>
-          );
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale).replace(", ", " ");
+          return <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">{absolute}</span>;
         },
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
+        header: () => <span className="sr-only">{t("admin.users.table.actions")}</span>,
         cell: ({ row }) => (
           <UsersRowActionsMenu
             user={row.original}
@@ -485,7 +500,7 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         ),
       },
     ],
-    [],
+    [locale, t],
   );
 
   return (
@@ -495,7 +510,8 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
         data={filteredUsers}
         isLoading={isLoading}
         enableSorting
-        searchPlaceholder="Buscar por nombre o email…"
+        searchPlaceholder={t("admin.users.filters.searchPlaceholder")}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
@@ -517,13 +533,13 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
                 } as CSSProperties
               }
             >
-              <Select<(typeof ROLE_FILTER_OPTIONS)[number], false>
+              <Select<(typeof roleFilterOptions)[number], false>
                 instanceId="users-role-filter"
                 inputId="users-role-filter-input"
-                aria-label="Filtrar por rol"
+                aria-label={t("admin.users.filters.roleAria")}
                 isSearchable={false}
                 isClearable={false}
-                options={[...ROLE_FILTER_OPTIONS]}
+                options={[...roleFilterOptions]}
                 value={filterValue}
                 onChange={(opt) => {
                   if (opt) setRoleFilter(opt.value);
@@ -539,8 +555,8 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
               className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
               disabled={isLoading || roleFilter === "all"}
               onClick={clearRoleFilter}
-              title="Limpiar filtros"
-              aria-label="Limpiar filtro de rol"
+              title={t("admin.users.filters.clear")}
+              aria-label={t("admin.users.filters.clearRoleAria")}
             >
               <FilterX className="h-4 w-4" aria-hidden />
             </Button>

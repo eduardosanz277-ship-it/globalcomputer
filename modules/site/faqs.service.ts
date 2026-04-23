@@ -4,20 +4,24 @@ export type SiteFaq = {
   id: string;
   question: string;
   answer: string;
+  questionEn: string;
+  answerEn: string;
 };
 
 type SiteFaqRow = {
   id: string;
-  pregunta: string;
-  respuesta: string;
+  question: string;
+  answer: string;
+  question_en: string;
+  answer_en: string;
 };
 
 export async function listActiveSiteFaqs(): Promise<SiteFaq[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("faqs")
-    .select("id, pregunta, respuesta")
-    .eq("activo", true)
+    .select("id, question, answer, question_en, answer_en")
+    .eq("active", true)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -26,7 +30,9 @@ export async function listActiveSiteFaqs(): Promise<SiteFaq[]> {
 
   return ((data ?? []) as SiteFaqRow[]).map((row) => ({
     id: row.id,
-    question: row.pregunta,
-    answer: row.respuesta,
+    question: row.question,
+    answer: row.answer,
+    questionEn: row.question_en,
+    answerEn: row.answer_en,
   }));
 }

@@ -3,11 +3,14 @@
 import { useMemo, useState } from "react";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { FAQItem } from "./FAQItem";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type FaqItemData = {
   id: string;
   question: string;
   answer: string;
+  questionEn: string;
+  answerEn: string;
 };
 
 type Props = {
@@ -15,14 +18,25 @@ type Props = {
 };
 
 export function FAQSection({ items }: Props) {
+  const { locale } = useI18n();
   const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
 
   const normalizedItems = useMemo(
     () =>
-      items.filter(
-        (item) => item.question.trim().length > 0 && item.answer.trim().length > 0,
-      ),
-    [items],
+      items
+        .map((item) => {
+          const question = locale === "en" ? item.questionEn || item.question : item.question;
+          const answer = locale === "en" ? item.answerEn || item.answer : item.answer;
+          return {
+            ...item,
+            question,
+            answer,
+          };
+        })
+        .filter(
+          (item) => item.question.trim().length > 0 && item.answer.trim().length > 0,
+        ),
+    [items, locale],
   );
 
   if (normalizedItems.length === 0) {
