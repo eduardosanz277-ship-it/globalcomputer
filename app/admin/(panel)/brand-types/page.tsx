@@ -6,6 +6,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminBrandTypesTable } from "./AdminBrandTypesTable";
+import { BrandTypesPageHeader } from "./BrandTypesPageHeader";
 
 async function AdminBrandTypesTableSection() {
   const [brands, brandTypes] = await Promise.all([
@@ -24,16 +25,7 @@ export default async function AdminBrandTypesPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Tipos por marca
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona los tipos de producto asociados a cada marca (por ejemplo
-            zapatillas, ropa). El estado activo permite ocultarlos del catálogo
-            sin borrarlos.
-          </p>
-        </header>
+        <BrandTypesPageHeader />
 
         <hr className="border-border" />
 

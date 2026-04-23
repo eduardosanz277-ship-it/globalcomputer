@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Eye, MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -19,6 +20,10 @@ export function AdminEditDeleteRowMenu({
   onDelete,
   isDeleting,
   deletingLabel = "Eliminando",
+  deleteLabel = "Eliminar",
+  showDelete = true,
+  /** Si se pasa, sustituye la etiqueta i18n del ítem Editar. */
+  editLabel,
   /** Desactiva el menú (p. ej. otro panel abierto) sin mostrar el estado “Eliminando”. */
   disabled = false,
 }: {
@@ -27,8 +32,14 @@ export function AdminEditDeleteRowMenu({
   onDelete: () => void | Promise<void>;
   isDeleting: boolean;
   deletingLabel?: string;
+  /** Texto del ítem destructivo cuando no está en curso (p. ej. «Archivar»). */
+  deleteLabel?: string;
+  /** Si es `false`, oculta la acción destructiva. */
+  showDelete?: boolean;
+  editLabel?: string;
   disabled?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -141,26 +152,30 @@ export function AdminEditDeleteRowMenu({
             className="h-4 w-4 shrink-0 text-muted-foreground"
             aria-hidden
           />
-          Editar
+          {editLabel ?? t("admin.common.actionEdit")}
         </button>
-        <div className="my-1 h-px bg-border/70" role="separator" />
-        <button
-          type="button"
-          role="menuitem"
-          className={
-            busy
-              ? "flex w-full cursor-not-allowed items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground/60"
-              : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
-          }
-          disabled={busy}
-          onClick={() => {
-            setOpen(false);
-            void onDelete();
-          }}
-        >
-          <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-          {isDeleting ? deletingLabel : "Eliminar"}
-        </button>
+        {showDelete ? (
+          <>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className={
+                busy
+                  ? "flex w-full cursor-not-allowed items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground/60"
+                  : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+              }
+              disabled={busy}
+              onClick={() => {
+                setOpen(false);
+                void onDelete();
+              }}
+            >
+              <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+              {isDeleting ? deletingLabel : deleteLabel}
+            </button>
+          </>
+        ) : null}
       </div>
     ) : null;
 

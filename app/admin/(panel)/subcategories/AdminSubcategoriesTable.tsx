@@ -31,6 +31,7 @@ import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { SubcategoryProfileCard } from "@/components/dashboard/subcategory-profile-card";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   Tooltip,
   TooltipContent,
@@ -38,26 +39,29 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activos" },
-  { value: "inactive" as const, label: "Inactivos" },
-];
+const STATUS_FILTER_VALUES = ["all", "active", "inactive"] as const;
 
-type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
 type FilterOption = { value: string; label: string };
 
 /** Ancho del select «Todas las categorías» en barra escritorio (xl+). */
 const CATEGORY_FILTER_TOOLBAR_WIDE_CH = "Todas las categorías".length + 7;
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
+
+/**
+ * Anchos fijos de columnas para evitar saltos de layout.
+ * - Fecha considera el caso más largo esperado: fecha absoluta completa.
+ */
+const NAME_COLUMN_CLASS =
+  "min-w-[19rem] max-w-[min(44rem,60vw)] md:max-w-[min(37rem,52vw)]";
+const STATUS_COLUMN_CLASS = "w-[8.5rem] min-w-[8.5rem] max-w-[8.5rem]";
+const UPDATED_AT_COLUMN_CLASS = "w-[13rem] min-w-[13rem] max-w-[13rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 
 interface Props {
   categories: CategoryAdmin[];
   subcategories: SubcategoryAdmin[];
   isLoading?: boolean;
-}
-
-function subcategorySortValue(row: SubcategoryAdmin): string {
-  return `${row.categoryName ?? ""} ${row.name ?? ""}`.trim().toLowerCase();
 }
 
 function updatedAtSortMs(row: SubcategoryAdmin): number {
@@ -73,11 +77,14 @@ function RowActions({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedRowName =
+    locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
     softDeleteSubcategoryAdminAction,
     {
-      successMessage: "Subcategoría archivada",
-      errorMessage: "No se pudo archivar la subcategoría",
+      successMessage: t("admin.subcategories.toast.archived"),
+      errorMessage: t("admin.subcategories.toast.error"),
       onSuccess: () => {
         router.refresh();
       },
@@ -86,9 +93,13 @@ function RowActions({
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Archivar subcategoría?",
-      html: `Se marcará como inactiva <strong>${row.name}</strong> (${row.categoryName}). Podrás reactivarla editándola más adelante.`,
-      confirmButtonText: "Archivar",
+      title: t("admin.subcategories.confirm.archiveTitle"),
+      html: t("admin.subcategories.confirm.archiveMessage")
+        .replace("{name}", localizedRowName)
+        .replace("{category}", row.categoryName),
+      confirmButtonText: t("admin.subcategories.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.subcategories.form.cancel"),
+      loadingConfirmText: t("admin.subcategories.confirm.archiveArchiving"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -100,6 +111,9 @@ function RowActions({
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.subcategories.confirm.archiveConfirm")}
+      deletingLabel={t("admin.subcategories.confirm.archiveArchiving")}
+      showDelete={row.active}
     />
   );
 }
@@ -109,6 +123,7 @@ export function AdminSubcategoriesTable({
   subcategories,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -118,12 +133,42 @@ export function AdminSubcategoriesTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SubcategoryAdmin | null>(null);
 
+  const statusFilterOptions = useMemo(
+    () => [
+      {
+        value: "all" as const,
+        label: t("admin.subcategories.filters.status.all"),
+      },
+      {
+        value: "active" as const,
+        label: t("admin.subcategories.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.subcategories.filters.status.inactive"),
+      },
+    ],
+    [t],
+  );
+
+  const categoryNameById = useMemo(() => {
+    return new Map(
+      categories.map((c) => [
+        c.id,
+        locale === "en" ? (c.nameEn ?? c.name) : c.name,
+      ]),
+    );
+  }, [categories, locale]);
+
   const categoryOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todas las categorías" },
-      ...categories.map((g) => ({ value: g.id, label: g.name })),
+      { value: "all", label: t("admin.subcategories.filters.categoryAll") },
+      ...categories.map((g) => ({
+        value: g.id,
+        label: locale === "en" ? (g.nameEn ?? g.name) : g.name,
+      })),
     ],
-    [categories],
+    [categories, locale, t],
   );
 
   const filtered = useMemo(() => {
@@ -139,8 +184,8 @@ export function AdminSubcategoriesTable({
   }, [subcategories, statusFilter, categoryFilter]);
 
   const statusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === statusFilter) ??
+    statusFilterOptions[0];
 
   const categoryFilterValue =
     categoryOptions.find((o) => o.value === categoryFilter) ??
@@ -151,8 +196,8 @@ export function AdminSubcategoriesTable({
     categoryOptions[0];
 
   const draftStatusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === draftStatus) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === draftStatus) ??
+    statusFilterOptions[0];
 
   const appliedFiltersCount = useMemo(() => {
     let n = 0;
@@ -188,31 +233,49 @@ export function AdminSubcategoriesTable({
       {
         id: "subcategory",
         accessorFn: (row) =>
-          `${row.categoryName ?? ""} ${row.name ?? ""}`.trim(),
+          `${categoryNameById.get(row.categoryId) ?? row.categoryName ?? ""} ${locale === "en" ? (row.nameEn ?? row.name) : row.name}`.trim(),
         enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          subcategorySortValue(rowA.original).localeCompare(
-            subcategorySortValue(rowB.original),
-            "es",
-            { sensitivity: "base" },
-          ),
+        sortingFn: (rowA, rowB) => {
+          const aCategory =
+            categoryNameById.get(rowA.original.categoryId) ??
+            rowA.original.categoryName;
+          const bCategory =
+            categoryNameById.get(rowB.original.categoryId) ??
+            rowB.original.categoryName;
+          const aName =
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
+          const bName =
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
+          return `${aCategory} ${aName}`
+            .trim()
+            .localeCompare(`${bCategory} ${bName}`.trim(), locale, {
+              sensitivity: "base",
+            });
+        },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Nombre"
-            ariaLabelIdle="Ordenar por categoría y subcategoría"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.subcategories.table.name")}
+            ariaLabelIdle={t("admin.subcategories.table.nameSortIdle")}
+            ariaLabelAsc={t("admin.subcategories.table.nameSortAsc")}
+            ariaLabelDesc={t("admin.subcategories.table.nameSortDesc")}
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+          cellClassName: NAME_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const r = row.original;
-          const title = r.name?.trim() || "—";
-          const secondary = r.categoryName?.trim();
+          const title =
+            (locale === "en" ? (r.nameEn ?? r.name) : r.name)?.trim() || "—";
+          const secondary = (
+            categoryNameById.get(r.categoryId) ??
+            r.categoryName
+          )?.trim();
           return (
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-foreground">
@@ -232,16 +295,17 @@ export function AdminSubcategoriesTable({
       {
         id: "active",
         accessorKey: "active",
+        meta: { cellClassName: STATUS_COLUMN_CLASS },
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           Number(rowB.original.active) - Number(rowA.original.active),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivos primero. Clic para invertir"
-            ariaLabelDesc="Activos primero. Clic para quitar orden"
+            label={t("admin.subcategories.table.status")}
+            ariaLabelIdle={t("admin.subcategories.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.subcategories.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.subcategories.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -253,39 +317,44 @@ export function AdminSubcategoriesTable({
                 : "border border-border bg-muted text-muted-foreground",
             )}
           >
-            {row.original.active ? "Activo" : "Inactivo"}
+            {row.original.active
+              ? t("admin.subcategories.table.statusActive")
+              : t("admin.subcategories.table.statusInactive")}
           </span>
         ),
       },
       {
         id: "updatedAt",
         accessorKey: "updatedAt",
+        meta: { cellClassName: UPDATED_AT_COLUMN_CLASS },
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.subcategories.table.updatedAt")}
+            ariaLabelIdle={t("admin.subcategories.table.updatedAtSortIdle")}
+            ariaLabelAsc={t("admin.subcategories.table.updatedAtSortAsc")}
+            ariaLabelDesc={t("admin.subcategories.table.updatedAtSortDesc")}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">{absolute}</span>
+              <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+                {absolute}
+              </span>
             );
           }
           return (
             <TooltipProvider delayDuration={120}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-sm text-muted-foreground">
+                  <span className="cursor-help whitespace-nowrap text-sm tabular-nums text-muted-foreground">
                     {relative}
                   </span>
                 </TooltipTrigger>
@@ -295,7 +364,7 @@ export function AdminSubcategoriesTable({
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
                   <span className="block font-medium">
-                    Última actualización
+                    {t("admin.subcategories.table.updatedTooltip")}
                   </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
@@ -308,8 +377,10 @@ export function AdminSubcategoriesTable({
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
+        header: () => (
+          <span className="sr-only">{t("admin.subcategories.table.actions")}</span>
+        ),
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -321,32 +392,35 @@ export function AdminSubcategoriesTable({
         ),
       },
     ],
-    [],
+    [categoryNameById, locale, t],
   );
 
-  const renderMobileRow = useCallback((row: Row<SubcategoryAdmin>) => {
-    const r = row.original;
-    return (
-      <li key={row.id}>
-        <SubcategoryProfileCard
-          name={r.name}
-          categoryName={r.categoryName}
-          active={r.active}
-          updatedAt={r.updatedAt}
-          className="hover:bg-muted/50 transition-colors duration-150"
-          actions={
-            <RowActions
-              row={r}
-              onEdit={() => {
-                setEditing(r);
-                setDialogOpen(true);
-              }}
-            />
-          }
-        />
-      </li>
-    );
-  }, []);
+  const renderMobileRow = useCallback(
+    (row: Row<SubcategoryAdmin>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <SubcategoryProfileCard
+            name={locale === "en" ? (r.nameEn ?? r.name) : r.name}
+            categoryName={categoryNameById.get(r.categoryId) ?? r.categoryName}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [categoryNameById, locale],
+  );
 
   const noCategories = categories.length === 0;
 
@@ -361,14 +435,14 @@ export function AdminSubcategoriesTable({
           />
           <Input
             type="search"
-            placeholder="Buscar subcategorías"
+            placeholder={t("admin.subcategories.filters.searchMobilePlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Buscar por categoría o subcategoría"
+            aria-label={t("admin.subcategories.filters.searchAria")}
           />
         </div>
         <div className="flex gap-2">
@@ -380,17 +454,20 @@ export function AdminSubcategoriesTable({
             onClick={openFiltersModal}
             aria-label={
               appliedFiltersCount > 0
-                ? `Filtros, ${appliedFiltersCount} aplicados`
-                : "Abrir filtros"
+                ? t("admin.subcategories.filters.openWithCount").replace(
+                    "{count}",
+                    String(appliedFiltersCount),
+                  )
+                : t("admin.subcategories.filters.open")
             }
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
-            Filtros
+            {t("admin.subcategories.filters.button")}
             {appliedFiltersCount > 0 ? ` (${appliedFiltersCount})` : ""}
           </Button>
           <Button
             type="button"
-            className="h-9 min-w-0 flex-1"
+            className={cn("h-9 min-w-0 flex-1", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -398,12 +475,12 @@ export function AdminSubcategoriesTable({
             disabled={noCategories}
             title={
               noCategories
-                ? "Crea al menos una categoría antes de añadir subcategorías"
+                ? t("admin.subcategories.noCategoriesTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-            Nuevo
+            {t("admin.subcategories.buttonNew")}
           </Button>
         </div>
       </div>
@@ -417,14 +494,16 @@ export function AdminSubcategoriesTable({
           />
           <Input
             type="search"
-            placeholder="Buscar por categoría o subcategoría…"
+            placeholder={t(
+              "admin.subcategories.filters.searchDesktopPlaceholder",
+            )}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Filtrar filas de la tabla"
+            aria-label={t("admin.subcategories.filters.searchAria")}
           />
         </div>
 
@@ -440,7 +519,7 @@ export function AdminSubcategoriesTable({
             <Select<FilterOption, false>
               instanceId="admin-subcategories-category-filter"
               inputId="admin-subcategories-category-filter-input"
-              aria-label="Filtrar por categoría"
+              aria-label={t("admin.subcategories.filters.categoryAria")}
               isSearchable={false}
               isClearable={false}
               options={categoryOptions}
@@ -453,13 +532,13 @@ export function AdminSubcategoriesTable({
             />
           </div>
           <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+            <Select<(typeof statusFilterOptions)[number], false>
               instanceId="admin-subcategories-status-filter"
               inputId="admin-subcategories-status-filter-input"
-              aria-label="Filtrar por estado"
+              aria-label={t("admin.subcategories.filters.statusAria")}
               isSearchable={false}
               isClearable={false}
-              options={STATUS_FILTER_OPTIONS}
+              options={statusFilterOptions}
               value={statusFilterValue}
               onChange={(opt) => {
                 if (opt) setStatusFilter(opt.value);
@@ -475,8 +554,8 @@ export function AdminSubcategoriesTable({
             className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
             disabled={isLoading || appliedFiltersCount === 0}
             onClick={clearToolbarFilters}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros de categoría y estado"
+            title={t("admin.subcategories.filters.clear")}
+            aria-label={t("admin.subcategories.filters.clear")}
           >
             <FilterX className="h-4 w-4" aria-hidden />
           </Button>
@@ -485,7 +564,7 @@ export function AdminSubcategoriesTable({
         <div className="flex w-full items-center xl:max-[1520px]:order-2 xl:max-[1520px]:w-auto xl:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
           <Button
             type="button"
-            className="h-9 w-full xl:w-auto"
+            className={cn("h-9 w-full xl:w-auto", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -493,12 +572,12 @@ export function AdminSubcategoriesTable({
             disabled={noCategories}
             title={
               noCategories
-                ? "Crea al menos una categoría antes de añadir subcategorías"
+                ? t("admin.subcategories.noCategoriesTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
+            {t("admin.subcategories.buttonNew")}
           </Button>
         </div>
       </div>
@@ -515,11 +594,10 @@ export function AdminSubcategoriesTable({
               </div>
               <div className="min-w-0 space-y-1.5 pt-0.5">
                 <DialogTitle className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                  Filtros
+                  {t("admin.subcategories.filters.modalTitle")}
                 </DialogTitle>
                 <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                  Refina por categoría y estado. Los cambios se aplican al
-                  pulsar Aplicar.
+                  {t("admin.subcategories.filters.modalDescription")}
                 </DialogDescription>
               </div>
             </div>
@@ -532,13 +610,13 @@ export function AdminSubcategoriesTable({
                   htmlFor="admin-subcategories-filter-modal-category"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Categoría
+                  {t("admin.subcategories.filters.categoryLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="admin-subcategories-category-filter-modal"
                     inputId="admin-subcategories-filter-modal-category"
-                    aria-label="Categoría"
+                    aria-label={t("admin.subcategories.filters.categoryLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={categoryOptions}
@@ -557,16 +635,16 @@ export function AdminSubcategoriesTable({
                   htmlFor="admin-subcategories-filter-modal-status"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Estado
+                  {t("admin.subcategories.filters.statusLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
-                  <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+                  <Select<(typeof statusFilterOptions)[number], false>
                     instanceId="admin-subcategories-status-filter-modal"
                     inputId="admin-subcategories-filter-modal-status"
-                    aria-label="Estado"
+                    aria-label={t("admin.subcategories.filters.statusLabel")}
                     isSearchable={false}
                     isClearable={false}
-                    options={STATUS_FILTER_OPTIONS}
+                    options={statusFilterOptions}
                     value={draftStatusFilterValue}
                     onChange={(opt) => {
                       if (opt) setDraftStatus(opt.value);
@@ -587,14 +665,14 @@ export function AdminSubcategoriesTable({
               className="text-muted-foreground hover:text-foreground"
               onClick={handleClearModalFilters}
             >
-              Limpiar
+              {t("admin.subcategories.filters.clear")}
             </Button>
             <Button
               type="button"
               className="min-w-[6.5rem] shadow-sm"
               onClick={handleApplyModalFilters}
             >
-              Aplicar
+              {t("admin.subcategories.filters.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -606,6 +684,7 @@ export function AdminSubcategoriesTable({
         isLoading={isLoading}
         enableSorting
         hideToolbar
+        tableClassName="table-fixed"
         externalGlobalFilter={globalFilter}
         onExternalGlobalFilterChange={setGlobalFilter}
         tableHeadCellClassName="!font-medium"
@@ -621,8 +700,7 @@ export function AdminSubcategoriesTable({
       {noCategories ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <FolderTree className="h-4 w-4 shrink-0" aria-hidden />
-          No hay categorías todavía. Crea una en la sección Categorías para
-          poder definir subcategorías.
+          {t("admin.subcategories.noCategoriesHint")}
         </p>
       ) : null}
 

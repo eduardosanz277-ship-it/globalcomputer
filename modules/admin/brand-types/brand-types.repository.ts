@@ -9,11 +9,15 @@ type BrandTypeRow = {
   id: string;
   brand_id: string;
   name: string;
+  name_en?: string | null;
   slug: string;
   active: boolean;
   created_at: string;
   updated_at: string;
-  brands: { name: string } | { name: string }[] | null;
+  brands:
+    | { name: string; name_en?: string | null }
+    | { name: string; name_en?: string | null }[]
+    | null;
 };
 
 function brandNameFromRow(row: BrandTypeRow): string {
@@ -23,12 +27,21 @@ function brandNameFromRow(row: BrandTypeRow): string {
   return b.name ?? "—";
 }
 
+function brandNameEnFromRow(row: BrandTypeRow): string | null {
+  const b = row.brands;
+  if (!b) return null;
+  if (Array.isArray(b)) return b[0]?.name_en ?? null;
+  return b.name_en ?? null;
+}
+
 function mapRow(row: BrandTypeRow): BrandType {
   return {
     id: row.id,
     brandId: row.brand_id,
     brandName: brandNameFromRow(row),
+    brandNameEn: brandNameEnFromRow(row),
     name: row.name,
+    nameEn: row.name_en ?? null,
     slug: row.slug,
     active: row.active,
     createdAt: row.created_at,
@@ -41,7 +54,7 @@ export async function repoListBrandTypes(): Promise<BrandType[]> {
   const { data, error } = await supabase
     .from("brand_types")
     .select(
-      "id, brand_id, name, slug, active, created_at, updated_at, brands ( name )"
+      "id, brand_id, name, name_en, slug, active, created_at, updated_at, brands ( name, name_en )"
     )
     .order("name", { ascending: true });
 
@@ -63,11 +76,12 @@ export async function repoCreateBrandType(
     .insert({
       brand_id: payload.brandId,
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       active: payload.active,
     })
     .select(
-      "id, brand_id, name, slug, active, created_at, updated_at, brands ( name )",
+      "id, brand_id, name, name_en, slug, active, created_at, updated_at, brands ( name, name_en )",
     )
     .single();
 
@@ -85,6 +99,7 @@ export async function repoUpdateBrandType(
     .update({
       brand_id: payload.brandId,
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       active: payload.active,
     })

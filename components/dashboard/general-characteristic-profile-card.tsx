@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/utils/cn";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 
@@ -26,9 +27,10 @@ export function GeneralCharacteristicProfileCard({
   className,
   actions,
 }: GeneralCharacteristicProfileCardProps) {
+  const { t, locale } = useI18n();
   const title = name.trim() || "—";
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
+  const relative = formatRelativeLastAccess(updatedAt, locale);
+  const absolute = formatDateDdMmYyyyHhMm(updatedAt, locale);
 
   return (
     <div
@@ -58,12 +60,16 @@ export function GeneralCharacteristicProfileCard({
               statusBadgeClass(active),
             )}
           >
-            {active ? "Activa" : "Inactiva"}
+            {active
+              ? t("admin.generalCharacteristics.table.statusActive")
+              : t("admin.generalCharacteristics.table.statusInactive")}
           </span>
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.generalCharacteristics.table.updatedAt")}
+          </p>
           <p
             className="text-sm text-foreground"
             title={absolute || undefined}

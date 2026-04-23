@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteGeneralCharacteristicAction } from "./actions";
 import { GeneralCharacteristicFormDialog } from "./GeneralCharacteristicFormDialog";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -31,17 +32,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activas" },
-  { value: "inactive" as const, label: "Inactivas" },
-];
+const STATUS_FILTER_VALUES = ["all", "active", "inactive"] as const;
 
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
 const STATUS_FILTER_WIDE_CH =
-  STATUS_FILTER_OPTIONS[0].label.length + 7;
+  "Todos los estados".length + 7;
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
 
-type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
 
 interface Props {
   characteristics: GeneralCharacteristic[];
@@ -61,11 +59,14 @@ function RowActions({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedRowName =
+    locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
     deleteGeneralCharacteristicAction,
     {
-      successMessage: "Característica eliminada",
-      errorMessage: "No se pudo eliminar la característica",
+      successMessage: t("admin.generalCharacteristics.toast.archived"),
+      errorMessage: t("admin.generalCharacteristics.toast.error"),
       onSuccess: () => {
         router.refresh();
       },
@@ -74,9 +75,16 @@ function RowActions({
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Eliminar característica?",
-      html: `Vas a eliminar <strong>${row.name}</strong>. Se borrarán también los valores específicos asociados si la base de datos lo permite; si hay productos vinculados, puede no permitirse.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.generalCharacteristics.confirm.archiveTitle"),
+      html: t("admin.generalCharacteristics.confirm.archiveMessage").replace(
+        "{name}",
+        localizedRowName,
+      ),
+      confirmButtonText: t("admin.generalCharacteristics.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.generalCharacteristics.form.cancel"),
+      loadingConfirmText: t(
+        "admin.generalCharacteristics.confirm.archiveArchiving",
+      ),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -88,6 +96,8 @@ function RowActions({
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.generalCharacteristics.confirm.archiveConfirm")}
+      deletingLabel={t("admin.generalCharacteristics.confirm.archiveArchiving")}
     />
   );
 }
@@ -96,9 +106,28 @@ export function AdminGeneralCharacteristicsTable({
   characteristics,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GeneralCharacteristic | null>(null);
+
+  const statusFilterOptions = useMemo(
+    () => [
+      {
+        value: "all" as const,
+        label: t("admin.generalCharacteristics.filters.status.all"),
+      },
+      {
+        value: "active" as const,
+        label: t("admin.generalCharacteristics.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.generalCharacteristics.filters.status.inactive"),
+      },
+    ],
+    [t],
+  );
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return characteristics;
@@ -109,8 +138,8 @@ export function AdminGeneralCharacteristicsTable({
   }, [characteristics, statusFilter]);
 
   const filterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === statusFilter) ??
+    statusFilterOptions[0];
 
   const clearStatusFilter = useCallback(() => {
     setStatusFilter("all");
@@ -120,19 +149,27 @@ export function AdminGeneralCharacteristicsTable({
     () => [
       {
         id: "name",
-        accessorFn: (row) => row.name,
+        accessorFn: (row) =>
+          locale === "en" ? (row.nameEn ?? row.name) : row.name,
         enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          rowA.original.name.localeCompare(rowB.original.name, "es", {
-            sensitivity: "base",
-          }),
+        sortingFn: (rowA, rowB) => {
+          const a =
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
+          const b =
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
+          return a.localeCompare(b, locale, { sensitivity: "base" });
+        },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Nombre"
-            ariaLabelIdle="Ordenar por nombre"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.generalCharacteristics.table.name")}
+            ariaLabelIdle={t("admin.generalCharacteristics.table.nameSortIdle")}
+            ariaLabelAsc={t("admin.generalCharacteristics.table.nameSortAsc")}
+            ariaLabelDesc={t("admin.generalCharacteristics.table.nameSortDesc")}
           />
         ),
         meta: {
@@ -140,7 +177,11 @@ export function AdminGeneralCharacteristicsTable({
             "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
         },
         cell: ({ row }) => {
-          const name = row.original.name.trim();
+          const name = (
+            locale === "en"
+              ? (row.original.nameEn ?? row.original.name)
+              : row.original.name
+          ).trim();
           return (
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-foreground">
@@ -159,10 +200,10 @@ export function AdminGeneralCharacteristicsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivas primero. Clic para invertir"
-            ariaLabelDesc="Activas primero. Clic para quitar orden"
+            label={t("admin.generalCharacteristics.table.status")}
+            ariaLabelIdle={t("admin.generalCharacteristics.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.generalCharacteristics.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.generalCharacteristics.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -174,7 +215,9 @@ export function AdminGeneralCharacteristicsTable({
                 : "border border-border bg-muted text-muted-foreground",
             )}
           >
-            {row.original.active ? "Activa" : "Inactiva"}
+            {row.original.active
+              ? t("admin.generalCharacteristics.table.statusActive")
+              : t("admin.generalCharacteristics.table.statusInactive")}
           </span>
         ),
       },
@@ -187,16 +230,20 @@ export function AdminGeneralCharacteristicsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.generalCharacteristics.table.updatedAt")}
+            ariaLabelIdle={t(
+              "admin.generalCharacteristics.table.updatedAtSortIdle",
+            )}
+            ariaLabelAsc={t("admin.generalCharacteristics.table.updatedAtSortAsc")}
+            ariaLabelDesc={t(
+              "admin.generalCharacteristics.table.updatedAtSortDesc",
+            )}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
               <span className="text-sm text-muted-foreground">
@@ -217,7 +264,9 @@ export function AdminGeneralCharacteristicsTable({
                   align="start"
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
-                  <span className="block font-medium">Última actualización</span>
+                  <span className="block font-medium">
+                    {t("admin.generalCharacteristics.table.updatedTooltip")}
+                  </span>
                   <span className="mt-0.5 block text-muted-foreground">{absolute}</span>
                 </TooltipContent>
               </Tooltip>
@@ -228,7 +277,11 @@ export function AdminGeneralCharacteristicsTable({
       {
         id: "actions",
         meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        header: () => (
+          <span className="sr-only">
+            {t("admin.generalCharacteristics.table.actions")}
+          </span>
+        ),
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -240,7 +293,7 @@ export function AdminGeneralCharacteristicsTable({
         ),
       },
     ],
-    [],
+    [locale, t],
   );
 
   const renderMobileRow = useCallback(
@@ -249,7 +302,7 @@ export function AdminGeneralCharacteristicsTable({
       return (
         <li key={row.id}>
           <GeneralCharacteristicProfileCard
-            name={r.name}
+            name={locale === "en" ? (r.nameEn ?? r.name) : r.name}
             active={r.active}
             updatedAt={r.updatedAt}
             className="hover:bg-muted/50 transition-colors duration-150"
@@ -266,7 +319,7 @@ export function AdminGeneralCharacteristicsTable({
         </li>
       );
     },
-    [],
+    [locale],
   );
 
   return (
@@ -276,7 +329,7 @@ export function AdminGeneralCharacteristicsTable({
         data={filtered}
         isLoading={isLoading}
         enableSorting
-        searchPlaceholder="Buscar por nombre…"
+        searchPlaceholder={t("admin.generalCharacteristics.filters.searchPlaceholder")}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
@@ -298,13 +351,13 @@ export function AdminGeneralCharacteristicsTable({
                 } as CSSProperties
               }
             >
-              <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+              <Select<(typeof statusFilterOptions)[number], false>
                 instanceId="general-characteristics-status-filter"
                 inputId="general-characteristics-status-filter-input"
-                aria-label="Filtrar por estado"
+                aria-label={t("admin.generalCharacteristics.filters.statusAria")}
                 isSearchable={false}
                 isClearable={false}
-                options={STATUS_FILTER_OPTIONS}
+                options={statusFilterOptions}
                 value={filterValue}
                 onChange={(opt) => {
                   if (opt) setStatusFilter(opt.value);
@@ -320,8 +373,8 @@ export function AdminGeneralCharacteristicsTable({
               className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
               disabled={isLoading || statusFilter === "all"}
               onClick={clearStatusFilter}
-              title="Limpiar filtros"
-              aria-label="Limpiar filtro de estado"
+              title={t("admin.generalCharacteristics.filters.clear")}
+              aria-label={t("admin.generalCharacteristics.filters.clear")}
             >
               <FilterX className="h-4 w-4" aria-hidden />
             </Button>
@@ -330,14 +383,17 @@ export function AdminGeneralCharacteristicsTable({
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 md:w-auto"
+            className={cn(
+              "h-9 w-full shrink-0 md:w-auto",
+              NEW_BUTTON_MIN_W_CLASS,
+            )}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nueva
+            {t("admin.generalCharacteristics.buttonNew")}
           </Button>
         }
       />

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  subcategoryFormSchema,
+  createSubcategoryFormSchema,
   type SubcategoryFormValues,
 } from "@/modules/admin/subcategories/subcategories.schema";
 import type { SubcategoryAdmin } from "@/modules/admin/subcategories/subcategories.types";
@@ -24,6 +24,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { slugify } from "@/lib/slugify";
 
 const FORM_ID = "admin-subcategory-form-slide-over";
@@ -42,9 +43,21 @@ export function SubcategoryFormDialog({
   categories,
 }: Props) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedSchema = useMemo(
+    () =>
+      createSubcategoryFormSchema({
+        categoryRequired: t("admin.subcategories.form.errors.categoryRequired"),
+        categoryInvalid: t("admin.subcategories.form.errors.categoryInvalid"),
+        nameRequired: t("admin.subcategories.form.errors.nameRequired"),
+        nameEnRequired: t("admin.subcategories.form.errors.nameEnRequired"),
+        maxChars: t("admin.subcategories.form.errors.maxChars"),
+      }),
+    [t],
+  );
   const form = useForm<SubcategoryFormValues>({
-    resolver: zodResolver(subcategoryFormSchema),
-    defaultValues: { categoryId: "", name: "", active: true },
+    resolver: zodResolver(localizedSchema),
+    defaultValues: { categoryId: "", name: "", nameEn: "", active: true },
   });
 
   const errors = form.formState.errors;
@@ -52,26 +65,30 @@ export function SubcategoryFormDialog({
   const categoryOptions = useMemo(() => {
     const base = categories
       .filter((c) => c.active)
-      .map((c) => ({ value: c.id, label: c.name }));
-    if (
-      subcategory &&
-      !base.some((o) => o.value === subcategory.categoryId)
-    ) {
+      .map((c) => ({
+        value: c.id,
+        label: locale === "en" ? (c.nameEn ?? c.name) : c.name,
+      }));
+    if (subcategory && !base.some((o) => o.value === subcategory.categoryId)) {
       return [
         {
           value: subcategory.categoryId,
-          label: subcategory.categoryName,
+          label:
+            locale === "en"
+              ? categories.find((c) => c.id === subcategory.categoryId)?.nameEn ??
+                subcategory.categoryName
+              : subcategory.categoryName,
         },
         ...base,
       ];
     }
     return base;
-  }, [categories, subcategory]);
+  }, [categories, locale, subcategory]);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createSubcategoryAdminAction,
     {
-      successMessage: "Subcategoría creada",
+      successMessage: t("admin.subcategories.toast.created"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -82,7 +99,7 @@ export function SubcategoryFormDialog({
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateSubcategoryAdminAction,
     {
-      successMessage: "Subcategoría actualizada",
+      successMessage: t("admin.subcategories.toast.updated"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -98,10 +115,11 @@ export function SubcategoryFormDialog({
       form.reset({
         categoryId: subcategory.categoryId,
         name: subcategory.name,
+        nameEn: subcategory.nameEn ?? subcategory.name,
         active: subcategory.active,
       });
     } else {
-      form.reset({ categoryId: "", name: "", active: true });
+      form.reset({ categoryId: "", name: "", nameEn: "", active: true });
     }
   }, [open, subcategory, form]);
 
@@ -120,9 +138,11 @@ export function SubcategoryFormDialog({
       open={open}
       onClose={() => onOpenChange(false)}
       title={
-        subcategory ? "Editar subcategoría" : "Nueva subcategoría"
+        subcategory
+          ? t("admin.subcategories.form.titleEdit")
+          : t("admin.subcategories.form.titleNew")
       }
-      description="Cada subcategoría pertenece a una categoría; el nombre es único entre subcategorías activas de esa categoría."
+      description={t("admin.subcategories.form.description")}
       footer={
         <SlideOverFooter>
           <Button
@@ -131,15 +151,15 @@ export function SubcategoryFormDialog({
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.subcategories.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.subcategories.form.saving")}
           >
-            Guardar
+            {t("admin.subcategories.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -149,28 +169,62 @@ export function SubcategoryFormDialog({
           <div className="space-y-4">
             <FormSelectField<SubcategoryFormValues>
               name="categoryId"
-              label="Categoría"
+              label={t("admin.subcategories.form.labelCategory")}
               instanceId="admin-subcategory-category"
               options={categoryOptions}
-              placeholder="Selecciona una categoría"
+              placeholder={t("admin.subcategories.form.placeholderCategory")}
               isDisabled={isPending}
               required
               useMenuPortal
             />
-            <FormField
-              name="name"
-              label="Nombre de la subcategoría"
-              required
-              disabled={isPending}
-              error={errors.name?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
+            {locale === "en" ? (
+              <>
+                <FormField
+                  name="nameEn"
+                  label={t("admin.subcategories.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="name"
+                  label={t("admin.subcategories.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            ) : (
+              <>
+                <FormField
+                  name="name"
+                  label={t("admin.subcategories.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="nameEn"
+                  label={t("admin.subcategories.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            )}
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<SubcategoryFormValues>
                 name="active"
-                label="Activa"
-                description="Si está desactivada, no se ofrece al clasificar productos."
+                label={t("admin.subcategories.form.activeLabel")}
+                description={t("admin.subcategories.form.activeDescription")}
               />
             </div>
           </div>

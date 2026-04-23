@@ -8,17 +8,16 @@ import {
 import { UserDetailDrawer } from "@/app/admin/(panel)/users/UserDetailDrawer";
 import {
   AdminTableEmptyEmDash,
-  adminTableDateCell,
   adminTableOptionalString,
 } from "@/components/admin/admin-table-empty";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useServerAction } from "@/hooks/use-server-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import type { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { cn } from "@/utils/cn";
 import {
   ArrowUpDown,
@@ -39,28 +38,32 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from "react";
 import Select from "react-select";
 import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { BusinessProfileCard } from "@/components/dashboard/business-profile-card";
+import { FilterX } from "lucide-react";
 
-const APPROVAL_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "pending" as const, label: "Pendiente" },
-  { value: "approved" as const, label: "Aprobada" },
-  { value: "rejected" as const, label: "Rechazada" },
+const APPROVAL_FILTER_VALUES = [
+  "all",
+  "pending",
+  "approved",
+  "rejected",
 ] as const;
+const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
 
-type ApprovalFilter = (typeof APPROVAL_FILTER_OPTIONS)[number]["value"];
+type ApprovalFilter = (typeof APPROVAL_FILTER_VALUES)[number];
 
 function approvalLabel(
   s: BusinessRegistrationStatus | null | undefined,
+  t: (key: string) => string,
 ): string {
   const v = s ?? "pending";
-  if (v === "pending") return "Pendiente";
-  if (v === "rejected") return "Rechazada";
-  return "Aprobada";
+  if (v === "pending") return t("admin.businessSubscriptions.status.pending");
+  if (v === "rejected") return t("admin.businessSubscriptions.status.rejected");
+  return t("admin.businessSubscriptions.status.approved");
 }
 
 function approvalBadgeClass(
@@ -76,8 +79,15 @@ function approvalBadgeClass(
   return "border border-emerald-200/90 bg-emerald-50 text-emerald-900";
 }
 
-function businessDisplayName(row: AdminBusinessProfileRow): string {
-  return row.fullName?.trim() || row.email?.trim() || "Sin nombre";
+function businessDisplayName(
+  row: AdminBusinessProfileRow,
+  t: (key: string) => string,
+): string {
+  return (
+    row.fullName?.trim() ||
+    row.email?.trim() ||
+    t("admin.businessSubscriptions.table.noName")
+  );
 }
 
 function businessSortValue(row: AdminBusinessProfileRow): string {
@@ -205,6 +215,13 @@ function SortableHeader({
 }
 
 const MENU_MIN_WIDTH_PX = 208; // 13rem
+const BUSINESS_COLUMN_CLASS =
+  "min-w-[16rem] max-w-[min(29rem,42vw)] md:max-w-[min(24rem,36vw)]";
+const PHONE_COLUMN_CLASS = "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem]";
+const EIN_COLUMN_CLASS = "w-[10rem] min-w-[10rem] max-w-[10rem]";
+const APPROVAL_COLUMN_CLASS = "w-[11.5rem] min-w-[11.5rem] max-w-[11.5rem]";
+const CREATED_AT_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 
 interface Props {
   rows: AdminBusinessProfileRow[];
@@ -221,6 +238,7 @@ function SuscripcionesRowActionsMenu({
   onViewDetail: () => void;
   onDeleteSuccess: () => void;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -233,9 +251,8 @@ function SuscripcionesRowActionsMenu({
 
   const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
     useServerAction(approveBusinessRegistrationAction, {
-      successMessage:
-        "Empresa aprobada. Se ha enviado un correo de notificación.",
-      errorMessage: "No se pudo aprobar la empresa",
+      successMessage: t("admin.businessSubscriptions.toast.approved"),
+      errorMessage: t("admin.businessSubscriptions.toast.approveError"),
       onSuccess: () => {
         onDeleteSuccess();
         setOpen(false);
@@ -245,8 +262,8 @@ function SuscripcionesRowActionsMenu({
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
-      successMessage: "Solicitud de empresa rechazada.",
-      errorMessage: "No se pudo rechazar la solicitud",
+      successMessage: t("admin.businessSubscriptions.toast.rejected"),
+      errorMessage: t("admin.businessSubscriptions.toast.rejectError"),
       onSuccess: () => {
         onDeleteSuccess();
         setOpen(false);
@@ -256,8 +273,8 @@ function SuscripcionesRowActionsMenu({
 
   const { executeAsync: deleteUserAsync, isPending: deletingUser } =
     useServerAction(deleteUserAction, {
-      successMessage: "Usuario eliminado",
-      errorMessage: "No se pudo eliminar el usuario",
+      successMessage: t("admin.businessSubscriptions.toast.deleted"),
+      errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
       onSuccess: () => {
         onDeleteSuccess();
         setOpen(false);
@@ -315,9 +332,9 @@ function SuscripcionesRowActionsMenu({
   const handleDelete = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
     await swalSaasConfirmAsync({
-      title: "¿Eliminar suscripción de empresa?",
-      html: `Vas a eliminar el usuario y perfil de <strong>${label}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.businessSubscriptions.confirm.deleteTitle"),
+      html: `${t("admin.businessSubscriptions.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.businessSubscriptions.confirm.deleteMessageSuffix")}`,
+      confirmButtonText: t("admin.businessSubscriptions.confirm.deleteConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => deleteUserAsync(row.id),
@@ -328,11 +345,11 @@ function SuscripcionesRowActionsMenu({
     const label = row.fullName?.trim() || row.email || row.id;
     const wasApproved = row.businessRegistrationStatus === "approved";
     await swalSaasConfirmAsync({
-      title: "¿Rechazar solicitud?",
+      title: t("admin.businessSubscriptions.confirm.rejectTitle"),
       html: wasApproved
-        ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa.`
-        : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario no podrá iniciar sesión como empresa.`,
-      confirmButtonText: "Rechazar",
+        ? `${t("admin.businessSubscriptions.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.businessSubscriptions.confirm.rejectApprovedSuffix")}`
+        : `${t("admin.businessSubscriptions.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.businessSubscriptions.confirm.rejectPendingSuffix")}`,
+      confirmButtonText: t("admin.businessSubscriptions.confirm.rejectConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(row.id),
@@ -342,9 +359,11 @@ function SuscripcionesRowActionsMenu({
   const handleApprove = async () => {
     const label = row.fullName?.trim() || row.email || row.id;
     await swalSaasConfirmAsync({
-      title: "¿Aprobar solicitud?",
-      html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
-      confirmButtonText: "Aprobar",
+      title: t("admin.businessSubscriptions.confirm.approveTitle"),
+      html: `${t("admin.businessSubscriptions.confirm.approveMessagePrefix")} <strong>${label}</strong>. ${t("admin.businessSubscriptions.confirm.approveMessageSuffix")}`,
+      confirmButtonText: t(
+        "admin.businessSubscriptions.confirm.approveConfirm",
+      ),
       variant: "positive",
       iconType: "question",
       preConfirm: () => approveBusinessAsync(row.id),
@@ -371,7 +390,7 @@ function SuscripcionesRowActionsMenu({
           }}
         >
           <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          Ver detalles
+          {t("admin.businessSubscriptions.menu.viewDetails")}
         </button>
 
         {showPendingActions ? (
@@ -387,7 +406,7 @@ function SuscripcionesRowActionsMenu({
               }}
             >
               <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-              Aprobar registro
+              {t("admin.businessSubscriptions.menu.approve")}
             </button>
             <button
               type="button"
@@ -399,7 +418,7 @@ function SuscripcionesRowActionsMenu({
               }}
             >
               <XCircle className="h-4 w-4 shrink-0" aria-hidden />
-              Rechazar solicitud
+              {t("admin.businessSubscriptions.menu.reject")}
             </button>
           </>
         ) : null}
@@ -417,7 +436,7 @@ function SuscripcionesRowActionsMenu({
               }}
             >
               <XCircle className="h-4 w-4 shrink-0" aria-hidden />
-              Rechazar solicitud
+              {t("admin.businessSubscriptions.menu.reject")}
             </button>
           </>
         ) : null}
@@ -438,7 +457,9 @@ function SuscripcionesRowActionsMenu({
           }}
         >
           <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-          {deletingUser ? "Eliminando" : "Eliminar"}
+          {deletingUser
+            ? t("admin.businessSubscriptions.menu.deleting")
+            : t("admin.businessSubscriptions.menu.delete")}
         </button>
       </div>
     ) : null;
@@ -453,7 +474,7 @@ function SuscripcionesRowActionsMenu({
         className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground md:rounded-md md:border md:border-border/80 md:bg-background md:hover:bg-muted/60"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Abrir menú de acciones"
+        aria-label={t("admin.businessSubscriptions.menu.openActions")}
         disabled={busy}
         onClick={() => setOpen((v) => !v)}
       >
@@ -470,8 +491,31 @@ export function AdminSuscripcionesEmpresasTable({
   rows,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("all");
+  const approvalFilterOptions = useMemo(
+    () =>
+      [
+        {
+          value: "all" as const,
+          label: t("admin.businessSubscriptions.filters.all"),
+        },
+        {
+          value: "pending" as const,
+          label: t("admin.businessSubscriptions.status.pending"),
+        },
+        {
+          value: "approved" as const,
+          label: t("admin.businessSubscriptions.status.approved"),
+        },
+        {
+          value: "rejected" as const,
+          label: t("admin.businessSubscriptions.status.rejected"),
+        },
+      ] as const,
+    [t],
+  );
 
   const filtered = useMemo(() => {
     if (approvalFilter === "all") return rows;
@@ -487,8 +531,8 @@ export function AdminSuscripcionesEmpresasTable({
   }, [rows, approvalFilter]);
 
   const filterValue =
-    APPROVAL_FILTER_OPTIONS.find((o) => o.value === approvalFilter) ??
-    APPROVAL_FILTER_OPTIONS[0];
+    approvalFilterOptions.find((o) => o.value === approvalFilter) ??
+    approvalFilterOptions[0];
 
   const renderMobileRow = useCallback((row: Row<AdminBusinessProfileRow>) => {
     const r = row.original;
@@ -528,25 +572,26 @@ export function AdminSuscripcionesEmpresasTable({
         sortingFn: (rowA, rowB) =>
           businessSortValue(rowA.original).localeCompare(
             businessSortValue(rowB.original),
-            "es",
+            locale,
             { sensitivity: "base" },
           ),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Empresa"
-            ariaLabelIdle="Ordenar por empresa"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.businessSubscriptions.table.business")}
+            ariaLabelIdle={t(
+              "admin.businessSubscriptions.table.businessSortIdle",
+            )}
+            ariaLabelAsc={t("admin.businessSubscriptions.table.sortAsc")}
+            ariaLabelDesc={t("admin.businessSubscriptions.table.sortDesc")}
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+          cellClassName: BUSINESS_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const r = row.original;
-          const name = businessDisplayName(r);
+          const name = businessDisplayName(r, t);
           const email = r.email?.trim();
           return (
             <div className="flex min-w-0 items-start gap-3">
@@ -577,19 +622,25 @@ export function AdminSuscripcionesEmpresasTable({
       },
       {
         accessorKey: "phone",
-        header: "Teléfono",
+        header: t("admin.businessSubscriptions.table.phone"),
+        meta: {
+          cellClassName: PHONE_COLUMN_CLASS,
+        },
         cell: ({ row }) =>
           adminTableOptionalString(row.original.phone, {
-            classNameWhenPresent: "text-foreground",
+            classNameWhenPresent: "text-foreground whitespace-nowrap",
           }),
       },
       {
         accessorKey: "employerIdentificationNumber",
-        header: "EIN",
+        header: t("admin.businessSubscriptions.table.ein"),
+        meta: {
+          cellClassName: EIN_COLUMN_CLASS,
+        },
         cell: ({ row }) => {
           const v = row.original.employerIdentificationNumber?.trim();
           if (!v) return <AdminTableEmptyEmDash />;
-          return <span className="font-mono text-xs">{v}</span>;
+          return <span className="font-mono text-xs whitespace-nowrap">{v}</span>;
         },
       },
       {
@@ -601,12 +652,21 @@ export function AdminSuscripcionesEmpresasTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado alta"
-            ariaLabelIdle="Ordenar por estado de alta"
-            ariaLabelAsc="Pendiente primero. Clic para invertir"
-            ariaLabelDesc="Rechazada primero. Clic para quitar orden"
+            label={t("admin.businessSubscriptions.table.registrationStatus")}
+            ariaLabelIdle={t(
+              "admin.businessSubscriptions.table.registrationStatusSortIdle",
+            )}
+            ariaLabelAsc={t(
+              "admin.businessSubscriptions.table.registrationStatusSortAsc",
+            )}
+            ariaLabelDesc={t(
+              "admin.businessSubscriptions.table.registrationStatusSortDesc",
+            )}
           />
         ),
+        meta: {
+          cellClassName: APPROVAL_COLUMN_CLASS,
+        },
         cell: ({ row }) => (
           <span
             className={cn(
@@ -614,7 +674,7 @@ export function AdminSuscripcionesEmpresasTable({
               approvalBadgeClass(row.original.businessRegistrationStatus),
             )}
           >
-            {approvalLabel(row.original.businessRegistrationStatus)}
+            {approvalLabel(row.original.businessRegistrationStatus, t)}
           </span>
         ),
       },
@@ -673,22 +733,35 @@ export function AdminSuscripcionesEmpresasTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Registro"
-            ariaLabelIdle="Ordenar por fecha de registro"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.businessSubscriptions.table.createdAt")}
+            ariaLabelIdle={t(
+              "admin.businessSubscriptions.table.createdAtSortIdle",
+            )}
+            ariaLabelAsc={t(
+              "admin.businessSubscriptions.table.createdAtSortAsc",
+            )}
+            ariaLabelDesc={t(
+              "admin.businessSubscriptions.table.createdAtSortDesc",
+            )}
           />
         ),
+        meta: {
+          cellClassName: CREATED_AT_COLUMN_CLASS,
+        },
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {adminTableDateCell(row.original.createdAt)}
+          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
+            {formatDateDdMmYyyyHhMm(row.original.createdAt, locale)}
           </span>
         ),
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
+        header: () => (
+          <span className="sr-only">
+            {t("admin.businessSubscriptions.table.actions")}
+          </span>
+        ),
         cell: ({ row }) => (
           <SuscripcionesRowActionsMenu
             row={row.original}
@@ -702,7 +775,53 @@ export function AdminSuscripcionesEmpresasTable({
         ),
       },
     ],
-    [],
+    [locale, t],
+  );
+
+  const toolbarFilters = useMemo(
+    () => (
+      <div className="flex w-full min-w-0 items-center gap-2">
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            "min-[1440px]:box-border min-[1440px]:w-[var(--orders-status-filter-w)] min-[1440px]:min-w-[var(--orders-status-filter-w)] min-[1440px]:max-w-[var(--orders-status-filter-w)] min-[1440px]:flex-none min-[1440px]:shrink-0",
+          )}
+          style={
+            {
+              ["--orders-status-filter-w" as string]: `${STATUS_FILTER_WIDE_CH}ch`,
+            } as CSSProperties
+          }
+        >
+          <Select<(typeof approvalFilterOptions)[number], false>
+            instanceId="suscripciones-empresas-approval-filter"
+            inputId="suscripciones-empresas-approval-filter-input"
+            aria-label={t("admin.businessSubscriptions.filters.statusAria")}
+            isSearchable={false}
+            isClearable={false}
+            options={[...approvalFilterOptions]}
+            value={filterValue}
+            onChange={(opt) => {
+              if (opt) setApprovalFilter(opt.value);
+            }}
+            styles={appToolbarSelectStyles}
+            className="w-full min-w-0"
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
+          disabled={approvalFilter === "all"}
+          onClick={() => setApprovalFilter("all")}
+          title={t("admin.businessSubscriptions.filters.clear")}
+          aria-label={t("admin.businessSubscriptions.filters.clearAria")}
+        >
+          <FilterX className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
+    ),
+    [approvalFilter, approvalFilterOptions, filterValue, t],
   );
 
   return (
@@ -712,31 +831,17 @@ export function AdminSuscripcionesEmpresasTable({
         data={filtered}
         isLoading={isLoading}
         enableSorting
-        searchPlaceholder="Buscar por negocio, email, teléfono o EIN…"
+        searchPlaceholder={t(
+          "admin.businessSubscriptions.filters.searchPlaceholder",
+        )}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
         paginationClassName="border-border/50"
         getRowClassName={(row) => businessSubscriptionRowClassName(row)}
         renderMobileRow={renderMobileRow}
-        toolbarFilters={
-          <div className="flex w-full min-w-0 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof APPROVAL_FILTER_OPTIONS)[number], false>
-              instanceId="suscripciones-empresas-approval-filter"
-              inputId="suscripciones-empresas-approval-filter-input"
-              aria-label="Filtrar por estado de alta"
-              isSearchable={false}
-              isClearable={false}
-              options={[...APPROVAL_FILTER_OPTIONS]}
-              value={filterValue}
-              onChange={(opt) => {
-                if (opt) setApprovalFilter(opt.value);
-              }}
-              styles={appToolbarSelectStyles}
-              className="w-full"
-            />
-          </div>
-        }
+        toolbarFilters={toolbarFilters}
       />
       <UserDetailDrawer
         userId={detailUserId}

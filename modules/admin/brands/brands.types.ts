@@ -2,6 +2,7 @@
 export type Brand = {
   id: string;
   name: string;
+  nameEn: string | null;
   slug: string;
   active: boolean;
   createdAt: string;
@@ -10,12 +11,14 @@ export type Brand = {
 
 export type BrandInsert = {
   name: string;
+  nameEn: string;
   slug: string;
   active: boolean;
 };
 
 export type BrandUpdate = {
   name: string;
+  nameEn: string;
   slug: string;
   active: boolean;
 };

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/utils/cn";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 
@@ -28,10 +29,11 @@ export function SubcategoryProfileCard({
   className,
   actions,
 }: SubcategoryProfileCardProps) {
+  const { t, locale } = useI18n();
   const title = name.trim() || "—";
   const secondary = categoryName?.trim();
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
+  const relative = formatRelativeLastAccess(updatedAt, locale);
+  const absolute = formatDateDdMmYyyyHhMm(updatedAt, locale);
 
   return (
     <div
@@ -66,12 +68,16 @@ export function SubcategoryProfileCard({
               statusBadgeClass(active),
             )}
           >
-            {active ? "Activo" : "Inactivo"}
+            {active
+              ? t("admin.subcategories.table.statusActive")
+              : t("admin.subcategories.table.statusInactive")}
           </span>
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.subcategories.table.updatedAt")}
+          </p>
           <p
             className="text-sm text-foreground"
             title={absolute || undefined}

@@ -6,6 +6,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminSpecificCharacteristicsTable } from "./AdminSpecificCharacteristicsTable";
+import { SpecificCharacteristicsPageHeader } from "./SpecificCharacteristicsPageHeader";
 
 async function AdminSpecificCharacteristicsTableSection() {
   const [generalCharacteristics, specificCharacteristics] = await Promise.all([
@@ -30,16 +31,7 @@ export default async function AdminSpecificCharacteristicsPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Características específicas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona los valores de cada característica general (por ejemplo,
-            Color - Rojo/Negro, RAM - 8GB/16GB). El estado activo permite
-            ocultarlas sin borrarlas.
-          </p>
-        </header>
+        <SpecificCharacteristicsPageHeader />
 
         <hr className="border-border" />
 

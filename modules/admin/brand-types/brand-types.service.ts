@@ -61,6 +61,7 @@ export async function updateBrandTypeService(
   const partial = brandTypeFormSchema.pick({
     brandId: true,
     name: true,
+    nameEn: true,
     active: true,
   });
   const parsed = partial.safeParse(payload);

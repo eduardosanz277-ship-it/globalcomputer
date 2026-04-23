@@ -5,6 +5,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminCategoriesTable } from "./AdminCategoriesTable";
+import { CategoriesPageHeader } from "./CategoriesPageHeader";
 
 async function AdminCategoriesTableSection() {
   const items = await getAllCategoriesAdminService();
@@ -20,25 +21,11 @@ export default async function AdminCategoriesPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Categorías
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Define categorías de producto reutilizables. Las subcategorías se
-            asocian a cada categoría al clasificar productos. El estado activo
-            permite ocultarlas en la tienda y en la asignación de productos sin
-            perder el historial.
-          </p>
-        </header>
+        <CategoriesPageHeader />
 
         <hr className="border-border" />
 
-        <Suspense
-          fallback={
-            <AdminCategoriesTable categories={[]} isLoading />
-          }
-        >
+        <Suspense fallback={<AdminCategoriesTable categories={[]} isLoading />}>
           <AdminCategoriesTableSection />
         </Suspense>
       </CardContent>

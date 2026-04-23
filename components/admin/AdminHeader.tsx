@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { LanguageSelector } from "@/components/i18n/LanguageSelector";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
 import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
 import { cn } from "@/utils/cn";
@@ -74,6 +76,8 @@ export function AdminHeader({
   const avatarClass =
     "flex shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-sm font-semibold leading-none text-primary";
 
+  const { t } = useI18n();
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-white px-2.5 lg:px-6">
       {variant === "admin" && onOpenMobileMenu && (
@@ -130,6 +134,12 @@ export function AdminHeader({
         >
           <Bell className="h-5 w-5" />
         </button>
+
+        <LanguageSelector
+          className="hidden gap-1 md:flex"
+          buttonClassName="bg-muted/80"
+          aria-label={t("admin.header.languageToggle")}
+        />
 
         <div
           className="relative"

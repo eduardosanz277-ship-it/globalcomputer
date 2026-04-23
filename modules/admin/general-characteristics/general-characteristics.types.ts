@@ -2,6 +2,7 @@
 export type GeneralCharacteristic = {
   id: string;
   name: string;
+  nameEn: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -10,12 +11,14 @@ export type GeneralCharacteristic = {
 
 export type GeneralCharacteristicInsert = {
   name: string;
+  nameEn: string;
   active: boolean;
   slug?: string;
 };
 
 export type GeneralCharacteristicUpdate = {
   name: string;
+  nameEn: string;
   active: boolean;
   slug?: string;
 };

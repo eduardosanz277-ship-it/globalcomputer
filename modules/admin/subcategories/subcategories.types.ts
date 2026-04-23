@@ -4,6 +4,7 @@ export type SubcategoryAdmin = {
   categoryId: string;
   categoryName: string;
   name: string;
+  nameEn: string | null;
   slug: string;
   active: boolean;
   createdAt: string;
@@ -13,6 +14,7 @@ export type SubcategoryAdmin = {
 export type SubcategoryAdminInsert = {
   categoryId: string;
   name: string;
+  nameEn: string;
   slug: string;
   active: boolean;
 };

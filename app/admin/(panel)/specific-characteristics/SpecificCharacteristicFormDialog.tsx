@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  specificCharacteristicFormSchema,
+  createSpecificCharacteristicFormSchema,
   type SpecificCharacteristicFormValues,
 } from "@/modules/admin/specific-characteristics/specific-characteristics.schema";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
@@ -24,6 +24,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 const FORM_ID = "specific-characteristic-form-slide-over";
 
@@ -41,9 +42,21 @@ export function SpecificCharacteristicFormDialog({
   generalCharacteristics,
 }: Props) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedSchema = useMemo(
+    () =>
+      createSpecificCharacteristicFormSchema({
+        generalRequired: t("admin.specificCharacteristics.form.errors.generalRequired"),
+        generalInvalid: t("admin.specificCharacteristics.form.errors.generalInvalid"),
+        nameRequired: t("admin.specificCharacteristics.form.errors.nameRequired"),
+        nameEnRequired: t("admin.specificCharacteristics.form.errors.nameEnRequired"),
+        maxChars: t("admin.specificCharacteristics.form.errors.maxChars"),
+      }),
+    [t],
+  );
   const form = useForm<SpecificCharacteristicFormValues>({
-    resolver: zodResolver(specificCharacteristicFormSchema),
-    defaultValues: { generalId: "", name: "", active: true },
+    resolver: zodResolver(localizedSchema),
+    defaultValues: { generalId: "", name: "", nameEn: "", active: true },
   });
 
   const errors = form.formState.errors;
@@ -51,7 +64,7 @@ export function SpecificCharacteristicFormDialog({
   const generalOptions = useMemo(() => {
     const base = generalCharacteristics.map((g) => ({
       value: g.id,
-      label: g.name,
+      label: locale === "en" ? (g.nameEn ?? g.name) : g.name,
     }));
     if (
       specificCharacteristic &&
@@ -60,18 +73,22 @@ export function SpecificCharacteristicFormDialog({
       return [
         {
           value: specificCharacteristic.generalId,
-          label: specificCharacteristic.generalName,
+          label:
+            locale === "en"
+              ? (specificCharacteristic.generalNameEn ??
+                specificCharacteristic.generalName)
+              : specificCharacteristic.generalName,
         },
         ...base,
       ];
     }
     return base;
-  }, [generalCharacteristics, specificCharacteristic]);
+  }, [generalCharacteristics, locale, specificCharacteristic]);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createSpecificCharacteristicAction,
     {
-      successMessage: "Característica específica creada",
+      successMessage: t("admin.specificCharacteristics.toast.created"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -82,7 +99,7 @@ export function SpecificCharacteristicFormDialog({
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateSpecificCharacteristicAction,
     {
-      successMessage: "Característica específica actualizada",
+      successMessage: t("admin.specificCharacteristics.toast.updated"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -98,10 +115,11 @@ export function SpecificCharacteristicFormDialog({
       form.reset({
         generalId: specificCharacteristic.generalId,
         name: specificCharacteristic.name,
+        nameEn: specificCharacteristic.nameEn ?? specificCharacteristic.name,
         active: specificCharacteristic.active,
       });
     } else {
-      form.reset({ generalId: "", name: "", active: true });
+      form.reset({ generalId: "", name: "", nameEn: "", active: true });
     }
   }, [open, specificCharacteristic, form]);
 
@@ -119,10 +137,10 @@ export function SpecificCharacteristicFormDialog({
       onClose={() => onOpenChange(false)}
       title={
         specificCharacteristic
-          ? "Editar característica específica"
-          : "Nueva característica específica"
+          ? t("admin.specificCharacteristics.form.titleEdit")
+          : t("admin.specificCharacteristics.form.titleNew")
       }
-      description="Cada valor específico pertenece a una característica general; el nombre es único dentro de esa característica general."
+      description={t("admin.specificCharacteristics.form.description")}
       footer={
         <SlideOverFooter>
           <Button
@@ -131,15 +149,15 @@ export function SpecificCharacteristicFormDialog({
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.specificCharacteristics.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.specificCharacteristics.form.saving")}
           >
-            Guardar
+            {t("admin.specificCharacteristics.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -159,27 +177,61 @@ export function SpecificCharacteristicFormDialog({
           <div className="space-y-4">
             <FormSelectField<SpecificCharacteristicFormValues>
               name="generalId"
-              label="Característica general"
+              label={t("admin.specificCharacteristics.form.labelGeneral")}
               instanceId="specific-characteristic-general"
               options={generalOptions}
-              placeholder="Selecciona una característica general"
+              placeholder={t("admin.specificCharacteristics.form.placeholderGeneral")}
               isDisabled={isPending}
               required
             />
-            <FormField
-              name="name"
-              label="Nombre de la característica específica"
-              required
-              disabled={isPending}
-              error={errors.name?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
+            {locale === "en" ? (
+              <>
+                <FormField
+                  name="nameEn"
+                  label={t("admin.specificCharacteristics.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="name"
+                  label={t("admin.specificCharacteristics.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            ) : (
+              <>
+                <FormField
+                  name="name"
+                  label={t("admin.specificCharacteristics.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="nameEn"
+                  label={t("admin.specificCharacteristics.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            )}
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<SpecificCharacteristicFormValues>
                 name="active"
-                label="Activo"
-                description="Si está desactivado, el valor específico no se ofrece al configurar productos."
+                label={t("admin.specificCharacteristics.form.activeLabel")}
+                description={t("admin.specificCharacteristics.form.activeDescription")}
               />
             </div>
           </div>

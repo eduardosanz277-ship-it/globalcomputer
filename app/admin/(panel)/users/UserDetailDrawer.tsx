@@ -6,14 +6,26 @@ import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import type { AdminUserDetail } from "@/modules/admin/users/users.types";
 import {
   approveBusinessRegistrationAction,
+  deleteUserAction,
   rejectBusinessRegistrationAction,
   getUserDetailAction,
 } from "./actions";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
-import { Loader2, Mail, Phone, Hash } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Phone,
+  Hash,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlideOver } from "@/components/ui/slide-over";
 import { useServerAction } from "@/hooks/use-server-action";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { cn } from "@/utils/cn";
 
 type Props = {
   userId: string | null;
@@ -25,18 +37,24 @@ type Props = {
   subscriptionContext?: boolean;
 };
 
-function businessStatusText(d: AdminUserDetail): string {
+function businessStatusText(
+  d: AdminUserDetail,
+  t: (key: string) => string,
+): string {
   if (d.role !== "BUSINESS") return "—";
   const s = d.businessRegistrationStatus ?? "pending";
-  if (s === "pending") return "Pendiente de aprobación";
-  if (s === "rejected") return "Rechazada";
-  return "Aprobada";
+  if (s === "pending") return t("admin.userDetail.businessStatus.pendingReview");
+  if (s === "rejected") return t("admin.userDetail.businessStatus.rejected");
+  return t("admin.userDetail.businessStatus.approved");
 }
 
-function roleLabel(role: AdminUserDetail["role"]): string {
-  if (role === "ADMIN") return "Administrador";
-  if (role === "BUSINESS") return "Empresa";
-  if (role === "CLIENT") return "Cliente";
+function roleLabel(
+  role: AdminUserDetail["role"],
+  t: (key: string) => string,
+): string {
+  if (role === "ADMIN") return t("admin.userDetail.role.admin");
+  if (role === "BUSINESS") return t("admin.userDetail.role.business");
+  if (role === "CLIENT") return t("admin.userDetail.role.client");
   return role;
 }
 
@@ -98,19 +116,24 @@ function UserDetailContent({
   approvalBusy,
   onReject,
   onApprove,
+  onDelete,
   showRejectButton,
   showApproveButton,
+  showDeleteButton,
   subscriptionContext,
 }: {
   user: AdminUserDetail;
   approvalBusy: boolean;
   onReject: () => void;
   onApprove: () => void;
+  onDelete: () => void;
   showRejectButton: boolean;
   showApproveButton: boolean;
+  showDeleteButton: boolean;
   subscriptionContext: boolean;
 }) {
-  const businessStatus = businessStatusText(user);
+  const { t, locale } = useI18n();
+  const businessStatus = businessStatusText(user, t);
   const isBusiness = user.role === "BUSINESS";
   const isClient = user.role === "CLIENT";
   const showCompanyStatusBadge = isBusiness;
@@ -118,24 +141,34 @@ function UserDetailContent({
   const showPhone = isBusiness || isClient || user.role === "ADMIN";
   const detailSectionTitle = subscriptionContext
     ? isBusiness
-      ? "Datos de la empresa y la solicitud de alta"
+      ? t("admin.userDetail.section.subscriptionBusiness")
       : isClient
-        ? "Información de contacto"
-        : "Información de la cuenta"
+        ? t("admin.userDetail.section.contact")
+        : t("admin.userDetail.section.account")
     : isClient
-      ? "Información de contacto"
+      ? t("admin.userDetail.section.contact")
       : isBusiness
-        ? "Información del negocio"
-        : "Información de la cuenta";
-  const hasActions = showRejectButton || showApproveButton;
+        ? t("admin.userDetail.section.business")
+        : t("admin.userDetail.section.account");
+  const hasActions = showRejectButton || showApproveButton || showDeleteButton;
+  const registrationDate = user.createdAt
+    ? formatDateDdMmYyyyHhMm(user.createdAt, locale)
+    : "—";
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+    <div className={cn("space-y-6", subscriptionContext && "space-y-4 md:space-y-5")}>
+      <header
+        className={cn(
+          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6",
+          subscriptionContext
+            ? "rounded-xl border border-border/70 bg-card p-4 sm:p-5"
+            : "border-b border-border/60 pb-6",
+        )}
+      >
         <div className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              {user.fullName?.trim() || "Usuario sin nombre"}
+              {user.fullName?.trim() || t("admin.userDetail.unnamedUser")}
             </h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-4 w-4 shrink-0" aria-hidden />
@@ -157,44 +190,67 @@ function UserDetailContent({
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${roleBadgeClass(user.role)}`}
               >
-                Rol: {roleLabel(user.role)}
+                {t("admin.userDetail.roleLabel")}: {roleLabel(user.role, t)}
               </span>
             )}
             {showCompanyStatusBadge ? (
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${businessBadgeClass(user.businessRegistrationStatus)}`}
               >
-                Estado empresa: {businessStatus}
+                {businessStatus}
               </span>
             ) : null}
           </div>
         </div>
 
         {hasActions ? (
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-right">
-              Acciones
-            </p>
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="flex w-full shrink-0 justify-end sm:w-auto sm:justify-end">
+            <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               {showApproveButton ? (
                 <Button
                   type="button"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-emerald-700 transition hover:bg-emerald-50"
                   disabled={approvalBusy}
                   onClick={onApprove}
+                  title={t("admin.userDetail.buttons.approveBusiness")}
+                  aria-label={t("admin.userDetail.buttons.approveBusiness")}
                 >
-                  {approvalBusy ? "Aprobando…" : "Aprobar empresa"}
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
                 </Button>
               ) : null}
               {showRejectButton ? (
                 <Button
                   type="button"
-                  variant="outline"
-                  className="border-rose-200/90 text-rose-600/90 hover:bg-rose-50/90 dark:border-rose-900/45 dark:text-rose-400/90 dark:hover:bg-rose-950/35"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
                   disabled={approvalBusy}
                   onClick={onReject}
+                  title={t("admin.userDetail.buttons.rejectRequest")}
+                  aria-label={t("admin.userDetail.buttons.rejectRequest")}
                 >
-                  {approvalBusy ? "Rechazando…" : "Rechazar solicitud"}
+                  <XCircle className="h-4 w-4" aria-hidden />
+                </Button>
+              ) : null}
+              {showDeleteButton ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 transition",
+                    approvalBusy
+                      ? "cursor-not-allowed text-muted-foreground/60"
+                      : "text-destructive hover:bg-destructive/10",
+                  )}
+                  disabled={approvalBusy}
+                  onClick={onDelete}
+                  title={t("admin.businessSubscriptions.menu.delete")}
+                  aria-label={t("admin.businessSubscriptions.menu.delete")}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </Button>
               ) : null}
             </div>
@@ -202,19 +258,29 @@ function UserDetailContent({
         ) : null}
       </header>
 
-      <section className="space-y-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <section
+        className={cn(
+          "space-y-4",
+          subscriptionContext && "rounded-xl border border-border/70 bg-card p-4 sm:p-5",
+        )}
+      >
+        <h3
+          className={cn(
+            "text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+            subscriptionContext && "text-sm font-medium normal-case tracking-normal text-foreground",
+          )}
+        >
           {detailSectionTitle}
         </h3>
         <div className="grid gap-y-4">
           <DetailField
-            label="Teléfono"
+            label={t("admin.userDetail.phone")}
             value={showPhone ? user.phone : null}
             icon={<Phone className="h-4 w-4" aria-hidden />}
           />
           {showEinField ? (
             <DetailField
-              label="EIN"
+              label={t("admin.userDetail.ein")}
               value={user.employerIdentificationNumber}
               mono
               icon={<Hash className="h-4 w-4" aria-hidden />}
@@ -235,16 +301,30 @@ function UserDetailContent({
             </>
           ) : (
             <DetailField
-              label="Último acceso"
+              label={t("admin.userDetail.lastAccess")}
               value={
                 user.lastSignInAt
-                  ? formatDateDdMmYyyyHhMm(user.lastSignInAt)
+                  ? formatDateDdMmYyyyHhMm(user.lastSignInAt, locale)
                   : null
               }
             />
           )}
         </div>
       </section>
+
+      {subscriptionContext ? (
+        <section className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
+          <h3 className="text-sm font-medium text-foreground">
+            {t("admin.userDetail.metadata.title")}
+          </h3>
+          <div className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock3 className="h-4 w-4" aria-hidden />
+            <span>
+              {t("admin.userDetail.metadata.registeredPrefix")} {registrationDate}
+            </span>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -254,6 +334,7 @@ export function UserDetailDrawer({
   onClose,
   subscriptionContext = false,
 }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const open = userId !== null;
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
@@ -262,17 +343,24 @@ export function UserDetailDrawer({
 
   const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
     useServerAction(approveBusinessRegistrationAction, {
-      successMessage:
-        "Empresa aprobada. Se ha enviado un correo de notificación.",
-      errorMessage: "No se pudo aprobar la empresa",
+      successMessage: t("admin.userDetail.toast.approved"),
+      errorMessage: t("admin.userDetail.toast.approveError"),
       onSuccess: () => onClose(),
       onSettled: () => router.refresh(),
     });
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
     useServerAction(rejectBusinessRegistrationAction, {
-      successMessage: "Solicitud de empresa rechazada.",
-      errorMessage: "No se pudo rechazar la solicitud",
+      successMessage: t("admin.userDetail.toast.rejected"),
+      errorMessage: t("admin.userDetail.toast.rejectError"),
+      onSuccess: () => onClose(),
+      onSettled: () => router.refresh(),
+    });
+
+  const { executeAsync: deleteUserAsync, isPending: deletingUser } =
+    useServerAction(deleteUserAction, {
+      successMessage: t("admin.businessSubscriptions.toast.deleted"),
+      errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
       onSuccess: () => onClose(),
       onSettled: () => router.refresh(),
     });
@@ -294,7 +382,7 @@ export function UserDetailDrawer({
         if (!cancelled) setDetail(data);
       })
       .catch(() => {
-        if (!cancelled) setError("No se pudo cargar el usuario.");
+        if (!cancelled) setError(t("admin.userDetail.error.loadUser"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -303,18 +391,19 @@ export function UserDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, t]);
 
   const handleRejectClick = async () => {
     if (!userId || !detail) return;
     const label = detail.fullName?.trim() || detail.email || userId;
     const wasApproved = detail.businessRegistrationStatus === "approved";
+    onClose();
     await swalSaasConfirmAsync({
-      title: "¿Rechazar solicitud?",
+      title: t("admin.userDetail.confirm.rejectTitle"),
       html: wasApproved
-        ? `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>. El usuario dejará de poder iniciar sesión como empresa (aunque antes estuviera aprobada).`
-        : `La solicitud de <strong>${label}</strong> quedará como <strong>rechazada</strong>.`,
-      confirmButtonText: "Rechazar",
+        ? `${t("admin.userDetail.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.userDetail.confirm.rejectApprovedSuffix")}`
+        : `${t("admin.userDetail.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.userDetail.confirm.rejectPendingSuffix")}`,
+      confirmButtonText: t("admin.userDetail.confirm.rejectConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(userId),
@@ -324,17 +413,32 @@ export function UserDetailDrawer({
   const handleApproveClick = async () => {
     if (!userId || !detail) return;
     const label = detail.fullName?.trim() || detail.email || userId;
+    onClose();
     await swalSaasConfirmAsync({
-      title: "¿Aprobar solicitud?",
-      html: `Se aprobará el registro de <strong>${label}</strong>. Se enviará un correo de notificación al usuario.`,
-      confirmButtonText: "Aprobar",
+      title: t("admin.userDetail.confirm.approveTitle"),
+      html: `${t("admin.userDetail.confirm.approveMessagePrefix")} <strong>${label}</strong>. ${t("admin.userDetail.confirm.approveMessageSuffix")}`,
+      confirmButtonText: t("admin.userDetail.confirm.approveConfirm"),
       variant: "positive",
       iconType: "question",
       preConfirm: () => approveBusinessAsync(userId),
     });
   };
 
-  const approvalBusy = approvingBusiness || rejectingBusiness;
+  const handleDeleteClick = async () => {
+    if (!userId || !detail) return;
+    const label = detail.fullName?.trim() || detail.email || userId;
+    onClose();
+    await swalSaasConfirmAsync({
+      title: t("admin.businessSubscriptions.confirm.deleteTitle"),
+      html: `${t("admin.businessSubscriptions.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.businessSubscriptions.confirm.deleteMessageSuffix")}`,
+      confirmButtonText: t("admin.businessSubscriptions.confirm.deleteConfirm"),
+      variant: "destructive",
+      iconType: "warning",
+      preConfirm: () => deleteUserAsync(userId),
+    });
+  };
+
+  const approvalBusy = approvingBusiness || rejectingBusiness || deletingUser;
 
   const showApproveButton =
     Boolean(detail && userId && detail.role === "BUSINESS") &&
@@ -347,15 +451,17 @@ export function UserDetailDrawer({
       detail?.businessRegistrationStatus == null ||
       detail?.businessRegistrationStatus === "approved");
 
+  const showDeleteButton = Boolean(detail && userId && subscriptionContext);
+
   const slideTitle = subscriptionContext
-    ? "Detalles de la suscripción"
-    : "Detalles del usuario";
+    ? t("admin.userDetail.slide.subscriptionTitle")
+    : t("admin.userDetail.slide.userTitle");
   const slideDescription = subscriptionContext
-    ? "Empresa, contacto y estado de la solicitud de alta a la plataforma."
-    : "Datos del perfil y de la sesión.";
+    ? t("admin.userDetail.slide.subscriptionDescription")
+    : t("admin.userDetail.slide.userDescription");
   const slideAriaLabel = subscriptionContext
-    ? "Detalle de la suscripción"
-    : "Detalle del usuario";
+    ? t("admin.userDetail.slide.subscriptionAria")
+    : t("admin.userDetail.slide.userAria");
 
   return (
     <SlideOver
@@ -375,7 +481,7 @@ export function UserDetailDrawer({
             className="h-10 w-10 animate-spin text-muted-foreground"
             aria-hidden
           />
-          <span className="sr-only">Cargando</span>
+          <span className="sr-only">{t("tablePagination.loadingData")}</span>
         </div>
       ) : (
         <>
@@ -388,6 +494,8 @@ export function UserDetailDrawer({
               onApprove={handleApproveClick}
               showRejectButton={showRejectButton}
               showApproveButton={showApproveButton}
+              showDeleteButton={showDeleteButton}
+              onDelete={handleDeleteClick}
               subscriptionContext={subscriptionContext}
             />
           ) : null}

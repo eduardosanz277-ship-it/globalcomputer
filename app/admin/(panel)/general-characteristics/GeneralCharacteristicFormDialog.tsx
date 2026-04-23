@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  generalCharacteristicFormSchema,
+  createGeneralCharacteristicFormSchema,
   type GeneralCharacteristicFormValues,
 } from "@/modules/admin/general-characteristics/general-characteristics.schema";
 import type { GeneralCharacteristic } from "@/modules/admin/general-characteristics/general-characteristics.types";
@@ -23,6 +23,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 const FORM_ID = "general-characteristic-form-slide-over";
 
@@ -38,9 +39,15 @@ export function GeneralCharacteristicFormDialog({
   characteristic,
 }: Props) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedSchema = createGeneralCharacteristicFormSchema({
+    nameRequired: t("admin.generalCharacteristics.form.errors.nameRequired"),
+    nameEnRequired: t("admin.generalCharacteristics.form.errors.nameEnRequired"),
+    maxChars: t("admin.generalCharacteristics.form.errors.maxChars"),
+  });
   const form = useForm<GeneralCharacteristicFormValues>({
-    resolver: zodResolver(generalCharacteristicFormSchema),
-    defaultValues: { name: "", active: true },
+    resolver: zodResolver(localizedSchema),
+    defaultValues: { name: "", nameEn: "", active: true },
   });
 
   const errors = form.formState.errors;
@@ -48,7 +55,7 @@ export function GeneralCharacteristicFormDialog({
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createGeneralCharacteristicAction,
     {
-      successMessage: "Característica creada",
+      successMessage: t("admin.generalCharacteristics.toast.created"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -59,7 +66,7 @@ export function GeneralCharacteristicFormDialog({
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateGeneralCharacteristicAction,
     {
-      successMessage: "Característica actualizada",
+      successMessage: t("admin.generalCharacteristics.toast.updated"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -72,9 +79,13 @@ export function GeneralCharacteristicFormDialog({
   useEffect(() => {
     if (!open) return;
     if (characteristic) {
-      form.reset({ name: characteristic.name, active: characteristic.active });
+      form.reset({
+        name: characteristic.name,
+        nameEn: characteristic.nameEn ?? characteristic.name,
+        active: characteristic.active,
+      });
     } else {
-      form.reset({ name: "", active: true });
+      form.reset({ name: "", nameEn: "", active: true });
     }
   }, [open, characteristic, form]);
 
@@ -92,10 +103,10 @@ export function GeneralCharacteristicFormDialog({
       onClose={() => onOpenChange(false)}
       title={
         characteristic
-          ? "Editar característica general"
-          : "Nueva característica general"
+          ? t("admin.generalCharacteristics.form.titleEdit")
+          : t("admin.generalCharacteristics.form.titleNew")
       }
-      description="Nombre único en el catálogo. Si está inactiva, no se ofrece al configurar productos."
+      description={t("admin.generalCharacteristics.form.description")}
       footer={
         <SlideOverFooter>
           <Button
@@ -104,15 +115,15 @@ export function GeneralCharacteristicFormDialog({
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.generalCharacteristics.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.generalCharacteristics.form.saving")}
           >
-            Guardar
+            {t("admin.generalCharacteristics.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -120,20 +131,54 @@ export function GeneralCharacteristicFormDialog({
       <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
         <section className={adminSlideOverSectionClassName}>
           <div className="space-y-4">
-            <FormField
-              name="name"
-              label="Nombre"
-              required
-              disabled={isPending}
-              error={errors.name?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
+            {locale === "en" ? (
+              <>
+                <FormField
+                  name="nameEn"
+                  label={t("admin.generalCharacteristics.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="name"
+                  label={t("admin.generalCharacteristics.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            ) : (
+              <>
+                <FormField
+                  name="name"
+                  label={t("admin.generalCharacteristics.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="nameEn"
+                  label={t("admin.generalCharacteristics.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            )}
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<GeneralCharacteristicFormValues>
                 name="active"
-                label="Activa"
-                description="Si está desactivada, no se muestra al asignar características a productos."
+                label={t("admin.generalCharacteristics.form.activeLabel")}
+                description={t("admin.generalCharacteristics.form.activeDescription")}
               />
             </div>
           </div>

@@ -29,6 +29,28 @@ import { CategoryFormDialog } from "./CategoryFormDialog";
 
 type StatusFilter = "all" | "active" | "inactive";
 
+/**
+ * Ancho del select de estados (en `ch`) fijado con el texto en español
+ * ("Todos los estados" + margen) para que no varíe al cambiar de idioma.
+ */
+const STATUS_FILTER_WIDTH_CH = "Todos los estados".length + 7;
+
+/**
+ * `min-width` del botón «Nueva» (en `rem`) calibrado con el copy en español
+ * e icono, para que el ancho no dependa de "New" frente a "Nueva".
+ */
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
+
+/**
+ * Anchos fijos de columnas para evitar saltos al cambiar idioma.
+ * - Fecha considera el caso más largo: fecha absoluta (`MM/DD/YYYY, h:mm AM/PM`).
+ */
+const NAME_COLUMN_CLASS =
+  "min-w-[18rem] max-w-[min(42rem,58vw)] md:max-w-[min(36rem,50vw)]";
+const STATUS_COLUMN_CLASS = "w-[8.5rem] min-w-[8.5rem] max-w-[8.5rem]";
+const UPDATED_AT_COLUMN_CLASS = "w-[13rem] min-w-[13rem] max-w-[13rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
+
 interface Props {
   categories: CategoryAdmin[];
   isLoading?: boolean;
@@ -69,6 +91,8 @@ function RowActions({
         localizedRowName,
       ),
       confirmButtonText: t("admin.categories.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.categories.form.cancel"),
+      loadingConfirmText: t("admin.categories.confirm.archiveArchiving"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -80,6 +104,9 @@ function RowActions({
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.categories.confirm.archiveConfirm")}
+      deletingLabel={t("admin.categories.confirm.archiveArchiving")}
+      showDelete={row.active}
     />
   );
 }
@@ -107,7 +134,6 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
     ],
     [t],
   );
-  const statusFilterWideCh = statusFilterOptions[0].label.length + 7;
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return categories;
@@ -155,8 +181,7 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
+          cellClassName: NAME_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const name =
@@ -176,6 +201,7 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
       {
         id: "active",
         accessorKey: "active",
+        meta: { cellClassName: STATUS_COLUMN_CLASS },
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           Number(rowB.original.active) - Number(rowA.original.active),
@@ -206,6 +232,7 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
       {
         id: "updatedAt",
         accessorKey: "updatedAt",
+        meta: { cellClassName: UPDATED_AT_COLUMN_CLASS },
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           updatedAtSortMs(rowA.original) - updatedAtSortMs(rowB.original),
@@ -213,25 +240,27 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
           <SortableHeader
             column={column}
             label={t("admin.categories.table.updatedAt")}
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            ariaLabelIdle={t("admin.categories.table.updatedAtSortIdle")}
+            ariaLabelAsc={t("admin.categories.table.updatedAtSortAsc")}
+            ariaLabelDesc={t("admin.categories.table.updatedAtSortDesc")}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">{absolute}</span>
+              <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+                {absolute}
+              </span>
             );
           }
           return (
             <TooltipProvider delayDuration={120}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-sm text-muted-foreground">
+                  <span className="cursor-help whitespace-nowrap text-sm tabular-nums text-muted-foreground">
                     {relative}
                   </span>
                 </TooltipTrigger>
@@ -254,8 +283,10 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
+        header: () => (
+          <span className="sr-only">{t("admin.categories.table.actions")}</span>
+        ),
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -305,6 +336,7 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
         isLoading={isLoading}
         enableSorting
         searchPlaceholder={t("admin.categories.filters.searchPlaceholder")}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
@@ -322,7 +354,7 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
               )}
               style={
                 {
-                  ["--gc-status-filter-w" as string]: `${statusFilterWideCh}ch`,
+                  ["--gc-status-filter-w" as string]: `${STATUS_FILTER_WIDTH_CH}ch`,
                 } as CSSProperties
               }
             >
@@ -358,7 +390,10 @@ export function AdminCategoriesTable({ categories, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 md:w-auto"
+            className={cn(
+              "h-9 w-full shrink-0 md:w-auto",
+              NEW_BUTTON_MIN_W_CLASS,
+            )}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);

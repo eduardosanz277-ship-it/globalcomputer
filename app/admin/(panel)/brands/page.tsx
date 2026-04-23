@@ -5,6 +5,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminBrandsTable } from "./AdminBrandsTable";
+import { BrandsPageHeader } from "./BrandsPageHeader";
 
 async function AdminBrandsTableSection() {
   const brands = await getAllBrandsService();
@@ -20,13 +21,7 @@ export default async function AdminBrandsPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">Marcas</h1>
-          <p className="text-sm text-muted-foreground">
-            Crea, edita o elimina marcas de producto. El campo activo permite
-            ocultarlas del catálogo sin borrarlas.
-          </p>
-        </header>
+        <BrandsPageHeader />
 
         <hr className="border-border" />
 

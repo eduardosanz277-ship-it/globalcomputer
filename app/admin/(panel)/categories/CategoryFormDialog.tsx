@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -40,7 +40,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
     resolver: zodResolver(categoryFormSchema),
     defaultValues: { name: "", nameEn: "", active: true },
   });
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const errors = form.formState.errors;
 
@@ -115,7 +115,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
             type="submit"
             form={FORM_ID}
             pending={isPending}
-            pendingLabel={t("admin.categories.form.save")}
+            pendingLabel={t("admin.categories.form.saving")}
           >
             {t("admin.categories.form.save")}
           </ButtonPending>
@@ -125,24 +125,49 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
       <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
         <section className={adminSlideOverSectionClassName}>
           <div className="space-y-4">
-            <FormField
-              name="name"
-              label={t("admin.categories.form.labelName")}
-              required
-              disabled={isPending}
-              error={errors.name?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
-            <FormField
-              name="nameEn"
-              label={t("admin.categories.form.labelNameEn")}
-              required
-              disabled={isPending}
-              error={errors.nameEn?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
+            {locale === "en" ? (
+              <>
+                <FormField
+                  name="nameEn"
+                  label={t("admin.categories.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="name"
+                  label={t("admin.categories.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            ) : (
+              <>
+                <FormField
+                  name="name"
+                  label={t("admin.categories.form.labelName")}
+                  required
+                  disabled={isPending}
+                  error={errors.name?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="nameEn"
+                  label={t("admin.categories.form.labelNameEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.nameEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+              </>
+            )}
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<CategoryFormValues>
                 name="active"

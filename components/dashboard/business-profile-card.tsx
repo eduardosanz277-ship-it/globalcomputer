@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type BusinessProfileCardProps = {
   email: string;
@@ -32,11 +33,12 @@ function businessInitial(
 
 function approvalLabel(
   s: BusinessRegistrationStatus | null | undefined,
+  t: (key: string) => string,
 ): string {
   const v = s ?? "pending";
-  if (v === "pending") return "Pendiente";
-  if (v === "rejected") return "Rechazada";
-  return "Aprobada";
+  if (v === "pending") return t("admin.businessSubscriptions.status.pending");
+  if (v === "rejected") return t("admin.businessSubscriptions.status.rejected");
+  return t("admin.businessSubscriptions.status.approved");
 }
 
 function approvalBadgeClass(
@@ -88,6 +90,7 @@ export function BusinessProfileCard({
   className,
   actions,
 }: BusinessProfileCardProps) {
+  const { t, locale } = useI18n();
   const name = fullName?.trim();
   const em = email.trim();
   const title = name || em;
@@ -145,7 +148,7 @@ export function BusinessProfileCard({
                     approvalBadgeClass(businessRegistrationStatus),
                   )}
                 >
-                  {approvalLabel(businessRegistrationStatus)}
+                  {approvalLabel(businessRegistrationStatus, t)}
                 </span>
               </div>
             </div>
@@ -168,14 +171,18 @@ export function BusinessProfileCard({
 
         <div className="space-y-3 border-t border-border/60 pt-4">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Teléfono</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.businessSubscriptions.table.phone")}
+            </p>
             <p className="text-sm leading-snug text-foreground">
               {phone?.trim() ? phone : "—"}
             </p>
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">EIN</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.businessSubscriptions.table.ein")}
+            </p>
             <p className="text-xs font-mono leading-snug text-foreground">
               {employerIdentificationNumber?.trim()
                 ? employerIdentificationNumber
@@ -184,9 +191,11 @@ export function BusinessProfileCard({
           </div>
 
           <div className="space-y-1 border-t border-border/60 pt-3">
-            <p className="text-sm text-muted-foreground">Fecha de registro</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.businessSubscriptions.table.createdAt")}
+            </p>
             <p className="text-sm leading-snug text-foreground">
-              {createdAt ? formatDateDdMmYyyyHhMm(createdAt) : "—"}
+              {createdAt ? formatDateDdMmYyyyHhMm(createdAt, locale) : "—"}
             </p>
           </div>
         </div>

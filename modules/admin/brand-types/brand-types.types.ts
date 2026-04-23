@@ -3,7 +3,9 @@ export type BrandType = {
   id: string;
   brandId: string;
   brandName: string;
+  brandNameEn: string | null;
   name: string;
+  nameEn: string | null;
   slug: string;
   active: boolean;
   createdAt: string;
@@ -13,6 +15,7 @@ export type BrandType = {
 export type BrandTypeInsert = {
   brandId: string;
   name: string;
+  nameEn: string;
   slug: string;
   active: boolean;
 };
@@ -20,6 +23,7 @@ export type BrandTypeInsert = {
 export type BrandTypeUpdate = {
   brandId: string;
   name: string;
+  nameEn: string;
   slug: string;
   active: boolean;
 };

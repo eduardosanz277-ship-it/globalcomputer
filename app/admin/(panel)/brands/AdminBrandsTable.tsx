@@ -21,6 +21,7 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { deleteBrandAction } from "./actions";
 import { BrandFormDialog } from "./BrandFormDialog";
 import { BrandProfileCard } from "@/components/dashboard/brand-profile-card";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -31,17 +32,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activas" },
-  { value: "inactive" as const, label: "Inactivas" },
-];
+const STATUS_FILTER_VALUES = ["all", "active", "inactive"] as const;
 
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
 const STATUS_FILTER_WIDE_CH =
-  STATUS_FILTER_OPTIONS[0].label.length + 7;
+  "Todos los estados".length + 7;
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
 
-type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
 
 interface Props {
   brands: Brand[];
@@ -55,9 +53,12 @@ function updatedAtSortMs(b: Brand): number {
 
 function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedBrandName =
+    locale === "en" ? (brand.nameEn ?? brand.name) : brand.name;
   const { executeAsync, isPending } = useServerAction(deleteBrandAction, {
-    successMessage: "Marca eliminada",
-    errorMessage: "No se pudo eliminar la marca",
+    successMessage: t("admin.brands.toast.archived"),
+    errorMessage: t("admin.brands.toast.error"),
     onSuccess: () => {
       router.refresh();
     },
@@ -65,9 +66,14 @@ function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Eliminar marca?",
-      html: `Vas a eliminar <strong>${brand.name}</strong>. Si hay productos asociados, la operación no se permitirá.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.brands.confirm.archiveTitle"),
+      html: t("admin.brands.confirm.archiveMessage").replace(
+        "{name}",
+        localizedBrandName,
+      ),
+      confirmButtonText: t("admin.brands.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.brands.form.cancel"),
+      loadingConfirmText: t("admin.brands.confirm.archiveArchiving"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(brand.id),
@@ -79,14 +85,32 @@ function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.brands.confirm.archiveConfirm")}
+      deletingLabel={t("admin.brands.confirm.archiveArchiving")}
     />
   );
 }
 
 export function AdminBrandsTable({ brands, isLoading = false }: Props) {
+  const { t, locale } = useI18n();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
+
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: "all" as const, label: t("admin.brands.filters.status.all") },
+      {
+        value: "active" as const,
+        label: t("admin.brands.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.brands.filters.status.inactive"),
+      },
+    ],
+    [t],
+  );
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return brands;
@@ -95,8 +119,8 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
   }, [brands, statusFilter]);
 
   const filterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === statusFilter) ??
+    statusFilterOptions[0];
 
   const clearStatusFilter = useCallback(() => {
     setStatusFilter("all");
@@ -107,7 +131,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
     return (
       <li key={row.id}>
         <BrandProfileCard
-          name={b.name}
+          name={locale === "en" ? (b.nameEn ?? b.name) : b.name}
           active={b.active}
           updatedAt={b.updatedAt}
           className="hover:bg-muted/50 transition-colors duration-150"
@@ -123,25 +147,33 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         />
       </li>
     );
-  }, []);
+  }, [locale]);
 
   const columns = useMemo<ColumnDef<Brand>[]>(
     () => [
       {
         id: "brand",
-        accessorFn: (row) => row.name,
+        accessorFn: (row) =>
+          locale === "en" ? (row.nameEn ?? row.name) : row.name,
         enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          rowA.original.name.localeCompare(rowB.original.name, "es", {
-            sensitivity: "base",
-          }),
+        sortingFn: (rowA, rowB) => {
+          const a =
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
+          const b =
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
+          return a.localeCompare(b, locale, { sensitivity: "base" });
+        },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Marca"
-            ariaLabelIdle="Ordenar por nombre"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.brands.table.name")}
+            ariaLabelIdle={t("admin.brands.table.nameSortIdle")}
+            ariaLabelAsc={t("admin.brands.table.nameSortAsc")}
+            ariaLabelDesc={t("admin.brands.table.nameSortDesc")}
           />
         ),
         meta: {
@@ -149,7 +181,11 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
             "min-w-0 max-w-[min(28rem,50vw)] md:max-w-[min(22rem,40vw)]",
         },
         cell: ({ row }) => {
-          const name = row.original.name.trim();
+          const name = (
+            locale === "en"
+              ? (row.original.nameEn ?? row.original.name)
+              : row.original.name
+          ).trim();
           return (
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-foreground">
@@ -168,10 +204,10 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivas primero. Clic para invertir"
-            ariaLabelDesc="Activas primero. Clic para quitar orden"
+            label={t("admin.brands.table.status")}
+            ariaLabelIdle={t("admin.brands.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.brands.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.brands.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -183,7 +219,9 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
                 : "border border-border bg-muted text-muted-foreground",
             )}
           >
-            {row.original.active ? "Activa" : "Inactiva"}
+            {row.original.active
+              ? t("admin.brands.table.statusActive")
+              : t("admin.brands.table.statusInactive")}
           </span>
         ),
       },
@@ -196,16 +234,16 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.brands.table.updatedAt")}
+            ariaLabelIdle={t("admin.brands.table.updatedAtSortIdle")}
+            ariaLabelAsc={t("admin.brands.table.updatedAtSortAsc")}
+            ariaLabelDesc={t("admin.brands.table.updatedAtSortDesc")}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
               <span className="text-sm text-muted-foreground">{absolute}</span>
@@ -225,7 +263,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
                   <span className="block font-medium">
-                    Última actualización
+                    {t("admin.brands.table.updatedTooltip")}
                   </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
@@ -239,7 +277,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
       {
         id: "actions",
         meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        header: () => <span className="sr-only">{t("admin.brands.table.actions")}</span>,
         cell: ({ row }) => (
           <RowActions
             brand={row.original}
@@ -251,7 +289,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         ),
       },
     ],
-    [],
+    [locale, t],
   );
 
   return (
@@ -261,7 +299,7 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         data={filtered}
         isLoading={isLoading}
         enableSorting
-        searchPlaceholder="Buscar por nombre…"
+        searchPlaceholder={t("admin.brands.filters.searchPlaceholder")}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
@@ -284,13 +322,13 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
                 } as CSSProperties
               }
             >
-              <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+              <Select<(typeof statusFilterOptions)[number], false>
                 instanceId="brands-status-filter"
                 inputId="brands-status-filter-input"
-                aria-label="Filtrar por estado"
+                aria-label={t("admin.brands.filters.statusAria")}
                 isSearchable={false}
                 isClearable={false}
-                options={STATUS_FILTER_OPTIONS}
+                options={statusFilterOptions}
                 value={filterValue}
                 onChange={(opt) => {
                   if (opt) setStatusFilter(opt.value);
@@ -306,8 +344,8 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
               className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
               disabled={isLoading || statusFilter === "all"}
               onClick={clearStatusFilter}
-              title="Limpiar filtros"
-              aria-label="Limpiar filtro de estado"
+              title={t("admin.brands.filters.clear")}
+              aria-label={t("admin.brands.filters.clear")}
             >
               <FilterX className="h-4 w-4" aria-hidden />
             </Button>
@@ -316,14 +354,17 @@ export function AdminBrandsTable({ brands, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 md:w-auto"
+            className={cn(
+              "h-9 w-full shrink-0 md:w-auto",
+              NEW_BUTTON_MIN_W_CLASS,
+            )}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nueva
+            {t("admin.brands.buttonNew")}
           </Button>
         }
       />

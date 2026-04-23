@@ -1,6 +1,7 @@
 "use client";
 
 import { AppLogo } from "@/components/brand/AppLogo";
+import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
 import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
@@ -62,34 +63,6 @@ function NavMegaMenuLoading() {
       <span className="text-xs uppercase tracking-[0.35em] text-white/55">
         Cargando
       </span>
-    </div>
-  );
-}
-
-function LanguageSelector({
-  className,
-  buttonClassName,
-}: {
-  className?: string;
-  buttonClassName?: string;
-}) {
-  const { locale, setLocale, supportedLocales, t } = useI18n();
-  const nextLocale =
-    supportedLocales[
-      (supportedLocales.indexOf(locale) + 1) % supportedLocales.length
-    ];
-  return (
-    <div className={cn("flex items-center", className)}>
-      <button
-        type="button"
-        className={cn(
-          "inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-transparent p-0 text-center text-[10px] font-bold uppercase leading-[1] text-black transition hover:border-black hover:text-foreground",
-          buttonClassName,
-        )}
-        onClick={() => setLocale(nextLocale)}
-      >
-        {locale.toUpperCase()}
-      </button>
     </div>
   );
 }

@@ -31,6 +31,7 @@ import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { BrandTypeProfileCard } from "@/components/dashboard/brand-type-profile-card";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   Tooltip,
   TooltipContent,
@@ -38,27 +39,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activos" },
-  { value: "inactive" as const, label: "Inactivos" },
-];
+const STATUS_FILTER_VALUES = ["all", "active", "inactive"] as const;
 
-type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
 
 type FilterOption = { value: string; label: string };
 
 /** Ancho del select «Todas las marcas» en barra escritorio (xl+): texto de referencia + margen (`ch`). */
 const BRAND_FILTER_TOOLBAR_WIDE_CH = "Todas las marcas".length + 7;
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
 
 interface Props {
   brands: Brand[];
   brandTypes: BrandType[];
   isLoading?: boolean;
-}
-
-function brandTypeSortValue(row: BrandType): string {
-  return `${row.brandName ?? ""} ${row.name ?? ""}`.trim().toLowerCase();
 }
 
 function updatedAtSortMs(row: BrandType): number {
@@ -68,9 +62,14 @@ function updatedAtSortMs(row: BrandType): number {
 
 function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedRowName =
+    locale === "en" ? (row.nameEn ?? row.name) : row.name;
+  const localizedBrandName =
+    locale === "en" ? (row.brandNameEn ?? row.brandName) : row.brandName;
   const { executeAsync, isPending } = useServerAction(deleteBrandTypeAction, {
-    successMessage: "Tipo eliminado",
-    errorMessage: "No se pudo eliminar el tipo",
+    successMessage: t("admin.brandTypes.toast.archived"),
+    errorMessage: t("admin.brandTypes.toast.error"),
     onSuccess: () => {
       router.refresh();
     },
@@ -78,9 +77,13 @@ function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Eliminar tipo?",
-      html: `Vas a eliminar <strong>${row.name}</strong> (${row.brandName}). Si hay productos asociados, la operación no se permitirá.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.brandTypes.confirm.archiveTitle"),
+      html: t("admin.brandTypes.confirm.archiveMessage")
+        .replace("{name}", localizedRowName)
+        .replace("{brand}", localizedBrandName),
+      confirmButtonText: t("admin.brandTypes.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.brandTypes.form.cancel"),
+      loadingConfirmText: t("admin.brandTypes.confirm.archiveArchiving"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -92,6 +95,8 @@ function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.brandTypes.confirm.archiveConfirm")}
+      deletingLabel={t("admin.brandTypes.confirm.archiveArchiving")}
     />
   );
 }
@@ -101,6 +106,7 @@ export function AdminBrandTypesTable({
   brandTypes,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -110,12 +116,39 @@ export function AdminBrandTypesTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<BrandType | null>(null);
 
+  const statusFilterOptions = useMemo(
+    () => [
+      {
+        value: "all" as const,
+        label: t("admin.brandTypes.filters.status.all"),
+      },
+      {
+        value: "active" as const,
+        label: t("admin.brandTypes.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.brandTypes.filters.status.inactive"),
+      },
+    ],
+    [t],
+  );
+
+  const brandNameById = useMemo(() => {
+    return new Map(
+      brands.map((b) => [b.id, locale === "en" ? (b.nameEn ?? b.name) : b.name]),
+    );
+  }, [brands, locale]);
+
   const brandFilterOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todas las marcas" },
-      ...brands.map((b) => ({ value: b.id, label: b.name })),
+      { value: "all", label: t("admin.brandTypes.filters.brandAll") },
+      ...brands.map((b) => ({
+        value: b.id,
+        label: locale === "en" ? (b.nameEn ?? b.name) : b.name,
+      })),
     ],
-    [brands],
+    [brands, locale, t],
   );
 
   const filtered = useMemo(() => {
@@ -129,8 +162,8 @@ export function AdminBrandTypesTable({
   }, [brandTypes, statusFilter, brandFilter]);
 
   const statusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === statusFilter) ??
+    statusFilterOptions[0];
 
   const brandFilterValue =
     brandFilterOptions.find((o) => o.value === brandFilter) ??
@@ -141,8 +174,8 @@ export function AdminBrandTypesTable({
     brandFilterOptions[0];
 
   const draftStatusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === draftStatus) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === draftStatus) ??
+    statusFilterOptions[0];
 
   const appliedFiltersCount = useMemo(() => {
     let n = 0;
@@ -177,21 +210,35 @@ export function AdminBrandTypesTable({
     () => [
       {
         id: "type",
-        accessorFn: (row) => `${row.brandName} ${row.name}`.trim(),
+        accessorFn: (row) =>
+          `${brandNameById.get(row.brandId) ?? row.brandName} ${locale === "en" ? (row.nameEn ?? row.name) : row.name}`.trim(),
         enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          brandTypeSortValue(rowA.original).localeCompare(
-            brandTypeSortValue(rowB.original),
-            "es",
+        sortingFn: (rowA, rowB) => {
+          const aBrand =
+            brandNameById.get(rowA.original.brandId) ?? rowA.original.brandName;
+          const bBrand =
+            brandNameById.get(rowB.original.brandId) ?? rowB.original.brandName;
+          const aName =
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
+          const bName =
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
+          return `${aBrand} ${aName}`.trim().localeCompare(
+            `${bBrand} ${bName}`.trim(),
+            locale,
             { sensitivity: "base" },
-          ),
+          );
+        },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Tipo"
-            ariaLabelIdle="Ordenar por marca y tipo"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.brandTypes.table.name")}
+            ariaLabelIdle={t("admin.brandTypes.table.nameSortIdle")}
+            ariaLabelAsc={t("admin.brandTypes.table.nameSortAsc")}
+            ariaLabelDesc={t("admin.brandTypes.table.nameSortDesc")}
           />
         ),
         meta: {
@@ -200,8 +247,12 @@ export function AdminBrandTypesTable({
         },
         cell: ({ row }) => {
           const r = row.original;
-          const title = r.name?.trim() || "—";
-          const secondary = r.brandName?.trim();
+          const title =
+            (locale === "en" ? (r.nameEn ?? r.name) : r.name)?.trim() || "—";
+          const secondary = (
+            brandNameById.get(r.brandId) ??
+            r.brandName
+          )?.trim();
           return (
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-foreground">
@@ -227,10 +278,10 @@ export function AdminBrandTypesTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivos primero. Clic para invertir"
-            ariaLabelDesc="Activos primero. Clic para quitar orden"
+            label={t("admin.brandTypes.table.status")}
+            ariaLabelIdle={t("admin.brandTypes.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.brandTypes.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.brandTypes.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -242,7 +293,9 @@ export function AdminBrandTypesTable({
                 : "border border-border bg-muted text-muted-foreground",
             )}
           >
-            {row.original.active ? "Activo" : "Inactivo"}
+            {row.original.active
+              ? t("admin.brandTypes.table.statusActive")
+              : t("admin.brandTypes.table.statusInactive")}
           </span>
         ),
       },
@@ -255,16 +308,16 @@ export function AdminBrandTypesTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.brandTypes.table.updatedAt")}
+            ariaLabelIdle={t("admin.brandTypes.table.updatedAtSortIdle")}
+            ariaLabelAsc={t("admin.brandTypes.table.updatedAtSortAsc")}
+            ariaLabelDesc={t("admin.brandTypes.table.updatedAtSortDesc")}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
               <span className="text-sm text-muted-foreground">{absolute}</span>
@@ -284,7 +337,7 @@ export function AdminBrandTypesTable({
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
                   <span className="block font-medium">
-                    Última actualización
+                    {t("admin.brandTypes.table.updatedTooltip")}
                   </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
@@ -298,7 +351,7 @@ export function AdminBrandTypesTable({
       {
         id: "actions",
         meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        header: () => <span className="sr-only">{t("admin.brandTypes.table.actions")}</span>,
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -310,32 +363,35 @@ export function AdminBrandTypesTable({
         ),
       },
     ],
-    [],
+    [brandNameById, locale, t],
   );
 
-  const renderMobileRow = useCallback((row: Row<BrandType>) => {
-    const r = row.original;
-    return (
-      <li key={row.id}>
-        <BrandTypeProfileCard
-          name={r.name}
-          brandName={r.brandName}
-          active={r.active}
-          updatedAt={r.updatedAt}
-          className="hover:bg-muted/50 transition-colors duration-150"
-          actions={
-            <RowActions
-              row={r}
-              onEdit={() => {
-                setEditing(r);
-                setDialogOpen(true);
-              }}
-            />
-          }
-        />
-      </li>
-    );
-  }, []);
+  const renderMobileRow = useCallback(
+    (row: Row<BrandType>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <BrandTypeProfileCard
+            name={locale === "en" ? (r.nameEn ?? r.name) : r.name}
+            brandName={brandNameById.get(r.brandId) ?? r.brandName}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [brandNameById, locale],
+  );
 
   const noBrands = brands.length === 0;
 
@@ -350,14 +406,14 @@ export function AdminBrandTypesTable({
           />
           <Input
             type="search"
-            placeholder="Buscar tipos"
+            placeholder={t("admin.brandTypes.filters.searchMobilePlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Buscar tipos por marca o nombre"
+            aria-label={t("admin.brandTypes.filters.searchAria")}
           />
         </div>
         <div className="flex gap-2">
@@ -369,17 +425,20 @@ export function AdminBrandTypesTable({
             onClick={openFiltersModal}
             aria-label={
               appliedFiltersCount > 0
-                ? `Filtros, ${appliedFiltersCount} aplicados`
-                : "Abrir filtros"
+                ? t("admin.brandTypes.filters.openWithCount").replace(
+                    "{count}",
+                    String(appliedFiltersCount),
+                  )
+                : t("admin.brandTypes.filters.open")
             }
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
-            Filtros
+            {t("admin.brandTypes.filters.button")}
             {appliedFiltersCount > 0 ? ` (${appliedFiltersCount})` : ""}
           </Button>
           <Button
             type="button"
-            className="h-9 min-w-0 flex-1"
+            className={cn("h-9 min-w-0 flex-1", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -387,12 +446,12 @@ export function AdminBrandTypesTable({
             disabled={noBrands}
             title={
               noBrands
-                ? "Crea al menos una marca antes de añadir tipos"
+                ? t("admin.brandTypes.noBrandsTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-            Nuevo
+            {t("admin.brandTypes.buttonNew")}
           </Button>
         </div>
       </div>
@@ -406,14 +465,14 @@ export function AdminBrandTypesTable({
           />
           <Input
             type="search"
-            placeholder="Buscar por marca o tipo…"
+            placeholder={t("admin.brandTypes.filters.searchDesktopPlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Filtrar filas de la tabla"
+            aria-label={t("admin.brandTypes.filters.searchAria")}
           />
         </div>
 
@@ -429,7 +488,7 @@ export function AdminBrandTypesTable({
             <Select<FilterOption, false>
               instanceId="brand-types-brand-filter"
               inputId="brand-types-brand-filter-input"
-              aria-label="Filtrar por marca"
+              aria-label={t("admin.brandTypes.filters.brandAria")}
               isSearchable={false}
               isClearable={false}
               options={brandFilterOptions}
@@ -442,13 +501,13 @@ export function AdminBrandTypesTable({
             />
           </div>
           <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+            <Select<(typeof statusFilterOptions)[number], false>
               instanceId="brand-types-status-filter"
               inputId="brand-types-status-filter-input"
-              aria-label="Filtrar por estado"
+              aria-label={t("admin.brandTypes.filters.statusAria")}
               isSearchable={false}
               isClearable={false}
-              options={STATUS_FILTER_OPTIONS}
+              options={statusFilterOptions}
               value={statusFilterValue}
               onChange={(opt) => {
                 if (opt) setStatusFilter(opt.value);
@@ -464,8 +523,8 @@ export function AdminBrandTypesTable({
             className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
             disabled={isLoading || appliedFiltersCount === 0}
             onClick={clearToolbarFilters}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros de marca y estado"
+            title={t("admin.brandTypes.filters.clear")}
+            aria-label={t("admin.brandTypes.filters.clear")}
           >
             <FilterX className="h-4 w-4" aria-hidden />
           </Button>
@@ -474,7 +533,7 @@ export function AdminBrandTypesTable({
         <div className="flex w-full items-center xl:max-[1520px]:order-2 xl:max-[1520px]:w-auto xl:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
           <Button
             type="button"
-            className="h-9 w-full xl:w-auto"
+            className={cn("h-9 w-full xl:w-auto", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -482,12 +541,12 @@ export function AdminBrandTypesTable({
             disabled={noBrands}
             title={
               noBrands
-                ? "Crea al menos una marca antes de añadir tipos"
+                ? t("admin.brandTypes.noBrandsTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
+            {t("admin.brandTypes.buttonNew")}
           </Button>
         </div>
       </div>
@@ -504,11 +563,10 @@ export function AdminBrandTypesTable({
               </div>
               <div className="min-w-0 space-y-1.5 pt-0.5">
                 <DialogTitle className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                  Filtros
+                  {t("admin.brandTypes.filters.modalTitle")}
                 </DialogTitle>
                 <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                  Refina por marca y estado. Los cambios se aplican al pulsar
-                  Aplicar.
+                  {t("admin.brandTypes.filters.modalDescription")}
                 </DialogDescription>
               </div>
             </div>
@@ -521,13 +579,13 @@ export function AdminBrandTypesTable({
                   htmlFor="brand-types-filter-modal-brand"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Marca
+                  {t("admin.brandTypes.filters.brandLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="brand-types-brand-filter-modal"
                     inputId="brand-types-filter-modal-brand"
-                    aria-label="Marca"
+                    aria-label={t("admin.brandTypes.filters.brandLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={brandFilterOptions}
@@ -546,16 +604,16 @@ export function AdminBrandTypesTable({
                   htmlFor="brand-types-filter-modal-status"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Estado
+                  {t("admin.brandTypes.filters.statusLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
-                  <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+                  <Select<(typeof statusFilterOptions)[number], false>
                     instanceId="brand-types-status-filter-modal"
                     inputId="brand-types-filter-modal-status"
-                    aria-label="Estado"
+                    aria-label={t("admin.brandTypes.filters.statusLabel")}
                     isSearchable={false}
                     isClearable={false}
-                    options={STATUS_FILTER_OPTIONS}
+                    options={statusFilterOptions}
                     value={draftStatusFilterValue}
                     onChange={(opt) => {
                       if (opt) setDraftStatus(opt.value);
@@ -576,14 +634,14 @@ export function AdminBrandTypesTable({
               className="text-muted-foreground hover:text-foreground"
               onClick={handleClearModalFilters}
             >
-              Limpiar
+              {t("admin.brandTypes.filters.clear")}
             </Button>
             <Button
               type="button"
               className="min-w-[6.5rem] shadow-sm"
               onClick={handleApplyModalFilters}
             >
-              Aplicar
+              {t("admin.brandTypes.filters.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -610,8 +668,7 @@ export function AdminBrandTypesTable({
       {noBrands ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Layers className="h-4 w-4 shrink-0" aria-hidden />
-          No hay marcas todavía. Crea una marca en la sección Marcas para poder
-          definir tipos.
+          {t("admin.brandTypes.noBrandsHint")}
         </p>
       ) : null}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -26,9 +27,10 @@ export function CategoryProfileCard({
   className,
   actions,
 }: CategoryProfileCardProps) {
+  const { t, locale } = useI18n();
   const title = name.trim() || "—";
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
+  const relative = formatRelativeLastAccess(updatedAt, locale);
+  const absolute = formatDateDdMmYyyyHhMm(updatedAt, locale);
 
   return (
     <div
@@ -58,12 +60,16 @@ export function CategoryProfileCard({
               statusBadgeClass(active),
             )}
           >
-            {active ? "Activa" : "Inactiva"}
+            {active
+              ? t("admin.categories.table.statusActive")
+              : t("admin.categories.table.statusInactive")}
           </span>
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.categories.table.updatedTooltip")}
+          </p>
           <p
             className="text-sm text-foreground"
             title={absolute || undefined}

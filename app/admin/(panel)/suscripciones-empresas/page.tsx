@@ -5,6 +5,7 @@ import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminSuscripcionesEmpresasTable } from "./AdminSuscripcionesEmpresasTable";
+import { SuscripcionesEmpresasPageHeader } from "./SuscripcionesEmpresasPageHeader";
 
 async function TableSection() {
   const rows = await listBusinessProfilesService();
@@ -20,14 +21,7 @@ export default async function AdminSuscripcionesEmpresasPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Suscripciones de Empresas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona el alta de los perfiles de empresa.
-          </p>
-        </header>
+        <SuscripcionesEmpresasPageHeader />
 
         <hr className="border-border" />
 

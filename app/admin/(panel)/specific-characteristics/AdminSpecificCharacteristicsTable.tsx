@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
 import { deleteSpecificCharacteristicAction } from "./actions";
 import { SpecificCharacteristicFormDialog } from "./SpecificCharacteristicFormDialog";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -38,26 +39,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "all" as const, label: "Todos los estados" },
-  { value: "active" as const, label: "Activos" },
-  { value: "inactive" as const, label: "Inactivos" },
-];
+const STATUS_FILTER_VALUES = ["all", "active", "inactive"] as const;
 
-type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]["value"];
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
 type FilterOption = { value: string; label: string };
 
 /** Ancho del select «Todas las características» en barra escritorio (xl+): texto de referencia + margen (`ch`). */
 const GENERAL_FILTER_TOOLBAR_WIDE_CH = "Todas las características".length + 7;
+const NEW_BUTTON_MIN_W_CLASS = "min-w-[6.5rem]";
 
 interface Props {
   generalCharacteristics: GeneralCharacteristic[];
   specificCharacteristics: SpecificCharacteristic[];
   isLoading?: boolean;
-}
-
-function specificSortValue(row: SpecificCharacteristic): string {
-  return `${row.generalName ?? ""} ${row.name ?? ""}`.trim().toLowerCase();
 }
 
 function updatedAtSortMs(row: SpecificCharacteristic): number {
@@ -73,11 +67,16 @@ function RowActions({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedSpecificName =
+    locale === "en" ? (row.nameEn ?? row.name) : row.name;
+  const localizedGeneralName =
+    locale === "en" ? (row.generalNameEn ?? row.generalName) : row.generalName;
   const { executeAsync, isPending } = useServerAction(
     deleteSpecificCharacteristicAction,
     {
-      successMessage: "Característica específica eliminada",
-      errorMessage: "No se pudo eliminar la característica específica",
+      successMessage: t("admin.specificCharacteristics.toast.archived"),
+      errorMessage: t("admin.specificCharacteristics.toast.error"),
       onSuccess: () => {
         router.refresh();
       },
@@ -86,9 +85,15 @@ function RowActions({
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Eliminar característica específica?",
-      html: `Vas a eliminar <strong>${row.name}</strong> de <strong>${row.generalName}</strong>. Si hay productos asociados, la operación no se permitirá.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.specificCharacteristics.confirm.archiveTitle"),
+      html: t("admin.specificCharacteristics.confirm.archiveMessage")
+        .replace("{name}", localizedSpecificName)
+        .replace("{general}", localizedGeneralName),
+      confirmButtonText: t("admin.specificCharacteristics.confirm.archiveConfirm"),
+      cancelButtonText: t("admin.specificCharacteristics.form.cancel"),
+      loadingConfirmText: t(
+        "admin.specificCharacteristics.confirm.archiveArchiving",
+      ),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -100,6 +105,8 @@ function RowActions({
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deleteLabel={t("admin.specificCharacteristics.confirm.archiveConfirm")}
+      deletingLabel={t("admin.specificCharacteristics.confirm.archiveArchiving")}
     />
   );
 }
@@ -109,6 +116,7 @@ export function AdminSpecificCharacteristicsTable({
   specificCharacteristics,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [generalFilter, setGeneralFilter] = useState<string>("all");
@@ -118,12 +126,42 @@ export function AdminSpecificCharacteristicsTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SpecificCharacteristic | null>(null);
 
+  const statusFilterOptions = useMemo(
+    () => [
+      {
+        value: "all" as const,
+        label: t("admin.specificCharacteristics.filters.status.all"),
+      },
+      {
+        value: "active" as const,
+        label: t("admin.specificCharacteristics.filters.status.active"),
+      },
+      {
+        value: "inactive" as const,
+        label: t("admin.specificCharacteristics.filters.status.inactive"),
+      },
+    ],
+    [t],
+  );
+
+  const generalNameById = useMemo(() => {
+    return new Map(
+      generalCharacteristics.map((g) => [
+        g.id,
+        locale === "en" ? (g.nameEn ?? g.name) : g.name,
+      ]),
+    );
+  }, [generalCharacteristics, locale]);
+
   const generalOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todas las características" },
-      ...generalCharacteristics.map((g) => ({ value: g.id, label: g.name })),
+      { value: "all", label: t("admin.specificCharacteristics.filters.generalAll") },
+      ...generalCharacteristics.map((g) => ({
+        value: g.id,
+        label: locale === "en" ? (g.nameEn ?? g.name) : g.name,
+      })),
     ],
-    [generalCharacteristics],
+    [generalCharacteristics, locale, t],
   );
 
   const filtered = useMemo(() => {
@@ -139,8 +177,8 @@ export function AdminSpecificCharacteristicsTable({
   }, [specificCharacteristics, statusFilter, generalFilter]);
 
   const statusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === statusFilter) ??
+    statusFilterOptions[0];
 
   const generalFilterValue =
     generalOptions.find((o) => o.value === generalFilter) ?? generalOptions[0];
@@ -149,8 +187,8 @@ export function AdminSpecificCharacteristicsTable({
     generalOptions.find((o) => o.value === draftGeneral) ?? generalOptions[0];
 
   const draftStatusFilterValue =
-    STATUS_FILTER_OPTIONS.find((o) => o.value === draftStatus) ??
-    STATUS_FILTER_OPTIONS[0];
+    statusFilterOptions.find((o) => o.value === draftStatus) ??
+    statusFilterOptions[0];
 
   const appliedFiltersCount = useMemo(() => {
     let n = 0;
@@ -186,21 +224,36 @@ export function AdminSpecificCharacteristicsTable({
       {
         id: "specific",
         accessorFn: (row) =>
-          `${row.generalName ?? ""} ${row.name ?? ""}`.trim(),
+          `${generalNameById.get(row.generalId) ?? row.generalName ?? ""} ${locale === "en" ? (row.nameEn ?? row.name) : row.name}`.trim(),
         enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          specificSortValue(rowA.original).localeCompare(
-            specificSortValue(rowB.original),
-            "es",
+        sortingFn: (rowA, rowB) => {
+          const aGeneral =
+            generalNameById.get(rowA.original.generalId) ??
+            rowA.original.generalName;
+          const bGeneral =
+            generalNameById.get(rowB.original.generalId) ??
+            rowB.original.generalName;
+          const aName =
+            locale === "en"
+              ? (rowA.original.nameEn ?? rowA.original.name)
+              : rowA.original.name;
+          const bName =
+            locale === "en"
+              ? (rowB.original.nameEn ?? rowB.original.name)
+              : rowB.original.name;
+          return `${aGeneral} ${aName}`.trim().localeCompare(
+            `${bGeneral} ${bName}`.trim(),
+            locale,
             { sensitivity: "base" },
-          ),
+          );
+        },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Valor"
-            ariaLabelIdle="Ordenar por característica general y valor"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.specificCharacteristics.table.name")}
+            ariaLabelIdle={t("admin.specificCharacteristics.table.nameSortIdle")}
+            ariaLabelAsc={t("admin.specificCharacteristics.table.nameSortAsc")}
+            ariaLabelDesc={t("admin.specificCharacteristics.table.nameSortDesc")}
           />
         ),
         meta: {
@@ -209,8 +262,12 @@ export function AdminSpecificCharacteristicsTable({
         },
         cell: ({ row }) => {
           const r = row.original;
-          const title = r.name?.trim() || "—";
-          const secondary = r.generalName?.trim();
+          const title =
+            (locale === "en" ? (r.nameEn ?? r.name) : r.name)?.trim() || "—";
+          const secondary = (
+            generalNameById.get(r.generalId) ??
+            r.generalName
+          )?.trim();
           return (
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-foreground">
@@ -236,10 +293,10 @@ export function AdminSpecificCharacteristicsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivos primero. Clic para invertir"
-            ariaLabelDesc="Activos primero. Clic para quitar orden"
+            label={t("admin.specificCharacteristics.table.status")}
+            ariaLabelIdle={t("admin.specificCharacteristics.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.specificCharacteristics.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.specificCharacteristics.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -251,7 +308,9 @@ export function AdminSpecificCharacteristicsTable({
                 : "border border-border bg-muted text-muted-foreground",
             )}
           >
-            {row.original.active ? "Activo" : "Inactivo"}
+            {row.original.active
+              ? t("admin.specificCharacteristics.table.statusActive")
+              : t("admin.specificCharacteristics.table.statusInactive")}
           </span>
         ),
       },
@@ -264,16 +323,20 @@ export function AdminSpecificCharacteristicsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.specificCharacteristics.table.updatedAt")}
+            ariaLabelIdle={t(
+              "admin.specificCharacteristics.table.updatedAtSortIdle",
+            )}
+            ariaLabelAsc={t("admin.specificCharacteristics.table.updatedAtSortAsc")}
+            ariaLabelDesc={t(
+              "admin.specificCharacteristics.table.updatedAtSortDesc",
+            )}
           />
         ),
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale);
           if (relative == null) {
             return (
               <span className="text-sm text-muted-foreground">{absolute}</span>
@@ -293,7 +356,7 @@ export function AdminSpecificCharacteristicsTable({
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
                   <span className="block font-medium">
-                    Última actualización
+                    {t("admin.specificCharacteristics.table.updatedTooltip")}
                   </span>
                   <span className="mt-0.5 block text-muted-foreground">
                     {absolute}
@@ -307,7 +370,9 @@ export function AdminSpecificCharacteristicsTable({
       {
         id: "actions",
         meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        header: () => (
+          <span className="sr-only">{t("admin.specificCharacteristics.table.actions")}</span>
+        ),
         cell: ({ row }) => (
           <RowActions
             row={row.original}
@@ -319,32 +384,35 @@ export function AdminSpecificCharacteristicsTable({
         ),
       },
     ],
-    [],
+    [generalNameById, locale, t],
   );
 
-  const renderMobileRow = useCallback((row: Row<SpecificCharacteristic>) => {
-    const r = row.original;
-    return (
-      <li key={row.id}>
-        <SpecificCharacteristicProfileCard
-          name={r.name}
-          generalName={r.generalName}
-          active={r.active}
-          updatedAt={r.updatedAt}
-          className="hover:bg-muted/50 transition-colors duration-150"
-          actions={
-            <RowActions
-              row={r}
-              onEdit={() => {
-                setEditing(r);
-                setDialogOpen(true);
-              }}
-            />
-          }
-        />
-      </li>
-    );
-  }, []);
+  const renderMobileRow = useCallback(
+    (row: Row<SpecificCharacteristic>) => {
+      const r = row.original;
+      return (
+        <li key={row.id}>
+          <SpecificCharacteristicProfileCard
+            name={locale === "en" ? (r.nameEn ?? r.name) : r.name}
+            generalName={generalNameById.get(r.generalId) ?? r.generalName}
+            active={r.active}
+            updatedAt={r.updatedAt}
+            className="hover:bg-muted/50 transition-colors duration-150"
+            actions={
+              <RowActions
+                row={r}
+                onEdit={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              />
+            }
+          />
+        </li>
+      );
+    },
+    [generalNameById, locale],
+  );
 
   const noGenerals = generalCharacteristics.length === 0;
 
@@ -359,14 +427,14 @@ export function AdminSpecificCharacteristicsTable({
           />
           <Input
             type="search"
-            placeholder="Buscar valores"
+            placeholder={t("admin.specificCharacteristics.filters.searchMobilePlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Buscar por característica general o valor específico"
+            aria-label={t("admin.specificCharacteristics.filters.searchAria")}
           />
         </div>
         <div className="flex gap-2">
@@ -378,17 +446,20 @@ export function AdminSpecificCharacteristicsTable({
             onClick={openFiltersModal}
             aria-label={
               appliedFiltersCount > 0
-                ? `Filtros, ${appliedFiltersCount} aplicados`
-                : "Abrir filtros"
+                ? t("admin.specificCharacteristics.filters.openWithCount").replace(
+                    "{count}",
+                    String(appliedFiltersCount),
+                  )
+                : t("admin.specificCharacteristics.filters.open")
             }
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
-            Filtros
+            {t("admin.specificCharacteristics.filters.button")}
             {appliedFiltersCount > 0 ? ` (${appliedFiltersCount})` : ""}
           </Button>
           <Button
             type="button"
-            className="h-9 min-w-0 flex-1"
+            className={cn("h-9 min-w-0 flex-1", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -396,12 +467,12 @@ export function AdminSpecificCharacteristicsTable({
             disabled={noGenerals}
             title={
               noGenerals
-                ? "Crea al menos una característica general antes de añadir valores específicos"
+                ? t("admin.specificCharacteristics.noGeneralsTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-            Nuevo
+            {t("admin.specificCharacteristics.buttonNew")}
           </Button>
         </div>
       </div>
@@ -415,14 +486,16 @@ export function AdminSpecificCharacteristicsTable({
           />
           <Input
             type="search"
-            placeholder="Buscar por característica general o valor específico…"
+            placeholder={t(
+              "admin.specificCharacteristics.filters.searchDesktopPlaceholder",
+            )}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Filtrar filas de la tabla"
+            aria-label={t("admin.specificCharacteristics.filters.searchAria")}
           />
         </div>
 
@@ -438,7 +511,7 @@ export function AdminSpecificCharacteristicsTable({
             <Select<FilterOption, false>
               instanceId="specific-characteristics-general-filter"
               inputId="specific-characteristics-general-filter-input"
-              aria-label="Filtrar por característica general"
+              aria-label={t("admin.specificCharacteristics.filters.generalAria")}
               isSearchable={false}
               isClearable={false}
               options={generalOptions}
@@ -451,13 +524,13 @@ export function AdminSpecificCharacteristicsTable({
             />
           </div>
           <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem]">
-            <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+            <Select<(typeof statusFilterOptions)[number], false>
               instanceId="specific-characteristics-status-filter"
               inputId="specific-characteristics-status-filter-input"
-              aria-label="Filtrar por estado"
+              aria-label={t("admin.specificCharacteristics.filters.statusAria")}
               isSearchable={false}
               isClearable={false}
-              options={STATUS_FILTER_OPTIONS}
+              options={statusFilterOptions}
               value={statusFilterValue}
               onChange={(opt) => {
                 if (opt) setStatusFilter(opt.value);
@@ -473,8 +546,8 @@ export function AdminSpecificCharacteristicsTable({
             className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
             disabled={isLoading || appliedFiltersCount === 0}
             onClick={clearToolbarFilters}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros de característica general y estado"
+            title={t("admin.specificCharacteristics.filters.clear")}
+            aria-label={t("admin.specificCharacteristics.filters.clear")}
           >
             <FilterX className="h-4 w-4" aria-hidden />
           </Button>
@@ -483,7 +556,7 @@ export function AdminSpecificCharacteristicsTable({
         <div className="flex w-full items-center xl:max-[1520px]:order-2 xl:max-[1520px]:w-auto xl:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
           <Button
             type="button"
-            className="h-9 w-full xl:w-auto"
+            className={cn("h-9 w-full xl:w-auto", NEW_BUTTON_MIN_W_CLASS)}
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -491,12 +564,12 @@ export function AdminSpecificCharacteristicsTable({
             disabled={noGenerals}
             title={
               noGenerals
-                ? "Crea al menos una característica general antes de añadir valores específicos"
+                ? t("admin.specificCharacteristics.noGeneralsTooltip")
                 : undefined
             }
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
+            {t("admin.specificCharacteristics.buttonNew")}
           </Button>
         </div>
       </div>
@@ -513,11 +586,10 @@ export function AdminSpecificCharacteristicsTable({
               </div>
               <div className="min-w-0 space-y-1.5 pt-0.5">
                 <DialogTitle className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                  Filtros
+                  {t("admin.specificCharacteristics.filters.modalTitle")}
                 </DialogTitle>
                 <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                  Refina por característica general y estado. Los cambios se
-                  aplican al pulsar Aplicar.
+                  {t("admin.specificCharacteristics.filters.modalDescription")}
                 </DialogDescription>
               </div>
             </div>
@@ -530,13 +602,13 @@ export function AdminSpecificCharacteristicsTable({
                   htmlFor="specific-characteristics-filter-modal-general"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Característica general
+                  {t("admin.specificCharacteristics.filters.generalLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="specific-characteristics-general-filter-modal"
                     inputId="specific-characteristics-filter-modal-general"
-                    aria-label="Característica general"
+                    aria-label={t("admin.specificCharacteristics.filters.generalLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={generalOptions}
@@ -555,16 +627,16 @@ export function AdminSpecificCharacteristicsTable({
                   htmlFor="specific-characteristics-filter-modal-status"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Estado
+                  {t("admin.specificCharacteristics.filters.statusLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
-                  <Select<(typeof STATUS_FILTER_OPTIONS)[number], false>
+                  <Select<(typeof statusFilterOptions)[number], false>
                     instanceId="specific-characteristics-status-filter-modal"
                     inputId="specific-characteristics-filter-modal-status"
-                    aria-label="Estado"
+                    aria-label={t("admin.specificCharacteristics.filters.statusLabel")}
                     isSearchable={false}
                     isClearable={false}
-                    options={STATUS_FILTER_OPTIONS}
+                    options={statusFilterOptions}
                     value={draftStatusFilterValue}
                     onChange={(opt) => {
                       if (opt) setDraftStatus(opt.value);
@@ -585,14 +657,14 @@ export function AdminSpecificCharacteristicsTable({
               className="text-muted-foreground hover:text-foreground"
               onClick={handleClearModalFilters}
             >
-              Limpiar
+              {t("admin.specificCharacteristics.filters.clear")}
             </Button>
             <Button
               type="button"
               className="min-w-[6.5rem] shadow-sm"
               onClick={handleApplyModalFilters}
             >
-              Aplicar
+              {t("admin.specificCharacteristics.filters.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -619,8 +691,7 @@ export function AdminSpecificCharacteristicsTable({
       {noGenerals ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <ListChecks className="h-4 w-4 shrink-0" aria-hidden />
-          No hay características generales todavía. Crea una en la sección
-          correspondiente para poder definir valores específicos.
+          {t("admin.specificCharacteristics.noGeneralsHint")}
         </p>
       ) : null}
 

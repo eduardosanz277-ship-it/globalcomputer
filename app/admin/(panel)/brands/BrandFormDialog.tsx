@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  brandFormSchema,
+  createBrandFormSchema,
   type BrandFormValues,
 } from "@/modules/admin/brands/brands.schema";
 import type { Brand } from "@/modules/admin/brands/brands.types";
@@ -20,6 +20,7 @@ import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { slugify } from "@/lib/slugify";
 
 const BRAND_FORM_ID = "brand-form-slide-over";
@@ -33,9 +34,15 @@ type Props = {
 
 export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const localizedSchema = createBrandFormSchema({
+    nameRequired: t("admin.brands.form.errors.nameRequired"),
+    nameEnRequired: t("admin.brands.form.errors.nameEnRequired"),
+    maxChars: t("admin.brands.form.errors.maxChars"),
+  });
   const form = useForm<BrandFormValues>({
-    resolver: zodResolver(brandFormSchema),
-    defaultValues: { name: "", active: true },
+    resolver: zodResolver(localizedSchema),
+    defaultValues: { name: "", nameEn: "", active: true },
   });
 
   const errors = form.formState.errors;
@@ -43,7 +50,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createBrandAction,
     {
-      successMessage: "Marca creada",
+      successMessage: t("admin.brands.toast.created"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -54,7 +61,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateBrandAction,
     {
-      successMessage: "Marca actualizada",
+      successMessage: t("admin.brands.toast.updated"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -67,9 +74,13 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   useEffect(() => {
     if (!open) return;
     if (brand) {
-      form.reset({ name: brand.name, active: brand.active });
+      form.reset({
+        name: brand.name,
+        nameEn: brand.nameEn ?? brand.name,
+        active: brand.active,
+      });
     } else {
-      form.reset({ name: "", active: true });
+      form.reset({ name: "", nameEn: "", active: true });
     }
   }, [open, brand, form]);
 
@@ -87,8 +98,8 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
     <SlideOver
       open={open}
       onClose={() => onOpenChange(false)}
-      title={brand ? "Editar marca" : "Nueva marca"}
-      description="Define el nombre y si la marca se muestra en el catálogo público."
+      title={brand ? t("admin.brands.form.titleEdit") : t("admin.brands.form.titleNew")}
+      description={t("admin.brands.form.description")}
       footer={
         <SlideOverFooter>
           <Button
@@ -97,15 +108,15 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.brands.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={BRAND_FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.brands.form.saving")}
           >
-            Guardar
+            {t("admin.brands.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -120,18 +131,27 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
           <div className="space-y-4">
             <FormField
               name="name"
-              label="Nombre"
+              label={t("admin.brands.form.labelName")}
               required
               disabled={isPending}
               error={errors.name?.message}
               autoComplete="off"
               className={adminServiceLikeInputClassName}
             />
+            <FormField
+              name="nameEn"
+              label={t("admin.brands.form.labelNameEn")}
+              required
+              disabled={isPending}
+              error={errors.nameEn?.message}
+              autoComplete="off"
+              className={adminServiceLikeInputClassName}
+            />
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<BrandFormValues>
                 name="active"
-                label="Activa en catálogo"
-                description="Si está desactivada, la marca no se muestra en el catálogo público."
+                label={t("admin.brands.form.activeLabel")}
+                description={t("admin.brands.form.activeDescription")}
               />
             </div>
           </div>

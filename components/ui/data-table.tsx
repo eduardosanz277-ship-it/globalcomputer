@@ -30,6 +30,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { Button } from "./button";
 import { EmptyState } from "./empty-state";
@@ -166,6 +167,7 @@ export function DataTable<TData, TValue>({
   onRowClick,
   renderMobileRow,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useI18n();
   const pageSizeSelectId = useId();
   const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
   const globalFilter =
@@ -662,7 +664,7 @@ export function DataTable<TData, TValue>({
 
       <nav
         className={cn("border-t border-border/80 pt-4", paginationClassName)}
-        aria-label="Paginación de la tabla"
+        aria-label={t("tablePagination.navAriaLabel")}
       >
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
           <p
@@ -670,26 +672,28 @@ export function DataTable<TData, TValue>({
             className="min-w-0 text-sm leading-relaxed text-muted-foreground"
           >
             {isLoading ? (
-              "Cargando datos"
+              t("tablePagination.loadingData")
             ) : filteredCount === 0 ? (
-              "Sin resultados."
+              t("tablePagination.noResults")
             ) : (
               <>
-                Mostrando{" "}
+                {t("tablePagination.showing")}{" "}
                 <span className="tabular-nums font-medium text-foreground">
                   {startRow}–{endRow}
                 </span>{" "}
-                de{" "}
+                {t("tablePagination.of")}{" "}
                 <span className="tabular-nums font-medium text-foreground">
                   {filteredCount}
-                </span>
-                {filteredCount === 1 ? " resultado" : " resultados"}
+                </span>{" "}
+                {filteredCount === 1
+                  ? t("tablePagination.resultSingular")
+                  : t("tablePagination.resultPlural")}
                 <span className="mx-1.5 text-muted-foreground/70">·</span>
-                página{" "}
+                {t("tablePagination.pageWord")}{" "}
                 <span className="tabular-nums font-medium text-foreground">
                   {pageIndex + 1}
                 </span>{" "}
-                de{" "}
+                {t("tablePagination.of")}{" "}
                 <span className="tabular-nums font-medium text-foreground">
                   {totalPages}
                 </span>
@@ -708,7 +712,7 @@ export function DataTable<TData, TValue>({
                 htmlFor={`${pageSizeSelectId}-input`}
                 className="whitespace-nowrap text-sm text-muted-foreground"
               >
-                Filas por página
+                {t("tablePagination.rowsPerPageLabel")}
               </label>
               <Select<PageSizeOption, false>
                 instanceId={pageSizeSelectId}
@@ -719,18 +723,43 @@ export function DataTable<TData, TValue>({
                 isDisabled={isLoading}
                 options={pageSizeSelectOptions}
                 value={pageSizeValue}
+                menuPlacement="top"
+                components={{
+                  DropdownIndicator: null,
+                  IndicatorSeparator: null,
+                }}
                 onChange={(opt) => {
                   if (opt) table.setPageSize(opt.value);
                 }}
-                styles={appToolbarSelectStyles}
-                className="min-w-[62px] shrink-0"
+                styles={{
+                  ...appToolbarSelectStyles,
+                  control: (base, state) => ({
+                    ...(typeof appToolbarSelectStyles.control === "function"
+                      ? appToolbarSelectStyles.control(base, state)
+                      : base),
+                    cursor: "pointer",
+                  }),
+                  valueContainer: (base, props) => ({
+                    ...(typeof appToolbarSelectStyles.valueContainer === "function"
+                      ? appToolbarSelectStyles.valueContainer(base, props)
+                      : base),
+                    cursor: "pointer",
+                  }),
+                  singleValue: (base, props) => ({
+                    ...(typeof appToolbarSelectStyles.singleValue === "function"
+                      ? appToolbarSelectStyles.singleValue(base, props)
+                      : base),
+                    cursor: "pointer",
+                  }),
+                }}
+                className="min-w-[50px] shrink-0"
               />
             </div>
 
             <div
               className="flex items-center gap-1"
               role="group"
-              aria-label="Ir a otra página de resultados"
+              aria-label={t("tablePagination.pageButtonsGroupAria")}
             >
               <Button
                 type="button"
@@ -739,8 +768,8 @@ export function DataTable<TData, TValue>({
                 className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.setPageIndex(0)}
                 disabled={isLoading || !table.getCanPreviousPage()}
-                aria-label="Ir a la primera página"
-                title="Primera página"
+                aria-label={t("tablePagination.firstPageAria")}
+                title={t("tablePagination.firstPageTitle")}
               >
                 <ChevronsLeft className="h-4 w-4" aria-hidden />
               </Button>
@@ -751,8 +780,8 @@ export function DataTable<TData, TValue>({
                 className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.previousPage()}
                 disabled={isLoading || !table.getCanPreviousPage()}
-                aria-label="Página anterior"
-                title="Anterior"
+                aria-label={t("tablePagination.previousPageAria")}
+                title={t("tablePagination.previousPageTitle")}
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden />
               </Button>
@@ -763,8 +792,8 @@ export function DataTable<TData, TValue>({
                 className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.nextPage()}
                 disabled={isLoading || !table.getCanNextPage()}
-                aria-label="Página siguiente"
-                title="Siguiente"
+                aria-label={t("tablePagination.nextPageAria")}
+                title={t("tablePagination.nextPageTitle")}
               >
                 <ChevronRight className="h-4 w-4" aria-hidden />
               </Button>
@@ -775,8 +804,8 @@ export function DataTable<TData, TValue>({
                 className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={() => table.setPageIndex(Math.max(0, pageCount - 1))}
                 disabled={isLoading || !table.getCanNextPage()}
-                aria-label="Ir a la última página"
-                title="Última página"
+                aria-label={t("tablePagination.lastPageAria")}
+                title={t("tablePagination.lastPageTitle")}
               >
                 <ChevronsRight className="h-4 w-4" aria-hidden />
               </Button>

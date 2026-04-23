@@ -22,19 +22,32 @@ export function formatDateTimeUtc(
   return `${formatter.format(d)} UTC`;
 }
 
+export type AppDateLocale = "es" | "en";
+
 /**
- * dd/MM/yyyy h:mm AM|PM (hora local, 12 horas, sufijo en mayúsculas).
+ * Fecha/hora local: `es` mantiene dd/MM/yyyy 12h; `en` usa formato corto en-US.
  */
 export function formatDateDdMmYyyyHhMm(
-  value: string | Date | null | undefined
+  value: string | Date | null | undefined,
+  dateLocale: AppDateLocale = "es",
 ): string {
   if (value == null) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(d.getTime())) return "—";
+  if (dateLocale === "en") {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  }
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = d.getFullYear();
-  let hour24 = d.getHours();
+  const hour24 = d.getHours();
   const min = String(d.getMinutes()).padStart(2, "0");
   const suffix = hour24 >= 12 ? "PM" : "AM";
   let hour12 = hour24 % 12;

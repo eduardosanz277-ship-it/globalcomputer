@@ -9,13 +9,14 @@ type SpecificCharacteristicRow = {
   id: string;
   general_id: string;
   name: string;
+  name_en?: string | null;
   slug: string;
   active: boolean;
   created_at: string;
   updated_at: string;
   product_characteristics_general:
-    | { name: string }
-    | { name: string }[]
+    | { name: string; name_en?: string | null }
+    | { name: string; name_en?: string | null }[]
     | null;
 };
 
@@ -26,12 +27,21 @@ function generalNameFromRow(row: SpecificCharacteristicRow): string {
   return g.name ?? "—";
 }
 
+function generalNameEnFromRow(row: SpecificCharacteristicRow): string | null {
+  const g = row.product_characteristics_general;
+  if (!g) return null;
+  if (Array.isArray(g)) return g[0]?.name_en ?? null;
+  return g.name_en ?? null;
+}
+
 function mapRow(row: SpecificCharacteristicRow): SpecificCharacteristic {
   return {
     id: row.id,
     generalId: row.general_id,
     generalName: generalNameFromRow(row),
+    generalNameEn: generalNameEnFromRow(row),
     name: row.name,
+    nameEn: row.name_en ?? null,
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -46,7 +56,7 @@ export async function repoListSpecificCharacteristics(): Promise<
   const { data, error } = await supabase
     .from("product_characteristics_specific")
     .select(
-      "id, general_id, name, slug, active, created_at, updated_at, product_characteristics_general ( name )"
+      "id, general_id, name, name_en, slug, active, created_at, updated_at, product_characteristics_general ( name, name_en )"
     )
     .order("name", { ascending: true });
 
@@ -68,11 +78,12 @@ export async function repoCreateSpecificCharacteristic(
     .insert({
       general_id: payload.generalId,
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       active: payload.active,
     })
     .select(
-      "id, general_id, name, slug, active, created_at, updated_at, product_characteristics_general ( name )"
+      "id, general_id, name, name_en, slug, active, created_at, updated_at, product_characteristics_general ( name, name_en )"
     )
     .single();
 
@@ -90,6 +101,7 @@ export async function repoUpdateSpecificCharacteristic(
     .update({
       general_id: payload.generalId,
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       active: payload.active,
     })
