@@ -133,74 +133,77 @@ export function ServiceForm({
       <div className="relative z-0 min-h-0 flex-1 space-y-4 pt-4">
         {activeTab === "basic" ? (
           <section className={adminSlideOverSectionClassName}>
-            <div
-              role="tablist"
-              aria-label={t("admin.services.form.languageTabs.ariaLabel")}
-              className="flex items-center justify-start gap-2"
-            >
-              {locale === "en" ? (
-                <>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={basicLanguageTab === "en"}
-                    className={cn(
-                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
-                      basicLanguageTab === "en"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                    )}
-                    onClick={() => setBasicLanguageTab("en")}
-                  >
-                    {t("admin.services.form.languageTabs.english")}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={basicLanguageTab === "es"}
-                    className={cn(
-                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
-                      basicLanguageTab === "es"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                    )}
-                    onClick={() => setBasicLanguageTab("es")}
-                  >
-                    {t("admin.services.form.languageTabs.spanish")}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={basicLanguageTab === "es"}
-                    className={cn(
-                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
-                      basicLanguageTab === "es"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                    )}
-                    onClick={() => setBasicLanguageTab("es")}
-                  >
-                    {t("admin.services.form.languageTabs.spanish")}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={basicLanguageTab === "en"}
-                    className={cn(
-                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
-                      basicLanguageTab === "en"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                    )}
-                    onClick={() => setBasicLanguageTab("en")}
-                  >
-                    {t("admin.services.form.languageTabs.english")}
-                  </button>
-                </>
-              )}
+            <div className="space-y-2">
+              <div
+                role="tablist"
+                aria-label={t("admin.services.form.languageTabs.ariaLabel")}
+                className="flex items-center justify-start gap-2"
+              >
+                {locale === "en" ? (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={basicLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        basicLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setBasicLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={basicLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        basicLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setBasicLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={basicLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        basicLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setBasicLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={basicLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        basicLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setBasicLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="border-t border-border/60" aria-hidden />
             </div>
 
             {basicLanguageTab === "es" ? (
@@ -220,7 +223,9 @@ export function ServiceForm({
                   autoComplete="off"
                   aria-required
                   aria-invalid={Boolean(nameError)}
-                  aria-describedby={nameError ? "service-name-error" : undefined}
+                  aria-describedby={
+                    nameError ? "service-name-error" : undefined
+                  }
                   className={cn(
                     adminServiceLikeInputClassName,
                     nameError &&
@@ -254,7 +259,9 @@ export function ServiceForm({
                   autoComplete="off"
                   aria-required
                   aria-invalid={Boolean(nameEnError)}
-                  aria-describedby={nameEnError ? "service-name-en-error" : undefined}
+                  aria-describedby={
+                    nameEnError ? "service-name-en-error" : undefined
+                  }
                   className={cn(
                     adminServiceLikeInputClassName,
                     nameEnError &&
@@ -312,8 +319,8 @@ export function ServiceForm({
                 onSetPrimary={images.markPrimary}
                 onMoveUp={(key) => images.moveByKeyboard(key, "up")}
                 onMoveDown={(key) => images.moveByKeyboard(key, "down")}
-              className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] sm:grid-cols-none"
-              itemClassName="w-[12rem] shrink-0"
+                className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] sm:grid-cols-none"
+                itemClassName="w-[12rem] shrink-0"
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">

@@ -43,6 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 /** Misma apariencia que tooltips de tablas admin (p. ej. columna de fechas). */
@@ -315,6 +316,7 @@ export function ProductDescriptionToolbar({
   onInsertSpecificationsTable,
   onInsertSpecAccordionBlock,
 }: Props) {
+  const { t } = useI18n();
   const [, tick] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
@@ -331,7 +333,7 @@ export function ProductDescriptionToolbar({
   if (!editor) {
     return (
       <div className="flex flex-wrap gap-1 rounded-t-lg border border-b-0 border-border/70 bg-muted/25 px-2 py-2 text-xs text-muted-foreground">
-        Cargando editor…
+        {t("admin.richTextEditor.toolbar.loading")}
       </div>
     );
   }
@@ -371,7 +373,7 @@ export function ProductDescriptionToolbar({
       <div className="flex min-w-0 flex-col gap-0 rounded-t-lg border border-b-0 border-border/70 bg-muted/20 px-2 pt-2 sm:px-3">
         <div className="-mx-2 min-w-0 sm:-mx-3">
           <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 pb-2 [scrollbar-width:thin] sm:px-3">
-            <EditorTooltip title="Deshacer (Ctrl+Z)">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.undo")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -384,7 +386,7 @@ export function ProductDescriptionToolbar({
                 <Undo2 className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Rehacer (Ctrl+Shift+Z)">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.redo")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -402,12 +404,12 @@ export function ProductDescriptionToolbar({
 
             <ToolbarDropdown
               disabled={disabled}
-              tooltip="Encabezado"
+              tooltip={t("admin.richTextEditor.toolbar.heading")}
               headingBadge={headingBadge}
               isTriggerActive={headingActive}
               items={[
                 {
-                  label: "Encabezado 1",
+                  label: t("admin.richTextEditor.toolbar.heading1"),
                   icon: Heading1,
                   active: editor.isActive("heading", { level: 1 }),
                   onSelect: () =>
@@ -420,7 +422,7 @@ export function ProductDescriptionToolbar({
                     }),
                 },
                 {
-                  label: "Encabezado 2",
+                  label: t("admin.richTextEditor.toolbar.heading2"),
                   icon: Heading2,
                   active: editor.isActive("heading", { level: 2 }),
                   onSelect: () =>
@@ -433,7 +435,7 @@ export function ProductDescriptionToolbar({
                     }),
                 },
                 {
-                  label: "Encabezado 3",
+                  label: t("admin.richTextEditor.toolbar.heading3"),
                   icon: Heading3,
                   active: editor.isActive("heading", { level: 3 }),
                   onSelect: () =>
@@ -446,7 +448,7 @@ export function ProductDescriptionToolbar({
                     }),
                 },
                 {
-                  label: "Encabezado 4",
+                  label: t("admin.richTextEditor.toolbar.heading4"),
                   icon: Heading4,
                   active: editor.isActive("heading", { level: 4 }),
                   onSelect: () =>
@@ -463,19 +465,19 @@ export function ProductDescriptionToolbar({
 
             <ToolbarDropdown
               disabled={disabled}
-              tooltip="Listas"
+              tooltip={t("admin.richTextEditor.toolbar.lists")}
               icon={List}
               isTriggerActive={listActive}
               items={[
                 {
-                  label: "Lista con viñetas",
+                  label: t("admin.richTextEditor.toolbar.bulletList"),
                   icon: List,
                   active: editor.isActive("bulletList"),
                   onSelect: () =>
                     run(() => editor.chain().focus().toggleBulletList().run()),
                 },
                 {
-                  label: "Lista numerada",
+                  label: t("admin.richTextEditor.toolbar.numberedList"),
                   icon: ListOrdered,
                   active: editor.isActive("orderedList"),
                   onSelect: () =>
@@ -484,7 +486,7 @@ export function ProductDescriptionToolbar({
               ]}
             />
 
-            <EditorTooltip title="Cita / bloque destacado">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.blockquote")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -502,7 +504,7 @@ export function ProductDescriptionToolbar({
 
             <span className="mx-1 hidden h-5 w-px bg-border/80 sm:inline-block" />
 
-            <EditorTooltip title="Negrita">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.bold")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -517,7 +519,7 @@ export function ProductDescriptionToolbar({
                 <span className="text-sm font-bold leading-none">B</span>
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Cursiva">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.italic")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -532,7 +534,7 @@ export function ProductDescriptionToolbar({
                 <Italic className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Subrayado">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.underline")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -550,7 +552,7 @@ export function ProductDescriptionToolbar({
 
             <span className="mx-1 hidden h-5 w-px bg-border/80 sm:inline-block" />
 
-            <EditorTooltip title="Alinear a la izquierda">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.alignLeft")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -565,7 +567,7 @@ export function ProductDescriptionToolbar({
                 <AlignLeft className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Centrar">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.alignCenter")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -580,7 +582,7 @@ export function ProductDescriptionToolbar({
                 <AlignCenter className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Alinear a la derecha">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.alignRight")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -595,7 +597,7 @@ export function ProductDescriptionToolbar({
                 <AlignRight className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Justificar">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.justify")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -615,7 +617,7 @@ export function ProductDescriptionToolbar({
 
             <span className="mx-1 hidden h-5 w-px bg-border/80 sm:inline-block" />
 
-            <EditorTooltip title="Enlace">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.link")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -629,7 +631,7 @@ export function ProductDescriptionToolbar({
                     | string
                     | undefined;
                   const next = window.prompt(
-                    "URL del enlace (vacío para quitar)",
+                    t("admin.richTextEditor.toolbar.linkPrompt"),
                     prev ?? "https://",
                   );
                   if (next === null) return;
@@ -653,7 +655,7 @@ export function ProductDescriptionToolbar({
                 <Link2 className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Insertar imagen">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.insertImage")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -666,7 +668,7 @@ export function ProductDescriptionToolbar({
                 <ImagePlus className="h-4 w-4" />
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Separador horizontal">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.horizontalRule")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -687,9 +689,9 @@ export function ProductDescriptionToolbar({
         <div className="-mx-2 border-t border-border/50 sm:-mx-3">
           <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 pb-2 pt-2.5 [scrollbar-width:thin] sm:px-3">
             <span className="mr-1 hidden shrink-0 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
-              Bloques
+              {t("admin.richTextEditor.toolbar.blocks")}
             </span>
-            <EditorTooltip title="Inserta título y lista de características">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.insertCharacteristicsHint")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -700,10 +702,10 @@ export function ProductDescriptionToolbar({
                 onClick={() => run(onInsertCharacteristicsBlock)}
               >
                 <TextQuote className="h-3.5 w-3.5" />
-                Características
+                {t("admin.richTextEditor.toolbar.characteristics")}
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Sección completa de especificaciones con tabla">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.insertSpecificationsSectionHint")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -714,10 +716,10 @@ export function ProductDescriptionToolbar({
                 onClick={() => run(onInsertSpecificationsSection)}
               >
                 <Table2 className="h-3.5 w-3.5" />
-                Especificaciones
+                {t("admin.richTextEditor.toolbar.specifications")}
               </Button>
             </EditorTooltip>
-            <EditorTooltip title="Solo tabla editable con filas típicas">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.insertSpecificationsTableHint")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -728,11 +730,11 @@ export function ProductDescriptionToolbar({
                 onClick={() => run(onInsertSpecificationsTable)}
               >
                 <Table2 className="h-3.5 w-3.5" />
-                Tabla espec.
+                {t("admin.richTextEditor.toolbar.specTable")}
               </Button>
             </EditorTooltip>
 
-            <EditorTooltip title="Bloque acordeón de especificaciones">
+            <EditorTooltip title={t("admin.richTextEditor.toolbar.specAccordionHint")}>
               <Button
                 type="button"
                 onMouseDown={preventEditorBlurMouseDown}
@@ -743,7 +745,7 @@ export function ProductDescriptionToolbar({
                 onClick={() => run(onInsertSpecAccordionBlock)}
               >
                 <ChevronDown className="h-3.5 w-3.5" />
-                Acordeón espec.
+                {t("admin.richTextEditor.toolbar.specAccordion")}
               </Button>
             </EditorTooltip>
           </div>
@@ -754,11 +756,11 @@ export function ProductDescriptionToolbar({
           <div className="-mx-2 border-t border-border/50 sm:-mx-3">
             <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 pb-2 pt-2.5 [scrollbar-width:thin] sm:px-3">
               <span className="mr-1 hidden shrink-0 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
-                Tabla
+                {t("admin.richTextEditor.toolbar.table")}
               </span>
 
               {/* ── Filas ── */}
-              <EditorTooltip title="Insertar fila encima">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.addRowBefore")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -771,11 +773,11 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Fila ↑
+                  {t("admin.richTextEditor.toolbar.rowUp")}
                 </Button>
               </EditorTooltip>
 
-              <EditorTooltip title="Insertar fila debajo">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.addRowAfter")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -788,11 +790,11 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Fila ↓
+                  {t("admin.richTextEditor.toolbar.rowDown")}
                 </Button>
               </EditorTooltip>
 
-              <EditorTooltip title="Eliminar fila actual">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.deleteRow")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -805,14 +807,14 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Fila
+                  {t("admin.richTextEditor.toolbar.row")}
                 </Button>
               </EditorTooltip>
 
               <span className="mx-1 h-5 w-px shrink-0 bg-border/60" />
 
               {/* ── Columnas ── */}
-              <EditorTooltip title="Insertar columna a la izquierda">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.addColumnBefore")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -825,11 +827,11 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Col ←
+                  {t("admin.richTextEditor.toolbar.colLeft")}
                 </Button>
               </EditorTooltip>
 
-              <EditorTooltip title="Insertar columna a la derecha">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.addColumnAfter")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -842,11 +844,11 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Col →
+                  {t("admin.richTextEditor.toolbar.colRight")}
                 </Button>
               </EditorTooltip>
 
-              <EditorTooltip title="Eliminar columna actual">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.deleteColumn")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -859,14 +861,14 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Col
+                  {t("admin.richTextEditor.toolbar.col")}
                 </Button>
               </EditorTooltip>
 
               <span className="mx-1 h-5 w-px shrink-0 bg-border/60" />
 
               {/* ── Tabla completa ── */}
-              <EditorTooltip title="Eliminar tabla completa">
+              <EditorTooltip title={t("admin.richTextEditor.toolbar.deleteTable")}>
                 <Button
                   type="button"
                   onMouseDown={preventEditorBlurMouseDown}
@@ -879,7 +881,7 @@ export function ProductDescriptionToolbar({
                   }
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Tabla
+                  {t("admin.richTextEditor.toolbar.tableWord")}
                 </Button>
               </EditorTooltip>
             </div>

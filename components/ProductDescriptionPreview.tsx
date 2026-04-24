@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { sanitizeProductDescriptionHtml } from "@/lib/sanitizeProductDescriptionHtml";
 import { setupSpecAccordionAnimations } from "@/lib/setupSpecAccordionAnimations";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   /** HTML crudo del editor (se sanea antes de pintar). */
@@ -15,6 +16,7 @@ type Props = {
  * para que el admin vea el resultado final.
  */
 export function ProductDescriptionPreview({ html, className }: Props) {
+  const { t } = useI18n();
   const safe = useMemo(
     () => sanitizeProductDescriptionHtml(html ?? ""),
     [html],
@@ -41,7 +43,7 @@ export function ProductDescriptionPreview({ html, className }: Props) {
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">
-        Vista previa
+        {t("admin.richTextEditor.preview.title")}
       </p>
       <div
         className={`rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 py-2 ${className ?? ""}`}
@@ -54,8 +56,7 @@ export function ProductDescriptionPreview({ html, className }: Props) {
           />
         ) : (
           <p className="min-h-6 truncate text-sm italic leading-6 text-muted-foreground">
-            Empieza a redactar una descripción clara y atractiva para ver aquí
-            cómo se presentará al cliente.
+            {t("admin.richTextEditor.preview.empty")}
           </p>
         )}
       </div>

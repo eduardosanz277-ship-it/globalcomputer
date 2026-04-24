@@ -17,55 +17,9 @@ import { ProductDescriptionToolbar } from "@/components/ProductDescriptionToolba
 import { ProductDescriptionPreview } from "@/components/ProductDescriptionPreview";
 import { SpecAccordionBlockExtension } from "@/components/editor/SpecAccordionBlock";
 import { uploadProductDescriptionImage } from "@/lib/uploadImage";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
-
-/** Plantilla lista para fichas tipo cámara / seguridad. */
-const BLOQUE_CARACTERISTICAS_HTML = `
-<h2>Características principales</h2>
-<ul>
-<li>Resolución 4MP</li>
-<li>Visión nocturna hasta 30m</li>
-<li>Detección de movimiento</li>
-</ul>
-<p></p>
-`;
-
-/** Sección con título, texto guía y tabla editable. */
-const BLOQUE_ESPECIFICACIONES_COMPLETO_HTML = `
-<h2>Especificaciones técnicas</h2>
-<p>Ajusta o amplía las filas según el producto.</p>
-<table>
-<thead>
-<tr><th>Campo</th><th>Detalle</th></tr>
-</thead>
-<tbody>
-<tr><td>Resolución</td><td></td></tr>
-<tr><td>Lente</td><td></td></tr>
-<tr><td>Visión nocturna</td><td></td></tr>
-<tr><td>Audio</td><td></td></tr>
-<tr><td>Compatibilidad</td><td></td></tr>
-</tbody>
-</table>
-<p></p>
-`;
-
-/** Solo la tabla (botón “Tabla espec.”). */
-const TABLA_ESPECIFICACIONES_HTML = `
-<table>
-<thead>
-<tr><th>Especificación</th><th>Detalle</th></tr>
-</thead>
-<tbody>
-<tr><td>Resolución</td><td></td></tr>
-<tr><td>Lente</td><td></td></tr>
-<tr><td>Visión nocturna</td><td></td></tr>
-<tr><td>Audio</td><td></td></tr>
-<tr><td>Compatibilidad</td><td></td></tr>
-</tbody>
-</table>
-<p></p>
-`;
 
 type Props = {
   id?: string;
@@ -83,14 +37,104 @@ type Props = {
  */
 export function ProductDescriptionEditor({
   id = "product-description-rich",
-  label = "Descripción del producto",
+  label,
   value,
   onChange,
   disabled,
   error,
   className,
 }: Props) {
+  const { t, locale } = useI18n();
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const resolvedLabel = label ?? t("admin.richTextEditor.labelDefault");
+  const characteristicsBlockHtml =
+    locale === "en"
+      ? `
+<h2>Key features</h2>
+<ul>
+<li>4MP resolution</li>
+<li>Night vision up to 30m</li>
+<li>Motion detection</li>
+</ul>
+<p></p>
+`
+      : `
+<h2>Características principales</h2>
+<ul>
+<li>Resolución 4MP</li>
+<li>Visión nocturna hasta 30m</li>
+<li>Detección de movimiento</li>
+</ul>
+<p></p>
+`;
+  const specificationsSectionHtml =
+    locale === "en"
+      ? `
+<h2>Technical specifications</h2>
+<p>Adjust or extend rows according to the product.</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>Resolution</td><td></td></tr>
+<tr><td>Lens</td><td></td></tr>
+<tr><td>Night vision</td><td></td></tr>
+<tr><td>Audio</td><td></td></tr>
+<tr><td>Compatibility</td><td></td></tr>
+</tbody>
+</table>
+<p></p>
+`
+      : `
+<h2>Especificaciones técnicas</h2>
+<p>Ajusta o amplía las filas según el producto.</p>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalle</th></tr>
+</thead>
+<tbody>
+<tr><td>Resolución</td><td></td></tr>
+<tr><td>Lente</td><td></td></tr>
+<tr><td>Visión nocturna</td><td></td></tr>
+<tr><td>Audio</td><td></td></tr>
+<tr><td>Compatibilidad</td><td></td></tr>
+</tbody>
+</table>
+<p></p>
+`;
+  const specificationsTableHtml =
+    locale === "en"
+      ? `
+<table>
+<thead>
+<tr><th>Specification</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>Resolution</td><td></td></tr>
+<tr><td>Lens</td><td></td></tr>
+<tr><td>Night vision</td><td></td></tr>
+<tr><td>Audio</td><td></td></tr>
+<tr><td>Compatibility</td><td></td></tr>
+</tbody>
+</table>
+<p></p>
+`
+      : `
+<table>
+<thead>
+<tr><th>Especificación</th><th>Detalle</th></tr>
+</thead>
+<tbody>
+<tr><td>Resolución</td><td></td></tr>
+<tr><td>Lente</td><td></td></tr>
+<tr><td>Visión nocturna</td><td></td></tr>
+<tr><td>Audio</td><td></td></tr>
+<tr><td>Compatibilidad</td><td></td></tr>
+</tbody>
+</table>
+<p></p>
+`;
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -107,7 +151,7 @@ export function ProductDescriptionEditor({
       }),
       Underline,
       Placeholder.configure({
-        placeholder: "Describe el producto: beneficios, uso, compatibilidad…",
+        placeholder: t("admin.richTextEditor.placeholder"),
       }),
       Link.configure({
         openOnClick: false,
@@ -140,7 +184,7 @@ export function ProductDescriptionEditor({
           "tiptap-editor-surface font-sans px-3 sm:px-4 text-sm leading-relaxed",
           "focus:outline-none",
         ),
-        "aria-label": "Área de edición de descripción",
+        "aria-label": t("admin.richTextEditor.editorAria"),
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -180,29 +224,29 @@ export function ProductDescriptionEditor({
       }
 
       editor.chain().focus().setImage({ src: result.publicUrl }).run();
-      toast.success("Imagen insertada");
+      toast.success(t("admin.richTextEditor.toast.imageInserted"));
     },
-    [editor, disabled],
+    [editor, disabled, t],
   );
 
   const insertCharacteristics = useCallback(() => {
     if (!editor || disabled) return;
-    editor.chain().focus().insertContent(BLOQUE_CARACTERISTICAS_HTML).run();
-  }, [editor, disabled]);
+    editor.chain().focus().insertContent(characteristicsBlockHtml).run();
+  }, [editor, disabled, characteristicsBlockHtml]);
 
   const insertSpecificationsSection = useCallback(() => {
     if (!editor || disabled) return;
     editor
       .chain()
       .focus()
-      .insertContent(BLOQUE_ESPECIFICACIONES_COMPLETO_HTML)
+      .insertContent(specificationsSectionHtml)
       .run();
-  }, [editor, disabled]);
+  }, [editor, disabled, specificationsSectionHtml]);
 
   const insertSpecificationsTable = useCallback(() => {
     if (!editor || disabled) return;
-    editor.chain().focus().insertContent(TABLA_ESPECIFICACIONES_HTML).run();
-  }, [editor, disabled]);
+    editor.chain().focus().insertContent(specificationsTableHtml).run();
+  }, [editor, disabled, specificationsTableHtml]);
 
   const insertSpecAccordionBlock = useCallback(() => {
     if (!editor || disabled) return;
@@ -212,22 +256,37 @@ export function ProductDescriptionEditor({
       .insertContent({
         type: "specAccordionBlock",
         attrs: {
-          groupTitle: "Lente",
+          groupTitle:
+            locale === "en"
+              ? t("admin.richTextEditor.accordion.defaultGroupTitleEn")
+              : t("admin.richTextEditor.accordion.defaultGroupTitle"),
           open: true,
             rows: [
-              { name: "Tipo", detail: "Dual lens" },
-              { name: "Focal Length", detail: "4 mm" },
+              {
+                name:
+                  locale === "en"
+                    ? t("admin.richTextEditor.accordion.defaultRowTypeEn")
+                    : t("admin.richTextEditor.accordion.defaultRowType"),
+                detail: "Dual lens",
+              },
+              {
+                name:
+                  locale === "en"
+                    ? t("admin.richTextEditor.accordion.defaultRowFocalEn")
+                    : t("admin.richTextEditor.accordion.defaultRowFocal"),
+                detail: "4 mm",
+              },
             ],
         },
       })
       .run();
-  }, [editor, disabled]);
+  }, [editor, disabled, locale, t]);
 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="space-y-1.5">
         <Label htmlFor={id} className="text-sm font-medium">
-          {label}
+          {resolvedLabel}
         </Label>
         {/* <p className="text-xs text-muted-foreground">
           Texto enriquecido con imágenes alojadas en Storage. Se guarda como
@@ -269,7 +328,7 @@ export function ProductDescriptionEditor({
         <div
           className="min-h-0 max-h-[min(50vh,22rem)] overflow-y-auto overscroll-y-contain rounded-b-lg border-t border-border/80 bg-white text-foreground dark:bg-muted/10"
           role="region"
-          aria-label="Área de edición con desplazamiento"
+          aria-label={t("admin.richTextEditor.scrollRegionAria")}
         >
           <EditorContent editor={editor} id={id} />
         </div>
