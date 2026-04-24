@@ -342,6 +342,7 @@ function SuscripcionesRowActionsMenu({
       title: t("admin.businessSubscriptions.confirm.deleteTitle"),
       html: `${t("admin.businessSubscriptions.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.businessSubscriptions.confirm.deleteMessageSuffix")}`,
       confirmButtonText: t("admin.businessSubscriptions.confirm.deleteConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => deleteUserAsync(row.id),
@@ -357,6 +358,7 @@ function SuscripcionesRowActionsMenu({
         ? `${t("admin.businessSubscriptions.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.businessSubscriptions.confirm.rejectApprovedSuffix")}`
         : `${t("admin.businessSubscriptions.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.businessSubscriptions.confirm.rejectPendingSuffix")}`,
       confirmButtonText: t("admin.businessSubscriptions.confirm.rejectConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(row.id),
@@ -409,6 +411,7 @@ function SuscripcionesRowActionsMenu({
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
               disabled={busy}
               onClick={() => {
+                setOpen(false);
                 void handleApprove();
               }}
             >
@@ -421,6 +424,7 @@ function SuscripcionesRowActionsMenu({
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
+                setOpen(false);
                 void handleReject();
               }}
             >
@@ -439,6 +443,7 @@ function SuscripcionesRowActionsMenu({
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
+                setOpen(false);
                 void handleReject();
               }}
             >
@@ -460,6 +465,7 @@ function SuscripcionesRowActionsMenu({
           )}
           disabled={busy}
           onClick={() => {
+            setOpen(false);
             void handleDelete();
           }}
         >

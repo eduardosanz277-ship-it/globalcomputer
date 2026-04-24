@@ -97,6 +97,7 @@ function RowActions({
       title: t("admin.services.confirm.deleteTitle"),
       html: `${t("admin.services.confirm.deleteMessagePrefix")} <strong>${localizedServiceName(row, locale)}</strong>.`,
       confirmButtonText: t("admin.services.confirm.deleteConfirm"),
+      cancelButtonText: t("admin.services.form.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),

@@ -7,8 +7,10 @@ import {
   FolderTree,
   Layers,
   ListChecks,
+  ListOrdered,
   ListTodo,
   MessageSquare,
+  MessageSquareText,
   Package,
   Settings,
   Shapes,
@@ -18,67 +20,67 @@ import {
 
 export type AdminNavSubItem = {
   href: string;
-  label: string;
+  labelKey: string;
 };
 
 export type AdminNavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   /** Submenú opcional (acordeón en el lateral) */
   children?: AdminNavSubItem[];
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { href: "/admin/home", label: "Home", icon: House },
-  { href: "/admin/products", label: "Productos", icon: Package },
+  { href: "/admin/home", labelKey: "admin.menu.home", icon: House },
+  { href: "/admin/products", labelKey: "admin.menu.products", icon: Package },
   {
     href: "/admin/categories",
-    label: "Categorías",
+    labelKey: "admin.menu.categories",
     icon: FolderTree,
   },
   {
     href: "/admin/subcategories",
-    label: "Subcategorías",
+    labelKey: "admin.menu.subcategories",
     icon: Layers,
   },
-  { href: "/admin/brands", label: "Marcas", icon: Tag },
+  { href: "/admin/brands", labelKey: "admin.menu.brands", icon: Tag },
   {
     href: "/admin/brand-types",
-    label: "Tipos por marca",
+    labelKey: "admin.menu.brandTypes",
     icon: Shapes,
   },
   {
     href: "/admin/general-characteristics",
-    label: "Características generales",
+    labelKey: "admin.menu.generalCharacteristics",
     icon: ListChecks,
   },
   {
     href: "/admin/specific-characteristics",
-    label: "Características especificas",
+    labelKey: "admin.menu.specificCharacteristics",
     icon: ListTodo,
   },
-  { href: "/admin/orders", label: "Pedidos", icon: ListChecks },
+  { href: "/admin/orders", labelKey: "admin.menu.orders", icon: ListOrdered },
   {
     href: "/admin/suscripciones-empresas",
-    label: "Suscripciones",
+    labelKey: "admin.menu.businessSubscriptions",
     icon: BadgeCheck,
   },
-  { href: "/admin/users", label: "Usuarios", icon: Users },
+  { href: "/admin/users", labelKey: "admin.menu.users", icon: Users },
   {
     href: "/admin/contacts",
-    label: "Mensajes de contacto",
-    icon: MessageSquare,
+    labelKey: "admin.menu.contactMessages",
+    icon: MessageSquareText,
   },
   {
     href: "/admin/faqs",
-    label: "FAQs",
+    labelKey: "admin.menu.faqs",
     icon: CircleHelp,
   },
   {
     href: "/admin/services",
-    label: "Servicios",
+    labelKey: "admin.menu.services",
     icon: BriefcaseBusiness,
   },
-  { href: "/admin/settings", label: "Configuración", icon: Settings },
+  { href: "/admin/settings", labelKey: "admin.menu.settings", icon: Settings },
 ];

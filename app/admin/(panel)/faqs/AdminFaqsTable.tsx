@@ -76,6 +76,7 @@ function RowActions({
       title: t("admin.faqs.confirm.deleteTitle"),
       html: `${t("admin.faqs.confirm.deleteMessagePrefix")} <strong>${questionText}</strong>.`,
       confirmButtonText: t("admin.faqs.confirm.deleteConfirm"),
+      cancelButtonText: t("admin.faqs.form.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),

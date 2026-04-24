@@ -29,6 +29,7 @@ export type CategoryAdminUpdate = CategoryAdminInsert;
 export type AdminSubcategory = {
   id: string;
   name: string;
+  nameEn: string | null;
   categoryId: string;
   slug: string;
 };

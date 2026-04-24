@@ -9,6 +9,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminProductsTable } from "./AdminProductsTable";
+import { ProductsPageHeader } from "./ProductsPageHeader";
 
 async function AdminProductsTableSection() {
   const [
@@ -46,12 +47,7 @@ export default async function AdminProductsPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">Productos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona catálogo, precios, stock, imágenes y características específicas de cada producto.
-          </p>
-        </header>
+        <ProductsPageHeader />
 
         <hr className="border-border" />
 

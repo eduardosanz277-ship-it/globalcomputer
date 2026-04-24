@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader, type AdminHeaderUser } from "./AdminHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function AdminShell({ user, children }: Props) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -51,7 +53,7 @@ export function AdminShell({ user, children }: Props) {
         <button
           type="button"
           className="fixed inset-0 z-20 bg-black/40 md:hidden"
-          aria-label="Cerrar menú"
+          aria-label={t("admin.menu.closeMenu")}
           onClick={() => setMobileMenuOpen(false)}
         />
       )}

@@ -51,8 +51,9 @@ import {
   useServiceImagesManager,
   type ExistingServiceImageInput,
 } from "@/components/admin/service-form";
-import { Trash2, RefreshCcw } from "lucide-react";
+import { Trash2, RefreshCcw, X } from "lucide-react";
 import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 const PRODUCT_FORM_ID = "product-form-slide-over";
 
@@ -78,13 +79,17 @@ export function ProductFormDialog({
   subcategories,
 }: Props) {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       sku: "",
       name: "",
+      nameEn: "",
       description: "",
+      descriptionEn: "",
       specifications: "",
+      specificationsEn: "",
       stock: 0,
       price: 0,
       discountBusinessPct: 0,
@@ -107,7 +112,7 @@ export function ProductFormDialog({
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createProductWithImageAction,
     {
-      successMessage: "Producto creado",
+      successMessage: t("admin.products.toast.created"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -118,7 +123,7 @@ export function ProductFormDialog({
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateProductWithImageAction,
     {
-      successMessage: "Producto actualizado",
+      successMessage: t("admin.products.toast.updated"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -135,8 +140,11 @@ export function ProductFormDialog({
       form.reset({
         sku: product.sku,
         name: product.name,
+        nameEn: product.nameEn ?? "",
         description: product.description ?? "",
+        descriptionEn: product.descriptionEn ?? "",
         specifications: product.specifications ?? "",
+        specificationsEn: product.specificationsEn ?? "",
         stock: product.stock,
         price: product.price,
         discountBusinessPct: product.discountBusinessPct,
@@ -160,8 +168,11 @@ export function ProductFormDialog({
       form.reset({
         sku: "",
         name: "",
+        nameEn: "",
         description: "",
+        descriptionEn: "",
         specifications: "",
+        specificationsEn: "",
         stock: 0,
         price: 0,
         discountBusinessPct: 0,
@@ -182,9 +193,22 @@ export function ProductFormDialog({
   const watchedBrandId = form.watch("brandId");
   const watchedPlacementCategoryId = form.watch("placementCategoryId");
 
+  const localizedBrandName = (brand: Brand): string =>
+    locale === "en" ? brand.nameEn?.trim() || brand.name : brand.name;
+  const localizedBrandTypeName = (type: BrandType): string =>
+    locale === "en" ? type.nameEn?.trim() || type.name : type.name;
+  const localizedBrandTypeBrandName = (type: BrandType): string =>
+    locale === "en" ? type.brandNameEn?.trim() || type.brandName : type.brandName;
+  const localizedCategoryName = (category: AdminCategory): string =>
+    locale === "en" ? category.nameEn?.trim() || category.name : category.name;
+
   const categoryOptions = useMemo(
-    () => categories.map((c) => ({ value: c.id, label: c.name })),
-    [categories],
+    () =>
+      categories.map((c) => ({
+        value: c.id,
+        label: localizedCategoryName(c),
+      })),
+    [categories, locale],
   );
 
   const subcategoriesForCategory = useMemo(
@@ -213,8 +237,12 @@ export function ProductFormDialog({
   }, [watchedPlacementCategoryId, subcategories, form]);
 
   const brandOptions = useMemo(
-    () => brands.map((b) => ({ value: b.id, label: b.name })),
-    [brands],
+    () =>
+      brands.map((b) => ({
+        value: b.id,
+        label: localizedBrandName(b),
+      })),
+    [brands, locale],
   );
 
   const brandTypeOptions = useMemo(() => {
@@ -222,7 +250,7 @@ export function ProductFormDialog({
       .filter((t) => !watchedBrandId || t.brandId === watchedBrandId)
       .map((t) => ({
         value: t.id,
-        label: `${t.brandName} \u00B7 ${t.name}`,
+        label: `${localizedBrandTypeBrandName(t)} \u00B7 ${localizedBrandTypeName(t)}`,
       }));
 
     // Solo mostrar el tipo guardado como opción extra si sigue editando la misma
@@ -240,7 +268,7 @@ export function ProductFormDialog({
     }
 
     return base;
-  }, [brandTypes, watchedBrandId, product]);
+  }, [brandTypes, watchedBrandId, product, locale]);
 
   // Si cambia la marca (o los tipos cargados), el `brandTypeId` debe seguir
   // perteneciendo a esa marca; si no, se limpia para que el select coincida.
@@ -261,18 +289,31 @@ export function ProductFormDialog({
   }, [watchedBrandId, brandTypes, form]);
 
   const specificOptions = useMemo(() => {
+    const localizedSpecificName = (item: SpecificCharacteristic): string =>
+      locale === "en" ? item.nameEn?.trim() || item.name : item.name;
+    const localizedGeneralName = (item: SpecificCharacteristic): string =>
+      locale === "en"
+        ? item.generalNameEn?.trim() || item.generalName
+        : item.generalName;
+
     const selectedIds = new Set(characteristics.map((c) => c.specificId));
     const all = specificCharacteristics
       .filter((s) => s.active || selectedIds.has(s.id))
       .slice()
       .sort((a, b) => {
-        const byGeneral = a.generalName.localeCompare(b.generalName, "es");
+        const byGeneral = localizedGeneralName(a).localeCompare(
+          localizedGeneralName(b),
+          locale,
+        );
         if (byGeneral !== 0) return byGeneral;
-        return a.name.localeCompare(b.name, "es");
+        return localizedSpecificName(a).localeCompare(
+          localizedSpecificName(b),
+          locale,
+        );
       });
 
     return all;
-  }, [specificCharacteristics, characteristics]);
+  }, [specificCharacteristics, characteristics, locale]);
 
   const toggleCharacteristic = (specificId: string) => {
     setCharacteristics((prev) => {
@@ -282,6 +323,12 @@ export function ProductFormDialog({
       }
       return [...prev, { specificId, value: "" }];
     });
+  };
+
+  const removeCharacteristic = (specificId: string) => {
+    setCharacteristics((prev) =>
+      prev.filter((item) => item.specificId !== specificId),
+    );
   };
 
   const updateCharacteristicValue = (specificId: string, value: string) => {
@@ -347,10 +394,12 @@ export function ProductFormDialog({
     <SlideOver
       open={open}
       onClose={() => onOpenChange(false)}
-      title={product ? "Editar producto" : "Nuevo producto"}
-      description={
-        "Gestiona información comercial, imágenes y características específicas del producto."
+      title={
+        product
+          ? t("admin.products.form.titleEdit")
+          : t("admin.products.form.titleNew")
       }
+      description={t("admin.products.form.description")}
       panelClassName="md:w-[min(90vw,42rem)] lg:w-[55%] lg:max-w-none"
       footer={
         <SlideOverFooter>
@@ -360,19 +409,19 @@ export function ProductFormDialog({
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.products.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={PRODUCT_FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.products.form.saving")}
           >
-            Guardar
+            {t("admin.products.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
-      contentAriaLabel="Formulario de producto"
+      contentAriaLabel={t("admin.products.form.contentAria")}
       contentClassName="bg-background px-4 pb-4 pt-0"
     >
       <ProductFormBody
@@ -388,6 +437,7 @@ export function ProductFormDialog({
         specificOptions={specificOptions}
         characteristics={characteristics}
         toggleCharacteristic={toggleCharacteristic}
+        removeCharacteristic={removeCharacteristic}
         updateCharacteristicValue={updateCharacteristicValue}
         existingImages={existingImages}
         manualPdfFile={manualPdfFile}
@@ -409,6 +459,7 @@ function ProductFormBody({
   specificOptions,
   characteristics,
   toggleCharacteristic,
+  removeCharacteristic,
   updateCharacteristicValue,
   existingImages,
   manualPdfFile,
@@ -432,11 +483,13 @@ function ProductFormBody({
   specificOptions: SpecificCharacteristic[];
   characteristics: Array<{ specificId: string; value: string }>;
   toggleCharacteristic: (specificId: string) => void;
+  removeCharacteristic: (specificId: string) => void;
   updateCharacteristicValue: (specificId: string, value: string) => void;
   existingImages: ExistingServiceImageInput[];
   manualPdfFile: File | null;
   setManualPdfFile: (file: File | null) => void;
 }) {
+  const { t, locale } = useI18n();
   type GeneralFilterOption = { value: string; label: string };
   const errors = form.formState.errors;
   const watchedPlacementCategoryId = form.watch("placementCategoryId");
@@ -452,15 +505,33 @@ function ProductFormBody({
     | "specifications";
 
   const PRODUCT_FORM_TABS: { id: ProductFormTabId; label: string }[] = [
-    { id: "general", label: "Información general" },
-    { id: "description", label: "Descripción" },
-    { id: "pricing", label: "Precios e inventario" },
-    { id: "media", label: "Multimedia" },
-    { id: "characteristics", label: "Características" },
-    { id: "specifications", label: "Especificaciones" },
+    { id: "general", label: t("admin.products.form.tabs.general") },
+    { id: "description", label: t("admin.products.form.tabs.description") },
+    { id: "pricing", label: t("admin.products.form.tabs.pricing") },
+    { id: "media", label: t("admin.products.form.tabs.media") },
+    {
+      id: "characteristics",
+      label: t("admin.products.form.tabs.characteristics"),
+    },
+    {
+      id: "specifications",
+      label: t("admin.products.form.tabs.specifications"),
+    },
   ];
 
   const [activeTab, setActiveTab] = useState<ProductFormTabId>("general");
+  const [descriptionLanguageTab, setDescriptionLanguageTab] = useState<
+    "es" | "en"
+  >(locale === "en" ? "en" : "es");
+  const [specificationsLanguageTab, setSpecificationsLanguageTab] = useState<
+    "es" | "en"
+  >(locale === "en" ? "en" : "es");
+
+  useEffect(() => {
+    const next = locale === "en" ? "en" : "es";
+    setDescriptionLanguageTab(next);
+    setSpecificationsLanguageTab(next);
+  }, [locale]);
 
   const selectedSet = useMemo(
     () => new Set(characteristics.map((item) => item.specificId)),
@@ -468,17 +539,25 @@ function ProductFormBody({
   );
 
   const specificGeneralOptions = useMemo<GeneralFilterOption[]>(() => {
+    const localizedGeneralName = (item: SpecificCharacteristic): string =>
+      locale === "en"
+        ? item.generalNameEn?.trim() || item.generalName
+        : item.generalName;
+
     const map = new Map<string, string>();
     for (const item of specificOptions) {
       if (!map.has(item.generalId)) {
-        map.set(item.generalId, item.generalName);
+        map.set(item.generalId, localizedGeneralName(item));
       }
     }
     const dynamic = Array.from(map.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label, "es"));
-    return [{ value: "all", label: "Todas las características" }, ...dynamic];
-  }, [specificOptions]);
+      .sort((a, b) => a.label.localeCompare(b.label, locale));
+    return [
+      { value: "all", label: t("admin.products.form.characteristics.filterAll") },
+      ...dynamic,
+    ];
+  }, [locale, specificOptions, t]);
 
   const visibleSpecificOptions = useMemo(() => {
     if (selectedGeneralId === "all") return specificOptions;
@@ -486,6 +565,37 @@ function ProductFormBody({
       (item) => item.generalId === selectedGeneralId,
     );
   }, [specificOptions, selectedGeneralId]);
+
+  const selectedSpecificGroups = useMemo(() => {
+    const localizedGeneral = (item: SpecificCharacteristic): string =>
+      locale === "en"
+        ? item.generalNameEn?.trim() || item.generalName
+        : item.generalName;
+    const localizedSpecific = (item: SpecificCharacteristic): string =>
+      locale === "en" ? item.nameEn?.trim() || item.name : item.name;
+
+    const selectedIds = new Set(characteristics.map((c) => c.specificId));
+    const selectedItems = specificOptions
+      .filter((item) => selectedIds.has(item.id))
+      .slice()
+      .sort((a, b) => {
+        const byGeneral = localizedGeneral(a).localeCompare(
+          localizedGeneral(b),
+          locale,
+        );
+        if (byGeneral !== 0) return byGeneral;
+        return localizedSpecific(a).localeCompare(localizedSpecific(b), locale);
+      });
+
+    const grouped = new Map<string, SpecificCharacteristic[]>();
+    for (const item of selectedItems) {
+      const key = localizedGeneral(item);
+      const list = grouped.get(key) ?? [];
+      list.push(item);
+      grouped.set(key, list);
+    }
+    return Array.from(grouped.entries());
+  }, [characteristics, locale, specificOptions]);
 
   const onSubmitForm = (values: ProductFormValues) => {
     onSubmit(
@@ -505,7 +615,7 @@ function ProductFormBody({
     >
       <div
         role="tablist"
-        aria-label="Secciones del formulario de producto"
+        aria-label={t("admin.products.form.tabs.ariaLabel")}
         className="sticky top-0 z-[100] -mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-background px-4 pb-3 pt-4 shadow-sm [scrollbar-width:thin]"
       >
         {PRODUCT_FORM_TABS.map((t) => (
@@ -530,8 +640,8 @@ function ProductFormBody({
       <div className="relative z-0 min-h-0 flex-1 space-y-4">
         {activeTab === "general" && (
           <section className={adminSlideOverSectionClassName}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-1">
+            <div className="w-full">
+              <div>
                 <FormField
                   name="sku"
                   label="SKU"
@@ -542,38 +652,79 @@ function ProductFormBody({
                   autoComplete="off"
                 />
               </div>
-              <div className="sm:col-span-2">
-                <FormField
-                  name="name"
-                  label="Nombre"
-                  required
-                  disabled={isPending}
-                  error={errors.name?.message}
-                  className={adminServiceLikeInputClassName}
-                  autoComplete="off"
-                />
-              </div>
             </div>
+
+            {locale === "en" ? (
+              <>
+                <div className="w-full">
+                  <FormField
+                    name="nameEn"
+                    label={t("admin.products.form.fields.nameEn")}
+                    required
+                    disabled={isPending}
+                    error={errors.nameEn?.message}
+                    className={adminServiceLikeInputClassName}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="w-full">
+                  <FormField
+                    name="name"
+                    label={t("admin.products.form.fields.name")}
+                    required
+                    disabled={isPending}
+                    error={errors.name?.message}
+                    className={adminServiceLikeInputClassName}
+                    autoComplete="off"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-full">
+                  <FormField
+                    name="name"
+                    label={t("admin.products.form.fields.name")}
+                    required
+                    disabled={isPending}
+                    error={errors.name?.message}
+                    className={adminServiceLikeInputClassName}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="w-full">
+                  <FormField
+                    name="nameEn"
+                    label={t("admin.products.form.fields.nameEn")}
+                    required
+                    disabled={isPending}
+                    error={errors.nameEn?.message}
+                    className={adminServiceLikeInputClassName}
+                    autoComplete="off"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-1 gap-4 border-t border-border/50 pt-4">
               <FormSelectField<ProductFormValues>
                 name="brandId"
-                label="Marca"
+                label={t("admin.products.form.fields.brand")}
                 required
                 instanceId="product-brand"
                 options={brandOptions}
-                placeholder="Selecciona una marca"
+                placeholder={t("admin.products.form.fields.brandPlaceholder")}
                 isDisabled={isPending}
               />
               <FormSelectField<ProductFormValues>
                 name="brandTypeId"
-                label="Tipo por marca"
+                label={t("admin.products.form.fields.brandType")}
                 instanceId="product-brand-type"
                 options={brandTypeOptions}
                 placeholder={
                   brandTypeOptions.length === 0
-                    ? "No hay tipos para esta marca"
-                    : "Selecciona un tipo"
+                    ? t("admin.products.form.fields.brandTypeNoOptions")
+                    : t("admin.products.form.fields.brandTypePlaceholder")
                 }
                 isDisabled={isPending || brandTypeOptions.length === 0}
               />
@@ -581,26 +732,24 @@ function ProductFormBody({
 
             <header className="space-y-1 border-t border-border/50 pt-4">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Categoría en catálogo
+                {t("admin.products.form.catalog.title")}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Selecciona la categoría y, si existe, marca una subcategoría. Si
-                no marcas ninguna subcategoría, el producto queda solo en la
-                categoría.
+                {t("admin.products.form.catalog.description")}
               </p>
             </header>
 
             <div className="space-y-4">
               <FormSelectField<ProductFormValues>
                 name="placementCategoryId"
-                label="Categoría"
+                label={t("admin.products.form.fields.category")}
                 required
                 instanceId="product-category"
                 options={categoryOptions}
                 placeholder={
                   categoryOptions.length === 0
-                    ? "No hay categorías"
-                    : "Selecciona una categoría"
+                    ? t("admin.products.form.fields.categoryNoOptions")
+                    : t("admin.products.form.fields.categoryPlaceholder")
                 }
                 isDisabled={isPending || categoryOptions.length === 0}
                 useMenuPortal
@@ -611,16 +760,15 @@ function ProductFormBody({
                   id="product-subcategory-group-label"
                   className="text-sm font-medium"
                 >
-                  Subcategoría
+                  {t("admin.products.form.fields.subcategory")}
                 </Label>
                 {!watchedPlacementCategoryId ? (
                   <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                    Primero elige una categoría para ver las subcategorías.
+                    {t("admin.products.form.fields.subcategoryPickCategoryHint")}
                   </p>
                 ) : subcategoriesForCategory.length === 0 ? (
                   <p className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                    Esta categoría no tiene subcategorías; el producto se
-                    clasificará únicamente en la categoría elegida.
+                    {t("admin.products.form.fields.subcategoryEmptyHint")}
                   </p>
                 ) : (
                   <Controller
@@ -644,10 +792,10 @@ function ProductFormBody({
                             />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-foreground">
-                                Solo en esta categoría
+                                {t("admin.products.form.fields.subcategoryOnlyCategory")}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Sin subcategoría
+                                {t("admin.products.form.fields.subcategoryNone")}
                               </p>
                             </div>
                           </label>
@@ -668,7 +816,9 @@ function ProductFormBody({
                               />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-foreground">
-                                  {sub.name}
+                                  {locale === "en"
+                                    ? sub.nameEn?.trim() || sub.name
+                                    : sub.name}
                                 </p>
                               </div>
                             </label>
@@ -689,15 +839,15 @@ function ProductFormBody({
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<ProductFormValues>
                 name="active"
-                label="Activo en catálogo"
-                description="Si está desactivado, el producto no se mostrará en el catálogo público."
+                label={t("admin.products.form.fields.active")}
+                description={t("admin.products.form.fields.activeDescription")}
               />
             </div>
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<ProductFormValues>
                 name="featured"
-                label="Producto destacado"
-                description="Actívalo para que este producto pueda mostrarse en los bloques de destacados de la tienda (por ejemplo en la página de inicio)."
+                label={t("admin.products.form.fields.featured")}
+                description={t("admin.products.form.fields.featuredDescription")}
               />
             </div>
           </section>
@@ -705,18 +855,108 @@ function ProductFormBody({
 
         {activeTab === "description" && (
           <section className={adminSlideOverSectionClassName}>
+            <div className="space-y-2">
+              <div
+                role="tablist"
+                aria-label={t("admin.services.form.languageTabs.ariaLabel")}
+                className="flex items-center justify-start gap-2"
+              >
+                {locale === "en" ? (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={descriptionLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        descriptionLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setDescriptionLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={descriptionLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        descriptionLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setDescriptionLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={descriptionLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        descriptionLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setDescriptionLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={descriptionLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        descriptionLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setDescriptionLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="border-t border-border/60" aria-hidden />
+            </div>
             <Controller
               name="description"
               control={form.control}
               render={({ field }) => (
-                <ProductDescriptionEditor
-                  id="product-description-rich"
-                  label="Descripción"
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={isPending}
-                  error={errors.description?.message}
-                />
+                <div className={cn(descriptionLanguageTab !== "es" && "hidden")}>
+                  <ProductDescriptionEditor
+                    id="product-description-rich"
+                    label={t("admin.products.form.fields.description")}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isPending}
+                    error={errors.description?.message}
+                  />
+                </div>
+              )}
+            />
+            <Controller
+              name="descriptionEn"
+              control={form.control}
+              render={({ field }) => (
+                <div className={cn(descriptionLanguageTab !== "en" && "hidden")}>
+                  <ProductDescriptionEditor
+                    id="product-description-rich-en"
+                    label={t("admin.products.form.fields.descriptionEn")}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isPending}
+                    error={errors.descriptionEn?.message}
+                  />
+                </div>
               )}
             />
           </section>
@@ -727,7 +967,7 @@ function ProductFormBody({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 name="stock"
-                label="Stock"
+                label={t("admin.products.form.fields.stock")}
                 type="number"
                 required
                 disabled={isPending}
@@ -737,7 +977,7 @@ function ProductFormBody({
               />
               <FormField
                 name="price"
-                label="Precio"
+                label={t("admin.products.form.fields.price")}
                 type="number"
                 step="0.01"
                 required
@@ -751,7 +991,7 @@ function ProductFormBody({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 name="discountBusinessPct"
-                label="Descuento empresa (%)"
+                label={t("admin.products.form.fields.discountBusiness")}
                 type="number"
                 step="0.01"
                 required
@@ -763,7 +1003,7 @@ function ProductFormBody({
               />
               <FormField
                 name="discountClient"
-                label="Descuento cliente (%)"
+                label={t("admin.products.form.fields.discountClient")}
                 type="number"
                 step="0.01"
                 required
@@ -782,11 +1022,10 @@ function ProductFormBody({
             <section className={adminSlideOverSectionClassName}>
               <header className="space-y-1">
                 <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                  Imágenes
+                  {t("admin.products.form.media.imagesTitle")}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Reordena por drag & drop, define una principal y elimina las
-                  que no necesites.
+                  {t("admin.products.form.media.imagesDescription")}
                 </p>
               </header>
 
@@ -805,7 +1044,7 @@ function ProductFormBody({
                 />
               ) : (
                 <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                  Aún no hay imágenes. Puedes subir una o varias.
+                  {t("admin.products.form.media.imagesEmpty")}
                 </div>
               )}
             </section>
@@ -813,11 +1052,11 @@ function ProductFormBody({
             <section className={adminSlideOverSectionClassName}>
               <header className="space-y-1">
                 <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                  Manual PDF (opcional)
+                  {t("admin.products.form.media.manualTitle")}
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   {
-                    "Sube el PDF del manual. Al guardar se registrará su URL pública."
+                    t("admin.products.form.media.manualDescription")
                   }
                 </p>
               </header>
@@ -843,13 +1082,13 @@ function ProductFormBody({
                     {!manualPdfFile ? (
                       <div className="space-y-2">
                         <Label htmlFor="product-manual-pdf" className="sr-only">
-                          Subir PDF del manual
+                          {t("admin.products.form.media.manualUploadAria")}
                         </Label>
                         <label
                           htmlFor="product-manual-pdf"
                           className="inline-flex cursor-pointer items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
                         >
-                          Subir PDF
+                          {t("admin.products.form.media.manualUpload")}
                         </label>
                         <Input
                           id="product-manual-pdf"
@@ -863,7 +1102,7 @@ function ProductFormBody({
                           }}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Formato PDF. Máximo 10 MB.
+                          {t("admin.products.form.media.manualHint")}
                         </p>
                       </div>
                     ) : (
@@ -895,7 +1134,9 @@ function ProductFormBody({
                                       className="h-4 w-4"
                                       aria-hidden
                                     />
-                                    <span className="sr-only">Reemplazar</span>
+                                    <span className="sr-only">
+                                      {t("admin.products.form.media.manualReplace")}
+                                    </span>
                                   </label>
                                 </TooltipTrigger>
                                 <TooltipContent
@@ -903,7 +1144,7 @@ function ProductFormBody({
                                   align="center"
                                   className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
                                 >
-                                  Reemplazar
+                                  {t("admin.products.form.media.manualReplace")}
                                 </TooltipContent>
                               </Tooltip>
 
@@ -915,7 +1156,9 @@ function ProductFormBody({
                                     className="inline-flex items-center justify-center rounded-md p-1 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4" aria-hidden />
-                                    <span className="sr-only">Eliminar</span>
+                                    <span className="sr-only">
+                                      {t("admin.products.form.media.manualDelete")}
+                                    </span>
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent
@@ -923,7 +1166,7 @@ function ProductFormBody({
                                   align="center"
                                   className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
                                 >
-                                  Eliminar
+                                  {t("admin.products.form.media.manualDelete")}
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -942,14 +1185,14 @@ function ProductFormBody({
           <section className={adminSlideOverSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Características específicas
+                {t("admin.products.form.characteristics.title")}
               </h2>
               {/* <p className="text-xs text-muted-foreground">
             Marca las características que aplican al producto y, si quieres,
             añade un valor extra.
           </p> */}
               <p className="text-xs text-muted-foreground">
-                Marca las características que aplican al producto.
+                {t("admin.products.form.characteristics.description")}
               </p>
             </header>
 
@@ -958,7 +1201,7 @@ function ProductFormBody({
                 htmlFor="specific-general-filter"
                 className="text-sm font-medium"
               >
-                Filtrar por característica general
+                {t("admin.products.form.characteristics.filterLabel")}
               </Label>
               <Select<GeneralFilterOption, false>
                 instanceId="specific-general-filter"
@@ -976,7 +1219,9 @@ function ProductFormBody({
                 isClearable={false}
                 isSearchable={false}
                 isDisabled={isPending || specificGeneralOptions.length === 0}
-                noOptionsMessage={() => "Sin coincidencias"}
+                noOptionsMessage={() =>
+                  t("admin.products.form.characteristics.noMatches")
+                }
                 className="w-full"
               />
             </div>
@@ -1000,10 +1245,14 @@ function ProductFormBody({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground">
-                          {item.name}
+                          {locale === "en"
+                            ? item.nameEn?.trim() || item.name
+                            : item.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {item.generalName}
+                          {locale === "en"
+                            ? item.generalNameEn?.trim() || item.generalName
+                            : item.generalName}
                         </p>
                       </div>
                     </label>
@@ -1031,27 +1280,172 @@ function ProductFormBody({
               })}
               {visibleSpecificOptions.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                  No hay características específicas para este filtro.
+                  {t("admin.products.form.characteristics.emptyForFilter")}
                 </p>
               ) : null}
+            </div>
+
+            <div className="border-t border-border/60" aria-hidden />
+
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("admin.products.form.characteristics.selectedTitle")}
+              </h3>
+              {selectedSpecificGroups.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("admin.products.form.characteristics.selectedEmpty")}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {selectedSpecificGroups.map(([generalName, rows]) => (
+                    <article
+                      key={generalName}
+                      className="overflow-hidden rounded-lg border border-border/70 bg-muted/20"
+                    >
+                      <header className="border-b border-border/70 bg-muted/30 px-3 py-2">
+                        <p className="text-xs font-medium tracking-wide text-foreground">
+                          {generalName}
+                        </p>
+                      </header>
+                      <div className="flex flex-wrap gap-2 p-3">
+                        {rows.map((item) => (
+                          <div
+                            key={item.id}
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5"
+                          >
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {locale === "en"
+                                ? item.nameEn?.trim() || item.name
+                                : item.name}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => removeCharacteristic(item.id)}
+                              disabled={isPending}
+                              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              aria-label={t(
+                                "admin.products.form.characteristics.removeAria",
+                              ).replace("{name}", locale === "en"
+                                ? item.nameEn?.trim() || item.name
+                                : item.name)}
+                            >
+                              <X className="h-3 w-3" aria-hidden />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         )}
 
         {activeTab === "specifications" && (
           <section className={adminSlideOverSectionClassName}>
+            <div className="space-y-2">
+              <div
+                role="tablist"
+                aria-label={t("admin.services.form.languageTabs.ariaLabel")}
+                className="flex items-center justify-start gap-2"
+              >
+                {locale === "en" ? (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={specificationsLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        specificationsLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setSpecificationsLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={specificationsLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        specificationsLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setSpecificationsLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={specificationsLanguageTab === "es"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        specificationsLanguageTab === "es"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setSpecificationsLanguageTab("es")}
+                    >
+                      {t("admin.services.form.languageTabs.spanish")}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={specificationsLanguageTab === "en"}
+                      className={cn(
+                        "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                        specificationsLanguageTab === "en"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                      )}
+                      onClick={() => setSpecificationsLanguageTab("en")}
+                    >
+                      {t("admin.services.form.languageTabs.english")}
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="border-t border-border/60" aria-hidden />
+            </div>
             <Controller
               name="specifications"
               control={form.control}
               render={({ field }) => (
-                <ProductDescriptionEditor
-                  id="product-specifications-rich"
-                  label="Especificaciones"
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={isPending}
-                  error={errors.specifications?.message}
-                />
+                <div className={cn(specificationsLanguageTab !== "es" && "hidden")}>
+                  <ProductDescriptionEditor
+                    id="product-specifications-rich"
+                    label={t("admin.products.form.fields.specifications")}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isPending}
+                    error={errors.specifications?.message}
+                  />
+                </div>
+              )}
+            />
+            <Controller
+              name="specificationsEn"
+              control={form.control}
+              render={({ field }) => (
+                <div className={cn(specificationsLanguageTab !== "en" && "hidden")}>
+                  <ProductDescriptionEditor
+                    id="product-specifications-rich-en"
+                    label={t("admin.products.form.fields.specificationsEn")}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isPending}
+                    error={errors.specificationsEn?.message}
+                  />
+                </div>
               )}
             />
           </section>

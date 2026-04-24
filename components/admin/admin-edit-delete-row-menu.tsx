@@ -21,6 +21,8 @@ export function AdminEditDeleteRowMenu({
   isDeleting,
   deletingLabel = "Eliminando",
   deleteLabel = "Eliminar",
+  viewLabel,
+  openActionsLabel,
   showDelete = true,
   /** Si se pasa, sustituye la etiqueta i18n del ítem Editar. */
   editLabel,
@@ -34,6 +36,8 @@ export function AdminEditDeleteRowMenu({
   deletingLabel?: string;
   /** Texto del ítem destructivo cuando no está en curso (p. ej. «Archivar»). */
   deleteLabel?: string;
+  viewLabel?: string;
+  openActionsLabel?: string;
   /** Si es `false`, oculta la acción destructiva. */
   showDelete?: boolean;
   editLabel?: string;
@@ -133,7 +137,7 @@ export function AdminEditDeleteRowMenu({
                 className="h-4 w-4 shrink-0 text-muted-foreground"
                 aria-hidden
               />
-              Ver detalles
+              {viewLabel ?? t("admin.users.menu.viewDetails")}
             </button>
             <div className="my-1 h-px bg-border/70" role="separator" />
           </>
@@ -189,7 +193,7 @@ export function AdminEditDeleteRowMenu({
         className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground md:rounded-md md:border md:border-border/80 md:bg-background md:hover:bg-muted/60"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Abrir menú de acciones"
+        aria-label={openActionsLabel ?? t("admin.users.menu.openActions")}
         disabled={busy}
         onClick={() => setOpen((v) => !v)}
       >

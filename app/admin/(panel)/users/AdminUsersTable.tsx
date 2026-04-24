@@ -197,6 +197,7 @@ function UsersRowActionsMenu({
         ? `${t("admin.users.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.users.confirm.rejectApprovedSuffix")}`
         : `${t("admin.users.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.users.confirm.rejectPendingSuffix")}`,
       confirmButtonText: t("admin.users.confirm.rejectConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(user.id),
@@ -210,6 +211,7 @@ function UsersRowActionsMenu({
       title: t("admin.users.confirm.deleteTitle"),
       html: `${t("admin.users.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.users.confirm.deleteMessageSuffix")}`,
       confirmButtonText: t("admin.users.confirm.deleteConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => deleteUserAsync(user.id),
@@ -247,6 +249,7 @@ function UsersRowActionsMenu({
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
               disabled={busy}
               onClick={() => {
+                setOpen(false);
                 void handleReject();
               }}
             >
@@ -268,6 +271,7 @@ function UsersRowActionsMenu({
           disabled={isAdminUser || busy}
           onClick={() => {
             if (isAdminUser) return;
+            setOpen(false);
             void handleDelete();
           }}
         >

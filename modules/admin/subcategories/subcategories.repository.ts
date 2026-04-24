@@ -50,7 +50,7 @@ export async function repoListSubcategoriesForProductForm(): Promise<
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("subcategories")
-    .select("id, name, slug, category_id")
+    .select("id, name, name_en, slug, category_id")
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
@@ -58,6 +58,7 @@ export async function repoListSubcategoriesForProductForm(): Promise<
   return (data ?? []).map((row) => ({
     id: row.id as string,
     name: row.name as string,
+    nameEn: (row.name_en as string | null | undefined) ?? null,
     categoryId: row.category_id as string,
     slug: row.slug as string,
   }));

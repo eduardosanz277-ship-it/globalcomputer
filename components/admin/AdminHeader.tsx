@@ -65,8 +65,12 @@ export function AdminHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const { t } = useI18n();
+
   const displayName =
-    user.fullName?.trim() || user.email?.split("@")[0] || "Usuario";
+    user.fullName?.trim() ||
+    user.email?.split("@")[0] ||
+    t("admin.header.defaultUserName");
 
   const userInitial = useMemo(() => {
     const base = displayName.trim() || user.email?.split("@")[0] || "";
@@ -76,8 +80,6 @@ export function AdminHeader({
   const avatarClass =
     "flex shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-sm font-semibold leading-none text-primary";
 
-  const { t } = useI18n();
-
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-white px-2.5 lg:px-6">
       {variant === "admin" && onOpenMobileMenu && (
@@ -85,7 +87,7 @@ export function AdminHeader({
           type="button"
           className="-ml-1 rounded-lg pl-1 text-muted-foreground transition hover:bg-muted hover:text-foreground md:hidden"
           onClick={onOpenMobileMenu}
-          aria-label="Abrir menú de navegación"
+          aria-label={t("admin.header.openNavigationMenu")}
         >
           <Menu className="h-6 w-6" aria-hidden />
         </button>
@@ -130,7 +132,7 @@ export function AdminHeader({
         <button
           type="button"
           className="rounded-lg py-1.5 text-muted-foreground transition hover:text-foreground"
-          aria-label="Notificaciones"
+          aria-label={t("admin.header.notifications")}
         >
           <Bell className="h-5 w-5" />
         </button>
@@ -158,7 +160,9 @@ export function AdminHeader({
               {userInitial}
             </span>
             <div className="hidden text-left sm:block">
-              <p className="text-xs text-muted-foreground">Bienvenido,</p>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.header.welcome")}
+              </p>
               <p className="max-w-[200px] truncate text-sm font-semibold leading-tight text-foreground">
                 {displayName}
               </p>
@@ -181,7 +185,9 @@ export function AdminHeader({
                 role="menu"
               >
                 <div className="border-b border-border px-3 py-2 sm:hidden">
-                  <p className="text-xs text-muted-foreground">Bienvenido,</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.header.welcome")}
+                  </p>
                   <p className="truncate text-sm font-medium">{displayName}</p>
                 </div>
                 <Link
@@ -191,7 +197,7 @@ export function AdminHeader({
                   onClick={() => setOpen(false)}
                 >
                   <Home className="h-4 w-4" />
-                  Ir al sitio
+                  {t("admin.header.goToSite")}
                 </Link>
                 {variant === "standalone" && user.role === "ADMIN" ? (
                   <Link
@@ -201,7 +207,7 @@ export function AdminHeader({
                     onClick={() => setOpen(false)}
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Panel de administración
+                    {t("admin.header.adminPanel")}
                   </Link>
                 ) : null}
                 <form action="/auth/logout" method="post">
@@ -211,7 +217,7 @@ export function AdminHeader({
                     role="menuitem"
                   >
                     <LogOut className="h-4 w-4" />
-                    Cerrar sesión
+                    {t("admin.header.logout")}
                   </button>
                 </form>
               </div>

@@ -1,44 +1,41 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 /** Evita caché estática: métricas y “actividad reciente” deben reflejar el catálogo al visitar el home. */
 export const revalidate = 0;
-import { DashboardChart } from "@/components/dashboard/DashboardChart";
 import {
-  DashboardTable,
   type DashboardProductRow,
 } from "@/components/dashboard/DashboardTable";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
-import {
-  Boxes,
-  Building2,
-  LayoutList,
-  PackageCheck,
-  PackageX,
-  ShieldCheck,
-  Tags,
-  Users,
-} from "lucide-react";
+import { AdminHomeView } from "./AdminHomeView";
 
 type ProductBrandRow = {
-  brands: { name: string } | { name: string }[] | null;
+  brands:
+    | { name: string; name_en: string | null }
+    | { name: string; name_en: string | null }[]
+    | null;
 };
 
 type ProductRecentRow = {
   id: string;
   name: string;
+  name_en: string | null;
   price: number;
   stock: number;
   active: boolean;
-  brands: { name: string } | { name: string }[] | null;
+  brands:
+    | { name: string; name_en: string | null }
+    | { name: string; name_en: string | null }[]
+    | null;
 };
 
-function relationName(
-  rel: { name: string } | { name: string }[] | null,
-): string {
-  if (!rel) return "Sin marca";
-  if (Array.isArray(rel)) return rel[0]?.name ?? "Sin marca";
-  return rel.name ?? "Sin marca";
+function relationNames(
+  rel:
+    | { name: string; name_en: string | null }
+    | { name: string; name_en: string | null }[]
+    | null,
+): { name: string; nameEn: string | null } {
+  if (!rel) return { name: "", nameEn: null };
+  const row = Array.isArray(rel) ? rel[0] : rel;
+  if (!row) return { name: "", nameEn: null };
+  return { name: row.name ?? "", nameEn: row.name_en ?? null };
 }
 
 async function countRows(
@@ -142,22 +139,27 @@ export default async function AdminHomePage() {
     /** Últimos N productos por fecha de última modificación (`updated_at`). */
     supabase
       .from("products")
-      .select("id, name, price, stock, active, brands(name)")
+      .select("id, name, name_en, price, stock, active, brands(name, name_en)")
       .order("updated_at", { ascending: false })
       .limit(8),
-    supabase.from("products").select("brands(name)"),
+    supabase.from("products").select("brands(name, name_en)"),
   ]);
 
   const recentProducts: DashboardProductRow[] = (
     recentProductsResult.data ?? ([] as ProductRecentRow[])
-  ).map((row) => ({
-    id: row.id,
-    name: row.name,
-    brand: relationName(row.brands),
-    price: row.price,
-    stock: row.stock,
-    active: row.active,
-  }));
+  ).map((row) => {
+    const names = relationNames(row.brands);
+    return {
+      id: row.id,
+      name: row.name,
+      nameEn: row.name_en,
+      brand: names.name,
+      brandEn: names.nameEn,
+      price: row.price,
+      stock: row.stock,
+      active: row.active,
+    };
+  });
 
   if (recentProductsResult.error) {
     console.error(
@@ -166,12 +168,18 @@ export default async function AdminHomePage() {
     );
   }
 
-  const productsByBrandMap = new Map<string, number>();
+  const productsByBrandMap = new Map<string, { total: number; brand: string; brandEn: string | null }>();
   const productsByBrand = (productsByBrandResult.data ??
     []) as ProductBrandRow[];
   for (const row of productsByBrand) {
-    const brand = relationName(row.brands);
-    productsByBrandMap.set(brand, (productsByBrandMap.get(brand) ?? 0) + 1);
+    const names = relationNames(row.brands);
+    const key = `${names.name}|||${names.nameEn ?? ""}`;
+    const current = productsByBrandMap.get(key);
+    productsByBrandMap.set(key, {
+      total: (current?.total ?? 0) + 1,
+      brand: names.name,
+      brandEn: names.nameEn,
+    });
   }
 
   if (productsByBrandResult.error) {
@@ -182,7 +190,7 @@ export default async function AdminHomePage() {
   }
 
   const chartItems = Array.from(productsByBrandMap.entries())
-    .map(([brand, total]) => ({ brand, total }))
+    .map(([, value]) => value)
     .sort((a, b) => b.total - a.total)
     .slice(0, 8);
 
@@ -190,98 +198,20 @@ export default async function AdminHomePage() {
     totalGeneralCharacteristics + totalSpecificCharacteristics;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Vista general del estado del e-commerce y su catálogo.
-        </p>
-      </header>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Total de productos"
-          value={totalProducts}
-          icon={Boxes}
-        />
-        <StatCard label="Total de marcas" value={totalBrands} icon={Tags} />
-        <StatCard
-          label="Total de categorias"
-          value={totalCategories}
-          icon={LayoutList}
-        />
-        <StatCard label="Total de usuarios" value={totalUsers} icon={Users} />
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Productos activos"
-          value={activeProducts}
-          icon={PackageCheck}
-          hint="Disponibles en catalogo"
-        />
-        <StatCard
-          label="Productos sin stock"
-          value={noStockProducts}
-          icon={PackageX}
-          hint="Stock en cero o negativo"
-        />
-        <StatCard
-          label="Servicios disponibles"
-          value={availableServices}
-          icon={ShieldCheck}
-        />
-        <StatCard
-          label="Suscripciones activas"
-          value={activeSubscriptions}
-          icon={Building2}
-          hint="Empresas aprobadas"
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <DashboardChart items={chartItems} />
-        </div>
-
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Resumen del catalogo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-              <span className="text-sm text-muted-foreground">Categorias</span>
-              <span className="text-base font-semibold">{totalCategories}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-              <span className="text-sm text-muted-foreground">
-                Subcategorias
-              </span>
-              <span className="text-base font-semibold">
-                {totalSubcategories}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-              <span className="text-sm text-muted-foreground">
-                Tipos por marca
-              </span>
-              <span className="text-base font-semibold">{totalBrandTypes}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-              <span className="text-sm text-muted-foreground">
-                Caracteristicas registradas
-              </span>
-              <span className="text-base font-semibold">
-                {totalCharacteristics}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section>
-        <DashboardTable rows={recentProducts} />
-      </section>
-    </div>
+    <AdminHomeView
+      totalProducts={totalProducts}
+      totalBrands={totalBrands}
+      totalCategories={totalCategories}
+      totalUsers={totalUsers}
+      activeProducts={activeProducts}
+      noStockProducts={noStockProducts}
+      availableServices={availableServices}
+      activeSubscriptions={activeSubscriptions}
+      totalSubcategories={totalSubcategories}
+      totalBrandTypes={totalBrandTypes}
+      totalCharacteristics={totalCharacteristics}
+      chartItems={chartItems}
+      recentProducts={recentProducts}
+    />
   );
 }

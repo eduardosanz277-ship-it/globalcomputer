@@ -23,6 +23,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlideOver } from "@/components/ui/slide-over";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
@@ -56,6 +62,29 @@ function roleLabel(
   if (role === "BUSINESS") return t("admin.userDetail.role.business");
   if (role === "CLIENT") return t("admin.userDetail.role.client");
   return role;
+}
+
+function ActionTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <TooltipProvider delayDuration={120}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent
+          side="top"
+          align="start"
+          className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
+        >
+          <span className="block font-medium">{label}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 function roleBadgeClass(role: AdminUserDetail["role"]): string {
@@ -200,51 +229,54 @@ function UserDetailContent({
           <div className="flex w-full shrink-0 justify-end sm:w-auto sm:justify-end">
             <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               {showApproveButton ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-emerald-700 transition hover:bg-emerald-50"
-                  disabled={approvalBusy}
-                  onClick={onApprove}
-                  title={t("admin.userDetail.buttons.approveBusiness")}
-                  aria-label={t("admin.userDetail.buttons.approveBusiness")}
-                >
-                  <CheckCircle2 className="h-4 w-4" aria-hidden />
-                </Button>
+                <ActionTooltip label={t("admin.userDetail.buttons.approveBusiness")}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-emerald-700 transition hover:bg-emerald-50"
+                    disabled={approvalBusy}
+                    onClick={onApprove}
+                    aria-label={t("admin.userDetail.buttons.approveBusiness")}
+                  >
+                    <CheckCircle2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </ActionTooltip>
               ) : null}
               {showRejectButton ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
-                  disabled={approvalBusy}
-                  onClick={onReject}
-                  title={t("admin.userDetail.buttons.rejectRequest")}
-                  aria-label={t("admin.userDetail.buttons.rejectRequest")}
-                >
-                  <XCircle className="h-4 w-4" aria-hidden />
-                </Button>
+                <ActionTooltip label={t("admin.userDetail.buttons.rejectRequest")}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-rose-500/95 transition hover:bg-rose-50/90 dark:text-rose-400/90 dark:hover:bg-rose-950/30"
+                    disabled={approvalBusy}
+                    onClick={onReject}
+                    aria-label={t("admin.userDetail.buttons.rejectRequest")}
+                  >
+                    <XCircle className="h-4 w-4" aria-hidden />
+                  </Button>
+                </ActionTooltip>
               ) : null}
               {showDeleteButton ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 transition",
-                    approvalBusy
-                      ? "cursor-not-allowed text-muted-foreground/60"
-                      : "text-destructive hover:bg-destructive/10",
-                  )}
-                  disabled={approvalBusy}
-                  onClick={onDelete}
-                  title={t("admin.businessSubscriptions.menu.delete")}
-                  aria-label={t("admin.businessSubscriptions.menu.delete")}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden />
-                </Button>
+                <ActionTooltip label={t("admin.businessSubscriptions.menu.delete")}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 transition",
+                      approvalBusy
+                        ? "cursor-not-allowed text-muted-foreground/60"
+                        : "text-destructive hover:bg-destructive/10",
+                    )}
+                    disabled={approvalBusy}
+                    onClick={onDelete}
+                    aria-label={t("admin.businessSubscriptions.menu.delete")}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </ActionTooltip>
               ) : null}
             </div>
           </div>
@@ -385,6 +417,7 @@ export function UserDetailDrawer({
         ? `${t("admin.userDetail.confirm.rejectApprovedPrefix")} <strong>${label}</strong> ${t("admin.userDetail.confirm.rejectApprovedSuffix")}`
         : `${t("admin.userDetail.confirm.rejectPendingPrefix")} <strong>${label}</strong> ${t("admin.userDetail.confirm.rejectPendingSuffix")}`,
       confirmButtonText: t("admin.userDetail.confirm.rejectConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => rejectBusinessAsync(userId),
@@ -399,6 +432,7 @@ export function UserDetailDrawer({
       title: t("admin.userDetail.confirm.approveTitle"),
       html: `${t("admin.userDetail.confirm.approveMessagePrefix")} <strong>${label}</strong>. ${t("admin.userDetail.confirm.approveMessageSuffix")}`,
       confirmButtonText: t("admin.userDetail.confirm.approveConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "positive",
       iconType: "question",
       preConfirm: () => approveBusinessAsync(userId),
@@ -413,6 +447,7 @@ export function UserDetailDrawer({
       title: t("admin.businessSubscriptions.confirm.deleteTitle"),
       html: `${t("admin.businessSubscriptions.confirm.deleteMessagePrefix")} <strong>${label}</strong>. ${t("admin.businessSubscriptions.confirm.deleteMessageSuffix")}`,
       confirmButtonText: t("admin.businessSubscriptions.confirm.deleteConfirm"),
+      cancelButtonText: t("admin.businessSubscriptions.confirm.cancel"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => deleteUserAsync(userId),

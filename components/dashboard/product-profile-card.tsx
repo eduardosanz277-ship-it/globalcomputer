@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type ProductProfileCardProps = {
   name: string;
+  nameEn?: string | null;
   sku: string;
   imageUrl?: string | null;
   /** Categoría / subcategoría en catálogo (opcional). */
@@ -50,6 +52,7 @@ function activeBadgeClass(active: boolean): string {
 
 export function ProductProfileCard({
   name,
+  nameEn,
   sku,
   imageUrl,
   catalogLabel,
@@ -61,7 +64,9 @@ export function ProductProfileCard({
   className,
   actions,
 }: ProductProfileCardProps) {
-  const title = name.trim() || "—";
+  const { t, locale } = useI18n();
+  const localizedName = locale === "en" ? (nameEn?.trim() || name) : name;
+  const title = localizedName.trim() || "—";
 
   const catalogOk = Boolean(catalogLabel?.trim()) && catalogLabel !== "—";
   const brandOk = Boolean(brandName?.trim()) && brandName !== "—";
@@ -118,7 +123,7 @@ export function ProductProfileCard({
           ) : (
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted text-muted-foreground">
               <ImageOff className="h-6 w-6" aria-hidden />
-              <span className="sr-only">Sin imagen</span>
+              <span className="sr-only">{t("admin.products.table.noImage")}</span>
             </span>
           )}
 
@@ -144,10 +149,12 @@ export function ProductProfileCard({
               <div className="flex items-center gap-1">
                 <span className={stockBadgeClass(stock)} title="Stock">
                   <span className="tabular-nums">{stock}</span>
-                  <span> en stock</span>
+                  <span> {t("admin.products.table.inStock")}</span>
                 </span>
                 <span className={activeBadgeClass(active)}>
-                  {active ? "Activo" : "Inactivo"}
+                  {active
+                    ? t("admin.products.table.statusActive")
+                    : t("admin.products.table.statusInactive")}
                 </span>
               </div>
             </div>
@@ -189,10 +196,12 @@ export function ProductProfileCard({
           <div className="flex items-center gap-1">
             <span className={stockBadgeClass(stock)} title="Stock">
               <span className="tabular-nums">{stock}</span>
-              <span> en stock</span>
+              <span> {t("admin.products.table.inStock")}</span>
             </span>
             <span className={activeBadgeClass(active)}>
-              {active ? "Activo" : "Inactivo"}
+              {active
+                ? t("admin.products.table.statusActive")
+                : t("admin.products.table.statusInactive")}
             </span>
           </div>
         </div>

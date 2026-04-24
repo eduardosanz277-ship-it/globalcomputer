@@ -9,7 +9,9 @@ export type ProductCharacteristicValue = {
   id: string;
   specificId: string;
   specificName: string;
+  specificNameEn: string | null;
   generalName: string;
+  generalNameEn: string | null;
   value: string | null;
 };
 
@@ -18,8 +20,11 @@ export type Product = {
   id: string;
   sku: string;
   name: string;
+  nameEn: string | null;
   description: string | null;
+  descriptionEn: string | null;
   specifications: string | null;
+  specificationsEn: string | null;
   stock: number;
   price: number;
   discountBusinessPct: number;
@@ -30,14 +35,18 @@ export type Product = {
   featured: boolean;
   brandId: string;
   brandName: string;
+  brandNameEn: string | null;
   brandTypeId: string;
   brandTypeName: string;
+  brandTypeNameEn: string | null;
   /** En BD: categoría directa, o null si el producto está en una subcategoría. */
   categoryId: string | null;
   /** En BD: subcategoría, o null si el producto está solo en categoría. */
   subcategoryId: string | null;
   /** Texto para tablas y detalle (ej. «Periféricos» o «Periféricos › Teclados»). */
   catalogLabel: string;
+  /** Variante en inglés del texto de catálogo para vistas i18n. */
+  catalogLabelEn: string;
   /**
    * Categoría padre en el formulario: si hay subcategoría, coincide con su `category_id`;
    * si no, es `category_id` del producto.
@@ -56,8 +65,11 @@ export type Product = {
 export type ProductInsert = {
   sku: string;
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   specifications: string;
+  specificationsEn: string;
   stock: number;
   price: number;
   discountBusinessPct: number;

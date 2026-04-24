@@ -35,6 +35,7 @@ import { ProductDetailDrawer } from "./ProductDetailDrawer";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { ProductProfileCard } from "@/components/dashboard/product-profile-card";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   products: Product[];
@@ -57,6 +58,26 @@ function formatCurrency(value: number): string {
     currency: "USD",
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function localizedProductName(row: Product, locale: string): string {
+  if (locale === "en") return row.nameEn?.trim() || row.name;
+  return row.name;
+}
+
+function localizedBrandName(row: Product, locale: string): string {
+  if (locale === "en") return row.brandNameEn?.trim() || row.brandName;
+  return row.brandName;
+}
+
+function localizedBrandTypeName(row: Product, locale: string): string {
+  if (locale === "en") return row.brandTypeNameEn?.trim() || row.brandTypeName;
+  return row.brandTypeName;
+}
+
+function localizedCatalogLabel(row: Product, locale: string): string {
+  if (locale === "en") return row.catalogLabelEn?.trim() || row.catalogLabel;
+  return row.catalogLabel;
 }
 
 function stockBadgeClass(stock: number): string {
@@ -103,11 +124,13 @@ function RowActions({
   onEdit,
   onDelete,
   isDeleting,
+  t,
 }: {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   isDeleting: boolean;
+  t: (key: string) => string;
 }) {
   return (
     <AdminEditDeleteRowMenu
@@ -115,6 +138,11 @@ function RowActions({
       onEdit={onEdit}
       onDelete={onDelete}
       isDeleting={isDeleting}
+      openActionsLabel={t("admin.products.menu.openActions")}
+      viewLabel={t("admin.products.menu.viewDetails")}
+      editLabel={t("admin.common.actionEdit")}
+      deleteLabel={t("admin.products.menu.delete")}
+      deletingLabel={t("admin.products.menu.deleting")}
     />
   );
 }
@@ -128,6 +156,7 @@ export function AdminProductsTable({
   subcategories,
   isLoading = false,
 }: Props) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -142,8 +171,8 @@ export function AdminProductsTable({
   const [viewing, setViewing] = useState<Product | null>(null);
   const { executeAsync: executeDeleteAsync, isPending: isDeleting } =
     useServerAction(deleteProductAction, {
-      successMessage: "Producto eliminado",
-      errorMessage: "No se pudo eliminar el producto",
+      successMessage: t("admin.products.toast.deleted"),
+      errorMessage: t("admin.products.toast.deleteError"),
       onSuccess: () => {
         router.refresh();
         setViewing(null);
@@ -153,23 +182,24 @@ export function AdminProductsTable({
   const handleDeleteProduct = useCallback(
     async (product: Product) => {
       await swalSaasConfirmAsync({
-        title: "¿Eliminar producto?",
-        html: `Vas a eliminar <strong>${product.name}</strong> (SKU: <strong>${product.sku}</strong>).`,
-        confirmButtonText: "Eliminar",
+        title: t("admin.products.confirm.deleteTitle"),
+        html: `${t("admin.products.confirm.deleteMessagePrefix")} <strong>${localizedProductName(product, locale)}</strong> (SKU: <strong>${product.sku}</strong>).`,
+        confirmButtonText: t("admin.products.confirm.deleteConfirm"),
+        cancelButtonText: t("admin.products.form.cancel"),
         variant: "destructive",
         iconType: "warning",
         preConfirm: () => executeDeleteAsync(product.id),
       });
     },
-    [executeDeleteAsync],
+    [executeDeleteAsync, locale, t],
   );
 
   const brandFilterOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todas las marcas" },
+      { value: "all", label: t("admin.products.filters.brandAll") },
       ...brands.map((b) => ({ value: b.id, label: b.name })),
     ],
-    [brands],
+    [brands, t],
   );
 
   const filteredProducts = useMemo(() => {
@@ -190,12 +220,12 @@ export function AdminProductsTable({
 
   const brandTypeFilterOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todos los tipos" },
+      { value: "all", label: t("admin.products.filters.typeAll") },
       ...brandTypes
         .filter((t) => brandFilter === "all" || t.brandId === brandFilter)
         .map((t) => ({ value: t.id, label: `${t.brandName} · ${t.name}` })),
     ],
-    [brandTypes, brandFilter],
+    [brandTypes, brandFilter, t],
   );
 
   const brandTypeFilterValue =
@@ -204,11 +234,11 @@ export function AdminProductsTable({
 
   const activeFilterOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todos los estados" },
-      { value: "active", label: "Activos" },
-      { value: "inactive", label: "Inactivos" },
+      { value: "all", label: t("admin.products.filters.status.all") },
+      { value: "active", label: t("admin.products.filters.status.active") },
+      { value: "inactive", label: t("admin.products.filters.status.inactive") },
     ],
-    [],
+    [t],
   );
 
   const activeFilterValue =
@@ -226,12 +256,12 @@ export function AdminProductsTable({
 
   const modalBrandTypeOptions = useMemo<FilterOption[]>(
     () => [
-      { value: "all", label: "Todos los tipos" },
+      { value: "all", label: t("admin.products.filters.typeAll") },
       ...brandTypes
         .filter((t) => draftBrand === "all" || t.brandId === draftBrand)
         .map((t) => ({ value: t.id, label: `${t.brandName} · ${t.name}` })),
     ],
-    [brandTypes, draftBrand],
+    [brandTypes, draftBrand, t],
   );
 
   const draftBrandFilterValue =
@@ -278,6 +308,7 @@ export function AdminProductsTable({
       <li key={row.id}>
         <ProductProfileCard
           name={p.name}
+          nameEn={p.nameEn}
           sku={p.sku}
           imageUrl={p.imageUrl}
           catalogLabel={p.catalogLabel}
@@ -296,31 +327,36 @@ export function AdminProductsTable({
               }}
               onDelete={() => void handleDeleteProduct(p)}
               isDeleting={isDeleting}
+              t={t}
             />
           }
         />
       </li>
     );
-  }, []);
+  }, [handleDeleteProduct, isDeleting]);
 
   const columns = useMemo<ColumnDef<Product>[]>(
     () => [
       {
         id: "product",
         accessorFn: (row) =>
-          `${row.name} ${row.sku} ${row.brandName} ${row.brandTypeName} ${row.catalogLabel} ${row.description ?? ""}`,
+          `${row.name} ${row.nameEn ?? ""} ${row.sku} ${row.brandName} ${row.brandNameEn ?? ""} ${row.brandTypeName} ${row.brandTypeNameEn ?? ""} ${row.catalogLabel} ${row.catalogLabelEn ?? ""} ${row.description ?? ""} ${row.descriptionEn ?? ""}`,
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
-          rowA.original.name.localeCompare(rowB.original.name, "es", {
+          localizedProductName(rowA.original, locale).localeCompare(
+            localizedProductName(rowB.original, locale),
+            locale,
+            {
             sensitivity: "base",
-          }),
+            },
+          ),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Producto"
-            ariaLabelIdle="Ordenar por nombre"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.products.table.product")}
+            ariaLabelIdle={t("admin.products.table.productSortIdle")}
+            ariaLabelAsc={t("admin.products.table.sortAsc")}
+            ariaLabelDesc={t("admin.products.table.sortDesc")}
           />
         ),
         meta: {
@@ -329,14 +365,16 @@ export function AdminProductsTable({
         },
         cell: ({ row }) => {
           const p = row.original;
-          const categoryLine = formatProductCategoryLine(p.catalogLabel);
+          const categoryLine = formatProductCategoryLine(
+            localizedCatalogLabel(p, locale),
+          );
           return (
             <div className="flex min-w-0 items-center gap-3">
               {p.imageUrl ? (
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/80 bg-muted">
                   <Image
                     src={p.imageUrl}
-                    alt={p.name}
+                    alt={localizedProductName(p, locale)}
                     fill
                     sizes="48px"
                     className="object-cover"
@@ -345,15 +383,15 @@ export function AdminProductsTable({
               ) : (
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-muted text-muted-foreground">
                   <ImageOff className="h-5 w-5" aria-hidden />
-                  <span className="sr-only">Sin imagen</span>
+                  <span className="sr-only">{t("admin.products.table.noImage")}</span>
                 </span>
               )}
               <div className="min-w-0 flex-1 space-y-0.5">
                 <p className="truncate text-[15px] font-semibold leading-5 text-foreground">
-                  {p.name}
+                  {localizedProductName(p, locale)}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  <span className="font-medium">SKU:</span>{" "}
+                    <span className="font-medium">{t("admin.products.table.sku")}:</span>{" "}
                   <span className="tabular-nums">{p.sku}</span>
                 </p>
                 {categoryLine !== "—" ? (
@@ -368,32 +406,39 @@ export function AdminProductsTable({
       },
       {
         id: "brand",
-        accessorFn: (row) => `${row.brandName} ${row.brandTypeName ?? ""}`,
+        accessorFn: (row) =>
+          `${row.brandName} ${row.brandNameEn ?? ""} ${row.brandTypeName ?? ""} ${row.brandTypeNameEn ?? ""}`,
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
-          rowA.original.brandName.localeCompare(rowB.original.brandName, "es", {
-            sensitivity: "base",
-          }),
+          localizedBrandName(rowA.original, locale).localeCompare(
+            localizedBrandName(rowB.original, locale),
+            locale,
+            {
+              sensitivity: "base",
+            },
+          ),
         meta: { cellClassName: "w-[10rem] min-w-[10rem]" },
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Marca"
-            ariaLabelIdle="Ordenar por marca"
-            ariaLabelAsc="Marca de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Marca de la Z a la A. Clic para quitar orden"
+            label={t("admin.products.table.brand")}
+            ariaLabelIdle={t("admin.products.table.brandSortIdle")}
+            ariaLabelAsc={t("admin.products.table.sortAsc")}
+            ariaLabelDesc={t("admin.products.table.sortDesc")}
           />
         ),
         cell: ({ row }) => {
           const p = row.original;
+          const brandName = localizedBrandName(p, locale);
+          const brandTypeName = localizedBrandTypeName(p, locale);
           return (
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">
-                {p.brandName}
+                {brandName}
               </p>
-              {p.brandTypeName && p.brandTypeName !== "—" ? (
+              {brandTypeName && brandTypeName !== "—" ? (
                 <p className="truncate text-xs text-muted-foreground">
-                  {p.brandTypeName}
+                  {brandTypeName}
                 </p>
               ) : null}
             </div>
@@ -408,10 +453,10 @@ export function AdminProductsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Precio"
-            ariaLabelIdle="Ordenar por precio"
-            ariaLabelAsc="Precio menor a mayor. Clic para invertir"
-            ariaLabelDesc="Precio mayor a menor. Clic para quitar orden"
+            label={t("admin.products.table.price")}
+            ariaLabelIdle={t("admin.products.table.priceSortIdle")}
+            ariaLabelAsc={t("admin.products.table.priceSortAsc")}
+            ariaLabelDesc={t("admin.products.table.priceSortDesc")}
           />
         ),
         cell: ({ row }) => (
@@ -428,10 +473,10 @@ export function AdminProductsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Stock"
-            ariaLabelIdle="Ordenar por stock"
-            ariaLabelAsc="Menor a mayor stock. Clic para invertir"
-            ariaLabelDesc="Mayor a menor stock. Clic para quitar orden"
+            label={t("admin.products.table.stock")}
+            ariaLabelIdle={t("admin.products.table.stockSortIdle")}
+            ariaLabelAsc={t("admin.products.table.stockSortAsc")}
+            ariaLabelDesc={t("admin.products.table.stockSortDesc")}
           />
         ),
         cell: ({ row }) => {
@@ -439,7 +484,7 @@ export function AdminProductsTable({
           return (
             <span className={stockBadgeClass(n)}>
               <span className="tabular-nums">{n}</span>
-              <span> en stock</span>
+              <span> {t("admin.products.table.inStock")}</span>
             </span>
           );
         },
@@ -454,15 +499,17 @@ export function AdminProductsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Estado"
-            ariaLabelIdle="Ordenar por estado"
-            ariaLabelAsc="Inactivos primero. Clic para invertir"
-            ariaLabelDesc="Activos primero. Clic para quitar orden"
+            label={t("admin.products.table.status")}
+            ariaLabelIdle={t("admin.products.table.statusSortIdle")}
+            ariaLabelAsc={t("admin.products.table.statusSortAsc")}
+            ariaLabelDesc={t("admin.products.table.statusSortDesc")}
           />
         ),
         cell: ({ row }) => (
           <span className={activeBadgeClass(row.original.active)}>
-            {row.original.active ? "Activo" : "Inactivo"}
+            {row.original.active
+              ? t("admin.products.table.statusActive")
+              : t("admin.products.table.statusInactive")}
           </span>
         ),
       },
@@ -470,14 +517,16 @@ export function AdminProductsTable({
         id: "discounts",
         accessorFn: (row) => `${row.discountBusinessPct} ${row.discountClient}`,
         meta: { cellClassName: "w-[10rem]" },
-        header: "Descuentos",
+        header: t("admin.products.table.discounts"),
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <span className={discountBadgeClass("business")}>
-              Emp. {row.original.discountBusinessPct}%
+              {t("admin.products.table.discountBusinessShort")}{" "}
+              {row.original.discountBusinessPct}%
             </span>
             <span className={discountBadgeClass("client")}>
-              Cte. {row.original.discountClient}%
+              {t("admin.products.table.discountClientShort")}{" "}
+              {row.original.discountClient}%
             </span>
           </div>
         ),
@@ -489,7 +538,7 @@ export function AdminProductsTable({
           cellClassName:
             "min-w-[4.25rem] w-[4.25rem] max-w-[4.25rem] shrink-0 pl-2.5 md:pl-3",
         },
-        header: () => <span className="sr-only">Acciones</span>,
+        header: () => <span className="sr-only">{t("admin.products.table.actions")}</span>,
         cell: ({ row }) => (
           <RowActions
             onView={() => setViewing(row.original)}
@@ -499,11 +548,12 @@ export function AdminProductsTable({
             }}
             onDelete={() => void handleDeleteProduct(row.original)}
             isDeleting={isDeleting}
+            t={t}
           />
         ),
       },
     ],
-    [],
+    [locale, t, isDeleting, handleDeleteProduct],
   );
 
   return (
@@ -517,14 +567,14 @@ export function AdminProductsTable({
           />
           <Input
             type="search"
-            placeholder="Buscar productos"
+            placeholder={t("admin.products.filters.searchMobilePlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Buscar productos"
+            aria-label={t("admin.products.filters.searchAria")}
           />
         </div>
         <div className="flex gap-2">
@@ -536,12 +586,15 @@ export function AdminProductsTable({
             onClick={openFiltersModal}
             aria-label={
               appliedFiltersCount > 0
-                ? `Filtros, ${appliedFiltersCount} aplicados`
-                : "Abrir filtros"
+                ? t("admin.products.filters.openWithCount").replace(
+                    "{count}",
+                    String(appliedFiltersCount),
+                  )
+                : t("admin.products.filters.open")
             }
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
-            Filtros
+            {t("admin.products.filters.button")}
             {appliedFiltersCount > 0 ? ` (${appliedFiltersCount})` : ""}
           </Button>
           <Button
@@ -553,7 +606,7 @@ export function AdminProductsTable({
             }}
           >
             <Plus className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-            Nuevo
+            {t("admin.products.buttonNew")}
           </Button>
         </div>
       </div>
@@ -567,14 +620,14 @@ export function AdminProductsTable({
           />
           <Input
             type="search"
-            placeholder="Buscar por SKU, nombre, marca o descripción…"
+            placeholder={t("admin.products.filters.searchDesktopPlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             disabled={isLoading}
             className="h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3 text-sm shadow-sm transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Filtrar filas de la tabla"
+            aria-label={t("admin.products.filters.searchAria")}
           />
         </div>
 
@@ -644,8 +697,8 @@ export function AdminProductsTable({
             className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
             disabled={isLoading || appliedFiltersCount === 0}
             onClick={clearToolbarFilters}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros de marca, tipo y estado"
+            title={t("admin.products.filters.clear")}
+            aria-label={t("admin.products.filters.clear")}
           >
             <FilterX className="h-4 w-4" aria-hidden />
           </Button>
@@ -654,14 +707,14 @@ export function AdminProductsTable({
         <div className="flex w-full items-center xl:max-[1520px]:order-2 xl:max-[1520px]:w-auto xl:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
           <Button
             type="button"
-            className="h-9 w-full xl:w-auto"
+            className="h-9 w-full shrink-0 md:w-24"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
+            {t("admin.products.buttonNew")}
           </Button>
         </div>
       </div>
@@ -678,11 +731,10 @@ export function AdminProductsTable({
               </div>
               <div className="min-w-0 space-y-1.5 pt-0.5">
                 <DialogTitle className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                  Filtros
+                  {t("admin.products.filters.modalTitle")}
                 </DialogTitle>
                 <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                  Refina por marca, tipo y estado. Los cambios se aplican al
-                  pulsar Aplicar.
+                  {t("admin.products.filters.modalDescription")}
                 </DialogDescription>
               </div>
             </div>
@@ -695,13 +747,13 @@ export function AdminProductsTable({
                   htmlFor="products-filter-modal-brand"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Marca
+                  {t("admin.products.filters.brandLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="products-brand-filter-modal"
                     inputId="products-filter-modal-brand"
-                    aria-label="Marca"
+                    aria-label={t("admin.products.filters.brandLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={brandFilterOptions}
@@ -723,13 +775,13 @@ export function AdminProductsTable({
                   htmlFor="products-filter-modal-type"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Tipo
+                  {t("admin.products.filters.typeLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="products-brand-type-filter-modal"
                     inputId="products-filter-modal-type"
-                    aria-label="Tipo"
+                    aria-label={t("admin.products.filters.typeLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={modalBrandTypeOptions}
@@ -748,13 +800,13 @@ export function AdminProductsTable({
                   htmlFor="products-filter-modal-active"
                   className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                 >
-                  Estado
+                  {t("admin.products.filters.statusLabel")}
                 </Label>
                 <div className="flex w-full min-w-0 items-center">
                   <Select<FilterOption, false>
                     instanceId="products-active-filter-modal"
                     inputId="products-filter-modal-active"
-                    aria-label="Estado"
+                    aria-label={t("admin.products.filters.statusLabel")}
                     isSearchable={false}
                     isClearable={false}
                     options={activeFilterOptions}
@@ -778,14 +830,14 @@ export function AdminProductsTable({
               className="text-muted-foreground hover:text-foreground"
               onClick={handleClearModalFilters}
             >
-              Limpiar
+              {t("admin.products.filters.clear")}
             </Button>
             <Button
               type="button"
               className="min-w-[6.5rem] shadow-sm"
               onClick={handleApplyModalFilters}
             >
-              Aplicar
+              {t("admin.products.filters.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -799,6 +851,7 @@ export function AdminProductsTable({
         hideToolbar
         externalGlobalFilter={globalFilter}
         onExternalGlobalFilterChange={setGlobalFilter}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-2.5"
         paginationButtonVariant="ghost"

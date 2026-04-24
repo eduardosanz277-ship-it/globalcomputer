@@ -42,8 +42,15 @@ export const productFormSchema = z.object({
     .min(1, "El nombre es obligatorio")
     .max(200, "Máximo 200 caracteres")
     .transform((s) => s.trim()),
+  nameEn: z
+    .string()
+    .min(1, "El nombre en inglés es obligatorio")
+    .max(200, "Máximo 200 caracteres")
+    .transform((s) => s.trim()),
   description: richHtmlDescriptionField,
+  descriptionEn: richHtmlDescriptionField,
   specifications: richHtmlDescriptionField,
+  specificationsEn: richHtmlDescriptionField,
   stock: z.coerce
     .number({ invalid_type_error: "Ingresa un stock válido" })
     .int("El stock debe ser entero")

@@ -12,8 +12,11 @@ type ProductRow = {
   id: string;
   sku: string;
   name: string;
+  name_en: string | null;
   description: string | null;
+  description_en: string | null;
   specifications: string | null;
+  specifications_en: string | null;
   stock: number;
   price: number;
   active: boolean;
@@ -27,19 +30,33 @@ type ProductRow = {
   subcategory_id: string | null;
   created_at: string;
   updated_at: string;
-  brands: { name: string } | { name: string }[] | null;
-  brand_types: { name: string } | { name: string }[] | null;
-  categories: { name: string } | { name: string }[] | null;
+  brands: { name: string; name_en?: string | null } | { name: string; name_en?: string | null }[] | null;
+  brand_types:
+    | { name: string; name_en?: string | null }
+    | { name: string; name_en?: string | null }[]
+    | null;
+  categories:
+    | { name: string; name_en?: string | null }
+    | { name: string; name_en?: string | null }[]
+    | null;
   subcategories:
     | {
         name: string;
+        name_en?: string | null;
         category_id: string;
-        categories: { name: string } | { name: string }[] | null;
+        categories:
+          | { name: string; name_en?: string | null }
+          | { name: string; name_en?: string | null }[]
+          | null;
       }
     | Array<{
         name: string;
+        name_en?: string | null;
         category_id: string;
-        categories: { name: string } | { name: string }[] | null;
+        categories:
+          | { name: string; name_en?: string | null }
+          | { name: string; name_en?: string | null }[]
+          | null;
       }>
     | null;
   product_images?: Array<{ id: string; url: string; is_primary: boolean }>;
@@ -50,16 +67,18 @@ type ProductRow = {
     product_characteristics_specific:
       | {
           name: string;
+          name_en?: string | null;
           product_characteristics_general:
-            | { name: string }
-            | { name: string }[]
+            | { name: string; name_en?: string | null }
+            | { name: string; name_en?: string | null }[]
             | null;
         }
       | {
           name: string;
+          name_en?: string | null;
           product_characteristics_general:
-            | { name: string }
-            | { name: string }[]
+            | { name: string; name_en?: string | null }
+            | { name: string; name_en?: string | null }[]
             | null;
         }[]
       | null;
@@ -67,28 +86,55 @@ type ProductRow = {
   slug: string;
 };
 
+function relationField<TField extends "name" | "name_en">(
+  rel:
+    | { name?: string; name_en?: string | null }
+    | { name?: string; name_en?: string | null }[]
+    | null
+    | undefined,
+  field: TField,
+): string | null {
+  if (!rel) return null;
+  if (Array.isArray(rel)) return (rel[0]?.[field] as string | null | undefined) ?? null;
+  return (rel[field] as string | null | undefined) ?? null;
+}
+
 function relationName(
-  rel: { name?: string } | { name?: string }[] | null | undefined,
+  rel:
+    | { name?: string; name_en?: string | null }
+    | { name?: string; name_en?: string | null }[]
+    | null
+    | undefined,
 ): string {
-  if (!rel) return "—";
-  if (Array.isArray(rel)) return rel[0]?.name ?? "—";
-  return rel.name ?? "—";
+  return relationField(rel, "name") ?? "—";
+}
+
+function relationNameEn(
+  rel:
+    | { name?: string; name_en?: string | null }
+    | { name?: string; name_en?: string | null }[]
+    | null
+    | undefined,
+): string | null {
+  return relationField(rel, "name_en");
 }
 
 function specificRelation(
   rel:
     | {
         name: string;
+        name_en?: string | null;
         product_characteristics_general:
-          | { name: string }
-          | { name: string }[]
+          | { name: string; name_en?: string | null }
+          | { name: string; name_en?: string | null }[]
           | null;
       }
     | {
         name: string;
+        name_en?: string | null;
         product_characteristics_general:
-          | { name: string }
-          | { name: string }[]
+          | { name: string; name_en?: string | null }
+          | { name: string; name_en?: string | null }[]
           | null;
       }[]
     | null
@@ -104,16 +150,24 @@ function subcategoryRelation(
     | ProductRow["subcategories"]
     | {
         name: string;
+        name_en?: string | null;
         category_id: string;
-        categories: { name: string } | { name: string }[] | null;
+        categories:
+          | { name: string; name_en?: string | null }
+          | { name: string; name_en?: string | null }[]
+          | null;
       }
     | null
     | undefined,
 ):
   | {
       name: string;
+      name_en?: string | null;
       category_id: string;
-      categories: { name: string } | { name: string }[] | null;
+      categories:
+        | { name: string; name_en?: string | null }
+        | { name: string; name_en?: string | null }[]
+        | null;
     }
   | null {
   if (!rel) return null;
@@ -126,20 +180,28 @@ function catalogPlacementFromRow(row: ProductRow): Pick<
   | "categoryId"
   | "subcategoryId"
   | "catalogLabel"
+  | "catalogLabelEn"
   | "placementCategoryId"
   | "placementSubcategoryId"
 > {
   const catName = relationName(row.categories);
+  const catNameEn = relationNameEn(row.categories);
   const sub = subcategoryRelation(row.subcategories);
 
   if (row.subcategory_id && sub) {
     const parentName = relationName(sub.categories ?? null);
+    const parentNameEn = relationNameEn(sub.categories ?? null);
     const subName = sub.name ?? "—";
+    const subNameEn = sub.name_en ?? null;
     return {
       categoryId: null,
       subcategoryId: row.subcategory_id,
       catalogLabel:
         parentName && subName ? `${parentName} › ${subName}` : subName,
+      catalogLabelEn:
+        (parentNameEn && (subNameEn ?? subName)
+          ? `${parentNameEn} › ${subNameEn ?? subName}`
+          : (subNameEn ?? subName)) ?? "—",
       placementCategoryId: sub.category_id ?? "",
       placementSubcategoryId: row.subcategory_id,
     };
@@ -150,6 +212,7 @@ function catalogPlacementFromRow(row: ProductRow): Pick<
       categoryId: row.category_id,
       subcategoryId: null,
       catalogLabel: catName,
+      catalogLabelEn: catNameEn ?? catName,
       placementCategoryId: row.category_id,
       placementSubcategoryId: "",
     };
@@ -159,6 +222,7 @@ function catalogPlacementFromRow(row: ProductRow): Pick<
     categoryId: null,
     subcategoryId: null,
     catalogLabel: "—",
+    catalogLabelEn: "—",
     placementCategoryId: "",
     placementSubcategoryId: "",
   };
@@ -186,11 +250,18 @@ function mapRow(row: ProductRow): Product {
         const generalName = relationName(
           specific?.product_characteristics_general ?? null,
         );
+        const generalNameEn = Array.isArray(
+          specific?.product_characteristics_general,
+        )
+          ? (specific?.product_characteristics_general[0]?.name_en ?? null)
+          : (specific?.product_characteristics_general?.name_en ?? null);
         return {
           id: cv.id,
           specificId: cv.characteristic_specific_id,
           specificName: specific?.name ?? "—",
+          specificNameEn: specific?.name_en ?? null,
           generalName,
+          generalNameEn,
           value: cv.value,
         };
       })
@@ -204,8 +275,11 @@ function mapRow(row: ProductRow): Product {
     id: row.id,
     sku: row.sku,
     name: row.name,
+    nameEn: row.name_en,
     description: row.description,
+    descriptionEn: row.description_en,
     specifications: row.specifications,
+    specificationsEn: row.specifications_en,
     stock: row.stock,
     price: row.price,
     active: row.active,
@@ -215,8 +289,10 @@ function mapRow(row: ProductRow): Product {
     manualPdfUrl: row.manual_pdf_url,
     brandId: row.brand_id,
     brandName: relationName(row.brands),
+    brandNameEn: relationNameEn(row.brands),
     brandTypeId: row.brand_type_id ?? "",
     brandTypeName: relationName(row.brand_types),
+    brandTypeNameEn: relationNameEn(row.brand_types),
     ...placement,
     imageUrl: primaryImage?.url ?? null,
     images,
@@ -228,7 +304,7 @@ function mapRow(row: ProductRow): Product {
 }
 
 const PRODUCT_SELECT =
-  "id, sku, slug, name, description, specifications, stock, price, active, featured, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name), brand_types(name), categories(name), subcategories(name, category_id, categories(name)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, product_characteristics_general(name)))";
+  "id, sku, slug, name, name_en, description, description_en, specifications, specifications_en, stock, price, active, featured, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name, name_en), brand_types(name, name_en), categories(name, name_en), subcategories(name, name_en, category_id, categories(name, name_en)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, name_en, product_characteristics_general(name, name_en)))";
 
 function placementToDbColumns(payload: ProductInsert): {
   category_id: string | null;
@@ -260,8 +336,11 @@ export async function repoCreateProduct(payload: ProductInsert): Promise<Product
       sku: payload.sku,
       slug: payload.slug,
       name: payload.name,
+      name_en: payload.nameEn || null,
       description: payload.description || null,
+      description_en: payload.descriptionEn || null,
       specifications: payload.specifications || null,
+      specifications_en: payload.specificationsEn || null,
       stock: payload.stock,
       price: payload.price,
       active: payload.active,
@@ -291,8 +370,11 @@ export async function repoUpdateProduct(
       slug: payload.slug,
       sku: payload.sku,
       name: payload.name,
+      name_en: payload.nameEn || null,
       description: payload.description || null,
+      description_en: payload.descriptionEn || null,
       specifications: payload.specifications || null,
+      specifications_en: payload.specificationsEn || null,
       stock: payload.stock,
       price: payload.price,
       active: payload.active,
