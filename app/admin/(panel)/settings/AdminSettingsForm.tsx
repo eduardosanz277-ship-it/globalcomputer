@@ -19,19 +19,28 @@ import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-cl
 import { useServerAction } from "@/hooks/use-server-action";
 import { updateAppConfigAction } from "@/modules/admin/app-config/app-config.actions";
 import {
-  appConfigFormSchema,
+  createAppConfigFormSchema,
   type AppConfigFormValues,
 } from "@/modules/admin/app-config/app-config.schema";
 import type { AppConfigSettings } from "@/modules/admin/app-config/app-config.types";
 import { cn } from "@/utils/cn";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   initial: AppConfigSettings;
 };
 
 export function AdminSettingsForm({ initial }: Props) {
+  const { t } = useI18n();
+  const localizedSchema = createAppConfigFormSchema({
+    supportEmailRequired: t("admin.settings.form.errors.supportEmailRequired"),
+    supportEmailInvalid: t("admin.settings.form.errors.supportEmailInvalid"),
+    supportPhoneRequired: t("admin.settings.form.errors.supportPhoneRequired"),
+    supportAddressRequired: t("admin.settings.form.errors.supportAddressRequired"),
+    lowStockThresholdMin: t("admin.settings.form.errors.lowStockThresholdMin"),
+  });
   const form = useForm<AppConfigFormValues>({
-    resolver: zodResolver(appConfigFormSchema),
+    resolver: zodResolver(localizedSchema),
     defaultValues: {
       supportEmail: initial.supportEmail,
       supportPhone: initial.supportPhone,
@@ -44,7 +53,7 @@ export function AdminSettingsForm({ initial }: Props) {
   const lowStockAlertsOn = form.watch("lowStockNotificationsEnabled");
 
   const { execute, isPending } = useServerAction(updateAppConfigAction, {
-    successMessage: "Configuración guardada",
+    successMessage: t("admin.settings.toast.saved"),
   });
 
   const onSubmit = (values: AppConfigFormValues) => {
@@ -58,12 +67,12 @@ export function AdminSettingsForm({ initial }: Props) {
       <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
         <Card className="flex min-h-0 flex-col lg:h-full">
           <CardHeader>
-            <CardTitle>Contacto de soporte</CardTitle>
+            <CardTitle>{t("admin.settings.form.support.title")}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-4">
             <div className="space-y-2">
               <Label htmlFor="supportEmail" className="text-sm font-medium">
-                Email
+                {t("admin.settings.form.support.email")}
                 <RequiredMark />
               </Label>
               <div className="relative">
@@ -85,7 +94,7 @@ export function AdminSettingsForm({ initial }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="supportPhone" className="text-sm font-medium">
-                Teléfono
+                {t("admin.settings.form.support.phone")}
                 <RequiredMark />
               </Label>
               <div className="relative">
@@ -107,7 +116,7 @@ export function AdminSettingsForm({ initial }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="supportAddress" className="text-sm font-medium">
-                Dirección
+                {t("admin.settings.form.support.address")}
                 <RequiredMark />
               </Label>
               <div className="relative">
@@ -140,10 +149,9 @@ export function AdminSettingsForm({ initial }: Props) {
 
         <Card className="flex min-h-0 flex-col lg:h-full">
           <CardHeader>
-            <CardTitle>Stock bajo</CardTitle>
+            <CardTitle>{t("admin.settings.form.lowStock.title")}</CardTitle>
             <CardDescription>
-              Activa o desactiva las alertas por inventario bajo; si están
-              activas, define el umbral.
+              {t("admin.settings.form.lowStock.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
@@ -154,11 +162,10 @@ export function AdminSettingsForm({ initial }: Props) {
                     htmlFor="low-stock-notifications-enabled"
                     className="text-base font-medium"
                   >
-                    Alertas de stock bajo
+                    {t("admin.settings.form.lowStock.alertsLabel")}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Activa para recibir avisos cuando el inventario esté por
-                    debajo del umbral.
+                    {t("admin.settings.form.lowStock.alertsHint")}
                   </p>
                 </div>
                 <Controller
@@ -182,12 +189,11 @@ export function AdminSettingsForm({ initial }: Props) {
                 )}
               >
                 <Label htmlFor="lowStockThreshold" className="text-sm font-medium">
-                  Umbral (límite)
+                  {t("admin.settings.form.lowStock.thresholdLabel")}
                   <RequiredMark />
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Se alerta cuando la cantidad en stock sea menor o igual a este
-                  número (solo si las alertas de stock bajo están activas).
+                  {t("admin.settings.form.lowStock.thresholdHint")}
                 </p>
                 <Input
                   id="lowStockThreshold"
@@ -216,9 +222,9 @@ export function AdminSettingsForm({ initial }: Props) {
         <ButtonPending
           type="submit"
           pending={isPending}
-          pendingLabel="Guardando cambios"
+          pendingLabel={t("admin.settings.form.saving")}
         >
-          Guardar cambios
+          {t("admin.settings.form.save")}
         </ButtonPending>
       </div>
     </form>

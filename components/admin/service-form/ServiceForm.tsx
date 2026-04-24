@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
 import {
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
 import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Dropzone } from "./Dropzone";
 import { ImageGrid } from "./ImageGrid";
 import { useServiceImagesManager } from "./use-service-images-manager";
@@ -18,7 +19,9 @@ import type { ExistingServiceImageInput, ServiceFormSubmitData } from "./types";
 
 type ServiceFormProps = {
   initialName?: string;
+  initialNameEn?: string;
   initialDescription?: string;
+  initialDescriptionEn?: string;
   existingImages: ExistingServiceImageInput[];
   onSubmit: (data: ServiceFormSubmitData) => Promise<void> | void;
   onCancel?: () => void;
@@ -30,7 +33,9 @@ type ServiceFormProps = {
 
 export function ServiceForm({
   initialName = "",
+  initialNameEn = "",
   initialDescription = "",
+  initialDescriptionEn = "",
   existingImages,
   onSubmit,
   onCancel,
@@ -39,26 +44,45 @@ export function ServiceForm({
   formId,
   showActions = true,
 }: ServiceFormProps) {
+  const { t, locale } = useI18n();
   const [name, setName] = useState(initialName);
+  const [nameEn, setNameEn] = useState(initialNameEn);
   const [description, setDescription] = useState(initialDescription);
+  const [descriptionEn, setDescriptionEn] = useState(initialDescriptionEn);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [nameEnError, setNameEnError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"basic" | "media">("basic");
+  const [basicLanguageTab, setBasicLanguageTab] = useState<"es" | "en">(
+    locale === "en" ? "en" : "es",
+  );
+
+  useEffect(() => {
+    setBasicLanguageTab(locale === "en" ? "en" : "es");
+  }, [locale]);
 
   const images = useServiceImagesManager(existingImages);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setNameError(null);
+    setNameEnError(null);
 
     const cleanedName = name.trim();
+    const cleanedNameEn = nameEn.trim();
     if (!cleanedName) {
-      setNameError("El nombre del servicio es obligatorio.");
+      setNameError(t("admin.services.form.errors.nameRequired"));
+      return;
+    }
+    if (!cleanedNameEn) {
+      setNameEnError(t("admin.services.form.errors.nameEnRequired"));
       return;
     }
 
     await onSubmit({
       name: cleanedName,
+      nameEn: cleanedNameEn,
       description: description.trim(),
+      descriptionEn: descriptionEn.trim(),
       newImages: images.newImages,
       updatedExistingImages: images.updatedExistingImages,
       removedImages: images.removedImages,
@@ -73,7 +97,7 @@ export function ServiceForm({
     >
       <div
         role="tablist"
-        aria-label="Secciones del formulario de servicio"
+        aria-label={t("admin.services.form.tabs.ariaLabel")}
         className="sticky top-0 z-[100] -mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-background px-4 pb-3 pt-4 shadow-sm [scrollbar-width:thin]"
       >
         <button
@@ -88,7 +112,7 @@ export function ServiceForm({
           )}
           onClick={() => setActiveTab("basic")}
         >
-          Información básica
+          {t("admin.services.form.tabs.basic")}
         </button>
         <button
           type="button"
@@ -102,64 +126,179 @@ export function ServiceForm({
           )}
           onClick={() => setActiveTab("media")}
         >
-          Multimedia
+          {t("admin.services.form.tabs.media")}
         </button>
       </div>
 
       <div className="relative z-0 min-h-0 flex-1 space-y-4 pt-4">
         {activeTab === "basic" ? (
           <section className={adminSlideOverSectionClassName}>
-            <div className="space-y-2">
-              <Label htmlFor="service-name">
-                Nombre del servicio
-                <RequiredMark />
-              </Label>
-              <Input
-                id="service-name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (nameError) setNameError(null);
-                }}
-                placeholder="Ej. Instalación y puesta en marcha"
-                autoComplete="off"
-                aria-required
-                aria-invalid={Boolean(nameError)}
-                aria-describedby={nameError ? "service-name-error" : undefined}
-                className={cn(
-                  adminServiceLikeInputClassName,
-                  nameError &&
-                    "border-destructive focus-visible:ring-destructive/30",
-                )}
-              />
-              {nameError ? (
-                <p
-                  id="service-name-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {nameError}
-                </p>
-              ) : null}
+            <div
+              role="tablist"
+              aria-label={t("admin.services.form.languageTabs.ariaLabel")}
+              className="flex items-center justify-start gap-2"
+            >
+              {locale === "en" ? (
+                <>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={basicLanguageTab === "en"}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                      basicLanguageTab === "en"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                    onClick={() => setBasicLanguageTab("en")}
+                  >
+                    {t("admin.services.form.languageTabs.english")}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={basicLanguageTab === "es"}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                      basicLanguageTab === "es"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                    onClick={() => setBasicLanguageTab("es")}
+                  >
+                    {t("admin.services.form.languageTabs.spanish")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={basicLanguageTab === "es"}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                      basicLanguageTab === "es"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                    onClick={() => setBasicLanguageTab("es")}
+                  >
+                    {t("admin.services.form.languageTabs.spanish")}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={basicLanguageTab === "en"}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                      basicLanguageTab === "en"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "border border-border/80 bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                    onClick={() => setBasicLanguageTab("en")}
+                  >
+                    {t("admin.services.form.languageTabs.english")}
+                  </button>
+                </>
+              )}
             </div>
 
-            <ProductDescriptionEditor
-              id="service-description-rich"
-              label="Descripción"
-              value={description}
-              onChange={setDescription}
-              disabled={isSubmitting}
-            />
+            {basicLanguageTab === "es" ? (
+              <div className="space-y-2">
+                <Label htmlFor="service-name">
+                  {t("admin.services.form.labelName")}
+                  <RequiredMark />
+                </Label>
+                <Input
+                  id="service-name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (nameError) setNameError(null);
+                  }}
+                  placeholder={t("admin.services.form.placeholderName")}
+                  autoComplete="off"
+                  aria-required
+                  aria-invalid={Boolean(nameError)}
+                  aria-describedby={nameError ? "service-name-error" : undefined}
+                  className={cn(
+                    adminServiceLikeInputClassName,
+                    nameError &&
+                      "border-destructive focus-visible:ring-destructive/30",
+                  )}
+                />
+                {nameError ? (
+                  <p
+                    id="service-name-error"
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
+                    {nameError}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="service-name-en">
+                  {t("admin.services.form.labelNameEn")}
+                  <RequiredMark />
+                </Label>
+                <Input
+                  id="service-name-en"
+                  value={nameEn}
+                  onChange={(e) => {
+                    setNameEn(e.target.value);
+                    if (nameEnError) setNameEnError(null);
+                  }}
+                  placeholder={t("admin.services.form.placeholderNameEn")}
+                  autoComplete="off"
+                  aria-required
+                  aria-invalid={Boolean(nameEnError)}
+                  aria-describedby={nameEnError ? "service-name-en-error" : undefined}
+                  className={cn(
+                    adminServiceLikeInputClassName,
+                    nameEnError &&
+                      "border-destructive focus-visible:ring-destructive/30",
+                  )}
+                />
+                {nameEnError ? (
+                  <p
+                    id="service-name-en-error"
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
+                    {nameEnError}
+                  </p>
+                ) : null}
+              </div>
+            )}
+
+            {basicLanguageTab === "es" ? (
+              <ProductDescriptionEditor
+                id="service-description-rich-es"
+                label={t("admin.services.form.labelDescription")}
+                value={description}
+                onChange={setDescription}
+                disabled={isSubmitting}
+              />
+            ) : (
+              <ProductDescriptionEditor
+                id="service-description-rich-en"
+                label={t("admin.services.form.labelDescriptionEn")}
+                value={descriptionEn}
+                onChange={setDescriptionEn}
+                disabled={isSubmitting}
+              />
+            )}
           </section>
         ) : (
           <section className={adminSlideOverSectionClassName}>
             <header>
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Imágenes
+                {t("admin.services.form.media.title")}
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Reordena por drag & drop, define una imagen principal y elimina
-                las que no necesites.
+                {t("admin.services.form.media.description")}
               </p>
             </header>
 
@@ -178,8 +317,7 @@ export function ServiceForm({
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                Aún no hay imágenes. Sube al menos una para mejorar la
-                presentación.
+                {t("admin.services.form.media.empty")}
               </div>
             )}
           </section>
@@ -193,19 +331,19 @@ export function ServiceForm({
             variant="outline"
             onClick={onCancel}
             className="h-10 min-w-[110px] transition hover:-translate-y-[1px]"
-            aria-label="Cancelar edición del servicio"
+            aria-label={t("admin.services.form.cancelAria")}
           >
-            Cancelar
+            {t("admin.services.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             pending={Boolean(isSubmitting)}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.services.form.saving")}
             skipMinWidth
             className="h-10 min-w-[140px] transition hover:-translate-y-[1px] active:translate-y-0"
-            aria-label="Guardar servicio"
+            aria-label={t("admin.services.form.saveAria")}
           >
-            Guardar
+            {t("admin.services.form.save")}
           </ButtonPending>
         </footer>
       ) : null}

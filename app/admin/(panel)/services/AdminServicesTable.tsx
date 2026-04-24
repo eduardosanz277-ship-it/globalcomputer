@@ -18,6 +18,7 @@ import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ServiceProfileCard } from "@/components/dashboard/service-profile-card";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +30,10 @@ interface Props {
   services: Service[];
   isLoading?: boolean;
 }
+
+const SERVICE_COLUMN_CLASS = "w-[43rem] min-w-[43rem] max-w-[43rem]";
+const UPDATED_AT_COLUMN_CLASS = "w-[12rem] min-w-[12rem] max-w-[12rem]";
+const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 
 function serviceInitial(name: string): string {
   const t = name.trim();
@@ -54,11 +59,34 @@ function updatedAtSortMs(row: Service): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
-function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
+function localizedServiceName(row: Service, locale: string): string {
+  if (locale === "en") return row.nameEn?.trim() || row.name;
+  return row.name;
+}
+
+function localizedServiceDescription(
+  row: Service,
+  locale: string,
+): string | null {
+  if (locale === "en") return row.descriptionEn ?? row.description;
+  return row.description;
+}
+
+function RowActions({
+  row,
+  locale,
+  onEdit,
+  t,
+}: {
+  row: Service;
+  locale: string;
+  onEdit: () => void;
+  t: (key: string) => string;
+}) {
   const router = useRouter();
   const { executeAsync, isPending } = useServerAction(deleteServiceAction, {
-    successMessage: "Servicio eliminado",
-    errorMessage: "No se pudo eliminar el servicio",
+    successMessage: t("admin.services.toast.deleted"),
+    errorMessage: t("admin.services.toast.deleteError"),
     onSuccess: () => {
       router.refresh();
     },
@@ -66,9 +94,9 @@ function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({
-      title: "¿Eliminar servicio?",
-      html: `Vas a eliminar <strong>${row.name}</strong>.`,
-      confirmButtonText: "Eliminar",
+      title: t("admin.services.confirm.deleteTitle"),
+      html: `${t("admin.services.confirm.deleteMessagePrefix")} <strong>${localizedServiceName(row, locale)}</strong>.`,
+      confirmButtonText: t("admin.services.confirm.deleteConfirm"),
       variant: "destructive",
       iconType: "warning",
       preConfirm: () => executeAsync(row.id),
@@ -80,11 +108,14 @@ function RowActions({ row, onEdit }: { row: Service; onEdit: () => void }) {
       onEdit={onEdit}
       onDelete={() => void handleDelete()}
       isDeleting={isPending}
+      deletingLabel={t("admin.services.menu.deleting")}
+      deleteLabel={t("admin.services.menu.delete")}
     />
   );
 }
 
 export function AdminServicesTable({ services, isLoading = false }: Props) {
+  const { t, locale } = useI18n();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
 
@@ -94,14 +125,16 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
       return (
         <li key={row.id}>
           <ServiceProfileCard
-            name={r.name}
+            name={localizedServiceName(r, locale)}
             imageUrl={r.imageUrl}
-            description={r.description}
+            description={localizedServiceDescription(r, locale)}
             updatedAt={r.updatedAt}
             className="hover:bg-muted/50 transition-colors duration-150"
             actions={
               <RowActions
                 row={r}
+                locale={locale}
+                t={t}
                 onEdit={() => {
                   setEditing(r);
                   setDialogOpen(true);
@@ -112,43 +145,46 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         </li>
       );
     },
-    [],
+    [locale, t],
   );
 
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
       {
         id: "service",
-        accessorFn: (row) => `${row.name} ${row.description ?? ""}`.trim(),
+        accessorFn: (row) =>
+          `${row.name} ${row.nameEn ?? ""} ${row.description ?? ""} ${row.descriptionEn ?? ""}`.trim(),
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
-          rowA.original.name.localeCompare(rowB.original.name, "es", {
-            sensitivity: "base",
-          }),
+          localizedServiceName(rowA.original, locale).localeCompare(
+            localizedServiceName(rowB.original, locale),
+            locale,
+            {
+              sensitivity: "base",
+            },
+          ),
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Servicio"
-            ariaLabelIdle="Ordenar por nombre"
-            ariaLabelAsc="Ordenado de la A a la Z. Clic para invertir"
-            ariaLabelDesc="Ordenado de la Z a la A. Clic para quitar orden"
+            label={t("admin.services.table.service")}
+            ariaLabelIdle={t("admin.services.table.serviceSortIdle")}
+            ariaLabelAsc={t("admin.services.table.sortAsc")}
+            ariaLabelDesc={t("admin.services.table.sortDesc")}
           />
         ),
-        meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(36rem,85vw)] md:max-w-[min(28rem,50vw)]",
-        },
+        meta: { cellClassName: SERVICE_COLUMN_CLASS },
         cell: ({ row }) => {
           const r = row.original;
           const imageUrl = r.imageUrl;
-          const desc = serviceExcerpt(r.description);
+          const desc = serviceExcerpt(localizedServiceDescription(r, locale));
+          const localizedName = localizedServiceName(r, locale);
           return (
             <div className="flex min-w-0 items-start gap-3">
               {imageUrl ? (
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border border-border/80 bg-muted">
                   <Image
                     src={imageUrl}
-                    alt={r.name}
+                    alt={localizedName}
                     fill
                     sizes="56px"
                     className="object-cover"
@@ -159,12 +195,12 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
                   className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted text-sm font-semibold text-muted-foreground"
                   aria-hidden
                 >
-                  {serviceInitial(r.name)}
+                  {serviceInitial(localizedName)}
                 </span>
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold text-foreground">
-                  {r.name}
+                  {localizedName}
                 </p>
                 {desc ? (
                   <p className="line-clamp-2 text-sm text-muted-foreground">
@@ -187,19 +223,23 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Última actualización"
-            ariaLabelIdle="Ordenar por última actualización"
-            ariaLabelAsc="Más antiguo primero. Clic para invertir"
-            ariaLabelDesc="Más reciente primero. Clic para quitar orden"
+            label={t("admin.services.table.updatedAt")}
+            ariaLabelIdle={t("admin.services.table.updatedAtSortIdle")}
+            ariaLabelAsc={t("admin.services.table.updatedAtSortAsc")}
+            ariaLabelDesc={t("admin.services.table.updatedAtSortDesc")}
           />
         ),
+        meta: { cellClassName: UPDATED_AT_COLUMN_CLASS },
         cell: ({ row }) => {
           const raw = row.original.updatedAt;
-          const relative = formatRelativeLastAccess(raw);
-          const absolute = formatDateDdMmYyyyHhMm(raw);
+          const relative = formatRelativeLastAccess(raw, locale);
+          const absolute = formatDateDdMmYyyyHhMm(raw, locale).replace(
+            ", ",
+            " ",
+          );
           if (relative == null) {
             return (
-              <span className="text-sm text-muted-foreground">
+              <span className="whitespace-nowrap tabular-nums text-sm text-muted-foreground">
                 {absolute}
               </span>
             );
@@ -208,7 +248,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
             <TooltipProvider delayDuration={120}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-sm text-muted-foreground">
+                  <span className="cursor-help whitespace-nowrap tabular-nums text-sm text-muted-foreground">
                     {relative}
                   </span>
                 </TooltipTrigger>
@@ -217,8 +257,12 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
                   align="start"
                   className="rounded-xl border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl"
                 >
-                  <span className="block font-medium">Última actualización</span>
-                  <span className="mt-0.5 block text-muted-foreground">{absolute}</span>
+                  <span className="block font-medium">
+                    {t("admin.services.table.updatedTooltip")}
+                  </span>
+                  <span className="mt-0.5 block text-muted-foreground">
+                    {absolute}
+                  </span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -227,11 +271,15 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
       },
       {
         id: "actions",
-        meta: { align: "right", cellClassName: "w-[4.5rem]" },
-        header: () => <span className="sr-only">Acciones</span>,
+        meta: { align: "right", cellClassName: ACTIONS_COLUMN_CLASS },
+        header: () => (
+          <span className="sr-only">{t("admin.services.table.actions")}</span>
+        ),
         cell: ({ row }) => (
           <RowActions
             row={row.original}
+            locale={locale}
+            t={t}
             onEdit={() => {
               setEditing(row.original);
               setDialogOpen(true);
@@ -240,7 +288,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         ),
       },
     ],
-    [],
+    [locale, t],
   );
 
   return (
@@ -250,7 +298,8 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         data={services}
         isLoading={isLoading}
         enableSorting
-        searchPlaceholder="Buscar por nombre o descripción…"
+        searchPlaceholder={t("admin.services.filters.searchPlaceholder")}
+        tableClassName="table-fixed"
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
@@ -262,14 +311,14 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         toolbarActions={
           <Button
             type="button"
-            className="h-9 w-full shrink-0 md:w-auto"
+            className="h-9 w-full shrink-0 md:w-24"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Nuevo
+            {t("admin.services.buttonNew")}
           </Button>
         }
       />

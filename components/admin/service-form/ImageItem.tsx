@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/utils/cn";
 import type { ServiceImageItem } from "./types";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type ImageItemProps = {
   item: ServiceImageItem;
@@ -36,6 +37,7 @@ export function ImageItem({
   isLast,
   className,
 }: ImageItemProps) {
+  const { t } = useI18n();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.key });
 
@@ -55,7 +57,7 @@ export function ImageItem({
     >
       <Image
         src={item.url}
-        alt={`Imagen ${index + 1}`}
+        alt={`${t("admin.services.form.media.imageAlt")} ${index + 1}`}
         fill
         sizes="(max-width: 639px) min(100vw, 28rem), (max-width: 1023px) 45vw, 220px"
         className="object-cover"
@@ -66,7 +68,9 @@ export function ImageItem({
           #{index + 1}
         </span>
         <span className="w-fit rounded-md bg-black/55 px-2 py-0.5 text-[10px] text-white">
-          {item.source === "new" ? "Nueva" : "Existente"}
+          {item.source === "new"
+            ? t("admin.services.form.media.imageSourceNew")
+            : t("admin.services.form.media.imageSourceExisting")}
         </span>
       </div>
 
@@ -81,7 +85,7 @@ export function ImageItem({
             item.isPrimary && "ring-1 ring-amber-400/70"
           )}
           onClick={() => onSetPrimary(item.key)}
-          aria-label="Marcar como imagen principal"
+          aria-label={t("admin.services.form.media.markPrimaryAria")}
         >
           <Star
             className={cn(
@@ -97,7 +101,7 @@ export function ImageItem({
           variant="destructive"
           className="h-7 w-7"
           onClick={() => onRemove(item.key)}
-          aria-label="Eliminar imagen"
+          aria-label={t("admin.services.form.media.removeImageAria")}
         >
           <X className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -111,7 +115,7 @@ export function ImageItem({
               size="icon"
               variant="secondary"
               className="h-7 w-7 bg-background/85 backdrop-blur"
-              aria-label="Arrastrar para reordenar"
+              aria-label={t("admin.services.form.media.dragReorderAria")}
               {...attributes}
               {...listeners}
             >
@@ -119,7 +123,7 @@ export function ImageItem({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-[220px] text-center">
-            Mantén pulsado y arrastra para cambiar el orden de las imágenes
+            {t("admin.services.form.media.dragHint")}
           </TooltipContent>
         </Tooltip>
         <div className="flex items-center gap-1 rounded-md bg-background/75 p-1 backdrop-blur">
@@ -130,9 +134,9 @@ export function ImageItem({
             className="h-6 px-2 text-[11px]"
             disabled={isFirst}
             onClick={() => onMoveUp(item.key)}
-            aria-label="Mover imagen hacia arriba"
+            aria-label={t("admin.services.form.media.moveUpAria")}
           >
-            Subir
+            {t("admin.services.form.media.moveUp")}
           </Button>
           <Button
             type="button"
@@ -141,9 +145,9 @@ export function ImageItem({
             className="h-6 px-2 text-[11px]"
             disabled={isLast}
             onClick={() => onMoveDown(item.key)}
-            aria-label="Mover imagen hacia abajo"
+            aria-label={t("admin.services.form.media.moveDownAria")}
           >
-            Bajar
+            {t("admin.services.form.media.moveDown")}
           </Button>
         </div>
       </div>

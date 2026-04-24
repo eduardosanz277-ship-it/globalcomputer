@@ -21,7 +21,9 @@ export type NewServiceImageOutput = {
 
 export type ServiceFormSubmitData = {
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   newImages: NewServiceImageOutput[];
   updatedExistingImages: ExistingServiceImageOutput[];
   removedImages: string[];

@@ -34,7 +34,7 @@ type Props = {
 
 export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const localizedSchema = createFaqFormSchema({
     questionRequired: t("admin.faqs.form.errors.questionRequired"),
     questionEnRequired: t("admin.faqs.form.errors.questionEnRequired"),
@@ -82,6 +82,7 @@ export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
   );
 
   const isPending = isCreating || isUpdating;
+  const isEnglishLocale = locale === "en";
 
   useEffect(() => {
     if (!open) return;
@@ -146,71 +147,141 @@ export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
       <Form id={FORM_ID} form={form} onSubmit={onSubmit} className="space-y-0">
         <section className={adminSlideOverSectionClassName}>
           <div className="space-y-4">
-            <FormField
-              name="question"
-              label={t("admin.faqs.form.labelQuestion")}
-              required
-              disabled={isPending}
-              error={errors.question?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
-            <FormField
-              name="questionEn"
-              label={t("admin.faqs.form.labelQuestionEn")}
-              required
-              disabled={isPending}
-              error={errors.questionEn?.message}
-              autoComplete="off"
-              className={adminServiceLikeInputClassName}
-            />
-
-            <div className="space-y-2">
-              <Label htmlFor="answer">
-                {t("admin.faqs.form.labelAnswer")}
-                <RequiredMark />
-              </Label>
-              <textarea
-                id="answer"
-                rows={6}
-                disabled={isPending}
-                {...register("answer")}
-                className={cn(
-                  "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
-                  "min-h-[9rem] resize-y leading-relaxed",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
-                  "dark:bg-card",
-                )}
-              />
-              {errors.answer?.message ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {errors.answer.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="answerEn">
-                {t("admin.faqs.form.labelAnswerEn")}
-                <RequiredMark />
-              </Label>
-              <textarea
-                id="answerEn"
-                rows={6}
-                disabled={isPending}
-                {...register("answerEn")}
-                className={cn(
-                  "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
-                  "min-h-[9rem] resize-y leading-relaxed",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
-                  "dark:bg-card",
-                )}
-              />
-              {errors.answerEn?.message ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {errors.answerEn.message}
-                </p>
-              ) : null}
-            </div>
+            {isEnglishLocale ? (
+              <>
+                <FormField
+                  name="questionEn"
+                  label={t("admin.faqs.form.labelQuestionEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.questionEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="question"
+                  label={t("admin.faqs.form.labelQuestionSpanish")}
+                  required
+                  disabled={isPending}
+                  error={errors.question?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <div className="space-y-2">
+                  <Label htmlFor="answerEn">
+                    {t("admin.faqs.form.labelAnswerEn")}
+                    <RequiredMark />
+                  </Label>
+                  <textarea
+                    id="answerEn"
+                    rows={6}
+                    disabled={isPending}
+                    {...register("answerEn")}
+                    className={cn(
+                      "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
+                      "min-h-[9rem] resize-y leading-relaxed",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+                      "dark:bg-card",
+                    )}
+                  />
+                  {errors.answerEn?.message ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {errors.answerEn.message}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="answer">
+                    {t("admin.faqs.form.labelAnswerSpanish")}
+                    <RequiredMark />
+                  </Label>
+                  <textarea
+                    id="answer"
+                    rows={6}
+                    disabled={isPending}
+                    {...register("answer")}
+                    className={cn(
+                      "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
+                      "min-h-[9rem] resize-y leading-relaxed",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+                      "dark:bg-card",
+                    )}
+                  />
+                  {errors.answer?.message ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {errors.answer.message}
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <>
+                <FormField
+                  name="question"
+                  label={t("admin.faqs.form.labelQuestion")}
+                  required
+                  disabled={isPending}
+                  error={errors.question?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <FormField
+                  name="questionEn"
+                  label={t("admin.faqs.form.labelQuestionEn")}
+                  required
+                  disabled={isPending}
+                  error={errors.questionEn?.message}
+                  autoComplete="off"
+                  className={adminServiceLikeInputClassName}
+                />
+                <div className="space-y-2">
+                  <Label htmlFor="answer">
+                    {t("admin.faqs.form.labelAnswer")}
+                    <RequiredMark />
+                  </Label>
+                  <textarea
+                    id="answer"
+                    rows={6}
+                    disabled={isPending}
+                    {...register("answer")}
+                    className={cn(
+                      "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
+                      "min-h-[9rem] resize-y leading-relaxed",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+                      "dark:bg-card",
+                    )}
+                  />
+                  {errors.answer?.message ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {errors.answer.message}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="answerEn">
+                    {t("admin.faqs.form.labelAnswerEn")}
+                    <RequiredMark />
+                  </Label>
+                  <textarea
+                    id="answerEn"
+                    rows={6}
+                    disabled={isPending}
+                    {...register("answerEn")}
+                    className={cn(
+                      "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 shadow-sm transition",
+                      "min-h-[9rem] resize-y leading-relaxed",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+                      "dark:bg-card",
+                    )}
+                  />
+                  {errors.answerEn?.message ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {errors.answerEn.message}
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            )}
 
             <div className="border-t border-border/50 pt-4">
               <FormSwitchField<FaqFormValues>

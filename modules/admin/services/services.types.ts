@@ -9,7 +9,9 @@ export type ServiceImage = {
 export type Service = {
   id: string;
   name: string;
+  nameEn: string | null;
   description: string | null;
+  descriptionEn: string | null;
   imageUrl: string | null;
   images: ServiceImage[];
   slug: string;
@@ -19,13 +21,17 @@ export type Service = {
 
 export type ServiceInsert = {
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   slug?: string;
 };
 
 export type ServiceUpdate = {
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   slug?: string;
 };
 

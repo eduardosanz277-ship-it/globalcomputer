@@ -15,6 +15,7 @@ import {
   type ExistingServiceImageInput,
   type ServiceFormSubmitData,
 } from "@/components/admin/service-form";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   open: boolean;
@@ -26,11 +27,13 @@ const SERVICE_FORM_ID = "service-form-dialog";
 
 export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     createServiceWithImageAction,
     {
-      successMessage: "Servicio creado",
+      successMessage: t("admin.services.toast.created"),
+      errorMessage: t("admin.services.toast.createError"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -41,7 +44,8 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateServiceWithImageAction,
     {
-      successMessage: "Servicio actualizado",
+      successMessage: t("admin.services.toast.updated"),
+      errorMessage: t("admin.services.toast.updateError"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -70,7 +74,12 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     if (service) {
       executeUpdate(
         service.id,
-        { name: formData.name, description: formData.description },
+        {
+          name: formData.name,
+          nameEn: formData.nameEn,
+          description: formData.description,
+          descriptionEn: formData.descriptionEn,
+        },
         files,
         primaryImageIndex >= 0 ? primaryImageIndex : 0,
         formData.updatedExistingImages,
@@ -80,7 +89,12 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     }
 
     executeCreate(
-      { name: formData.name, description: formData.description },
+      {
+        name: formData.name,
+        nameEn: formData.nameEn,
+        description: formData.description,
+        descriptionEn: formData.descriptionEn,
+      },
       files,
       primaryImageIndex >= 0 ? primaryImageIndex : 0,
     );
@@ -90,8 +104,12 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     <SlideOver
       open={open}
       onClose={() => onOpenChange(false)}
-      title={service ? "Editar servicio" : "Nuevo servicio"}
-      description="Gestiona nombre, descripción e imágenes del servicio."
+      title={
+        service
+          ? t("admin.services.form.titleEdit")
+          : t("admin.services.form.titleNew")
+      }
+      description={t("admin.services.form.description")}
       panelClassName="md:w-[min(90vw,42rem)] lg:w-[50%] lg:max-w-none"
       contentClassName="bg-background px-4 pb-4 pt-0"
       footer={
@@ -102,15 +120,15 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("admin.services.form.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={SERVICE_FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("admin.services.form.saving")}
           >
-            Guardar
+            {t("admin.services.form.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -118,7 +136,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       <ServiceForm
         formId={SERVICE_FORM_ID}
         initialName={service?.name ?? ""}
+        initialNameEn={service?.nameEn ?? service?.name ?? ""}
         initialDescription={service?.description ?? ""}
+        initialDescriptionEn={service?.descriptionEn ?? service?.description ?? ""}
         existingImages={existingImages}
         onSubmit={handleSubmit}
         isSubmitting={isPending}

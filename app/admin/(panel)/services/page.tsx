@@ -5,6 +5,7 @@ import { isGlobalAdmin } from "@/modules/auth/auth.guards";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminServicesTable } from "./AdminServicesTable";
+import { ServicesPageHeader } from "./ServicesPageHeader";
 
 async function AdminServicesTableSection() {
   const services = await getAllServicesService();
@@ -20,13 +21,7 @@ export default async function AdminServicesPage() {
   return (
     <Card className="w-full">
       <CardContent>
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">Servicios</h1>
-          <p className="text-sm text-muted-foreground">
-            Crea, edita o elimina servicios. Puedes definir nombre y descripción
-            para mostrarlos en el catálogo.
-          </p>
-        </header>
+        <ServicesPageHeader />
 
         <hr className="border-border" />
 

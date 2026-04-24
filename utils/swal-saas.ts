@@ -85,8 +85,13 @@ function resolveLoadingConfirmText(
   explicit?: string,
 ): string {
   if (explicit?.trim()) return explicit.trim();
-  if (confirmButtonText === "Aprobar") return "Aprobando";
-  if (confirmButtonText === "Rechazar") return "Rechazando";
+  const normalized = confirmButtonText.trim().toLowerCase();
+  if (normalized === "aprobar") return "Aprobando";
+  if (normalized === "approve") return "Approving";
+  if (normalized === "rechazar") return "Rechazando";
+  if (normalized === "reject") return "Rejecting";
+  if (normalized === "eliminar") return "Eliminando";
+  if (normalized === "delete") return "Deleting";
   return "Eliminando";
 }
 

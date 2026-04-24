@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type DropzoneProps = {
   onFilesAdded: (files: File[]) => void;
@@ -17,6 +18,7 @@ export function Dropzone({
   maxFileSizeMb = 5,
   acceptedTypes = DEFAULT_ACCEPTED,
 }: DropzoneProps) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [feedback, setFeedback] = useState<string>("");
@@ -35,14 +37,14 @@ export function Dropzone({
 
     if (valid.length > 0) {
       onFilesAdded(valid);
-      setFeedback(`${valid.length} imagen(es) añadida(s).`);
+      setFeedback(`${valid.length} ${t("admin.services.form.dropzone.added")}`);
     } else {
-      setFeedback("No se añadieron imágenes válidas.");
+      setFeedback(t("admin.services.form.dropzone.noneValid"));
     }
 
     if (invalid.length > 0) {
       setFeedback((prev) =>
-        `${prev} ${invalid.length} archivo(s) omitido(s) por tipo o tamaño.`
+        `${prev} ${invalid.length} ${t("admin.services.form.dropzone.skipped")}`
       );
     }
   };
@@ -52,7 +54,7 @@ export function Dropzone({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Arrastra imágenes o selecciona archivos"
+        aria-label={t("admin.services.form.dropzone.aria")}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -79,10 +81,10 @@ export function Dropzone({
       >
         <ImagePlus className="mb-3 h-10 w-10 text-muted-foreground transition-colors group-hover:text-foreground" />
         <p className="text-sm font-medium text-foreground">
-          Arrastra imágenes aquí o haz clic para seleccionar
+          {t("admin.services.form.dropzone.title")}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          JPG, PNG, WEBP, GIF · máximo {maxFileSizeMb}MB
+          {t("admin.services.form.dropzone.hintPrefix")} {maxFileSizeMb}MB
         </p>
         <input
           ref={inputRef}

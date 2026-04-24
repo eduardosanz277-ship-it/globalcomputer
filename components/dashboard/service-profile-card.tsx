@@ -5,6 +5,7 @@ import Image from "next/image";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type ServiceProfileCardProps = {
   name: string;
@@ -38,9 +39,10 @@ export function ServiceProfileCard({
   className,
   actions,
 }: ServiceProfileCardProps) {
+  const { t, locale } = useI18n();
   const title = name.trim() || "—";
-  const relative = formatRelativeLastAccess(updatedAt);
-  const absolute = formatDateDdMmYyyyHhMm(updatedAt);
+  const relative = formatRelativeLastAccess(updatedAt, locale);
+  const absolute = formatDateDdMmYyyyHhMm(updatedAt, locale).replace(", ", " ");
   const desc = serviceExcerpt(description);
   const initial = name.trim().slice(0, 1).toUpperCase() || "?";
 
@@ -94,7 +96,9 @@ export function ServiceProfileCard({
         </div>
 
         <div className="space-y-1 border-t border-border/60 pt-4">
-          <p className="text-sm text-muted-foreground">Última actualización</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.services.table.updatedTooltip")}
+          </p>
           <p
             className="text-sm text-foreground"
             title={absolute || undefined}

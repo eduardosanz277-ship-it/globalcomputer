@@ -617,9 +617,11 @@ export const en = {
         description:
           "Manage the question, its answer, and whether it will be visible on the home page.",
         labelQuestion: "Question",
-        labelQuestionEn: "Question in English",
+        labelQuestionEn: "Question",
+        labelQuestionSpanish: "Question (Spanish)",
         labelAnswer: "Answer",
-        labelAnswerEn: "Answer in English",
+        labelAnswerEn: "Answer",
+        labelAnswerSpanish: "Answer (Spanish)",
         activeLabel: "Active",
         activeDescription:
           "When disabled, it will not be shown in the home FAQs section.",
@@ -642,6 +644,101 @@ export const en = {
         updated: "FAQ updated",
         deleted: "FAQ deleted",
         deleteError: "Unable to delete FAQ",
+      },
+    },
+    services: {
+      title: "Services",
+      description:
+        "Create, edit, or delete services. You can define name and description to show them in the catalog.",
+      buttonNew: "New",
+      filters: {
+        searchPlaceholder: "Search by name or description…",
+      },
+      table: {
+        service: "Service",
+        serviceSortIdle: "Sort by name",
+        sortAsc: "Sorted A to Z. Click to reverse",
+        sortDesc: "Sorted Z to A. Click to clear sort",
+        updatedAt: "Last updated",
+        updatedTooltip: "Last updated",
+        updatedAtSortIdle: "Sort by last updated",
+        updatedAtSortAsc: "Oldest first. Click to reverse",
+        updatedAtSortDesc: "Newest first. Click to clear sort",
+        actions: "Actions",
+      },
+      menu: {
+        delete: "Delete",
+        deleting: "Deleting",
+      },
+      confirm: {
+        deleteTitle: "Delete service?",
+        deleteMessagePrefix: "You are about to delete",
+        deleteConfirm: "Delete",
+      },
+      form: {
+        titleNew: "New service",
+        titleEdit: "Edit service",
+        description: "Manage service name, description, and images.",
+        tabs: {
+          ariaLabel: "Service form sections",
+          basic: "Basic information",
+          media: "Media",
+        },
+        languageTabs: {
+          ariaLabel: "Service basic information language",
+          spanish: "Spanish",
+          english: "English",
+        },
+        labelName: "Service name (Spanish)",
+        labelNameEn: "Service name",
+        placeholderName: "e.g. Instalacion y puesta en marcha",
+        placeholderNameEn: "e.g. Installation and setup",
+        labelDescription: "Description (Spanish)",
+        labelDescriptionEn: "Description",
+        media: {
+          title: "Images",
+          description:
+            "Reorder with drag and drop, set a primary image, and remove the ones you no longer need.",
+          empty:
+            "There are no images yet. Upload at least one to improve presentation.",
+          imageAlt: "Image",
+          imageSourceNew: "New",
+          imageSourceExisting: "Existing",
+          markPrimaryAria: "Mark as primary image",
+          removeImageAria: "Remove image",
+          dragReorderAria: "Drag to reorder",
+          dragHint: "Press and drag to change image order",
+          moveUpAria: "Move image up",
+          moveDownAria: "Move image down",
+          moveUp: "Up",
+          moveDown: "Down",
+        },
+        dropzone: {
+          aria: "Drag images or select files",
+          title: "Drag images here or click to select",
+          hintPrefix: "JPG, PNG, WEBP, GIF · up to",
+          added: "image(s) added.",
+          noneValid: "No valid images were added.",
+          skipped: "file(s) skipped due to type or size.",
+        },
+        cancel: "Cancel",
+        save: "Save",
+        saving: "Saving",
+        cancelAria: "Cancel service editing",
+        saveAria: "Save service",
+        errors: {
+          nameRequired: "Service name is required.",
+          nameEnRequired: "English service name is required.",
+          maxChars: "Maximum 200 characters",
+        },
+      },
+      toast: {
+        created: "Service created",
+        createError: "Unable to create service",
+        updated: "Service updated",
+        updateError: "Unable to update service",
+        deleted: "Service deleted",
+        deleteError: "Unable to delete service",
       },
     },
     users: {
@@ -878,6 +975,41 @@ export const en = {
         title: "Metadata",
         registrationDate: "Registration date",
         registeredPrefix: "Registered on",
+      },
+    },
+    settings: {
+      title: "Settings",
+      description: "General settings",
+      form: {
+        support: {
+          title: "Support contact",
+          email: "Email",
+          phone: "Phone",
+          address: "Address",
+        },
+        lowStock: {
+          title: "Low stock",
+          description:
+            "Enable or disable low-inventory alerts; if enabled, define the threshold.",
+          alertsLabel: "Low-stock alerts",
+          alertsHint:
+            "Enable to receive notifications when inventory is below the threshold.",
+          thresholdLabel: "Threshold (limit)",
+          thresholdHint:
+            "An alert is triggered when stock is less than or equal to this number (only if low-stock alerts are enabled).",
+        },
+        save: "Save changes",
+        saving: "Saving changes",
+        errors: {
+          supportEmailRequired: "Email is required",
+          supportEmailInvalid: "Enter a valid email",
+          supportPhoneRequired: "Phone is required",
+          supportAddressRequired: "Address is required",
+          lowStockThresholdMin: "Minimum 0",
+        },
+      },
+      toast: {
+        saved: "Settings saved",
       },
     },
     header: {

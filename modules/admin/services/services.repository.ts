@@ -9,7 +9,9 @@ import type {
 type ServiceRow = {
   id: string;
   name: string;
+  name_en: string | null;
   description: string | null;
+  description_en: string | null;
   slug: string;
   service_images?: Array<{
     id: string;
@@ -37,7 +39,9 @@ function mapRow(row: ServiceRow): Service {
   return {
     id: row.id,
     name: row.name,
+    nameEn: row.name_en ?? null,
     description: row.description,
+    descriptionEn: row.description_en ?? null,
     imageUrl: primaryImage?.url ?? null,
     images,
     slug: row.slug,
@@ -51,7 +55,7 @@ export async function repoListServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")
     .select(
-      "id, name, slug, description, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
+      "id, name, name_en, slug, description, description_en, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
     )
     .order("name", { ascending: true });
 
@@ -65,11 +69,13 @@ export async function repoCreateService(payload: ServiceInsert): Promise<Service
     .from("services")
     .insert({
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       description: payload.description || null,
+      description_en: payload.descriptionEn || null,
     })
     .select(
-      "id, name, slug, description, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
+      "id, name, name_en, slug, description, description_en, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
     )
     .single();
 
@@ -86,8 +92,10 @@ export async function repoUpdateService(
     .from("services")
     .update({
       name: payload.name,
+      name_en: payload.nameEn,
       slug: payload.slug,
       description: payload.description || null,
+      description_en: payload.descriptionEn || null,
     })
     .eq("id", id);
 

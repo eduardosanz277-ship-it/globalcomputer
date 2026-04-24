@@ -622,8 +622,10 @@ export const es = {
           "Gestiona la pregunta, su respuesta y si estará visible en el home.",
         labelQuestion: "Pregunta",
         labelQuestionEn: "Pregunta en inglés",
+        labelQuestionSpanish: "Pregunta en español",
         labelAnswer: "Respuesta",
         labelAnswerEn: "Respuesta en inglés",
+        labelAnswerSpanish: "Respuesta en español",
         activeLabel: "Activa",
         activeDescription:
           "Si está desactivada, no se mostrará en la sección de Preguntas frecuentes del home.",
@@ -642,10 +644,106 @@ export const es = {
         },
       },
       toast: {
-        created: "Pregunta frecuente creada",
-        updated: "Pregunta frecuente actualizada",
-        deleted: "Pregunta frecuente eliminada",
+        created: "FAQ creada",
+        updated: "FAQ actualizada",
+        deleted: "FAQ eliminada",
         deleteError: "No se pudo eliminar la pregunta frecuente",
+      },
+    },
+    services: {
+      title: "Servicios",
+      description:
+        "Crea, edita o elimina servicios. Puedes definir nombre y descripción para mostrarlos en el catálogo.",
+      buttonNew: "Nuevo",
+      filters: {
+        searchPlaceholder: "Buscar por nombre o descripción…",
+      },
+      table: {
+        service: "Servicio",
+        serviceSortIdle: "Ordenar por nombre",
+        sortAsc: "Ordenado de la A a la Z. Clic para invertir",
+        sortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
+        updatedAt: "Última actualización",
+        updatedTooltip: "Última actualización",
+        updatedAtSortIdle: "Ordenar por última actualización",
+        updatedAtSortAsc: "Más antiguo primero. Clic para invertir",
+        updatedAtSortDesc: "Más reciente primero. Clic para quitar orden",
+        actions: "Acciones",
+      },
+      menu: {
+        delete: "Eliminar",
+        deleting: "Eliminando",
+      },
+      confirm: {
+        deleteTitle: "¿Eliminar servicio?",
+        deleteMessagePrefix: "Vas a eliminar",
+        deleteConfirm: "Eliminar",
+      },
+      form: {
+        titleNew: "Nuevo servicio",
+        titleEdit: "Editar servicio",
+        description: "Gestiona nombre, descripción e imágenes del servicio.",
+        tabs: {
+          ariaLabel: "Secciones del formulario de servicio",
+          basic: "Información básica",
+          media: "Multimedia",
+        },
+        languageTabs: {
+          ariaLabel: "Idioma de la información básica del servicio",
+          spanish: "Español",
+          english: "Inglés",
+        },
+        labelName: "Nombre del servicio",
+        labelNameEn: "Nombre del servicio en inglés",
+        placeholderName: "Ej. Instalación y puesta en marcha",
+        placeholderNameEn: "Ej. Installation and setup",
+        labelDescription: "Descripción",
+        labelDescriptionEn: "Descripción en inglés",
+        media: {
+          title: "Imágenes",
+          description:
+            "Reordena por drag & drop, define una imagen principal y elimina las que no necesites.",
+          empty:
+            "Aún no hay imágenes. Sube al menos una para mejorar la presentación.",
+          imageAlt: "Imagen",
+          imageSourceNew: "Nueva",
+          imageSourceExisting: "Existente",
+          markPrimaryAria: "Marcar como imagen principal",
+          removeImageAria: "Eliminar imagen",
+          dragReorderAria: "Arrastrar para reordenar",
+          dragHint:
+            "Mantén pulsado y arrastra para cambiar el orden de las imágenes",
+          moveUpAria: "Mover imagen hacia arriba",
+          moveDownAria: "Mover imagen hacia abajo",
+          moveUp: "Subir",
+          moveDown: "Bajar",
+        },
+        dropzone: {
+          aria: "Arrastra imágenes o selecciona archivos",
+          title: "Arrastra imágenes aquí o haz clic para seleccionar",
+          hintPrefix: "JPG, PNG, WEBP, GIF · máximo",
+          added: "imagen(es) añadida(s).",
+          noneValid: "No se añadieron imágenes válidas.",
+          skipped: "archivo(s) omitido(s) por tipo o tamaño.",
+        },
+        cancel: "Cancelar",
+        save: "Guardar",
+        saving: "Guardando",
+        cancelAria: "Cancelar edición del servicio",
+        saveAria: "Guardar servicio",
+        errors: {
+          nameRequired: "El nombre del servicio es obligatorio.",
+          nameEnRequired: "El nombre del servicio en inglés es obligatorio.",
+          maxChars: "Máximo 200 caracteres",
+        },
+      },
+      toast: {
+        created: "Servicio creado",
+        createError: "No se pudo crear el servicio",
+        updated: "Servicio actualizado",
+        updateError: "No se pudo actualizar el servicio",
+        deleted: "Servicio eliminado",
+        deleteError: "No se pudo eliminar el servicio",
       },
     },
     users: {
@@ -878,6 +976,41 @@ export const es = {
         title: "Metadatos",
         registrationDate: "Fecha de registro",
         registeredPrefix: "Registrado el",
+      },
+    },
+    settings: {
+      title: "Configuración",
+      description: "Configuraciones generales",
+      form: {
+        support: {
+          title: "Contacto de soporte",
+          email: "Email",
+          phone: "Teléfono",
+          address: "Dirección",
+        },
+        lowStock: {
+          title: "Stock bajo",
+          description:
+            "Activa o desactiva las alertas por inventario bajo; si están activas, define el umbral.",
+          alertsLabel: "Alertas de stock bajo",
+          alertsHint:
+            "Activa para recibir avisos cuando el inventario esté por debajo del umbral.",
+          thresholdLabel: "Umbral (límite)",
+          thresholdHint:
+            "Se alerta cuando la cantidad en stock sea menor o igual a este número (solo si las alertas de stock bajo están activas).",
+        },
+        save: "Guardar cambios",
+        saving: "Guardando cambios",
+        errors: {
+          supportEmailRequired: "El email es obligatorio",
+          supportEmailInvalid: "Introduce un email válido",
+          supportPhoneRequired: "El teléfono es obligatorio",
+          supportAddressRequired: "La dirección es obligatoria",
+          lowStockThresholdMin: "Mínimo 0",
+        },
+      },
+      toast: {
+        saved: "Configuración guardada",
       },
     },
     header: {
