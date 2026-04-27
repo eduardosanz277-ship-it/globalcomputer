@@ -1730,7 +1730,8 @@ export function SiteHeader({ user }: Props) {
                                           )}
                                         >
                                           <span className="truncate">
-                                            {t("header.viewBy")} {localizeName(general)}
+                                            {t("header.viewBy")}{" "}
+                                            {localizeName(general)}
                                           </span>
                                           <ChevronDown
                                             className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
@@ -1766,7 +1767,8 @@ export function SiteHeader({ user }: Props) {
                                           mobileNavCatalogHeadingClass,
                                         )}
                                       >
-                                        {t("header.viewBy")} {localizeName(general)}
+                                        {t("header.viewBy")}{" "}
+                                        {localizeName(general)}
                                       </div>
                                     ),
                                 )

@@ -5,6 +5,7 @@ type AppConfigFormMessages = {
   supportEmailInvalid: string;
   supportPhoneRequired: string;
   supportAddressRequired: string;
+  numberInvalid: string;
   lowStockThresholdMin: string;
   offerAmountMin: string;
   offerPercentageMin: string;
@@ -16,10 +17,11 @@ const DEFAULT_MESSAGES: AppConfigFormMessages = {
   supportEmailInvalid: "Introduce un email válido",
   supportPhoneRequired: "El teléfono es obligatorio",
   supportAddressRequired: "La dirección es obligatoria",
-  lowStockThresholdMin: "Mínimo 0",
-  offerAmountMin: "Mínimo 0",
-  offerPercentageMin: "Mínimo 0",
-  offerPercentageMax: "Máximo 100",
+  numberInvalid: "Debe ser un valor numérico",
+  lowStockThresholdMin: "Debe ser mayor o igual a 0",
+  offerAmountMin: "Debe ser mayor o igual a 0",
+  offerPercentageMin: "Debe ser mayor o igual a 0",
+  offerPercentageMax: "No puede ser mayor a 100",
 };
 
 export function createAppConfigFormSchema(
@@ -36,10 +38,15 @@ export function createAppConfigFormSchema(
       .trim()
       .min(1, messages.supportAddressRequired),
     lowStockNotificationsEnabled: z.boolean(),
-    lowStockThreshold: z.number().int().min(0, messages.lowStockThresholdMin),
-    offerAmount: z.number().min(0, messages.offerAmountMin),
+    lowStockThreshold: z
+      .number({ invalid_type_error: messages.numberInvalid })
+      .int()
+      .min(0, messages.lowStockThresholdMin),
+    offerAmount: z
+      .number({ invalid_type_error: messages.numberInvalid })
+      .min(0, messages.offerAmountMin),
     offerPercentage: z
-      .number()
+      .number({ invalid_type_error: messages.numberInvalid })
       .min(0, messages.offerPercentageMin)
       .max(100, messages.offerPercentageMax),
   });

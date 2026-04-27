@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
@@ -12,6 +13,7 @@ import { ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 
 export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
+  const { t } = useI18n();
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
   const { productsById, loading } = useCartProductsMap(ids);
@@ -28,10 +30,10 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           />
         </div>
         <h1 className="text-lg font-semibold text-foreground">
-          Tu carrito está vacío
+          {t("storefront.cart.emptyTitle")}
         </h1>
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          Explora el catálogo y añade productos para verlos aquí.
+          {t("storefront.cart.emptyDescription")}
         </p>
         <Link
           href="/products"
@@ -40,7 +42,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
             "mt-6 h-11 rounded-xl px-6",
           )}
         >
-          Seguir comprando
+          {t("storefront.cart.continueShopping")}
         </Link>
       </div>
     );
@@ -60,7 +62,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
         <div
           className="-mx-4 h-px bg-border/70 lg:hidden"
           role="separator"
-          aria-label="Separador de secciones del carrito"
+          aria-label={t("storefront.cart.sectionSeparatorAria")}
         />
       </div>
 

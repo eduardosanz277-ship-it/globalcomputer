@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DollarSign, Mail, MapPin, Percent, Phone } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type Resolver, useForm } from "react-hook-form";
+import { useCallback, useEffect } from "react";
 
 import { ButtonPending } from "@/components/ui/button-pending";
 import {
@@ -31,19 +32,26 @@ type Props = {
 };
 
 export function AdminSettingsForm({ initial }: Props) {
-  const { t } = useI18n();
-  const localizedSchema = createAppConfigFormSchema({
-    supportEmailRequired: t("admin.settings.form.errors.supportEmailRequired"),
-    supportEmailInvalid: t("admin.settings.form.errors.supportEmailInvalid"),
-    supportPhoneRequired: t("admin.settings.form.errors.supportPhoneRequired"),
-    supportAddressRequired: t("admin.settings.form.errors.supportAddressRequired"),
-    lowStockThresholdMin: t("admin.settings.form.errors.lowStockThresholdMin"),
-    offerAmountMin: t("admin.settings.form.errors.offerAmountMin"),
-    offerPercentageMin: t("admin.settings.form.errors.offerPercentageMin"),
-    offerPercentageMax: t("admin.settings.form.errors.offerPercentageMax"),
-  });
+  const { t, locale } = useI18n();
+  const resolver = useCallback<Resolver<AppConfigFormValues>>(
+    async (values, context, options) => {
+      const localizedSchema = createAppConfigFormSchema({
+        supportEmailRequired: t("admin.settings.form.errors.supportEmailRequired"),
+        supportEmailInvalid: t("admin.settings.form.errors.supportEmailInvalid"),
+        supportPhoneRequired: t("admin.settings.form.errors.supportPhoneRequired"),
+        supportAddressRequired: t("admin.settings.form.errors.supportAddressRequired"),
+        numberInvalid: t("admin.settings.form.errors.numberInvalid"),
+        lowStockThresholdMin: t("admin.settings.form.errors.lowStockThresholdMin"),
+        offerAmountMin: t("admin.settings.form.errors.offerAmountMin"),
+        offerPercentageMin: t("admin.settings.form.errors.offerPercentageMin"),
+        offerPercentageMax: t("admin.settings.form.errors.offerPercentageMax"),
+      });
+      return zodResolver(localizedSchema)(values, context, options);
+    },
+    [t, locale],
+  );
   const form = useForm<AppConfigFormValues>({
-    resolver: zodResolver(localizedSchema),
+    resolver,
     defaultValues: {
       supportEmail: initial.supportEmail,
       supportPhone: initial.supportPhone,
@@ -67,8 +75,16 @@ export function AdminSettingsForm({ initial }: Props) {
 
   const errors = form.formState.errors;
 
+  useEffect(() => {
+    void form.trigger();
+  }, [locale, form]);
+
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+    <form
+      noValidate
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="w-full space-y-6"
+    >
       <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
         <Card className="flex min-h-0 flex-col lg:h-full">
           <CardHeader>

@@ -243,6 +243,8 @@ export function StorefrontProductCard({
                   {t("storefront.card.addingPending")}
                 </span>
               }
+              pendingClassName="relative max-lg:inline-flex max-lg:items-center max-lg:justify-center max-lg:p-0 lg:gap-2"
+              pendingLoaderClassName="text-primary-foreground max-lg:absolute max-lg:left-[calc(50%-0.5rem)] max-lg:top-[calc(50%-0.5rem)] max-lg:!m-0"
               skipMinWidth
               aria-label={
                 canBuy

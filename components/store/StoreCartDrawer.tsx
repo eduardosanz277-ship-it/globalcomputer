@@ -50,6 +50,7 @@ export function StoreCartDrawer({
               loading={listBusy}
               tier={tier}
               variant="drawer"
+              panelOpen={open}
               onContinueShopping={onClose}
             />
           </SlideOverFooter>

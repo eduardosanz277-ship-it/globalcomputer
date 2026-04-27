@@ -1,4 +1,6 @@
 import { getAppBaseUrl } from "@/lib/app-url";
+import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
+import { getPublicSiteOffer } from "@/lib/site-offer.server";
 import type { GcCartItem } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
@@ -222,6 +224,13 @@ export async function createHostedCheckoutSession(
   const lineItems: NonNullable<SessionCreateParams["line_items"]> = [];
   let subtotalUsd = 0;
 
+  type PreparedLine = {
+    product: StorefrontProduct;
+    qty: number;
+    unitUsd: number;
+  };
+  const prepared: PreparedLine[] = [];
+
   for (const line of items) {
     const product = byId[line.productId];
     if (!product) {
@@ -239,17 +248,32 @@ export async function createHostedCheckoutSession(
     }
 
     const unitUsd = unitPriceUsd(product, tier);
-    const unitCents = dollarsToCents(unitUsd);
-    if (unitCents < 1) {
+    const unitCentsUnscaled = dollarsToCents(unitUsd);
+    if (unitCentsUnscaled < 1) {
       throw new CheckoutSessionError(
         `El producto «${product.name}» no tiene un importe válido para cobrar.`,
       );
     }
 
     subtotalUsd += unitUsd * line.qty;
+    prepared.push({ product, qty: line.qty, unitUsd });
+  }
+
+  const siteOffer = await getPublicSiteOffer();
+  const { applies: siteOfferApplied, unitPriceFactor } =
+    computeSiteOfferOnSubtotal(subtotalUsd, siteOffer);
+
+  for (const { product, qty, unitUsd } of prepared) {
+    const chargedUnitUsd = unitUsd * unitPriceFactor;
+    const unitCents = dollarsToCents(chargedUnitUsd);
+    if (unitCents < 1) {
+      throw new CheckoutSessionError(
+        `El producto «${product.name}» no tiene un importe válido para cobrar.`,
+      );
+    }
 
     lineItems.push({
-      quantity: line.qty,
+      quantity: qty,
       price_data: {
         currency: "usd",
         unit_amount: unitCents,
@@ -264,7 +288,9 @@ export async function createHostedCheckoutSession(
     });
   }
 
-  if (subtotalUsd < MIN_CHECKOUT_USD) {
+  const payableUsd = subtotalUsd * unitPriceFactor;
+
+  if (payableUsd < MIN_CHECKOUT_USD) {
     throw new CheckoutSessionError(
       `El importe mínimo para pagar con tarjeta es $${MIN_CHECKOUT_USD.toFixed(2)} USD.`,
     );
@@ -295,6 +321,7 @@ export async function createHostedCheckoutSession(
     },
     metadata: {
       source: "storefront",
+      site_offer_applied: siteOfferApplied ? "true" : "false",
     },
   });
 

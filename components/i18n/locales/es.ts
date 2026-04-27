@@ -299,11 +299,15 @@ export const es = {
       itemOne: "articulo",
       itemMany: "articulos",
       stripeInfo:
-        "Al finalizar se abrira la pagina segura de Stripe (Checkout) con el importe y los articulos. Impuestos y envio se confirman alli segun corresponda.",
+        "Completarás tu compra en la página segura de Stripe Checkout, donde podrás revisar el importe, los artículos seleccionados, y confirmar impuestos y costos de envío según corresponda.",
       openCheckout: "Abriendo pago",
       payWithStripe: "Pagar con Stripe",
       viewCart: "Ver carrito",
       sectionSeparatorAria: "Separador de secciones del carrito",
+      offerBanner:
+        "¡Ahorra un {pct}% en compras de {amount} o más!",
+      offerDiscountLabel: "Descuento por oferta ({pct}%)",
+      estimatedTotal: "Total estimado",
     },
   },
   admin: {
@@ -1489,7 +1493,7 @@ export const es = {
             "Valor numérico fijo que se usará como monto de oferta global.",
           percentageLabel: "Porcentaje de oferta",
           percentageHint:
-            "Valor porcentual entre 0 y 100 para la oferta global.",
+            "Valor porcentual entre 0 y 100 para la oferta global. Si se fija en 0, no se mostrará la oferta en el carrito.",
         },
         save: "Guardar cambios",
         saving: "Guardando cambios",
@@ -1498,10 +1502,11 @@ export const es = {
           supportEmailInvalid: "Introduce un email válido",
           supportPhoneRequired: "El teléfono es obligatorio",
           supportAddressRequired: "La dirección es obligatoria",
-          lowStockThresholdMin: "Mínimo 0",
-          offerAmountMin: "Mínimo 0",
-          offerPercentageMin: "Mínimo 0",
-          offerPercentageMax: "Máximo 100",
+          numberInvalid: "Debe ser un valor numérico",
+          lowStockThresholdMin: "Debe ser mayor o igual a 0",
+          offerAmountMin: "Debe ser mayor o igual a 0",
+          offerPercentageMin: "Debe ser mayor o igual a 0",
+          offerPercentageMax: "No puede ser mayor a 100",
         },
       },
       toast: {
