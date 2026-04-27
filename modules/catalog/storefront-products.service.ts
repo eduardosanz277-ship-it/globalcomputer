@@ -29,6 +29,7 @@ function relationSlug(
 export const STOREFRONT_PRODUCT_SELECT = `
   id,
   name,
+  name_en,
   slug,
   created_at,
   updated_at,
@@ -40,10 +41,10 @@ export const STOREFRONT_PRODUCT_SELECT = `
   brand_type_id,
   category_id,
   subcategory_id,
-  brands ( name, slug ),
-  categories ( id, name ),
-  subcategories ( category_id, categories ( id, name ) ),
-  brand_types ( name, slug ),
+  brands ( name, name_en, slug ),
+  categories ( id, name, name_en ),
+  subcategories ( category_id, categories ( id, name, name_en ) ),
+  brand_types ( name, name_en, slug ),
   product_characteristic_values (
     id,
     characteristic_specific_id,
@@ -51,8 +52,9 @@ export const STOREFRONT_PRODUCT_SELECT = `
     product_characteristics_specific (
       id,
       name,
+      name_en,
       general_id,
-      product_characteristics_general ( id, name )
+      product_characteristics_general ( id, name, name_en )
     )
   ),
   product_images ( id, url, is_primary, sort_order )
@@ -70,17 +72,30 @@ function mapProductImages(
   return raw;
 }
 
-function brandNameFromProductRow(row: Record<string, unknown>): string {
+function brandNamesFromProductRow(row: Record<string, unknown>): {
+  name: string;
+  nameEn: string | null;
+} {
   const b = row.brands;
+  const pick = (obj: { name?: unknown; name_en?: unknown } | null) => {
+    if (!obj) return { name: "—", nameEn: null as string | null };
+    const n = obj.name;
+    const name =
+      n != null && String(n).trim() !== "" ? String(n) : "—";
+    const enRaw = obj.name_en;
+    const nameEn =
+      enRaw != null && String(enRaw).trim() !== ""
+        ? String(enRaw)
+        : null;
+    return { name, nameEn };
+  };
   if (b && typeof b === "object" && !Array.isArray(b) && "name" in b) {
-    const n = (b as { name?: unknown }).name;
-    return n != null && String(n).trim() !== "" ? String(n) : "—";
+    return pick(b as { name?: unknown; name_en?: unknown });
   }
   if (Array.isArray(b) && b[0] && typeof b[0] === "object" && "name" in b[0]) {
-    const n = (b[0] as { name?: unknown }).name;
-    return n != null && String(n).trim() !== "" ? String(n) : "—";
+    return pick(b[0] as { name?: unknown; name_en?: unknown });
   }
-  return "—";
+  return { name: "—", nameEn: null };
 }
 
 function brandTypeNameFromProductRow(row: Record<string, unknown>): string {
@@ -96,23 +111,40 @@ function brandTypeNameFromProductRow(row: Record<string, unknown>): string {
   return "—";
 }
 
-function categoryNameFromRelation(rel: unknown): string | null {
-  if (!rel || typeof rel !== "object") return null;
+function categoryNameFromRelation(rel: unknown): {
+  name: string | null;
+  nameEn: string | null;
+} {
+  if (!rel || typeof rel !== "object") return { name: null, nameEn: null };
   if (!Array.isArray(rel) && "name" in rel) {
-    const n = (rel as { name?: unknown }).name;
-    if (n != null && String(n).trim() !== "") return String(n);
+    const n = (rel as { name?: unknown; name_en?: unknown }).name;
+    const en = (rel as { name_en?: unknown }).name_en;
+    const name =
+      n != null && String(n).trim() !== "" ? String(n) : null;
+    const nameEn =
+      en != null && String(en).trim() !== "" ? String(en) : null;
+    return { name, nameEn };
   }
   if (Array.isArray(rel) && rel[0] && typeof rel[0] === "object" && "name" in rel[0]) {
-    const n = (rel[0] as { name?: unknown }).name;
-    if (n != null && String(n).trim() !== "") return String(n);
+    const n = (rel[0] as { name?: unknown; name_en?: unknown }).name;
+    const en = (rel[0] as { name_en?: unknown }).name_en;
+    const name =
+      n != null && String(n).trim() !== "" ? String(n) : null;
+    const nameEn =
+      en != null && String(en).trim() !== "" ? String(en) : null;
+    return { name, nameEn };
   }
-  return null;
+  return { name: null, nameEn: null };
 }
 
 /** Categoría de listado: `category_id` directo o padre de `subcategory_id`. */
 function effectiveCatalogCategory(
   row: Record<string, unknown>,
-): { id: string | null; name: string | null } {
+): {
+  id: string | null;
+  name: string | null;
+  name_en: string | null;
+} {
   const rawDirect = row.category_id;
   const hasDirect =
     rawDirect != null &&
@@ -121,8 +153,8 @@ function effectiveCatalogCategory(
 
   if (hasDirect) {
     const id = String(rawDirect);
-    const name = categoryNameFromRelation(row.categories);
-    return { id, name: name ?? null };
+    const { name, nameEn } = categoryNameFromRelation(row.categories);
+    return { id, name: name ?? null, name_en: nameEn };
   }
 
   const sub = row.subcategories;
@@ -140,16 +172,17 @@ function effectiveCatalogCategory(
     String(subObj.category_id) !== "null"
   ) {
     const id = String(subObj.category_id);
-    const name = categoryNameFromRelation(subObj.categories);
-    return { id, name: name ?? null };
+    const { name, nameEn } = categoryNameFromRelation(subObj.categories);
+    return { id, name: name ?? null, name_en: nameEn };
   }
 
-  return { id: null, name: null };
+  return { id: null, name: null, name_en: null };
 }
 
 function normalizeCharacteristicsSpecific(raw: unknown): {
   id?: unknown;
   name?: unknown;
+  name_en?: unknown;
   general_id?: unknown;
   product_characteristics_general?: unknown;
 } | null {
@@ -160,6 +193,7 @@ function normalizeCharacteristicsSpecific(raw: unknown): {
     return first as {
       id?: unknown;
       name?: unknown;
+      name_en?: unknown;
       general_id?: unknown;
       product_characteristics_general?: unknown;
     };
@@ -167,6 +201,7 @@ function normalizeCharacteristicsSpecific(raw: unknown): {
   return raw as {
     id?: unknown;
     name?: unknown;
+    name_en?: unknown;
     general_id?: unknown;
     product_characteristics_general?: unknown;
   };
@@ -176,19 +211,23 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
   characteristic_specifics: {
     id: string;
     name: string;
+    name_en: string | null;
     general_id: string;
     general_name: string;
+    general_name_en: string | null;
   }[];
 } {
   const raw = row.product_characteristic_values;
-  const byGeneral = new Map<string, string>();
+  const byGeneral = new Map<string, { name: string; name_en: string | null }>();
   const bySpecific = new Map<
     string,
     {
       id: string;
       name: string;
+      name_en: string | null;
       general_id: string;
       general_name: string;
+      general_name_en: string | null;
     }
   >();
 
@@ -215,17 +254,26 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
       specNameRaw != null && String(specNameRaw).trim() !== ""
         ? String(specNameRaw)
         : "—";
+    const specNameEnRaw = spec.name_en;
+    const specNameEn =
+      specNameEnRaw != null && String(specNameEnRaw).trim() !== ""
+        ? String(specNameEnRaw)
+        : null;
 
     const genRel = spec.product_characteristics_general;
     let genId: string | null = null;
     let genName: string | null = null;
+    let genNameEn: string | null = null;
     if (genRel && typeof genRel === "object" && !Array.isArray(genRel)) {
       const gid = (genRel as { id?: unknown }).id;
       const gn = (genRel as { name?: unknown }).name;
+      const gnEn = (genRel as { name_en?: unknown }).name_en;
       if (gid != null && String(gid).trim() !== "") {
         genId = String(gid);
         genName =
           gn != null && String(gn).trim() !== "" ? String(gn) : "—";
+        genNameEn =
+          gnEn != null && String(gnEn).trim() !== "" ? String(gnEn) : null;
       }
     }
     if (
@@ -234,20 +282,32 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
       String(spec.general_id).trim() !== ""
     ) {
       genId = String(spec.general_id);
-      genName = categoryNameFromRelation(genRel) ?? "—";
+      const catGen = categoryNameFromRelation(genRel);
+      genName = catGen.name ?? "—";
+      genNameEn = catGen.nameEn;
     }
     if (!genId) continue;
 
     if (!byGeneral.has(genId)) {
-      byGeneral.set(genId, genName ?? "—");
+      byGeneral.set(genId, {
+        name: genName ?? "—",
+        name_en: genNameEn,
+      });
     }
-    const gName = genName ?? byGeneral.get(genId) ?? "—";
+    const cached = byGeneral.get(genId)!;
+    const gName = genName ?? cached.name ?? "—";
+    const gNameEn =
+      genName != null && genName !== ""
+        ? genNameEn
+        : cached.name_en;
     if (!bySpecific.has(specId)) {
       bySpecific.set(specId, {
         id: specId,
         name: specName,
+        name_en: specNameEn,
         general_id: genId,
         general_name: gName,
+        general_name_en: gNameEn,
       });
     }
   }
@@ -261,23 +321,29 @@ export function mapStorefrontProductRow(
   row: Record<string, unknown>,
 ): StorefrontProduct {
   const chars = parseProductCharacteristicsFromRow(row);
-  const brandName = brandNameFromProductRow(row);
+  const brand = brandNamesFromProductRow(row);
   const brandTypeName = brandTypeNameFromProductRow(row);
   const brandSlug = relationSlug(
     row.brands as RelationRecord | RelationRecord[] | null | undefined,
-    brandName,
+    brand.name,
   );
   const brandTypeSlug = relationSlug(
     row.brand_types as RelationRecord | RelationRecord[] | null | undefined,
-    brandTypeName !== "—" ? brandTypeName : brandName,
+    brandTypeName !== "—" ? brandTypeName : brand.name,
   );
   const productSlug =
     typeof row.slug === "string" && row.slug.trim() !== ""
       ? row.slug
       : slugify(String(row.name ?? ""));
+  const nameEnRaw = row.name_en;
+  const name_en =
+    nameEnRaw != null && String(nameEnRaw).trim() !== ""
+      ? String(nameEnRaw)
+      : null;
   return {
     id: String(row.id),
     name: String(row.name),
+    name_en,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
     price: Number(row.price),
@@ -287,7 +353,8 @@ export function mapStorefrontProductRow(
     brand_id: String(row.brand_id),
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,
-    brand_name: brandName,
+    brand_name: brand.name,
+    brand_name_en: brand.nameEn,
     brand_slug: brandSlug,
     brand_type_slug: row.brand_type_id != null ? brandTypeSlug : null,
     slug: productSlug,
@@ -296,6 +363,7 @@ export function mapStorefrontProductRow(
       return {
         category_id: cat.id,
         category_name: cat.name,
+        category_name_en: cat.name_en,
       };
     })(),
     characteristic_specifics: chars.characteristic_specifics,
@@ -315,24 +383,55 @@ function looksLikeMissingColumnError(error: { message?: string } | null): boolea
   );
 }
 
+function mapNameEnFromRow(row: Record<string, unknown>): string | null {
+  const raw = row.name_en;
+  if (raw == null || String(raw).trim() === "") return null;
+  return String(raw);
+}
+
+export type StorefrontBrandRow = {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  slug: string;
+};
+
+export type StorefrontBrandTypeRow = {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  brand_id: string;
+  slug: string;
+};
+
 export async function getBrandById(
   brandId: string,
-): Promise<{ id: string; name: string; slug: string } | null> {
+): Promise<StorefrontBrandRow | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brands")
-    .select("id, name, slug, active")
+    .select("id, name, name_en, slug, active")
     .eq("id", brandId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("brands")
-      .select("id, name, slug")
+      .select("id, name, slug, active")
       .eq("id", brandId)
       .maybeSingle();
     data = r.data as typeof data;
     error = r.error;
+  }
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r2 = await supabase
+      .from("brands")
+      .select("id, name")
+      .eq("id", brandId)
+      .maybeSingle();
+    data = r2.data as typeof data;
+    error = r2.error;
   }
 
   if (error) {
@@ -341,19 +440,35 @@ export async function getBrandById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
-  return { id: data.id, name: data.name, slug: data.slug ?? slugify(data.name) };
+  const row = data as Record<string, unknown>;
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEnFromRow(row),
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
+  };
 }
 
 export async function getBrandBySlug(
   slug: string,
-): Promise<{ id: string; name: string; slug: string } | null> {
+): Promise<StorefrontBrandRow | null> {
   const normalizedSlug = slugify(slug);
   const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("brands")
-    .select("id, name, slug, active")
+    .select("id, name, name_en, slug, active")
     .eq("slug", normalizedSlug)
     .maybeSingle();
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r = await supabase
+      .from("brands")
+      .select("id, name, slug, active")
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    data = r.data as typeof data;
+    error = r.error;
+  }
 
   if (error) {
     console.warn("[storefront] getBrandBySlug", slug, error.message);
@@ -361,7 +476,13 @@ export async function getBrandBySlug(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
-  return { id: data.id, name: data.name, slug: data.slug ?? slugify(data.name) };
+  const row = data as Record<string, unknown>;
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEnFromRow(row),
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
+  };
 }
 
 /**
@@ -370,24 +491,32 @@ export async function getBrandBySlug(
  */
 export async function getBrandTypeById(
   brandTypeId: string,
-): Promise<
-  { id: string; name: string; brand_id: string; slug: string } | null
-> {
+): Promise<StorefrontBrandTypeRow | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brand_types")
-    .select("id, name, brand_id, slug, active")
+    .select("id, name, name_en, brand_id, slug, active")
     .eq("id", brandTypeId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("brand_types")
-      .select("id, name, brand_id, slug")
+      .select("id, name, brand_id, slug, active")
       .eq("id", brandTypeId)
       .maybeSingle();
     data = r.data as typeof data;
     error = r.error;
+  }
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r2 = await supabase
+      .from("brand_types")
+      .select("id, name, brand_id, slug")
+      .eq("id", brandTypeId)
+      .maybeSingle();
+    data = r2.data as typeof data;
+    error = r2.error;
   }
 
   if (error) {
@@ -396,26 +525,39 @@ export async function getBrandTypeById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    brand_id: data.brand_id,
-    slug: data.slug ?? slugify(data.name),
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEnFromRow(row),
+    brand_id: row.brand_id as string,
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
   };
 }
 
 export async function getBrandTypeBySlug(
   brandId: string,
   slug: string,
-): Promise<{ id: string; name: string; brand_id: string; slug: string } | null> {
+): Promise<StorefrontBrandTypeRow | null> {
   const normalizedSlug = slugify(slug);
   const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("brand_types")
-    .select("id, name, brand_id, slug, active")
+    .select("id, name, name_en, brand_id, slug, active")
     .eq("brand_id", brandId)
     .eq("slug", normalizedSlug)
     .maybeSingle();
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r = await supabase
+      .from("brand_types")
+      .select("id, name, brand_id, slug, active")
+      .eq("brand_id", brandId)
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    data = r.data as typeof data;
+    error = r.error;
+  }
 
   if (error) {
     console.warn(
@@ -428,32 +570,44 @@ export async function getBrandTypeBySlug(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    brand_id: data.brand_id,
-    slug: data.slug ?? slugify(data.name),
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEnFromRow(row),
+    brand_id: row.brand_id as string,
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
   };
 }
 
 export async function listBrandTypesForBrand(
   brandId: string,
-): Promise<{ id: string; name: string; slug: string }[]> {
+): Promise<{ id: string; name: string; nameEn: string | null; slug: string }[]> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("brand_types")
-    .select("id, name, slug, active")
+    .select("id, name, name_en, slug, active")
     .eq("brand_id", brandId)
     .order("name");
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("brand_types")
-      .select("id, name")
+      .select("id, name, slug, active")
       .eq("brand_id", brandId)
       .order("name");
     data = r.data as typeof data;
     error = r.error;
+  }
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r2 = await supabase
+      .from("brand_types")
+      .select("id, name")
+      .eq("brand_id", brandId)
+      .order("name");
+    data = r2.data as typeof data;
+    error = r2.error;
   }
 
   if (error) {
@@ -463,14 +617,18 @@ export async function listBrandTypesForBrand(
   if (!data) return [];
   return data
     .filter((r) => !("active" in r) || r.active !== false)
-    .map((r) => ({
-      id: r.id,
-      name: r.name,
-      slug:
-        typeof r.slug === "string" && r.slug.trim() !== ""
-          ? r.slug
-          : slugify(r.name),
-    }));
+    .map((r) => {
+      const row = r as Record<string, unknown>;
+      return {
+        id: row.id as string,
+        name: row.name as string,
+        nameEn: mapNameEnFromRow(row),
+        slug:
+          typeof row.slug === "string" && row.slug.trim() !== ""
+            ? row.slug
+            : slugify(String(row.name)),
+      };
+    });
 }
 
 /** Todos los productos activos del catálogo público (tienda). */

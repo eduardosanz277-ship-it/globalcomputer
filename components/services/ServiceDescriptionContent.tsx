@@ -1,14 +1,23 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 
 type Props = {
   description: string | null;
+  descriptionEn?: string | null;
   className?: string;
 };
 
-export function ServiceDescriptionContent({ description, className }: Props) {
-  const hasDescription = Boolean(description?.trim());
+export function ServiceDescriptionContent({
+  description,
+  descriptionEn,
+  className,
+}: Props) {
+  const { locale, t } = useI18n();
+  const currentDescription =
+    locale === "en" ? descriptionEn?.trim() || description : description;
+  const hasDescription = Boolean(currentDescription?.trim());
 
   return (
     <section
@@ -16,10 +25,10 @@ export function ServiceDescriptionContent({ description, className }: Props) {
     >
       <div>
         {hasDescription ? (
-          <ProductDescriptionViewer descripcion={description ?? ""} />
+          <ProductDescriptionViewer descripcion={currentDescription ?? ""} />
         ) : (
           <p className="text-sm italic text-muted-foreground">
-            No hay descripción disponible en este momento.
+            {t("admin.products.detail.noDescription")}
           </p>
         )}
       </div>

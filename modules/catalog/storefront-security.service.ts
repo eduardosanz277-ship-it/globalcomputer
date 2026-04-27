@@ -16,24 +16,55 @@ function looksLikeMissingColumnError(error: { message?: string } | null): boolea
   );
 }
 
+function mapNameEn(row: Record<string, unknown>): string | null {
+  const raw = row.name_en;
+  if (raw == null || String(raw).trim() === "") return null;
+  return String(raw);
+}
+
+export type StorefrontSecurityGeneralRow = {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  slug: string;
+};
+
+export type StorefrontSecuritySpecificRow = {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  slug: string;
+  general_id: string;
+};
+
 export async function getCharacteristicGeneralById(
   generalId: string,
-): Promise<{ id: string; name: string; slug: string } | null> {
+): Promise<StorefrontSecurityGeneralRow | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("product_characteristics_general")
-    .select("id, name, slug, active")
+    .select("id, name, name_en, slug, active")
     .eq("id", generalId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("product_characteristics_general")
-      .select("id, name")
+      .select("id, name, slug, active")
       .eq("id", generalId)
       .maybeSingle();
     data = r.data as typeof data;
     error = r.error;
+  }
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r2 = await supabase
+      .from("product_characteristics_general")
+      .select("id, name")
+      .eq("id", generalId)
+      .maybeSingle();
+    data = r2.data as typeof data;
+    error = r2.error;
   }
 
   if (error) {
@@ -42,10 +73,12 @@ export async function getCharacteristicGeneralById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug ?? slugify(data.name),
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEn(row),
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
   };
 }
 
@@ -84,22 +117,32 @@ export async function listSpecificsForGeneral(
  */
 export async function getCharacteristicSpecificById(
   specificId: string,
-): Promise<{ id: string; name: string; general_id: string; slug: string } | null> {
+): Promise<StorefrontSecuritySpecificRow | null> {
   const supabase = await getCatalogSupabase();
   let { data, error } = await supabase
     .from("product_characteristics_specific")
-    .select("id, name, slug, general_id, active")
+    .select("id, name, name_en, slug, general_id, active")
     .eq("id", specificId)
     .maybeSingle();
 
   if (error && looksLikeMissingColumnError(error)) {
     const r = await supabase
       .from("product_characteristics_specific")
-      .select("id, name, general_id")
+      .select("id, name, slug, general_id")
       .eq("id", specificId)
       .maybeSingle();
     data = r.data as typeof data;
     error = r.error;
+  }
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r2 = await supabase
+      .from("product_characteristics_specific")
+      .select("id, name, general_id")
+      .eq("id", specificId)
+      .maybeSingle();
+    data = r2.data as typeof data;
+    error = r2.error;
   }
 
   if (error) {
@@ -108,24 +151,37 @@ export async function getCharacteristicSpecificById(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug ?? slugify(data.name),
-    general_id: data.general_id,
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEn(row),
+    slug: (row.slug as string | null | undefined) ?? slugify(String(row.name)),
+    general_id: row.general_id as string,
   };
 }
 
 export async function getCharacteristicGeneralBySlug(
   slug: string,
-): Promise<{ id: string; name: string; slug: string } | null> {
+): Promise<StorefrontSecurityGeneralRow | null> {
   const normalizedSlug = slugify(slug);
   const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("product_characteristics_general")
-    .select("id, name, slug, active")
+    .select("id, name, name_en, slug, active")
     .eq("slug", normalizedSlug)
     .maybeSingle();
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r = await supabase
+      .from("product_characteristics_general")
+      .select("id, name, slug, active")
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    data = r.data as typeof data;
+    error = r.error;
+  }
+
   if (error) {
     if (looksLikeMissingColumnError(error)) return null;
     console.warn("[storefront-security] getCharacteristicGeneralBySlug", slug, error.message);
@@ -133,25 +189,39 @@ export async function getCharacteristicGeneralBySlug(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug ?? normalizedSlug,
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEn(row),
+    slug: (row.slug as string | null | undefined) ?? normalizedSlug,
   };
 }
 
 export async function getCharacteristicSpecificBySlug(
   generalId: string,
   slug: string,
-): Promise<{ id: string; name: string; slug: string; general_id: string } | null> {
+): Promise<StorefrontSecuritySpecificRow | null> {
   const normalizedSlug = slugify(slug);
   const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("product_characteristics_specific")
-    .select("id, name, slug, general_id, active")
+    .select("id, name, name_en, slug, general_id, active")
     .eq("slug", normalizedSlug)
     .eq("general_id", generalId)
     .maybeSingle();
+
+  if (error && looksLikeMissingColumnError(error)) {
+    const r = await supabase
+      .from("product_characteristics_specific")
+      .select("id, name, slug, general_id, active")
+      .eq("slug", normalizedSlug)
+      .eq("general_id", generalId)
+      .maybeSingle();
+    data = r.data as typeof data;
+    error = r.error;
+  }
+
   if (error) {
     if (looksLikeMissingColumnError(error)) return null;
     console.warn(
@@ -164,17 +234,19 @@ export async function getCharacteristicSpecificBySlug(
   }
   if (!data) return null;
   if ("active" in data && data.active === false) return null;
+  const row = data as Record<string, unknown>;
   return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug ?? normalizedSlug,
-    general_id: data.general_id,
+    id: row.id as string,
+    name: row.name as string,
+    nameEn: mapNameEn(row),
+    slug: (row.slug as string | null | undefined) ?? normalizedSlug,
+    general_id: row.general_id as string,
   };
 }
 
 export async function getCharacteristicGeneralBySlugOrId(
   param: string,
-): Promise<{ general: { id: string; name: string; slug: string }; source: "slug" | "id" } | null> {
+): Promise<{ general: StorefrontSecurityGeneralRow; source: "slug" | "id" } | null> {
   const slugResult = await getCharacteristicGeneralBySlug(param);
   if (slugResult) return { general: slugResult, source: "slug" };
 
@@ -191,7 +263,7 @@ export async function getCharacteristicSpecificBySlugOrId(
   generalId: string,
   param: string,
 ): Promise<
-  { specific: { id: string; name: string; slug: string; general_id: string }; source: "slug" | "id" } | null
+  { specific: StorefrontSecuritySpecificRow; source: "slug" | "id" } | null
 > {
   const slugResult = await getCharacteristicSpecificBySlug(generalId, param);
   if (slugResult) return { specific: slugResult, source: "slug" };

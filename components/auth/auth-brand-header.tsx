@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
-import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 
 type AuthBrandHeaderProps = {
@@ -18,11 +19,12 @@ export function AuthBrandHeader({
   className,
   hideTagline = false,
 }: AuthBrandHeaderProps) {
+  const { t } = useI18n();
   return (
     <div className={cn("mb-8 flex justify-center px-1", className)}>
       <Link
         href="/"
-        aria-label={`${SITE_BRAND_NAME} — Inicio`}
+        aria-label={`${SITE_BRAND_NAME} — ${t("common.home")}`}
         className="flex min-w-0 max-w-full items-center gap-1 rounded-md py-0.5 text-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:gap-2"
       >
         <AppLogo
@@ -35,7 +37,7 @@ export function AuthBrandHeader({
           </span>
           {!hideTagline ? (
             <span className="mt-0.5 block truncate text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/90">
-              {SITE_BRAND_TAGLINE}
+              {t("header.brandTagline")}
             </span>
           ) : null}
         </span>

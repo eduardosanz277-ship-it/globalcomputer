@@ -1,11 +1,12 @@
 import { inter } from "@/lib/fonts/inter";
 import { Poppins } from "next/font/google";
 import { cn } from "@/utils/cn";
+import type { ReactNode } from "react";
 
 type HomeSectionHeadingProps = {
-  eyebrow?: string;
-  title: string;
-  description?: string;
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
   align?: "left" | "center";
   className?: string;
   /** Clases extra para el título (p. ej. tamaño expresivo en home) */

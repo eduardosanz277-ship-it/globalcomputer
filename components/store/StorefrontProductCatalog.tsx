@@ -25,6 +25,11 @@ import {
 } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import {
+  storefrontLocalizedText,
+  storefrontProductDisplayName,
+} from "@/modules/catalog/storefront-product.shared";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import {
   adminServiceLikeInputClassName,
   adminSlideOverNestedScrollClassName,
   adminSlideOverSectionClassName,
@@ -85,20 +90,6 @@ const EMPTY_FILTER_SECTIONS_STATE: Record<FilterSectionKey, boolean> = {
   stock: false,
   offers: false,
 };
-
-const sortOptions: SortOption[] = [
-  { value: "relevance", label: "Destacados" },
-  { value: "name_asc", label: "Nombre (A–Z)" },
-  { value: "name_desc", label: "Nombre (Z–A)" },
-  { value: "price_asc", label: "Precio: menor a mayor" },
-  { value: "price_desc", label: "Precio: mayor a menor" },
-  { value: "date_desc", label: "Más recientes" },
-  { value: "date_asc", label: "Más antiguos" },
-];
-
-const SORT_SELECT_WIDTH_CH =
-  sortOptions.reduce((max, option) => Math.max(max, option.label.length), 0) +
-  8;
 
 function salePrice(p: StorefrontProduct, tier: StorefrontPriceTier): number {
   const pct = activeDiscountPercent(p, tier);
@@ -167,6 +158,26 @@ type Props = {
 };
 
 export function StorefrontProductCatalog({ products, priceTier }: Props) {
+  const { locale, t } = useI18n();
+  const collatorLocale = locale === "en" ? "en" : "es";
+
+  const sortOptions = useMemo<SortOption[]>(
+    () => [
+      { value: "relevance", label: t("storefront.catalog.sortRelevance") },
+      { value: "name_asc", label: t("storefront.catalog.sortNameAsc") },
+      { value: "name_desc", label: t("storefront.catalog.sortNameDesc") },
+      { value: "price_asc", label: t("storefront.catalog.sortPriceAsc") },
+      { value: "price_desc", label: t("storefront.catalog.sortPriceDesc") },
+      { value: "date_desc", label: t("storefront.catalog.sortDateDesc") },
+      { value: "date_asc", label: t("storefront.catalog.sortDateAsc") },
+    ],
+    [t],
+  );
+
+  const sortSelectWidthCh =
+    sortOptions.reduce((max, option) => Math.max(max, option.label.length), 0) +
+    8;
+
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [brandIds, setBrandIds] = useState<Record<string, boolean>>({});
@@ -259,24 +270,34 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
   const brandOptions = useMemo(() => {
     const m = new Map<string, string>();
     for (const p of products) {
-      if (!m.has(p.brand_id)) m.set(p.brand_id, p.brand_name);
+      if (!m.has(p.brand_id)) {
+        m.set(
+          p.brand_id,
+          storefrontLocalizedText(locale, p.brand_name, p.brand_name_en),
+        );
+      }
     }
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name, "es"));
-  }, [products]);
+      .sort((a, b) => a.name.localeCompare(b.name, collatorLocale));
+  }, [products, locale, collatorLocale]);
 
   const categoryOptions = useMemo(() => {
     const m = new Map<string, string>();
+    const fallback = t("storefront.catalog.categoryFallback");
     for (const p of products) {
       if (p.category_id == null) continue;
-      const label = p.category_name?.trim() || "Categoría";
+      const label = storefrontLocalizedText(
+        locale,
+        p.category_name?.trim() || fallback,
+        p.category_name_en,
+      );
       if (!m.has(p.category_id)) m.set(p.category_id, label);
     }
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name, "es"));
-  }, [products]);
+      .sort((a, b) => a.name.localeCompare(b.name, collatorLocale));
+  }, [products, locale, collatorLocale, t]);
 
   const specificOptionsByGeneral = useMemo(() => {
     const generals = new Map<
@@ -288,12 +309,21 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         if (!generals.has(s.general_id)) {
           generals.set(s.general_id, {
             id: s.general_id,
-            name: s.general_name,
+            name: storefrontLocalizedText(
+              locale,
+              s.general_name,
+              s.general_name_en,
+            ),
             specifics: new Map(),
           });
         }
         const g = generals.get(s.general_id)!;
-        if (!g.specifics.has(s.id)) g.specifics.set(s.id, s.name);
+        if (!g.specifics.has(s.id)) {
+          g.specifics.set(
+            s.id,
+            storefrontLocalizedText(locale, s.name, s.name_en),
+          );
+        }
       }
     }
     return Array.from(generals.values())
@@ -302,11 +332,13 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         generalName: g.name,
         specifics: Array.from(g.specifics.entries())
           .map(([id, name]) => ({ id, name }))
-          .sort((a, b) => a.name.localeCompare(b.name, "es")),
+          .sort((a, b) => a.name.localeCompare(b.name, collatorLocale)),
       }))
       .filter((g) => g.specifics.length > 0)
-      .sort((a, b) => a.generalName.localeCompare(b.generalName, "es"));
-  }, [products]);
+      .sort((a, b) =>
+        a.generalName.localeCompare(b.generalName, collatorLocale),
+      );
+  }, [products, locale, collatorLocale]);
 
   const priceBounds = useMemo(() => {
     let min = Infinity;
@@ -370,9 +402,23 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
     let list = products.filter((p) => {
       if (q) {
-        const inName = p.name.toLowerCase().includes(q);
-        const inBrand = p.brand_name.toLowerCase().includes(q);
-        if (!inName && !inBrand) return false;
+        const nameHay = [
+          storefrontProductDisplayName(p, locale),
+          p.name,
+          p.name_en,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const brandHay = [
+          storefrontLocalizedText(locale, p.brand_name, p.brand_name_en),
+          p.brand_name,
+          p.brand_name_en,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!nameHay.includes(q) && !brandHay.includes(q)) return false;
       }
       if (hasBrandFilter && !selectedBrands.includes(p.brand_id)) return false;
 
@@ -428,10 +474,20 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
         );
         break;
       case "name_asc":
-        sorted.sort((a, b) => a.name.localeCompare(b.name, "es"));
+        sorted.sort((a, b) =>
+          storefrontProductDisplayName(a, locale).localeCompare(
+            storefrontProductDisplayName(b, locale),
+            collatorLocale,
+          ),
+        );
         break;
       case "name_desc":
-        sorted.sort((a, b) => b.name.localeCompare(a.name, "es"));
+        sorted.sort((a, b) =>
+          storefrontProductDisplayName(b, locale).localeCompare(
+            storefrontProductDisplayName(a, locale),
+            collatorLocale,
+          ),
+        );
         break;
       case "date_desc":
         sorted.sort((a, b) => {
@@ -463,6 +519,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     stockFilters,
     discountOnly,
     sortBy,
+    locale,
+    collatorLocale,
   ]);
 
   const filterResetKey = useMemo(
@@ -617,10 +675,16 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 aria-hidden
               />
               {activeFilterCount === 0
-                ? "Filtro"
+                ? t("storefront.catalog.filterIdle")
                 : activeFilterCount === 1
-                  ? `Filtro (${activeFilterCount})`
-                  : `Filtros (${activeFilterCount})`}
+                  ? t("storefront.catalog.filterWithCount").replace(
+                      "{count}",
+                      String(activeFilterCount),
+                    )
+                  : t("storefront.catalog.filtersWithCount").replace(
+                      "{count}",
+                      String(activeFilterCount),
+                    )}
             </Button>
             {activeFilterCount > 0 ? (
               <Button
@@ -629,8 +693,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 size="icon"
                 className="h-11 w-11 rounded-xl border-border/80 bg-card shadow-sm transition hover:bg-muted/50"
                 onClick={clearFilters}
-                title="Limpiar filtros"
-                aria-label="Limpiar filtros"
+                title={t("storefront.catalog.clearFilters")}
+                aria-label={t("storefront.catalog.clearFilters")}
               >
                 <FilterX className="h-4 w-4" aria-hidden />
               </Button>
@@ -638,8 +702,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           </div>
           <p className="text-sm font-medium text-muted-foreground">
             {activeFilterCount > 0
-              ? `${filtered.length} de ${products.length} ${products.length === 1 ? "producto" : "productos"}`
-              : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}
+              ? `${filtered.length} ${t("storefront.catalog.countSeparator")} ${products.length} ${products.length === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`
+              : `${products.length} ${products.length === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`}
           </p>
         </div>
 
@@ -648,11 +712,11 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
             htmlFor="toolbar-sort"
             className="whitespace-nowrap text-sm font-medium"
           >
-            Ordenar por:
+            {t("storefront.catalog.sortBy")}
           </Label>
           <div
             className="min-w-0 flex-1 sm:flex-none"
-            style={{ width: `${SORT_SELECT_WIDTH_CH}ch` }}
+            style={{ width: `${sortSelectWidthCh}ch` }}
           >
             <Select<SortOption, false>
               instanceId="toolbar-sort"
@@ -668,6 +732,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
               }}
               isClearable={false}
               isSearchable={false}
+              noOptionsMessage={() => t("storefront.catalog.noOptions")}
             />
           </div>
         </div>
@@ -676,10 +741,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
       <SlideOver
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
-        title="Filtros"
-        description="Refina el catálogo por categoría, disponibilidad, marca, características específicas, precio y ofertas."
+        title={t("storefront.catalog.slideOverTitle")}
+        description={t("storefront.catalog.slideOverDescription")}
         side="left"
-        contentAriaLabel="Opciones de filtrado del catálogo"
+        contentAriaLabel={t("storefront.catalog.slideOverContentAria")}
         footer={
           <SlideOverFooter className="justify-end gap-2">
             <Button
@@ -689,10 +754,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 clearFilters();
               }}
             >
-              Limpiar
+              {t("storefront.catalog.clear")}
             </Button>
             <Button type="button" onClick={() => setPanelOpen(false)}>
-              Ver resultados
+              {t("storefront.catalog.viewResults")}
             </Button>
           </SlideOverFooter>
         }
@@ -705,14 +770,14 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
               /* Separa de Precio en móvil; Precio usa !mt-0 y no recibe el gap del panel */
               "mb-5",
             )}
-            aria-label="Ordenar catálogo"
+            aria-label={t("storefront.catalog.sortSectionAria")}
           >
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                Ordenar por
+                {t("storefront.catalog.sortSectionTitle")}
               </h2>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Elige cómo ordenar los productos del listado.
+                {t("storefront.catalog.sortSectionDescription")}
               </p>
             </header>
             <div className="mt-4 space-y-2">
@@ -720,7 +785,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 htmlFor="filter-sort-mobile"
                 className="text-sm font-medium"
               >
-                Criterio
+                {t("storefront.catalog.criterion")}
               </Label>
               <Select<SortOption, false>
                 instanceId="filter-sort-mobile"
@@ -737,7 +802,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 }}
                 isClearable={false}
                 isSearchable={false}
-                noOptionsMessage={() => "Sin coincidencias"}
+                noOptionsMessage={() => t("storefront.catalog.noOptions")}
                 className="w-full"
               />
             </div>
@@ -746,8 +811,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           {categoryOptions.length > 0 ? (
             <FilterPanelSection
               className={cn(adminSlideOverSectionClassName, "!mt-0")}
-              title="Categoría"
-              description="Marca una o varias categorías para acotar el listado."
+              title={t("storefront.catalog.category")}
+              description={t("storefront.catalog.categoryDescription")}
               isOpen={expandedSections.category}
               onToggle={() => toggleFilterSection("category")}
             >
@@ -823,8 +888,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           {brandOptions.length > 0 ? (
             <FilterPanelSection
               className={adminSlideOverSectionClassName}
-              title="Marca"
-              description="Marca una o varias marcas para acotar el listado."
+              title={t("storefront.catalog.brand")}
+              description={t("storefront.catalog.brandDescription")}
               isOpen={expandedSections.brand}
               onToggle={() => toggleFilterSection("brand")}
             >
@@ -853,8 +918,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
           <FilterPanelSection
             className={adminSlideOverSectionClassName}
-            title="Precio"
-            description="Rango según tu precio de venta (USD, con descuento de perfil)."
+            title={t("storefront.catalog.price")}
+            description={t("storefront.catalog.priceDescription")}
             isOpen={expandedSections.price}
             onToggle={() => toggleFilterSection("price")}
           >
@@ -880,7 +945,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       handleMinSliderChange(Number(e.target.value))
                     }
                     className="pointer-events-none absolute inset-0 h-6 w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-primary/30 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-primary/30 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
-                    aria-label="Precio mínimo del rango"
+                    aria-label={t("storefront.catalog.priceMinSliderAria")}
                   />
                   <input
                     type="range"
@@ -893,12 +958,22 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       handleMaxSliderChange(Number(e.target.value))
                     }
                     className="pointer-events-none absolute inset-0 h-6 w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-primary/30 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-primary/30 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
-                    aria-label="Precio máximo del rango"
+                    aria-label={t("storefront.catalog.priceMaxSliderAria")}
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Desde {sliderMinBound}</span>
-                  <span>Hasta {sliderMaxBound}</span>
+                  <span>
+                    {t("storefront.catalog.priceFrom").replace(
+                      "{value}",
+                      String(sliderMinBound),
+                    )}
+                  </span>
+                  <span>
+                    {t("storefront.catalog.priceTo").replace(
+                      "{value}",
+                      String(sliderMaxBound),
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -908,7 +983,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                   htmlFor="filter-price-min"
                   className="text-sm font-medium"
                 >
-                  Precio mínimo
+                  {t("storefront.catalog.priceMinLabel")}
                 </Label>
                 <Input
                   id="filter-price-min"
@@ -926,13 +1001,15 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                   htmlFor="filter-price-max"
                   className="text-sm font-medium"
                 >
-                  Precio máximo
+                  {t("storefront.catalog.priceMaxLabel")}
                 </Label>
                 <Input
                   id="filter-price-max"
                   inputMode="decimal"
                   placeholder={
-                    priceBounds.max ? String(Math.ceil(priceBounds.max)) : "—"
+                    priceBounds.max
+                      ? String(Math.ceil(priceBounds.max))
+                      : t("storefront.catalog.pricePlaceholderDash")
                   }
                   value={priceMax}
                   onChange={(e) => setPriceMax(e.target.value)}
@@ -945,8 +1022,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           {specificOptionsByGeneral.length > 0 ? (
             <FilterPanelSection
               className={adminSlideOverSectionClassName}
-              title="Características específicas"
-              description="Agrupadas por categoría general. Puedes marcar varias: se muestran productos que cumplan al menos una de las elegidas."
+              title={t("storefront.catalog.specificTitle")}
+              description={t("storefront.catalog.specificDescription")}
               isOpen={expandedSections.specific}
               onToggle={() => toggleFilterSection("specific")}
             >
@@ -984,8 +1061,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
           <FilterPanelSection
             className={adminSlideOverSectionClassName}
-            title="Disponibilidad"
-            description="Elige el estado de inventario para encontrar productos disponibles, con poco stock o agotados."
+            title={t("storefront.catalog.availability")}
+            description={t("storefront.catalog.availabilityDescription")}
             isOpen={expandedSections.stock}
             onToggle={() => toggleFilterSection("stock")}
           >
@@ -999,7 +1076,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
                   <span className="block text-sm font-medium text-foreground">
-                    En stock
+                    {t("storefront.catalog.stockInStock")}
                   </span>
                 </label>
               </div>
@@ -1012,7 +1089,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
                   <span className="block text-sm font-medium text-foreground">
-                    Poco stock (1-5 uds.)
+                    {t("storefront.catalog.stockLow")}
                   </span>
                 </label>
               </div>
@@ -1025,7 +1102,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
                   <span className="block text-sm font-medium text-foreground">
-                    Agotado
+                    {t("storefront.catalog.stockOut")}
                   </span>
                 </label>
               </div>
@@ -1034,8 +1111,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
           <FilterPanelSection
             className={adminSlideOverSectionClassName}
-            title="Ofertas"
-            description="Solo productos con descuento aplicable a tu perfil."
+            title={t("storefront.catalog.offers")}
+            description={t("storefront.catalog.offersDescription")}
             isOpen={expandedSections.offers}
             onToggle={() => toggleFilterSection("offers")}
           >
@@ -1053,10 +1130,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                 />
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">
-                    Solo en oferta
+                    {t("storefront.catalog.discountOnly")}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    Incluye descuentos según tu perfil (cliente o empresa).
+                    {t("storefront.catalog.discountOnlyHint")}
                   </span>
                 </span>
               </label>
@@ -1067,14 +1144,13 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
       {filtered.length === 0 && products.length > 0 ? (
         <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
-          Ningún producto coincide con los filtros. Ajusta los criterios para
-          ver más resultados o{" "}
+          {t("storefront.catalog.emptyFiltered")}{" "}
           <button
             type="button"
             onClick={clearFilters}
             className="font-semibold text-black underline underline-offset-2 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
-            Limpiar todo
+            {t("storefront.catalog.emptyFilteredClear")}
           </button>
         </p>
       ) : (
@@ -1086,7 +1162,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
           {filteredCount > 0 ? (
             <nav
               className={cn("mt-8 border-t border-border/80 pt-4")}
-              aria-label="Paginación del catálogo"
+              aria-label={t("storefront.catalog.paginationNavAria")}
             >
               <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
                 <p
@@ -1094,24 +1170,26 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                   className="min-w-0 text-sm leading-relaxed text-muted-foreground"
                 >
                   {filteredCount === 0 ? (
-                    "Sin productos."
+                    t("storefront.catalog.noProducts")
                   ) : (
                     <>
-                      Mostrando{" "}
+                      {t("storefront.catalog.showing")}{" "}
                       <span className="tabular-nums font-medium text-foreground">
                         {startRow}–{endRow}
                       </span>{" "}
-                      de{" "}
+                      {t("storefront.catalog.rangeTo")}{" "}
                       <span className="tabular-nums font-medium text-foreground">
                         {filteredCount}
-                      </span>
-                      {filteredCount === 1 ? " producto" : " productos"}
+                      </span>{" "}
+                      {filteredCount === 1
+                        ? t("storefront.catalog.productOne")
+                        : t("storefront.catalog.productMany")}
                       <span className="mx-1.5 text-muted-foreground/70">·</span>
-                      página{" "}
+                      {t("storefront.catalog.pageWord")}{" "}
                       <span className="tabular-nums font-medium text-foreground">
                         {safePageIndex + 1}
                       </span>{" "}
-                      de{" "}
+                      {t("storefront.catalog.pageOf")}{" "}
                       <span className="tabular-nums font-medium text-foreground">
                         {totalPages}
                       </span>
@@ -1130,7 +1208,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       htmlFor={`${pageSizeSelectId}-input`}
                       className="max-w-full text-sm leading-snug text-muted-foreground sm:whitespace-nowrap"
                     >
-                      Productos por página
+                      {t("storefront.catalog.productsPerPage")}
                     </label>
                     <Select<PageSizeOption, false>
                       instanceId={pageSizeSelectId}
@@ -1154,7 +1232,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                   <div
                     className="flex items-center gap-1"
                     role="group"
-                    aria-label="Ir a otra página de productos"
+                    aria-label={t("storefront.catalog.paginationGroupAria")}
                   >
                     <Button
                       type="button"
@@ -1163,8 +1241,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={() => setPageIndex(0)}
                       disabled={!canPrev}
-                      aria-label="Ir a la primera página"
-                      title="Primera página"
+                      aria-label={t("storefront.catalog.firstPageAria")}
+                      title={t("storefront.catalog.firstPageTitle")}
                     >
                       <ChevronsLeft className="h-4 w-4" aria-hidden />
                     </Button>
@@ -1175,8 +1253,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
                       disabled={!canPrev}
-                      aria-label="Página anterior"
-                      title="Anterior"
+                      aria-label={t("storefront.catalog.prevPageAria")}
+                      title={t("storefront.catalog.prevPageTitle")}
                     >
                       <ChevronLeft className="h-4 w-4" aria-hidden />
                     </Button>
@@ -1189,8 +1267,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                         setPageIndex((i) => Math.min(totalPages - 1, i + 1))
                       }
                       disabled={!canNext}
-                      aria-label="Página siguiente"
-                      title="Siguiente"
+                      aria-label={t("storefront.catalog.nextPageAria")}
+                      title={t("storefront.catalog.nextPageTitle")}
                     >
                       <ChevronRight className="h-4 w-4" aria-hidden />
                     </Button>
@@ -1201,8 +1279,8 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={() => setPageIndex(Math.max(0, totalPages - 1))}
                       disabled={!canNext}
-                      aria-label="Ir a la última página"
-                      title="Última página"
+                      aria-label={t("storefront.catalog.lastPageAria")}
+                      title={t("storefront.catalog.lastPageTitle")}
                     >
                       <ChevronsRight className="h-4 w-4" aria-hidden />
                     </Button>

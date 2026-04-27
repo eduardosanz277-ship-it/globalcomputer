@@ -1,6 +1,7 @@
 "use client";
 
 import { StorefrontProductCard } from "@/components/store/StorefrontProductCard";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
@@ -21,10 +22,12 @@ export function StorefrontProductGrid({
   priceTier: StorefrontPriceTier;
   gridClassName?: string;
 }) {
+  const { t } = useI18n();
+
   if (products.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
-        No hay productos disponibles en esta sección por ahora.
+        {t("storefront.grid.emptySection")}
       </p>
     );
   }

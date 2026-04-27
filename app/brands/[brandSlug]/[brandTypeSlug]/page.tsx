@@ -1,6 +1,10 @@
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
+import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
+import { StorefrontTieredDocumentTitle } from "@/components/store/StorefrontTieredDocumentTitle";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
@@ -8,6 +12,7 @@ import {
   getBrandTypeBySlug,
   listProductsByBrandAndType,
 } from "@/modules/catalog/storefront-products.service";
+import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { notFound, redirect } from "next/navigation";
@@ -26,13 +31,24 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { brandSlug, brandTypeSlug } = await Promise.resolve(params);
+  const locale = await getServerLocale();
+  const catalogLabel = locale === "en" ? "Catalog" : "Catálogo";
   const brand = await getBrandBySlug(brandSlug);
-  if (!brand) return { title: "Catálogo" };
+  if (!brand) {
+    return { title: catalogLabel };
+  }
   const typeRow = await getBrandTypeBySlug(brand.id, brandTypeSlug);
-  if (!typeRow) return { title: "Catálogo" };
+  if (!typeRow) {
+    return { title: catalogLabel };
+  }
+  const bName = storefrontLocalizedText(locale, brand.name, brand.nameEn);
+  const tName = storefrontLocalizedText(locale, typeRow.name, typeRow.nameEn);
   return {
-    title: `${brand.name} — ${typeRow.name}`,
-    description: `Productos ${typeRow.name} de ${brand.name}.`,
+    title: `${bName} — ${tName} | ${catalogLabel}`,
+    description:
+      locale === "en"
+        ? `${tName} products from ${bName}.`
+        : `Productos ${tName} de ${bName}.`,
   };
 }
 
@@ -56,21 +72,50 @@ export default async function BrandTypePage({ params }: Props) {
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+      <StorefrontTieredDocumentTitle
+        primaryName={brand.name}
+        primaryNameEn={brand.nameEn}
+        secondaryName={typeRow.name}
+        secondaryNameEn={typeRow.nameEn}
+      />
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
             className={inter.className}
             items={[
-              { label: "Inicio", href: "/" },
-              { label: "Catálogo", href: "/products" },
-              { label: brand.name, href: `/brands/${brand.slug}` },
-              { label: typeRow.name },
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              {
+                label: <LocalizedText es="Catálogo" en="Catalog" />,
+                href: "/products",
+              },
+              {
+                label: (
+                  <StorefrontLocalizedName
+                    name={brand.name}
+                    nameEn={brand.nameEn}
+                  />
+                ),
+                href: `/brands/${brand.slug}`,
+              },
+              {
+                label: (
+                  <StorefrontLocalizedName
+                    name={typeRow.name}
+                    nameEn={typeRow.nameEn}
+                  />
+                ),
+              },
             ]}
           />
           <div className="mt-4">
             <HomeSectionHeading
               align="left"
-              title={typeRow.name}
+              title={
+                <StorefrontLocalizedName
+                  name={typeRow.name}
+                  nameEn={typeRow.nameEn}
+                />
+              }
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
             />
           </div>

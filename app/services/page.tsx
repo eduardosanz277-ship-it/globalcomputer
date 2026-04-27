@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
@@ -19,7 +20,7 @@ export default async function ServicesPage() {
   const { data } = await supabase
     .from("services")
     .select(
-      "id, name, slug, description, service_images(id, url, is_primary, sort_order)",
+      "id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)",
     )
     .order("name", { ascending: true });
 
@@ -30,15 +31,25 @@ export default async function ServicesPage() {
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
-            items={[{ label: "Inicio", href: "/" }, { label: "Servicios" }]}
+            items={[
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              { label: <LocalizedText es="Servicios" en="Services" /> },
+            ]}
             className={inter.className}
           />
           <div className="mt-4">
             <HomeSectionHeading
               className="max-w-none"
               align="left"
-              title="Nuestros servicios"
-              description="Lista completa de servicios disponibles."
+              title={
+                <LocalizedText es="Nuestros servicios" en="Our services" />
+              }
+              description={
+                <LocalizedText
+                  es="Lista completa de servicios disponibles."
+                  en="Complete list of available services."
+                />
+              }
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
               descriptionClassName={`${inter.className} mt-1 w-full max-w-none text-[15px] font-normal text-muted-foreground sm:text-base`}
             />
@@ -51,7 +62,9 @@ export default async function ServicesPage() {
             <ServiceCardLink
               key={s.id}
               name={s.name}
+              nameEn={s.name_en}
               description={s.description}
+              descriptionEn={s.description_en}
               imageUrl={resolvePrimaryServiceImage(s.service_images)}
               href={`/services/${s.slug ?? s.id}`}
             />

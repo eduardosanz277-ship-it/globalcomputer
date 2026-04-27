@@ -1,11 +1,17 @@
 import { FAQSection } from "@/components/marketing/FAQSection";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { ServicesSection } from "@/components/marketing/ServicesSection";
+import {
+  ServicesSection,
+  type ServiceWithI18n,
+} from "@/components/marketing/ServicesSection";
 import { StoreHero } from "@/components/marketing/StoreHero";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import {
@@ -14,7 +20,10 @@ import {
 } from "@/modules/catalog/storefront-products.service";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { listActiveSiteFaqs } from "@/modules/site/faqs.service";
-import { listProductReviewsForLeaveReviewPage } from "@/modules/site/leave-review-data.service";
+import {
+  getStoreRatingSummary,
+  listProductReviewsForLeaveReviewPage,
+} from "@/modules/site/leave-review-data.service";
 import { cn } from "@/utils/cn";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -80,15 +89,33 @@ const CATEGORIES: Array<{
   ];
 
 export default async function HomePage() {
-  const [products, featuredProducts, user, nav, productReviews, siteFaqs] =
-    await Promise.all([
-      listAllActiveStorefrontProducts(),
-      listFeaturedStorefrontProducts(8),
-      getCurrentUserService(),
-      getNavigationData(),
-      listProductReviewsForLeaveReviewPage(),
-      listActiveSiteFaqs(),
-    ]);
+  const supabase = await createSupabaseServerClient();
+  const [
+    { data: servicesData },
+    products,
+    featuredProducts,
+    user,
+    nav,
+    productReviews,
+    siteFaqs,
+    contact,
+    storeRatingSummary,
+  ] = await Promise.all([
+    supabase
+      .from("services")
+      .select(
+        "id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)",
+      )
+      .limit(6),
+    listAllActiveStorefrontProducts(),
+    listFeaturedStorefrontProducts(8),
+    getCurrentUserService(),
+    getNavigationData(),
+    listProductReviewsForLeaveReviewPage(),
+    listActiveSiteFaqs(),
+    getPublicSiteContact(),
+    getStoreRatingSummary(),
+  ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
     (p) => p.discount_client > 0 || p.discount_business_pct > 0,
@@ -108,6 +135,7 @@ export default async function HomePage() {
     .map((brand) => ({
       id: brand.id,
       name: brand.name,
+      nameEn: brand.nameEn ?? null,
       slug: brand.slug,
       imageUrl: brandImageById.get(brand.id) ?? null,
     }));
@@ -124,7 +152,11 @@ export default async function HomePage() {
 
   return (
     <main className="overflow-x-hidden">
-      <StoreHero />
+      <StoreHero
+        categories={nav?.catalogCategories ?? []}
+        contact={contact}
+        ratingSummary={storeRatingSummary}
+      />
 
       {/*
         Temporal: sección «Explora por marca» oculta; descomentar para restaurar.
@@ -176,8 +208,18 @@ export default async function HomePage() {
             <HomeSectionHeading
               align="left"
               // eyebrow="Selección"
-              title="Productos destacados"
-              description="Los favoritos de quienes ya instalaron con nosotros. Conecta tu catálogo real cuando quieras."
+              title={
+                <LocalizedText
+                  es="Productos destacados"
+                  en="Featured products"
+                />
+              }
+              description={
+                <LocalizedText
+                  es="Los favoritos de quienes ya instalaron con nosotros. Conecta tu catalogo real cuando quieras."
+                  en="Favorites from customers who already installed with us."
+                />
+              }
               className="sm:max-w-xl"
               titleClassName="text-3xl sm:text-4xl"
             />
@@ -188,7 +230,7 @@ export default async function HomePage() {
                 "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
               )}
             >
-              Ver catálogo
+              <LocalizedText es="Ver catalogo" en="View catalog" />
             </Link>
           </div>
 
@@ -201,7 +243,10 @@ export default async function HomePage() {
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Pronto añadiremos productos destacados a esta sección.
+                <LocalizedText
+                  es="Pronto anadiremos productos destacados a esta seccion."
+                  en="Featured products will appear here soon."
+                />
               </p>
             )}
           </div>
@@ -257,7 +302,7 @@ export default async function HomePage() {
         </section> */}
 
       {/* Services */}
-      <ServicesSection />
+      <ServicesSection services={(servicesData ?? []) as ServiceWithI18n[]} />
 
       {/* Banner emocional */}
       {/* <section className="border-y border-border/60 bg-gradient-to-br from-primary/[0.09] via-background to-secondary/[0.06] py-20 sm:py-24">
@@ -365,8 +410,13 @@ export default async function HomePage() {
             <HomeSectionHeading
               align="left"
               // eyebrow="Promos"
-              title="Ofertas que suman"
-              description="Promociones puntuales para mejorar tu seguridad."
+              title={<LocalizedText es="Ofertas que suman" en="Great offers" />}
+              description={
+                <LocalizedText
+                  es="Promociones puntuales para mejorar tu seguridad."
+                  en="Special promotions to improve your security."
+                />
+              }
               className="sm:max-w-xl"
               titleClassName="text-3xl text-white sm:text-4xl"
               descriptionClassName="text-white/80"
@@ -378,7 +428,7 @@ export default async function HomePage() {
                 "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
               )}
             >
-              Ver catálogo
+              <LocalizedText es="Ver catalogo" en="View catalog" />
             </Link>
           </div>
           {/*
@@ -467,8 +517,13 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <HomeSectionHeading
             // eyebrow="Testimonios"
-            title="Historias reales"
-            description="Personas como tú que ya confiaron en nosotros."
+            title={<LocalizedText es="Historias reales" en="Real stories" />}
+            description={
+              <LocalizedText
+                es="Personas como tu que ya confiaron en nosotros."
+                en="People like you who already trusted us."
+              />
+            }
             titleClassName="text-3xl sm:text-4xl"
           />
           <div className="mt-6 lg:mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -495,7 +550,12 @@ export default async function HomePage() {
                   {review.productName}
                 </p>
                 <blockquote className="mt-4 flex-1 border-l-2 border-primary/40 pl-4 text-sm italic leading-relaxed text-muted-foreground">
-                  {review.comment ?? "Sin comentario escrito."}
+                  {review.comment ?? (
+                    <LocalizedText
+                      es="Sin comentario escrito."
+                      en="No written comment."
+                    />
+                  )}
                 </blockquote>
                 <figcaption className="mt-5 text-sm font-bold text-foreground">
                   <span className="inline-flex items-center gap-1.5">
@@ -514,7 +574,7 @@ export default async function HomePage() {
                 "rounded-full border-primary/30 bg-card px-6 font-semibold hover:bg-primary/5",
               )}
             >
-              Ver todas reseñas
+              <LocalizedText es="Ver todas resenas" en="See all reviews" />
             </Link>
           </div>
         </div>
@@ -529,8 +589,18 @@ export default async function HomePage() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <HomeSectionHeading
               align="left"
-              title="Marcas que impulsan tu seguridad"
-              description="Explora equipos reales por marca y encuentra justo lo que necesitas para tu instalación."
+              title={
+                <LocalizedText
+                  es="Marcas que impulsan tu seguridad"
+                  en="Brands that power your security"
+                />
+              }
+              description={
+                <LocalizedText
+                  es="Explora equipos reales por marca y encuentra justo lo que necesitas para tu instalacion."
+                  en="Explore real equipment by brand and find exactly what your installation needs."
+                />
+              }
               className="sm:max-w-2xl"
               titleClassName="text-3xl sm:text-4xl"
             />
@@ -545,13 +615,13 @@ export default async function HomePage() {
                   <Link
                     href={`/brands/${brand.slug}`}
                   className="block"
-                  aria-label={`Ver productos de ${brand.name}`}
+                  aria-label={`Ver productos / View products - ${brand.name}`}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     {brand.imageUrl ? (
                       <Image
                         src={brand.imageUrl}
-                        alt={`Equipo de ${brand.name}`}
+                        alt={`Equipo / Product of ${brand.name}`}
                         fill
                         sizes="(min-width: 1024px) 31vw, (min-width: 640px) 48vw, 100vw"
                         className="object-cover transition duration-500 group-hover:scale-105"
@@ -565,11 +635,11 @@ export default async function HomePage() {
 
                 <div className="flex items-start justify-between gap-2.5 px-4 py-3">
                   <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground break-words">
-                    {brand.name}
+                    <LocalizedText es={brand.name} en={brand.nameEn} />
                   </h3>
                     <Link
                       href={`/brands/${brand.slug}`}
-                    aria-label={`Ver productos de ${brand.name}`}
+                    aria-label={`Ver productos / View products - ${brand.name}`}
                     className={cn(
                       buttonVariants({ variant: "outline", size: "sm" }),
                       "h-9 w-9 shrink-0 rounded-full border-primary/30 p-0 hover:bg-primary/5",

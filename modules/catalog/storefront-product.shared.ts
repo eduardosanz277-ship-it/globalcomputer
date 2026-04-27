@@ -9,6 +9,8 @@ export const STOREFRONT_PRODUCT_NEW_DAYS = 5;
 export type StorefrontProduct = {
   id: string;
   name: string;
+  /** Nombre en inglés (cuando existe en BD). */
+  name_en: string | null;
   created_at: string;
   updated_at: string;
   price: number;
@@ -21,9 +23,11 @@ export type StorefrontProduct = {
   brand_slug: string;
   brand_type_slug: string | null;
   brand_name: string;
+  brand_name_en: string | null;
   /** Categoría efectiva en catálogo (directa o padre de la subcategoría); null si no está clasificado. */
   category_id: string | null;
   category_name: string | null;
+  category_name_en: string | null;
   /**
    * Características específicas asignadas al producto (una entrada por específico),
    * con referencia a su categoría general para filtros agrupados.
@@ -31,8 +35,10 @@ export type StorefrontProduct = {
   characteristic_specifics: {
     id: string;
     name: string;
+    name_en: string | null;
     general_id: string;
     general_name: string;
+    general_name_en: string | null;
   }[];
   product_images: {
     id: string;
@@ -72,4 +78,21 @@ export function isStorefrontProductNew(
   days: number = STOREFRONT_PRODUCT_NEW_DAYS,
 ): boolean {
   return isNewFromCreatedAt(product.created_at, days);
+}
+
+export function storefrontProductDisplayName(
+  product: StorefrontProduct,
+  locale: string,
+): string {
+  if (locale === "en") return product.name_en?.trim() || product.name;
+  return product.name;
+}
+
+export function storefrontLocalizedText(
+  locale: string,
+  esValue: string,
+  enValue: string | null | undefined,
+): string {
+  if (locale === "en") return enValue?.trim() || esValue;
+  return esValue;
 }

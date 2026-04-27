@@ -19,6 +19,7 @@ import {
   AuthLayout,
   AuthPrimaryButton,
 } from "@/components/auth";
+import { AuthPageSuspenseFallback } from "@/components/auth/auth-page-suspense-fallback";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
 import { Form } from "@/components/ui/form";
@@ -355,18 +356,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <AuthLayout>
-          <AuthBrandHeader />
-          <AuthCard>
-            <p className="text-center text-sm text-muted-foreground">
-              Cargando…
-            </p>
-          </AuthCard>
-        </AuthLayout>
-      }
-    >
+    <Suspense fallback={<AuthPageSuspenseFallback />}>
       <LoginPageContent />
     </Suspense>
   );

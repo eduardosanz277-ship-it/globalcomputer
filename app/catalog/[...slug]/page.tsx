@@ -1,6 +1,10 @@
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
+import { StorefrontCatalogDocumentTitle } from "@/components/store/StorefrontCatalogDocumentTitle";
+import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import {
@@ -11,6 +15,7 @@ import {
   listProductsByCategoryId,
   listProductsBySubcategoryId,
 } from "@/modules/catalog/storefront-products.service";
+import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
@@ -38,31 +43,55 @@ async function slugSegments(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const locale = await getServerLocale();
   const segments = await slugSegments(params);
   if (segments.length === 1) {
     const category = await getStorefrontCategoryBySlug(segments[0]);
-    if (!category) return { title: "Catálogo" };
+    if (!category) return { title: locale === "en" ? "Catalog" : "Catálogo" };
+    const categoryName = storefrontLocalizedText(
+      locale,
+      category.name,
+      category.nameEn,
+    );
+    const catalogLabel = locale === "en" ? "Catalog" : "Catálogo";
     return {
-      title: `${category.name} | Catálogo`,
-      description: `Productos en la categoría ${category.name}.`,
+      title: `${categoryName} | ${catalogLabel}`,
+      description:
+        locale === "en"
+          ? `Products in the ${categoryName} category.`
+          : `Productos en la categoría ${categoryName}.`,
     };
   }
 
   if (segments.length === 2) {
     const category = await getStorefrontCategoryBySlug(segments[0]);
-    if (!category) return { title: "Catálogo" };
+    if (!category) return { title: locale === "en" ? "Catalog" : "Catálogo" };
     const subcategory = await getStorefrontSubcategoryInCategoryBySlug(
       category.id,
       segments[1],
     );
-    if (!subcategory) return { title: "Catálogo" };
+    if (!subcategory) return { title: locale === "en" ? "Catalog" : "Catálogo" };
+    const categoryName = storefrontLocalizedText(
+      locale,
+      category.name,
+      category.nameEn,
+    );
+    const subcategoryName = storefrontLocalizedText(
+      locale,
+      subcategory.name,
+      subcategory.nameEn,
+    );
+    const catalogLabel = locale === "en" ? "Catalog" : "Catálogo";
     return {
-      title: `${category.name} — ${subcategory.name} | Catálogo`,
-      description: `Productos en ${subcategory.name} (${category.name}).`,
+      title: `${categoryName} — ${subcategoryName} | ${catalogLabel}`,
+      description:
+        locale === "en"
+          ? `Products in ${subcategoryName} (${categoryName}).`
+          : `Productos en ${subcategoryName} (${categoryName}).`,
     };
   }
 
-  return { title: "Catálogo" };
+  return { title: locale === "en" ? "Catalog" : "Catálogo" };
 }
 
 export default async function CatalogoSlugPage({ params }: Props) {
@@ -80,20 +109,39 @@ export default async function CatalogoSlugPage({ params }: Props) {
 
     return (
       <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+        <StorefrontCatalogDocumentTitle
+          categoryName={category.name}
+          categoryNameEn={category.nameEn}
+        />
         <div className="border-b border-border/60 bg-card/40">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <MarketingBreadcrumb
               className={inter.className}
               items={[
-                { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/products" },
-                { label: category.name },
+                { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+                {
+                  label: <LocalizedText es="Catálogo" en="Catalog" />,
+                  href: "/products",
+                },
+                {
+                  label: (
+                    <StorefrontLocalizedName
+                      name={category.name}
+                      nameEn={category.nameEn}
+                    />
+                  ),
+                },
               ]}
             />
             <div className="mt-4">
               <HomeSectionHeading
                 align="left"
-                title={category.name}
+                title={
+                  <StorefrontLocalizedName
+                    name={category.name}
+                    nameEn={category.nameEn}
+                  />
+                }
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
               />
             </div>
@@ -130,19 +178,38 @@ export default async function CatalogoSlugPage({ params }: Props) {
 
     return (
       <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+        <StorefrontCatalogDocumentTitle
+          categoryName={category.name}
+          categoryNameEn={category.nameEn}
+          subcategoryName={subcategory.name}
+          subcategoryNameEn={subcategory.nameEn}
+        />
         <div className="border-b border-border/60 bg-card/40">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <MarketingBreadcrumb
               className={inter.className}
               items={[
-                { label: "Inicio", href: "/" },
-                { label: "Catálogo", href: "/products" },
+                { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
                 {
-                  label: category.name,
+                  label: <LocalizedText es="Catálogo" en="Catalog" />,
+                  href: "/products",
+                },
+                {
+                  label: (
+                    <StorefrontLocalizedName
+                      name={category.name}
+                      nameEn={category.nameEn}
+                    />
+                  ),
                   href: `/catalog/${category.slug}`,
                 },
                 {
-                  label: subcategory.name,
+                  label: (
+                    <StorefrontLocalizedName
+                      name={subcategory.name}
+                      nameEn={subcategory.nameEn}
+                    />
+                  ),
                   href: `/catalog/${category.slug}/${subcategory.slug}`,
                 },
               ]}
@@ -150,7 +217,12 @@ export default async function CatalogoSlugPage({ params }: Props) {
             <div className="mt-4">
               <HomeSectionHeading
                 align="left"
-                title={subcategory.name}
+                title={
+                  <StorefrontLocalizedName
+                    name={subcategory.name}
+                    nameEn={subcategory.nameEn}
+                  />
+                }
                 titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
               />
             </div>

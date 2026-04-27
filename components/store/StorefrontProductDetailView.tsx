@@ -43,6 +43,7 @@ import {
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import { stockBadgeClass } from "@/lib/storefront-stock";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
@@ -634,6 +635,7 @@ export function StorefrontProductDetailView({
   initialProductReviews,
   similarProducts,
 }: Props) {
+  const { locale } = useI18n();
   const router = useRouter();
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -653,7 +655,7 @@ export function StorefrontProductDetailView({
   );
   const sale = priceAfterDiscount(product.price, pct);
   const showCompare = pct > 0 && sale < product.price;
-  const stockUi = stockBadgeClass(product.stock);
+  const stockUi = stockBadgeClass(product.stock, locale);
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
   const isNew = isNewFromCreatedAt(product.created_at);

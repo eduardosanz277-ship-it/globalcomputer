@@ -1,4 +1,5 @@
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { ServiceDescriptionContent } from "@/components/services/ServiceDescriptionContent";
 import { Inter } from "next/font/google";
@@ -56,16 +57,19 @@ export default async function ServiceSlugPage({ params }: Props) {
           <MarketingBreadcrumb
             className={inter.className}
             items={[
-              { label: "Inicio", href: "/" },
-              { label: "Servicios", href: "/services" },
-              { label: service.name },
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              {
+                label: <LocalizedText es="Servicios" en="Services" />,
+                href: "/services",
+              },
+              { label: <LocalizedText es={service.name} en={service.name_en} /> },
             ]}
           />
           <div className="mt-4">
             <HomeSectionHeading
               className="max-w-none"
               align="left"
-              title={service.name}
+              title={<LocalizedText es={service.name} en={service.name_en} />}
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
             />
           </div>
@@ -85,7 +89,7 @@ export default async function ServiceSlugPage({ params }: Props) {
         />
         <Image
           src={primaryImageUrl}
-          alt={service.name}
+          alt={service.name_en?.trim() || service.name}
           fill
           sizes="100vw"
           className="object-contain"
@@ -96,7 +100,10 @@ export default async function ServiceSlugPage({ params }: Props) {
   ) : null}
 
       <div className="relative z-10 mx-auto -mt-6 max-w-7xl px-4 pb-12 sm:-mt-10 sm:px-6 lg:-mt-14 lg:px-8">
-        <ServiceDescriptionContent description={service.description} />
+        <ServiceDescriptionContent
+          description={service.description}
+          descriptionEn={service.description_en}
+        />
       </div>
     </main>
   );

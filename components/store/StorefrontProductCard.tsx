@@ -10,9 +10,12 @@ import {
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import {
   isStorefrontProductNew,
+  storefrontLocalizedText,
   storefrontPrimaryImageUrl,
+  storefrontProductDisplayName,
   type StorefrontProduct,
 } from "@/modules/catalog/storefront-product.shared";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { ImageOff, Plus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
@@ -76,11 +79,18 @@ export function StorefrontProductCard({
   interClassName,
   embedPlain = false,
 }: StorefrontProductCardProps) {
+  const { locale, t } = useI18n();
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+  const displayName = storefrontProductDisplayName(p, locale);
+  const displayBrand = storefrontLocalizedText(
+    locale,
+    p.brand_name,
+    p.brand_name_en,
+  );
 
   const handleAddToCart = async (productId: string, canBuy: boolean) => {
     if (!canBuy) {
-      toast.info("Este producto no tiene stock disponible.");
+      toast.info(t("storefront.card.toastNoStock"));
       return;
     }
     setAddingProductId(productId);
@@ -91,7 +101,7 @@ export function StorefrontProductCard({
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo agregar el producto al carrito.";
+          : t("storefront.card.toastAddError");
       toast.error(message);
     } finally {
       setAddingProductId((current) => (current === productId ? null : current));
@@ -102,7 +112,7 @@ export function StorefrontProductCard({
   const pct = activeDiscountPercent(p, priceTier);
   const sale = priceAfterDiscount(p.price, pct);
   const showCompare = pct > 0 && sale < p.price;
-  const stockUi = stockBadgeClass(p.stock);
+  const stockUi = stockBadgeClass(p.stock, locale);
   const canBuy = p.stock > 0;
   const isNew = isStorefrontProductNew(p);
 
@@ -138,7 +148,7 @@ export function StorefrontProductCard({
           {img ? (
             <Image
               src={img}
-              alt={p.name}
+              alt={displayName}
               fill
               className={cn(
                 "object-cover transition duration-500 ease-out",
@@ -157,14 +167,16 @@ export function StorefrontProductCard({
                   : "bg-gradient-to-b from-muted/50 to-muted/80",
               )}
               role="img"
-              aria-label="Sin imagen del producto"
+              aria-label={t("storefront.card.imageMissingAria")}
             >
               <ImageOff
                 className="h-12 w-12 opacity-50"
                 strokeWidth={1.5}
                 aria-hidden
               />
-              <span className="sr-only">Sin imagen</span>
+              <span className="sr-only">
+                {t("storefront.card.imageMissingSr")}
+              </span>
             </div>
           )}
         </Link>
@@ -178,7 +190,10 @@ export function StorefrontProductCard({
                   "rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2 py-[2px] text-[11px] font-semibold tabular-nums text-white ring-2 ring-white/25 sm:text-[12px]",
                   embedPlain ? "shadow-none" : "shadow-md",
                 )}
-                aria-label={`Descuento ${Math.round(pct)} por ciento`}
+                aria-label={t("storefront.card.discountAria").replace(
+                  "{pct}",
+                  String(Math.round(pct)),
+                )}
               >
                 −{Math.round(pct)}%
               </span>
@@ -191,7 +206,7 @@ export function StorefrontProductCard({
                   embedPlain ? "shadow-none" : "shadow-md",
                 )}
               >
-                Nuevo
+                {t("storefront.card.newBadge")}
               </span>
             ) : null}
           </div>
@@ -223,9 +238,17 @@ export function StorefrontProductCard({
               variant="default"
               disabled={!canBuy}
               pending={addingProductId === p.id}
-              pendingLabel={<span className="hidden lg:inline">Añadiendo</span>}
+              pendingLabel={
+                <span className="hidden lg:inline">
+                  {t("storefront.card.addingPending")}
+                </span>
+              }
               skipMinWidth
-              aria-label={canBuy ? "Añadir al carrito" : "Agotado"}
+              aria-label={
+                canBuy
+                  ? t("storefront.card.addToCartAria")
+                  : t("storefront.card.outOfStockAria")
+              }
               className={cn(
                 interClassName,
                 "pointer-events-auto rounded-full border-0 border-white text-primary-foreground transition hover:bg-primary",
@@ -253,10 +276,14 @@ export function StorefrontProductCard({
                     className="lg:hidden"
                     plain={embedPlain}
                   />
-                  <span className="hidden lg:inline">Añadir al carrito</span>
+                  <span className="hidden lg:inline">
+                    {t("storefront.card.addToCart")}
+                  </span>
                 </>
               ) : (
-                <span className="text-center">Agotado</span>
+                <span className="text-center">
+                  {t("storefront.card.outOfStock")}
+                </span>
               )}
             </ButtonPending>
           </span>
@@ -274,7 +301,7 @@ export function StorefrontProductCard({
               "text-[14px] font-semibold leading-snug tracking-[0.015em] text-foreground line-clamp-2 transition group-hover/card:text-primary sm:text-[15px]",
             )}
           >
-            {p.name}
+            {displayName}
           </h3>
           <p
             className={cn(
@@ -282,7 +309,7 @@ export function StorefrontProductCard({
               "mt-1 text-left text-[12px] font-medium leading-tight text-muted-foreground",
             )}
           >
-            {p.brand_name}
+            {displayBrand}
           </p>
         </Link>
 

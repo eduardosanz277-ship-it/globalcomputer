@@ -157,3 +157,42 @@ export async function listSiteReviewsForLeaveReviewPage(): Promise<
     })) ?? []
   );
 }
+
+export type StoreRatingSummary = {
+  /** Media en escala típica 1–5; `null` si no hay valoraciones válidas. */
+  average: number | null;
+  count: number;
+};
+
+/**
+ * Promedio de valoraciones de la tienda: reseñas de producto (`reviews`) +
+ * reseñas generales del sitio (`site_reviews`).
+ */
+export async function getStoreRatingSummary(): Promise<StoreRatingSummary> {
+  const supabase = createSupabaseAdminClient();
+  const [reviewsRes, siteRes] = await Promise.all([
+    supabase.from("reviews").select("rating"),
+    supabase.from("site_reviews").select("rating"),
+  ]);
+
+  if (reviewsRes.error) {
+    console.warn("[store-rating] reviews", reviewsRes.error.message);
+  }
+  if (siteRes.error) {
+    console.warn("[store-rating] site_reviews", siteRes.error.message);
+  }
+
+  const ratings: number[] = [];
+  for (const row of reviewsRes.data ?? []) {
+    const n = Number((row as { rating: unknown }).rating);
+    if (Number.isFinite(n) && n >= 1 && n <= 5) ratings.push(n);
+  }
+  for (const row of siteRes.data ?? []) {
+    const n = Number((row as { rating: unknown }).rating);
+    if (Number.isFinite(n) && n >= 1 && n <= 5) ratings.push(n);
+  }
+
+  if (ratings.length === 0) return { average: null, count: 0 };
+  const sum = ratings.reduce((a, b) => a + b, 0);
+  return { average: sum / ratings.length, count: ratings.length };
+}

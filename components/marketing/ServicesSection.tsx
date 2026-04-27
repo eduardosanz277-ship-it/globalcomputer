@@ -1,8 +1,7 @@
-import Link from "next/link";
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { buttonVariants } from "@/components/ui/button-variants";
+"use client";
+
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { cn } from "@/utils/cn";
 import {
   resolvePrimaryServiceImage,
   type ServiceRow,
@@ -11,53 +10,63 @@ import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
 
 const fallbackServices: Array<{
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   key: "installation" | "maintenance" | "advisory";
 }> = [
   {
-    name: "Instalación profesional",
+    name: "Instalacion profesional",
+    nameEn: "Professional installation",
     description:
-      "Te ayudamos a montar y configurar tu sistema para que funcione desde el día 1.",
+      "Te ayudamos a montar y configurar tu sistema para que funcione desde el dia 1.",
+    descriptionEn:
+      "We help you install and configure your system so it works from day one.",
     key: "installation",
   },
   {
     name: "Mantenimiento",
+    nameEn: "Maintenance",
     description:
-      "Revisiones y soporte técnico para mantener el rendimiento y la seguridad.",
+      "Revisiones y soporte tecnico para mantener el rendimiento y la seguridad.",
+    descriptionEn:
+      "Checkups and technical support to preserve performance and security.",
     key: "maintenance",
   },
   {
-    name: "Asesoría personalizada",
+    name: "Asesoria personalizada",
+    nameEn: "Personalized advisory",
     description:
       "Recomendaciones según tu espacio, presupuesto y nivel de seguridad requerido.",
+    descriptionEn:
+      "Recommendations tailored to your space, budget, and required security level.",
     key: "advisory",
   },
 ];
 
-export async function ServicesSection() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("services")
-    .select(
-      "id, name, slug, description, service_images(id, url, is_primary, sort_order)",
-    )
-    .limit(6);
+export type ServiceWithI18n = ServiceRow & {
+  name_en?: string | null;
+  description_en?: string | null;
+};
 
-  const services: ServiceRow[] = (data ?? []) as ServiceRow[];
+export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
+  const { locale } = useI18n();
+  const t = (es: string, en?: string | null) =>
+    locale === "en" ? en?.trim() || es : es;
 
   const list =
     services.length > 0
       ? services.map((s) => ({
           id: s.id,
-          name: s.name,
-          description: s.description ?? "",
+          name: t(s.name, s.name_en),
+          description: t(s.description ?? "", s.description_en),
           imageUrl: resolvePrimaryServiceImage(s.service_images),
           href: `/services/${s.slug ?? s.id}`,
         }))
       : fallbackServices.map((s, idx) => ({
           id: `fallback-${idx}`,
-          name: s.name,
-          description: s.description,
+          name: t(s.name, s.nameEn),
+          description: t(s.description, s.descriptionEn),
           imageUrl: "/images/camaras_de_seguridad.webp",
           href: "#ayuda",
         }));
@@ -72,8 +81,14 @@ export async function ServicesSection() {
           <HomeSectionHeading
             align="left"
             // eyebrow="Servicios"
-            title="Servicios para tu instalación"
-            description="Instalación profesional, mantenimiento preventivo y asesoría especializada para que tu sistema de seguridad funcione siempre sin complicaciones."
+            title={t(
+              "Servicios para tu instalacion",
+              "Services for your installation",
+            )}
+            description={t(
+              "Instalacion profesional, mantenimiento preventivo y asesoria especializada para que tu sistema de seguridad funcione siempre sin complicaciones.",
+              "Professional installation, preventive maintenance, and specialized advisory so your security system keeps working without complications.",
+            )}
             className="max-w-none"
             titleClassName="text-3xl sm:text-4xl"
           />

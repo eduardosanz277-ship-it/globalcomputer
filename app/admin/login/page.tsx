@@ -19,9 +19,12 @@ import { Form } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { locale, t, supportedLocales, setLocale } = useI18n();
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -32,7 +35,7 @@ export default function AdminLoginPage() {
   });
 
   const { execute, isPending } = useServerAction(adminLoginAction, {
-    successMessage: "Sesión iniciada",
+    successMessage: t("login.toast.signedIn"),
     onSuccess: () => {
       router.push("/admin/home");
       router.refresh();
@@ -47,22 +50,42 @@ export default function AdminLoginPage() {
     <AuthLayout>
       <AuthBrandHeader />
       <AuthCard>
+        <div className="mb-4 flex justify-end gap-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+          {supportedLocales.map((lang: Locale) => {
+            const isActive = lang === locale;
+            return (
+              <button
+                key={lang}
+                type="button"
+                className={`rounded-full px-3 py-1 transition ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                }`}
+                onClick={() => setLocale(lang)}
+                aria-pressed={isActive}
+              >
+                {t(LANGUAGE_LABEL_KEY[lang])}
+              </button>
+            );
+          })}
+        </div>
         <AuthHeading
-          title="Acceso administrativo"
-          description="Usa el correo y la contraseña de tu cuenta de administrador."
+          title={t("adminLogin.heading.title")}
+          description={t("adminLogin.heading.description")}
         />
 
         <Form form={form} onSubmit={onSubmit} className="space-y-4">
           <AuthField
             name="email"
-            label="Correo electrónico"
+            label={t("adminLogin.emailLabel")}
             type="email"
             required
             error={errors.email?.message}
           />
           <AuthField
             name="password"
-            label="Contraseña"
+            label={t("adminLogin.passwordLabel")}
             type="password"
             required
             error={errors.password?.message}
@@ -70,20 +93,20 @@ export default function AdminLoginPage() {
           <AuthPrimaryButton
             type="submit"
             pending={isPending}
-            pendingLabel="Entrando"
+            pendingLabel={t("adminLogin.buttons.pending")}
           >
-            Entrar al panel
+            {t("adminLogin.buttons.submit")}
           </AuthPrimaryButton>
         </Form>
 
         <AuthFooterLinks>
           <AuthInlineLinkRow>
-            <span>¿Eres cliente o empresa?</span>
+            <span>{t("adminLogin.footer.clientPrompt")}</span>
             <Link
               href="/login"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
             >
-              Iniciar sesión
+              {t("adminLogin.footer.clientLink")}
             </Link>
           </AuthInlineLinkRow>
         </AuthFooterLinks>

@@ -11,8 +11,10 @@ type ServiceImageRow = {
 export type StorefrontService = {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   description: string | null;
+  description_en: string | null;
   images: ServiceImageRow[];
 };
 
@@ -23,7 +25,7 @@ export async function getServiceBySlug(
   const supabase = await getCatalogSupabase();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, slug, description, service_images(id, url, is_primary, sort_order)")
+    .select("id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)")
     .eq("slug", normalizedSlug)
     .maybeSingle();
 
@@ -35,8 +37,10 @@ export async function getServiceBySlug(
   return {
     id: data.id,
     name: data.name,
+    name_en: data.name_en ?? null,
     slug: data.slug ?? slugify(data.name),
     description: data.description,
+    description_en: data.description_en ?? null,
     images: (data.service_images ?? []) as ServiceImageRow[],
   };
 }
@@ -47,7 +51,7 @@ export async function getServiceById(
   const supabase = await getCatalogSupabase();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, slug, description, service_images(id, url, is_primary, sort_order)")
+    .select("id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)")
     .eq("id", id)
     .maybeSingle();
 
@@ -59,8 +63,10 @@ export async function getServiceById(
   return {
     id: data.id,
     name: data.name,
+    name_en: data.name_en ?? null,
     slug: data.slug ?? slugify(data.name),
     description: data.description,
+    description_en: data.description_en ?? null,
     images: (data.service_images ?? []) as ServiceImageRow[],
   };
 }

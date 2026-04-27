@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -14,7 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { PublicSiteContact } from "@/lib/site";
-import { siteContactMapsUrl, SITE_CONTACT_SUPPORT_HOURS } from "@/lib/site";
+import { siteContactMapsUrl } from "@/lib/site";
 import {
   contactRequestFormSchema,
   type ContactRequestFormValues,
@@ -47,6 +48,7 @@ type Props = {
 };
 
 export function ContactPageClient({ contact }: Props) {
+  const { t } = useI18n();
   const form = useForm<ContactRequestFormValues>({
     resolver: zodResolver(contactRequestFormSchema),
     defaultValues: {
@@ -69,34 +71,34 @@ export function ContactPageClient({ contact }: Props) {
     () => [
       {
         id: "phone",
-        title: "Teléfono",
+        title: t("contactPage.cardPhone"),
         value: contact.phoneDisplay,
         href: `tel:${contact.phoneTel}`,
         icon: PhoneCall,
       },
       {
         id: "email",
-        title: "Correo electrónico",
+        title: t("contactPage.cardEmail"),
         value: contact.email,
         href: `mailto:${contact.email}`,
         icon: Mail,
       },
       {
         id: "address",
-        title: "Dirección",
+        title: t("contactPage.cardAddress"),
         value: contact.address,
         href: siteContactMapsUrl(contact.address),
         icon: MapPin,
       },
       {
         id: "hours",
-        title: "Horario de atención",
-        value: SITE_CONTACT_SUPPORT_HOURS,
+        title: t("contactPage.cardHours"),
+        value: t("contactPage.supportHours"),
         href: null,
         icon: Clock3,
       },
     ],
-    [contact],
+    [contact, t],
   );
 
   const onSubmit = async (values: ContactRequestFormValues) => {
@@ -116,9 +118,9 @@ export function ContactPageClient({ contact }: Props) {
       }
 
       reset();
-      toast.success("Mensaje enviado correctamente");
+      toast.success(t("contactPage.toastSent"));
     } catch {
-      toast.error("No se pudo enviar el mensaje");
+      toast.error(t("contactPage.toastError"));
     }
   };
 
@@ -129,11 +131,10 @@ export function ContactPageClient({ contact }: Props) {
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card p-5 shadow-soft sm:p-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-              Soporte especializado
+              {t("contactPage.supportBadge")}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-              Cuéntanos tu necesidad y te ayudamos con asesoría, instalación y
-              soporte técnico para cámaras y sistemas de monitoreo.
+              {t("contactPage.supportDescription")}
             </p>
           </div>
 
@@ -181,68 +182,68 @@ export function ContactPageClient({ contact }: Props) {
         <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              Envíanos un mensaje
+              {t("contactPage.formTitle")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Te responderemos en el menor tiempo posible.
+              {t("contactPage.formDescription")}
             </p>
           </div>
 
           <Form form={form} onSubmit={onSubmit} className="mt-5 space-y-4">
             <FormField
               name="name"
-              label="Nombre"
+                label={t("contactPage.nameLabel")}
               required
               disabled={isSubmitting}
               error={errors.name?.message}
               autoComplete="name"
               className={INPUT_CLASS}
-              placeholder="Tu nombre completo"
+                placeholder={t("contactPage.namePlaceholder")}
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 name="email"
-                label="Correo electrónico"
+                label={t("contactPage.emailLabel")}
                 type="email"
                 required
                 disabled={isSubmitting}
                 error={errors.email?.message}
                 autoComplete="email"
                 className={INPUT_CLASS}
-                placeholder="correo@ejemplo.com"
+                placeholder={t("contactPage.emailPlaceholder")}
               />
               <FormField
                 name="phone"
-                label="Teléfono"
+                label={t("contactPage.phoneLabel")}
                 required
                 disabled={isSubmitting}
                 error={errors.phone?.message}
                 autoComplete="tel"
                 className={INPUT_CLASS}
-                placeholder="786-395-1076"
+                placeholder={t("contactPage.phonePlaceholder")}
               />
             </div>
 
             <FormField
               name="subject"
-              label="Asunto"
+              label={t("contactPage.subjectLabel")}
               required
               disabled={isSubmitting}
               error={errors.subject?.message}
               autoComplete="off"
               className={INPUT_CLASS}
-              placeholder="¿En qué podemos ayudarte?"
+              placeholder={t("contactPage.subjectPlaceholder")}
             />
 
             <div className="space-y-2">
               <Label htmlFor="contact-message">
-                Mensaje
+                {t("contactPage.messageLabel")}
                 <RequiredMark />
               </Label>
               <textarea
                 id="contact-message"
-                placeholder="Cuéntanos lo que necesitas: tipo de proyecto, ubicación y horario de preferencia."
+                placeholder={t("contactPage.messagePlaceholder")}
                 disabled={isSubmitting}
                 aria-invalid={errors.message ? true : undefined}
                 aria-describedby={
@@ -274,12 +275,12 @@ export function ContactPageClient({ contact }: Props) {
                     className="mr-2 h-4 w-4 shrink-0 animate-spin"
                     aria-hidden
                   />
-                  Enviando mensaje
+                  {t("contactPage.sending")}
                 </>
               ) : (
                 <>
                   <SendHorizontal className="mr-2 h-4 w-4" aria-hidden />
-                  Enviar mensaje
+                  {t("contactPage.send")}
                 </>
               )}
             </Button>

@@ -21,9 +21,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
 
 export default function RegisterEmpresaPage() {
   const router = useRouter();
+  const { locale, t, supportedLocales, setLocale } = useI18n();
+
   const form = useForm<RegisterBusinessFormInput>({
     resolver: zodResolver(registerBusinessSchema),
     defaultValues: {
@@ -35,9 +39,8 @@ export default function RegisterEmpresaPage() {
   });
 
   const { execute, isPending } = useServerAction(registerBusinessAction, {
-    successMessage:
-      "Solicitud enviada. Un administrador debe aprobar tu cuenta; te notificaremos por correo cuando puedas iniciar sesión.",
-    errorMessage: "No se pudo completar el registro",
+    successMessage: t("registerBusiness.toast.success"),
+    errorMessage: t("registerBusiness.toast.error"),
     onSuccess: () => router.push("/login"),
   });
 
@@ -47,29 +50,49 @@ export default function RegisterEmpresaPage() {
     <AuthLayout>
       <AuthBrandHeader />
       <AuthCard>
+        <div className="mb-4 flex justify-end gap-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+          {supportedLocales.map((lang: Locale) => {
+            const isActive = lang === locale;
+            return (
+              <button
+                key={lang}
+                type="button"
+                className={`rounded-full px-3 py-1 transition ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                }`}
+                onClick={() => setLocale(lang)}
+                aria-pressed={isActive}
+              >
+                {t(LANGUAGE_LABEL_KEY[lang])}
+              </button>
+            );
+          })}
+        </div>
         <AuthHeading
-          title="Crear cuenta de empresa"
-          description="Completa los datos de tu negocio."
+          title={t("registerBusiness.heading.title")}
+          description={t("registerBusiness.heading.description")}
         />
 
         <Form form={form} onSubmit={(v) => execute(v)} className="space-y-4">
           <AuthField
             name="businessName"
-            label="Nombre del negocio"
+            label={t("registerBusiness.fields.businessName")}
             required
             autoComplete="organization"
             error={errors.businessName?.message}
           />
           <AuthField
             name="phone"
-            label="Teléfono"
+            label={t("registerBusiness.fields.phone")}
             type="tel"
             autoComplete="tel"
             error={errors.phone?.message}
           />
           <AuthField
             name="email"
-            label="Correo electrónico"
+            label={t("registerBusiness.fields.email")}
             type="email"
             required
             autoComplete="email"
@@ -77,29 +100,29 @@ export default function RegisterEmpresaPage() {
           />
           <AuthField
             name="employerIdentificationNumber"
-            label="Employer Identification Number (EIN)"
+            label={t("registerBusiness.fields.ein")}
             required
             autoComplete="off"
-            placeholder="p. ej. 12-3456789"
+            placeholder={t("registerBusiness.fields.einPlaceholder")}
             error={errors.employerIdentificationNumber?.message}
           />
           <AuthPrimaryButton
             type="submit"
             pending={isPending}
-            pendingLabel="Enviando solicitud"
+            pendingLabel={t("registerBusiness.buttons.pending")}
           >
-            Enviar solicitud
+            {t("registerBusiness.buttons.submit")}
           </AuthPrimaryButton>
         </Form>
 
         <AuthFooterLinks>
           <AuthInlineLinkRow>
-            <span>¿Ya tienes cuenta?</span>
+            <span>{t("registerBusiness.footer.haveAccount")}</span>
             <Link
               href="/login"
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
             >
-              Inicia sesión
+              {t("registerBusiness.footer.signInLink")}
             </Link>
           </AuthInlineLinkRow>
         </AuthFooterLinks>

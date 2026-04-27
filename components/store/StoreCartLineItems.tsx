@@ -11,16 +11,23 @@ import {
 } from "@/lib/store-cart";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
-import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
+import {
+  storefrontLocalizedText,
+  storefrontPrimaryImageUrl,
+  storefrontProductDisplayName,
+} from "@/modules/catalog/storefront-product.shared";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
 
-function toastCartError(error: unknown) {
+function toastCartError(error: unknown, t: (key: string) => string) {
   const message =
-    error instanceof Error ? error.message : "No se pudo actualizar el carrito.";
+    error instanceof Error
+      ? error.message
+      : t("storefront.cart.toastUpdateError");
   toast.error(message);
 }
 
@@ -57,11 +64,13 @@ function CartLineRow({
   onProductNavigate?: () => void;
   runCartMutation: (fn: () => Promise<void>) => Promise<void>;
 }) {
+  const { locale, t } = useI18n();
+
   const handleRemove = async (id: string) => {
     try {
       await runCartMutation(() => gcCartRemoveProduct(id));
     } catch (error) {
-      toastCartError(error);
+      toastCartError(error, t);
     }
   };
 
@@ -69,7 +78,7 @@ function CartLineRow({
     try {
       await runCartMutation(() => gcCartSetQty(id, nextQty, maxQty));
     } catch (error) {
-      toastCartError(error);
+      toastCartError(error, t);
     }
   };
 
@@ -82,7 +91,7 @@ function CartLineRow({
         )}
       >
         <p className="text-muted-foreground">
-          Un producto de tu carrito ya no está disponible.
+          {t("storefront.cart.productUnavailable")}
         </p>
         <Button
           type="button"
@@ -91,12 +100,18 @@ function CartLineRow({
           className="shrink-0"
           onClick={() => void handleRemove(item.productId)}
         >
-          Quitar
+          {t("storefront.cart.remove")}
         </Button>
       </div>
     );
   }
 
+  const displayName = storefrontProductDisplayName(product, locale);
+  const displayBrand = storefrontLocalizedText(
+    locale,
+    product.brand_name,
+    product.brand_name_en,
+  );
   const img = storefrontPrimaryImageUrl(product);
   const unit = cartLineUnitPrice(product, tier);
   const lineTotal = unit * item.qty;
@@ -123,7 +138,7 @@ function CartLineRow({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-            Sin foto
+            {t("storefront.cart.noPhoto")}
           </div>
         )}
       </Link>
@@ -135,10 +150,10 @@ function CartLineRow({
               onClick={onProductNavigate}
               className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary"
             >
-              {product.name}
+              {displayName}
             </Link>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {product.brand_name}
+              {displayBrand}
             </p>
           </div>
           <Button
@@ -146,7 +161,7 @@ function CartLineRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-            aria-label="Eliminar del carrito"
+            aria-label={t("storefront.cart.removeFromCartAria")}
             onClick={() => void handleRemove(product.id)}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
@@ -165,7 +180,7 @@ function CartLineRow({
           />
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-xs text-muted-foreground">
-              {formatUsd(unit)} c/u
+              {formatUsd(unit)} {t("storefront.cart.each")}
             </span>
             <span className="text-sm font-bold tabular-nums text-foreground">
               {formatUsd(lineTotal)}

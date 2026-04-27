@@ -1,7 +1,9 @@
 export type ServiceRow = {
   id: string;
   name: string;
+  name_en?: string | null;
   description: string | null;
+  description_en?: string | null;
   slug?: string | null;
   service_images?: Array<{
     id: string;

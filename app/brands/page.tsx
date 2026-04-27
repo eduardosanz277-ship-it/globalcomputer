@@ -1,6 +1,12 @@
 import { Inter } from "next/font/google";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
+import { StorefrontBrandsHubDocumentTitle } from "@/components/store/StorefrontBrandsHubDocumentTitle";
+import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 const inter = Inter({
@@ -9,20 +15,46 @@ const inter = Inter({
   display: "swap",
 });
 
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  if (locale === "en") {
+    return {
+      title: "Shop by brand",
+      description: "Browse products by brand.",
+    };
+  }
+  return {
+    title: "Comprar por marca",
+    description: "Explora productos organizados por marca.",
+  };
+}
+
 export default async function BrandsPage() {
   const nav = await getNavigationData();
   const brands = nav?.brands ?? [];
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
+      <StorefrontBrandsHubDocumentTitle />
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          {/* description="Explora productos organizados por marca." */}
-          {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
+          <MarketingBreadcrumb
+            className={inter.className}
+            items={[
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              {
+                label: (
+                  <LocalizedText es="Comprar por marca" en="Shop by brand" />
+                ),
+              },
+            ]}
+          />
           <HomeSectionHeading
-            eyebrow="Tienda"
+            eyebrow={<LocalizedText es="Tienda" en="Store" />}
             align="left"
-            title="Comprar por marca"
+            title={
+              <LocalizedText es="Comprar por marca" en="Shop by brand" />
+            }
             titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
           />
         </div>
@@ -39,9 +71,11 @@ export default async function BrandsPage() {
                 {b.name.slice(0, 1)}
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground">
-                {b.name}
+                <StorefrontLocalizedName name={b.name} nameEn={b.nameEn ?? null} />
               </h3>
-              <span className="text-sm text-muted-foreground">Ver productos</span>
+              <span className="text-sm text-muted-foreground">
+                <LocalizedText es="Ver productos" en="View products" />
+              </span>
             </Link>
           ))}
         </div>

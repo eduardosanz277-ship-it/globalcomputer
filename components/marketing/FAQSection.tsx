@@ -18,7 +18,7 @@ type Props = {
 };
 
 export function FAQSection({ items }: Props) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
 
   const normalizedItems = useMemo(
@@ -48,8 +48,8 @@ export function FAQSection({ items }: Props) {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5 shadow-soft backdrop-blur-sm sm:p-8 lg:p-10">
           <HomeSectionHeading
-            title="Preguntas frecuentes"
-            description="Respuestas claras a las dudas más comunes para ayudarte a elegir mejor y comprar con total confianza."
+            title={t("home.faq.title")}
+            description={t("home.faq.description")}
             titleClassName="text-3xl sm:text-4xl"
             descriptionClassName="max-w-2xl"
           />

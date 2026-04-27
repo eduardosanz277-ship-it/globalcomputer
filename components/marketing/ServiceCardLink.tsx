@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
 import Image from "next/image";
 import { Poppins } from "next/font/google";
@@ -14,19 +17,28 @@ const poppins = Poppins({
 
 type ServiceCardLinkProps = {
   name: string;
+  nameEn?: string | null;
   /** Puede incluir HTML; se muestra como texto plano recortado. */
   description: string | null | undefined;
+  descriptionEn?: string | null;
   imageUrl: string | null;
   href: string;
 };
 
 export function ServiceCardLink({
   name,
+  nameEn,
   description,
+  descriptionEn,
   imageUrl,
   href,
 }: ServiceCardLinkProps) {
-  const excerpt = clampText(plainTextFromHtml(description ?? ""), 130);
+  const { locale } = useI18n();
+  const t = (es: string, en: string) => (locale === "en" ? en : es);
+  const displayName = locale === "en" ? nameEn?.trim() || name : name;
+  const rawDescription =
+    locale === "en" ? descriptionEn?.trim() || description || "" : description || "";
+  const excerpt = clampText(plainTextFromHtml(rawDescription), 130);
 
   return (
     <Link
@@ -37,7 +49,7 @@ export function ServiceCardLink({
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={name}
+            alt={displayName}
             fill
             sizes="(min-width: 1024px) 30vw, (min-width: 640px) 48vw, 100vw"
             className="object-cover transition duration-500 group-hover:scale-105"
@@ -55,18 +67,18 @@ export function ServiceCardLink({
             "text-lg font-semibold leading-snug text-foreground transition group-hover:text-primary",
           )}
         >
-          {name}
+          {displayName}
         </h3>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
           {excerpt}
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <span className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition group-hover:bg-primary/90">
-            Ver servicio
+            {t("Ver servicio", "View service")}
             <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </span>
           <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-4 text-sm font-semibold text-foreground/90 backdrop-blur-sm transition group-hover:border-primary/30 group-hover:bg-primary/[0.04]">
-            Hablar con asesor
+            {t("Hablar con asesor", "Talk to advisor")}
             <MessageCircle className="h-4 w-4" aria-hidden />
           </span>
         </div>

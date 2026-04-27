@@ -1,22 +1,19 @@
+"use client";
+
+import { useMemo } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { StoreRatingSummary } from "@/modules/site/leave-review-data.service";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { getPublicSiteContact } from "@/lib/site-contact.server";
-import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { cn } from "@/utils/cn";
-import {
-  Headphones,
-  Phone,
-  ShieldCheck,
-  Star,
-  Truck
-} from "lucide-react";
+import { Headphones, Phone, ShieldCheck, Star, Truck } from "lucide-react";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 
 const TRUST_PILLS = [
-  { Icon: Truck, label: "Envío a EE. UU." },
-  { Icon: ShieldCheck, label: "Garantía real" },
-  { Icon: Headphones, label: "Te ayudamos" },
+  { Icon: Truck, label: "Envio a EE. UU.", labelEn: "Shipping in the U.S." },
+  { Icon: ShieldCheck, label: "Garantia real", labelEn: "Real warranty" },
+  { Icon: Headphones, label: "Te ayudamos", labelEn: "We help you" },
 ] as const;
 
 const HERO_STATS = [
@@ -25,10 +22,21 @@ const HERO_STATS = [
   { label: "Garantía", value: "Equipos" },
 ];
 
-const TRUST_BAR = [
-  { Icon: Star, text: "4,9 valoración media", sub: "compras verificadas" },
-  { Icon: Truck, text: "Envío nacional", sub: "EE. UU." },
-  { Icon: ShieldCheck, text: "Pago seguro", sub: "datos protegidos" },
+const TRUST_BAR_TAIL = [
+  {
+    Icon: Truck,
+    text: "Envio nacional",
+    textEn: "Nationwide shipping",
+    sub: "EE. UU.",
+    subEn: "U.S.",
+  },
+  {
+    Icon: ShieldCheck,
+    text: "Pago seguro",
+    textEn: "Secure payment",
+    sub: "datos protegidos",
+    subEn: "protected data",
+  },
 ] as const;
 
 const poppins = Poppins({
@@ -37,12 +45,62 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export async function StoreHero() {
-  const [nav, contact] = await Promise.all([
-    getNavigationData(),
-    getPublicSiteContact(),
-  ]);
-  const categories = nav?.catalogCategories ?? [];
+type HeroCategory = {
+  id: string;
+  name: string;
+  nameEn?: string | null;
+  slug: string;
+};
+
+type HeroContact = {
+  phoneTel: string;
+  phoneDisplay: string;
+};
+
+export function StoreHero({
+  categories,
+  contact,
+  ratingSummary,
+}: {
+  categories: HeroCategory[];
+  contact: HeroContact;
+  ratingSummary: StoreRatingSummary;
+}) {
+  const { locale } = useI18n();
+  const t = (es: string, en?: string | null) =>
+    locale === "en" ? en?.trim() || es : es;
+
+  const trustBarRows = useMemo(() => {
+    const { average, count } = ratingSummary;
+    const fmt = (n: number) => {
+      const s = n.toFixed(1);
+      return locale === "en" ? s : s.replace(".", ",");
+    };
+    const first =
+      average != null && count > 0
+        ? {
+            Icon: Star,
+            text:
+              locale === "en"
+                ? `${fmt(average)} average rating`
+                : `${fmt(average)} valoración media`,
+            sub:
+              locale === "en"
+                ? count === 1
+                  ? "1 review"
+                  : `${count} reviews`
+                : count === 1
+                  ? "1 valoración"
+                  : `${count} valoraciones`,
+          }
+        : {
+            Icon: Star,
+            text:
+              locale === "en" ? "Average rating" : "Valoración media",
+            sub: locale === "en" ? "No reviews yet" : "Aún sin reseñas",
+          };
+    return [...[first], ...TRUST_BAR_TAIL] as const;
+  }, [locale, ratingSummary]);
 
   return (
     <div className="relative">
@@ -79,18 +137,20 @@ export async function StoreHero() {
                   "mt-5 text-[2.25rem] font-semibold leading-[1.1] tracking-tight sm:text-[2.625rem] sm:leading-[1.08] lg:text-[2.725rem]",
                 )}
               >
-                Tu seguridad,{" "}
+                {t("Tu seguridad", "Your security")},{" "}
                 <span className="bg-gradient-to-r from-white via-white to-secondary/90 bg-clip-text text-transparent">
-                  simple y clara
+                  {t("simple y clara", "simple and clear")}
                 </span>
               </h1>
               <p className="mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:text-[18px]">
-                Cámaras, grabadoras y kits con precios visibles y equipo que te
-                orienta. Así debería ser comprar tecnología.
+                {t(
+                  "Camaras, grabadoras y kits con precios visibles y equipo que te orienta. Asi deberia ser comprar tecnologia.",
+                  "Cameras, recorders, and kits with transparent pricing and a team that guides you. This is how buying technology should feel.",
+                )}
               </p>
 
               <ul className="mt-7 flex flex-wrap gap-2 sm:gap-2.5">
-                {TRUST_PILLS.map(({ Icon, label }) => (
+                {TRUST_PILLS.map(({ Icon, label, labelEn }) => (
                   <li
                     key={label}
                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-white/92 backdrop-blur-md sm:px-3.5 sm:py-2 sm:text-base"
@@ -99,7 +159,7 @@ export async function StoreHero() {
                       className="h-3.5 w-3.5 shrink-0 text-secondary sm:h-4 sm:w-4"
                       aria-hidden
                     />
-                    {label}
+                    {t(label, labelEn)}
                   </li>
                 ))}
               </ul>
@@ -113,7 +173,7 @@ export async function StoreHero() {
                   )}
                 >
                   <span className="text-base sm:text-[1.05rem]">
-                    Comprar ahora
+                    {t("Comprar ahora", "Shop now")}
                   </span>
                 </Link>
                 <Link
@@ -122,12 +182,12 @@ export async function StoreHero() {
                     buttonVariants({ size: "lg", variant: "outline" }),
                     "group h-14 w-full gap-2 rounded-full border-2 border-white/35 bg-white/5 px-5 font-semibold text-white backdrop-blur-md hover:bg-white/15 sm:w-auto",
                   )}
-                  aria-label={`Llamar para ayuda al ${contact.phoneDisplay}`}
+                  aria-label={`${t("Llamar para ayuda al", "Call for help at")} ${contact.phoneDisplay}`}
                 >
                   <Phone className="h-4 w-4 shrink-0" aria-hidden />
                   <span className="flex flex-col items-start leading-tight">
                     <span className="text-[11px] font-medium text-white/80 sm:text-xs">
-                      ¿Necesitas ayuda?
+                      {t("Necesitas ayuda?", "Need help?")}
                     </span>
                     <span className="text-sm font-semibold text-white sm:text-base">
                       {contact.phoneDisplay}
@@ -152,7 +212,7 @@ export async function StoreHero() {
 
               <div className="mt-6">
                 <p className="text-sm font-semibold uppercase tracking-wider text-white/75 sm:text-base">
-                  Explora por categoría
+                  {t("Explora por categoria", "Explore by category")}
                 </p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {categories.map((c) => (
@@ -160,7 +220,7 @@ export async function StoreHero() {
                       <Link
                         href={`/catalog/${c.slug}`}
                         prefetch={false}
-                        aria-label={`Ver productos en ${c.name}`}
+                        aria-label={`${t("Ver productos en", "View products in")} ${t(c.name, c.nameEn)}`}
                         className={cn(
                           "group relative inline-flex w-max max-w-full items-start gap-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-left text-[13px] font-medium leading-snug text-white shadow-sm transition-all duration-300 ease-out sm:text-sm",
                           "hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.14] hover:shadow-lg hover:shadow-primary/25",
@@ -173,7 +233,7 @@ export async function StoreHero() {
                           aria-hidden
                         />
                         <span className="relative z-[1] break-words">
-                          {c.name}
+                          {t(c.name, c.nameEn)}
                         </span>
                         {/* <ChevronRight
                           className="relative z-[1] mt-0.5 hidden h-4 w-4 shrink-0 text-secondary/90 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100 -translate-x-1 lg:block"
@@ -192,27 +252,31 @@ export async function StoreHero() {
       {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual */}
       <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft-lg sm:flex sm:items-stretch sm:justify-between sm:gap-0 sm:p-0 sm:py-1">
-          {TRUST_BAR.map(({ Icon, text, sub }, i) => (
-            <div
-              key={text}
-              className={cn(
-                "flex flex-1 items-center gap-3 px-4 py-3 sm:justify-center sm:py-4 sm:px-6",
-                i > 0 && "border-t border-border/60 sm:border-l sm:border-t-0",
-              )}
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0 text-left">
-                <p className="text-sm font-semibold text-foreground sm:text-base">
-                  {text}
-                </p>
-                <p className="text-sm text-muted-foreground sm:text-base">
-                  {sub}
-                </p>
+          {trustBarRows.map((row, i) => {
+            const { Icon } = row;
+            const isTail = "textEn" in row;
+            return (
+              <div
+                key={i === 0 ? "hero-trust-rating" : row.text}
+                className={cn(
+                  "flex flex-1 items-center gap-3 px-4 py-3 sm:justify-center sm:py-4 sm:px-6",
+                  i > 0 && "border-t border-border/60 sm:border-l sm:border-t-0",
+                )}
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="min-w-0 text-left">
+                  <p className="text-sm font-semibold text-foreground sm:text-base">
+                    {isTail ? t(row.text, row.textEn) : row.text}
+                  </p>
+                  <p className="text-sm text-muted-foreground sm:text-base">
+                    {isTail ? t(row.sub, row.subEn) : row.sub}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

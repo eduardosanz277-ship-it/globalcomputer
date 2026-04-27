@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
 import {
   Clock,
@@ -8,13 +11,11 @@ import {
   Music2,
   Phone,
 } from "lucide-react";
-import {
-  type PublicSiteContact,
-  siteContactMapsUrl,
-  SITE_CONTACT_SUPPORT_HOURS,
-} from "@/lib/site";
+import { type PublicSiteContact, siteContactMapsUrl } from "@/lib/site";
 
 export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
+  const { t } = useI18n();
+
   return (
     <footer
       id="ayuda"
@@ -24,11 +25,11 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent"
         aria-hidden
       />
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
-              Empresa
+              {t("footer.company")}
             </p>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
@@ -36,7 +37,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/#destacados"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Destacados
+                  {t("footer.featured")}
                 </Link>
               </li>
               <li>
@@ -44,7 +45,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/#servicios"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Servicios
+                  {t("footer.services")}
                 </Link>
               </li>
               <li>
@@ -52,7 +53,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/#ofertas"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Ofertas
+                  {t("footer.offers")}
                 </Link>
               </li>
               <li>
@@ -60,7 +61,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/#marcas"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Marcas
+                  {t("footer.brands")}
                 </Link>
               </li>
               <li>
@@ -68,14 +69,14 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/leave-review"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Reseñas
+                  {t("footer.reviews")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
-              Ayuda
+              {t("footer.help")}
             </p>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
@@ -83,28 +84,30 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                   href="/login"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Tu cuenta / pedidos
+                  {t("footer.accountOrders")}
                 </Link>
               </li>
               <li>
-                <span className="text-zinc-500">Envíos y devoluciones</span>
+                <span className="text-zinc-500">
+                  {t("footer.shippingReturns")}
+                </span>
               </li>
               <li>
-                <span className="text-zinc-500">Garantía</span>
+                <span className="text-zinc-500">{t("footer.warranty")}</span>
               </li>
               <li>
                 <Link
                   href="/contact"
                   className="text-zinc-400 transition hover:text-white"
                 >
-                  Contacto
+                  {t("footer.contact")}
                 </Link>
               </li>
             </ul>
           </div>
           <div className="space-y-4 text-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
-              Contacto
+              {t("footer.contactSection")}
             </p>
             <a
               href={`tel:${contact.phoneTel}`}
@@ -131,7 +134,10 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-start gap-3 text-zinc-400 transition hover:text-white"
-              aria-label={`Abrir ${contact.address} en Google Maps`}
+              aria-label={t("footer.mapsAria").replace(
+                "{address}",
+                contact.address,
+              )}
             >
               <MapPin
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-white"
@@ -144,12 +150,12 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
                 aria-hidden
               />
-              <span>{SITE_CONTACT_SUPPORT_HOURS}</span>
+              <span>{t("footer.supportHours")}</span>
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
-              Redes sociales
+              {t("footer.social")}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
@@ -157,7 +163,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
-                aria-label="Facebook de Global Computers USA"
+                aria-label={t("footer.facebookAria")}
               >
                 <Facebook className="h-4 w-4" aria-hidden />
               </Link>
@@ -166,7 +172,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
-                aria-label="Instagram de Global Computers USA"
+                aria-label={t("footer.instagramAria")}
               >
                 <Instagram className="h-4 w-4" aria-hidden />
               </Link>
@@ -175,7 +181,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-white"
-                aria-label="TikTok de Global Computers USA"
+                aria-label={t("footer.tiktokAria")}
               >
                 <Music2 className="h-4 w-4" aria-hidden />
               </Link>
@@ -185,15 +191,15 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center text-xs text-zinc-600 sm:flex-row sm:text-left">
           <p>
-            © {new Date().getFullYear()} Global Computers USA. Todos los
-            derechos reservados. Creado por Veltrix Digital.
+            © {new Date().getFullYear()} Global Computers USA.{" "}
+            {t("footer.rightsReserved")} {t("footer.createdBy")}
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="#" className="transition hover:text-zinc-300">
-              Privacidad
+              {t("footer.privacy")}
             </Link>
             <Link href="#" className="transition hover:text-zinc-300">
-              Términos
+              {t("footer.terms")}
             </Link>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
 import { useGcCart } from "@/components/store/useGcCart";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { slugify } from "@/lib/slugify";
@@ -479,7 +479,7 @@ export function SiteHeader({ user }: Props) {
                         "relative rounded-xl hover:bg-transparent",
                       )}
                       aria-expanded={accountOpen}
-                      aria-label="Mi cuenta"
+                      aria-label={t("header.myAccount")}
                     >
                       <span
                         className={cn(publicUserAvatarClass, "h-8 w-8 text-xs")}
@@ -527,7 +527,7 @@ export function SiteHeader({ user }: Props) {
                                   strokeWidth={1.35}
                                   aria-hidden
                                 />
-                                Panel de administración
+                                {t("header.adminPanel")}
                               </Link>
                               <form action="/auth/logout" method="post">
                                 <button
@@ -535,7 +535,7 @@ export function SiteHeader({ user }: Props) {
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
                                 >
                                   <LogOut className="h-4 w-4" />
-                                  Cerrar sesión
+                                  {t("header.logout")}
                                 </button>
                               </form>
                             </>
@@ -551,7 +551,7 @@ export function SiteHeader({ user }: Props) {
                                   strokeWidth={1.35}
                                   aria-hidden
                                 />
-                                Mi cuenta
+                                {t("header.myAccount")}
                               </Link>
                               <Link
                                 href="/profile?tab=orders"
@@ -563,7 +563,7 @@ export function SiteHeader({ user }: Props) {
                                   strokeWidth={1.35}
                                   aria-hidden
                                 />
-                                Pedidos
+                                {t("header.orders")}
                               </Link>
                               <Link
                                 href="/profile?tab=addresses"
@@ -575,7 +575,7 @@ export function SiteHeader({ user }: Props) {
                                   strokeWidth={1.35}
                                   aria-hidden
                                 />
-                                Direcciones
+                                {t("header.addresses")}
                               </Link>
                               <form action="/auth/logout" method="post">
                                 <button
@@ -583,7 +583,7 @@ export function SiteHeader({ user }: Props) {
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
                                 >
                                   <LogOut className="h-4 w-4" />
-                                  Cerrar sesión
+                                  {t("header.logout")}
                                 </button>
                               </form>
                             </>
@@ -599,7 +599,7 @@ export function SiteHeader({ user }: Props) {
                       buttonVariants({ variant: "ghost", size: "icon" }),
                       "rounded-xl hover:bg-transparent",
                     )}
-                    aria-label="Iniciar sesión"
+                    aria-label={t("header.signIn")}
                   >
                     <UserRound
                       className="h-7 w-7"
@@ -615,7 +615,7 @@ export function SiteHeader({ user }: Props) {
                 size="icon"
                 type="button"
                 className="relative -ml-1.5 row-start-1 col-start-4 shrink-0 justify-self-end rounded-xl hover:bg-transparent sm:col-start-5"
-                aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? t("header.itemOne") : t("header.itemMany")})`}
                 onClick={handleCartIconClick}
               >
                 <span className="relative inline-flex">
@@ -662,7 +662,7 @@ export function SiteHeader({ user }: Props) {
                       {SITE_BRAND_NAME}
                     </span>
                     <span className="hidden truncate text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/90 sm:block">
-                      {SITE_BRAND_TAGLINE}
+                      {t("header.brandTagline")}
                     </span>
                   </span>
                 </Link>
@@ -670,7 +670,7 @@ export function SiteHeader({ user }: Props) {
 
               <div className="w-full min-w-0 px-1 sm:px-2 lg:px-3 xl:px-4">
                 <label className="relative block w-full">
-                  <span className="sr-only">Buscar productos</span>
+                  <span className="sr-only">{t("header.searchLabel")}</span>
                   <Search
                     className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:right-3.5"
                     aria-hidden
@@ -678,7 +678,7 @@ export function SiteHeader({ user }: Props) {
                   <input
                     type="search"
                     name="q"
-                    placeholder="Buscar cámaras IP, DVR, kits de seguridad, marcas..."
+                    placeholder={t("header.searchPlaceholder")}
                     autoComplete="off"
                     className="h-11 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
                   />
@@ -695,7 +695,7 @@ export function SiteHeader({ user }: Props) {
                   size="sm"
                   type="button"
                   className="shrink-0 gap-2 rounded-xl px-2.5 hover:bg-transparent hover:text-foreground md:order-2 md:px-3"
-                  aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+                  aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? t("header.itemOne") : t("header.itemMany")})`}
                   onClick={handleCartIconClick}
                 >
                   <span className="relative inline-flex">
@@ -784,7 +784,7 @@ export function SiteHeader({ user }: Props) {
                                     className="h-4 w-4"
                                     strokeWidth={1.35}
                                   />
-                                  Panel de administración
+                                  {t("header.adminPanel")}
                                 </Link>
                                 <form action="/auth/logout" method="post">
                                   <button
@@ -793,7 +793,7 @@ export function SiteHeader({ user }: Props) {
                                     role="menuitem"
                                   >
                                     <LogOut className="h-4 w-4" />
-                                    Cerrar sesión
+                                    {t("header.logout")}
                                   </button>
                                 </form>
                               </>
@@ -809,7 +809,7 @@ export function SiteHeader({ user }: Props) {
                                     className="h-4 w-4"
                                     strokeWidth={1.35}
                                   />
-                                  Mi cuenta
+                                  {t("header.myAccount")}
                                 </Link>
                                 <Link
                                   href="/profile?tab=orders"
@@ -822,7 +822,7 @@ export function SiteHeader({ user }: Props) {
                                     strokeWidth={1.35}
                                     aria-hidden
                                   />
-                                  Pedidos
+                                  {t("header.orders")}
                                 </Link>
                                 <Link
                                   href="/profile?tab=addresses"
@@ -835,7 +835,7 @@ export function SiteHeader({ user }: Props) {
                                     strokeWidth={1.35}
                                     aria-hidden
                                   />
-                                  Direcciones
+                                  {t("header.addresses")}
                                 </Link>
                                 <form action="/auth/logout" method="post">
                                   <button
@@ -844,7 +844,7 @@ export function SiteHeader({ user }: Props) {
                                     role="menuitem"
                                   >
                                     <LogOut className="h-4 w-4" />
-                                    Cerrar sesión
+                                    {t("header.logout")}
                                   </button>
                                 </form>
                               </>
@@ -875,7 +875,7 @@ export function SiteHeader({ user }: Props) {
                           strokeWidth={1.35}
                           aria-hidden
                         />
-                        <span>Cuenta</span>
+                        <span>{t("header.account")}</span>
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
                       {accountMenuPresence.mounted && (
@@ -894,10 +894,10 @@ export function SiteHeader({ user }: Props) {
                               onClick={() => setAccountOpen(false)}
                             >
                               <LogIn className="h-4 w-4" strokeWidth={1.6} />
-                              Iniciar sesión
+                              {t("header.signIn")}
                             </Link>
                             <Link
-                              href="/register"
+                              href="/register/empresa"
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                               role="menuitem"
                               onClick={() => setAccountOpen(false)}
@@ -906,7 +906,7 @@ export function SiteHeader({ user }: Props) {
                                 className="h-4 w-4"
                                 strokeWidth={1.6}
                               />
-                              Crear cuenta
+                              {t("header.createAccount")}
                             </Link>
                             <div
                               className="my-1 border-t border-border"
@@ -919,7 +919,7 @@ export function SiteHeader({ user }: Props) {
                               onClick={() => setAccountOpen(false)}
                             >
                               <Package className="h-4 w-4" strokeWidth={1.6} />
-                              Pedidos
+                              {t("header.orders")}
                             </Link>
                             <Link
                               href="/profile?tab=addresses"
@@ -932,7 +932,7 @@ export function SiteHeader({ user }: Props) {
                                 strokeWidth={1.6}
                                 aria-hidden
                               />
-                              Direcciones
+                              {t("header.addresses")}
                             </Link>
                           </div>
                         </div>
@@ -956,7 +956,7 @@ export function SiteHeader({ user }: Props) {
           <div className="min-h-0 overflow-visible lg:min-h-0">
             <nav
               className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 overflow-visible px-4 py-1 sm:gap-3 sm:px-6 lg:px-8"
-              aria-label="Principal"
+              aria-label={t("header.mainNavLabel")}
             >
               <Link
                 href="/"
@@ -1122,7 +1122,7 @@ export function SiteHeader({ user }: Props) {
                                   )}
                                 >
                                   <span className="truncate">
-                                    Ver por {localizeName(general)}
+                                    {t("header.viewBy")} {localizeName(general)}
                                   </span>
                                   {hasSubs ? (
                                     <ChevronRight
@@ -1371,7 +1371,7 @@ export function SiteHeader({ user }: Props) {
                     type="button"
                     onClick={() => setMobileNavOpen(false)}
                     className="rounded-lg p-2 transition hover:bg-muted"
-                    aria-label="Cerrar menú principal"
+                    aria-label={t("header.closeMenu")}
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1379,7 +1379,7 @@ export function SiteHeader({ user }: Props) {
               </div>
               <nav
                 className="flex h-[calc(100dvh-57px)] flex-col overflow-hidden overscroll-contain bg-[#e4e7ec]"
-                aria-label="Principal móvil"
+                aria-label={t("header.mobilePrimaryNavLabel")}
               >
                 <div className="relative min-h-0 flex-1 overflow-hidden">
                   <div
@@ -1407,7 +1407,7 @@ export function SiteHeader({ user }: Props) {
                                 navPrimaryLabelClass,
                               )}
                             >
-                              Inicio
+                              {t("header.nav.home")}
                             </Link>
                             <button
                               type="button"
@@ -1419,7 +1419,7 @@ export function SiteHeader({ user }: Props) {
                                 pushMobileNavPanel({ kind: "categories" })
                               }
                             >
-                              Categorías
+                              {t("header.nav.categories")}
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1435,7 +1435,7 @@ export function SiteHeader({ user }: Props) {
                                 pushMobileNavPanel({ kind: "security" })
                               }
                             >
-                              Sistema de Seguridad
+                              {t("header.nav.securitySystems")}
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1451,7 +1451,7 @@ export function SiteHeader({ user }: Props) {
                                 pushMobileNavPanel({ kind: "brands" })
                               }
                             >
-                              Ver Marcas
+                              {t("header.nav.brands")}
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1467,7 +1467,7 @@ export function SiteHeader({ user }: Props) {
                                 pushMobileNavPanel({ kind: "services" })
                               }
                             >
-                              Servicios
+                              {t("header.nav.services")}
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1481,7 +1481,7 @@ export function SiteHeader({ user }: Props) {
                                 navPrimaryLabelClass,
                               )}
                             >
-                              Contacto
+                              {t("header.nav.contact")}
                             </Link>
                             {/*
                             <Link
@@ -1532,7 +1532,7 @@ export function SiteHeader({ user }: Props) {
                                         className="h-4 w-4"
                                         strokeWidth={2}
                                       />
-                                      Panel de administración
+                                      {t("header.adminPanel")}
                                     </Link>
                                     <form action="/auth/logout" method="post">
                                       <button
@@ -1547,7 +1547,7 @@ export function SiteHeader({ user }: Props) {
                                           className="h-4 w-4 shrink-0"
                                           aria-hidden
                                         />
-                                        Cerrar sesión
+                                        {t("header.logout")}
                                       </button>
                                     </form>
                                   </>
@@ -1566,7 +1566,7 @@ export function SiteHeader({ user }: Props) {
                                         strokeWidth={2}
                                         aria-hidden
                                       />
-                                      Mi cuenta
+                                      {t("header.myAccount")}
                                     </Link>
                                     <Link
                                       href="/profile?tab=orders"
@@ -1581,7 +1581,7 @@ export function SiteHeader({ user }: Props) {
                                         strokeWidth={2}
                                         aria-hidden
                                       />
-                                      Pedidos
+                                      {t("header.orders")}
                                     </Link>
                                     <Link
                                       href="/profile?tab=addresses"
@@ -1596,7 +1596,7 @@ export function SiteHeader({ user }: Props) {
                                         strokeWidth={2}
                                         aria-hidden
                                       />
-                                      Direcciones
+                                      {t("header.addresses")}
                                     </Link>
                                     <form action="/auth/logout" method="post">
                                       <button
@@ -1611,7 +1611,7 @@ export function SiteHeader({ user }: Props) {
                                           className="h-4 w-4 shrink-0"
                                           aria-hidden
                                         />
-                                        Cerrar sesión
+                                        {t("header.logout")}
                                       </button>
                                     </form>
                                   </>
@@ -1628,10 +1628,10 @@ export function SiteHeader({ user }: Props) {
                                   )}
                                 >
                                   <LogIn className="h-4 w-4" strokeWidth={2} />
-                                  Iniciar sesión
+                                  {t("header.signIn")}
                                 </Link>
                                 <Link
-                                  href="/register"
+                                  href="/register/empresa"
                                   onClick={() => setMobileNavOpen(false)}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
@@ -1642,7 +1642,7 @@ export function SiteHeader({ user }: Props) {
                                     className="h-4 w-4"
                                     strokeWidth={2}
                                   />
-                                  Crear cuenta
+                                  {t("header.createAccount")}
                                 </Link>
                                 <div
                                   className="my-1 border-t border-border/70"
@@ -1661,7 +1661,7 @@ export function SiteHeader({ user }: Props) {
                                     strokeWidth={2}
                                     aria-hidden
                                   />
-                                  Pedidos
+                                  {t("header.orders")}
                                 </Link>
                                 <Link
                                   href="/profile?tab=addresses"
@@ -1676,7 +1676,7 @@ export function SiteHeader({ user }: Props) {
                                     strokeWidth={2}
                                     aria-hidden
                                   />
-                                  Direcciones
+                                  {t("header.addresses")}
                                 </Link>
                               </>
                             )}
@@ -1689,7 +1689,7 @@ export function SiteHeader({ user }: Props) {
                               className={cn(
                                 "flex w-full shrink-0 items-center gap-2 border-b border-border/60 bg-[#e4e7ec] px-3 py-2.5 text-left transition hover:bg-muted/60",
                               )}
-                              aria-label="Volver al menú principal"
+                              aria-label={t("header.backToMainMenu")}
                             >
                               <ChevronLeft
                                 className="h-5 w-5 shrink-0"
@@ -1730,7 +1730,7 @@ export function SiteHeader({ user }: Props) {
                                           )}
                                         >
                                           <span className="truncate">
-                                            Ver por {localizeName(general)}
+                                            {t("header.viewBy")} {localizeName(general)}
                                           </span>
                                           <ChevronDown
                                             className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
@@ -1766,7 +1766,7 @@ export function SiteHeader({ user }: Props) {
                                           mobileNavCatalogHeadingClass,
                                         )}
                                       >
-                                        Ver por {localizeName(general)}
+                                        {t("header.viewBy")} {localizeName(general)}
                                       </div>
                                     ),
                                 )

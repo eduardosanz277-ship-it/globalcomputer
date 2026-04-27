@@ -5,6 +5,7 @@ import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary"
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
 import { useRunCartMutation } from "@/components/store/useRunCartMutation";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
@@ -21,6 +22,7 @@ export function StoreCartDrawer({
   onClose: () => void;
   tier: StorefrontPriceTier;
 }) {
+  const { t } = useI18n();
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
   const { productsById, loading } = useCartProductsMap(ids);
@@ -34,10 +36,10 @@ export function StoreCartDrawer({
     <SlideOver
       open={open}
       onClose={onClose}
-      title="Tu carrito de compras"
-      description="Revisa los artículos añadidos antes de continuar."
+      title={t("storefront.cart.drawerTitle")}
+      description={t("storefront.cart.drawerDescription")}
       panelClassName="z-[100] w-full sm:max-w-md"
-      contentAriaLabel="Lista de productos en el carrito"
+      contentAriaLabel={t("storefront.cart.drawerContentAria")}
       contentClassName="bg-muted/90"
       footer={
         !isCartEmpty ? (
@@ -63,10 +65,10 @@ export function StoreCartDrawer({
             />
           </div>
           <p className="text-sm font-medium text-foreground">
-            Tu carrito está vacío
+            {t("storefront.cart.emptyTitle")}
           </p>
           <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-            Añade productos desde el catálogo para verlos aquí.
+            {t("storefront.cart.emptyDescription")}
           </p>
           <Link
             href="/products"
@@ -76,7 +78,7 @@ export function StoreCartDrawer({
               "mt-5 h-11 rounded-xl px-6",
             )}
           >
-            Seguir comprando
+            {t("storefront.cart.continueShopping")}
           </Link>
         </div>
       ) : (

@@ -4,16 +4,28 @@ import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb"
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Todos los productos",
-  description:
-    "Catálogo completo: cámaras, grabadoras, kits y accesorios disponibles en la tienda.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  if (locale === "en") {
+    return {
+      title: "All products",
+      description:
+        "Full catalog: cameras, recorders, kits, and accessories available in the store.",
+    };
+  }
+  return {
+    title: "Todos los productos",
+    description:
+      "Catálogo completo: cámaras, grabadoras, kits y accesorios disponibles en la tienda.",
+  };
+}
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,7 +45,10 @@ export default async function ProductosPage() {
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
-            items={[{ label: "Inicio", href: "/" }, { label: "Catálogo" }]}
+            items={[
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              { label: <LocalizedText es="Catálogo" en="Catalog" /> },
+            ]}
             className={inter.className}
           />
 
@@ -42,7 +57,7 @@ export default async function ProductosPage() {
             {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
             <HomeSectionHeading
               align="left"
-              title="Todos los productos"
+              title={<LocalizedText es="Todos los productos" en="All products" />}
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
             />
           </div>

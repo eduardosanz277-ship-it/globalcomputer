@@ -8,6 +8,7 @@ import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHea
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import type { ReactNode } from "react";
@@ -46,19 +47,20 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [user, contact] = await Promise.all([
+  const [user, contact, locale] = await Promise.all([
     getCurrentUserService(),
     getPublicSiteContact(),
+    getServerLocale(),
   ]);
 
   return (
     <html
-      lang="es"
+      lang={locale}
       className={`${fontSans.variable} ${fontDisplay.variable} ${fontRoboto.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <I18nProvider>
+        <I18nProvider initialLocale={locale}>
           <ScrollToTopOnPathname />
           <ConditionalSiteHeader user={user} />
           <main className="flex-1">{children}</main>

@@ -1,15 +1,26 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { StoreCartView } from "@/components/store/StoreCartView";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 
-export const metadata: Metadata = {
-  title: "Tu carrito de compras",
-  description: "Revisa los productos en tu carrito y continúa la compra.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  if (locale === "en") {
+    return {
+      title: "Your shopping cart",
+      description: "Review the products in your cart and continue checkout.",
+    };
+  }
+  return {
+    title: "Tu carrito de compras",
+    description: "Revisa los productos en tu carrito y continúa la compra.",
+  };
+}
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,14 +40,24 @@ export default async function CarritoPage() {
       >
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
-            items={[{ label: "Inicio", href: "/" }, { label: "Carrito" }]}
+            items={[
+              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              { label: <LocalizedText es="Carrito" en="Cart" /> },
+            ]}
             className={inter.className}
           />
           <div className="mt-4">
             <HomeSectionHeading
               align="left"
-              title="Carrito de compras"
-              description="Gestiona cantidades y revisa el total antes de finalizar."
+              title={
+                <LocalizedText es="Carrito de compras" en="Shopping cart" />
+              }
+              description={
+                <LocalizedText
+                  es="Gestiona cantidades y revisa el total antes de finalizar."
+                  en="Adjust quantities and review the total before checkout."
+                />
+              }
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
               descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`}
             />

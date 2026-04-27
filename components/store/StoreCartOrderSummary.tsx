@@ -4,6 +4,7 @@ import { computeCartSubtotal } from "@/components/store/cart-line-price";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -28,6 +29,7 @@ export function StoreCartOrderSummary({
   variant: "drawer" | "page";
   onContinueShopping?: () => void;
 }) {
+  const { t } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
   const totalUnits = gcCartTotalUnits(items);
   const hasUnresolvedProducts = items.some(
@@ -47,16 +49,16 @@ export function StoreCartOrderSummary({
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
-        throw new Error(data.error ?? "No se pudo iniciar el pago.");
+        throw new Error(data.error ?? t("storefront.cart.toastCheckoutStartError"));
       }
       if (data.url) {
         window.location.assign(data.url);
         return;
       }
-      throw new Error("Respuesta inválida del servidor.");
+      throw new Error(t("storefront.cart.toastCheckoutInvalidResponse"));
     } catch (e) {
       const msg =
-        e instanceof Error ? e.message : "No se pudo iniciar el pago.";
+        e instanceof Error ? e.message : t("storefront.cart.toastCheckoutStartError");
       toast.error(msg);
     } finally {
       setCheckoutLoading(false);
@@ -77,7 +79,7 @@ export function StoreCartOrderSummary({
     >
       {variant === "page" ? (
         <h2 className="text-xl font-semibold tracking-tight text-foreground">
-          Resumen del pedido
+          {t("storefront.cart.summaryTitle")}
         </h2>
       ) : null}
 
@@ -93,7 +95,10 @@ export function StoreCartOrderSummary({
         </div> */}
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-base font-semibold text-foreground">
-            Subtotal ({totalUnits} {totalUnits === 1 ? "artículo" : "artículos"}
+            {t("storefront.cart.subtotalPrefix")} ({totalUnits}{" "}
+            {totalUnits === 1
+              ? t("storefront.cart.itemOne")
+              : t("storefront.cart.itemMany")}
             )
           </span>
           <span className="text-xl font-bold tabular-nums text-foreground">
@@ -103,9 +108,7 @@ export function StoreCartOrderSummary({
           </span>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Al finalizar se abrirá la página segura de Stripe (Checkout) con el
-          importe y los artículos. Impuestos y envío se confirman allí según
-          corresponda.
+          {t("storefront.cart.stripeInfo")}
         </p>
       </div>
 
@@ -121,10 +124,10 @@ export function StoreCartOrderSummary({
             {checkoutLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Abriendo pago
+                {t("storefront.cart.openCheckout")}
               </>
             ) : (
-              "Pagar con Stripe"
+              t("storefront.cart.payWithStripe")
             )}
           </Button>
           <Link
@@ -134,7 +137,7 @@ export function StoreCartOrderSummary({
               "w-full rounded-xl",
             )}
           >
-            Seguir comprando
+            {t("storefront.cart.continueShopping")}
           </Link>
         </div>
       ) : null}
@@ -148,7 +151,7 @@ export function StoreCartOrderSummary({
               disabled
               className="w-full rounded-xl sm:flex-1"
             >
-              Ver carrito
+              {t("storefront.cart.viewCart")}
             </Button>
           ) : (
             <Link
@@ -159,7 +162,7 @@ export function StoreCartOrderSummary({
                 "w-full rounded-xl sm:flex-1",
               )}
             >
-              Ver carrito
+              {t("storefront.cart.viewCart")}
             </Link>
           )}
           <Button
@@ -171,10 +174,10 @@ export function StoreCartOrderSummary({
             {checkoutLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Abriendo pago
+                {t("storefront.cart.openCheckout")}
               </>
             ) : (
-              "Pagar con Stripe"
+              t("storefront.cart.payWithStripe")
             )}
           </Button>
         </div>
