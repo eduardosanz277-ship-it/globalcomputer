@@ -4,6 +4,8 @@ export const APP_CONFIG_KEYS = [
   "support_address",
   "low_stock_notifications_enabled",
   "low_stock_threshold",
+  "offer_amount",
+  "offer_percentage",
 ] as const;
 
 export type AppConfigKey = (typeof APP_CONFIG_KEYS)[number];
@@ -18,4 +20,8 @@ export type AppConfigSettings = {
   lowStockNotificationsEnabled: boolean;
   /** Cantidad máxima para considerar stock bajo (si las alertas están activas). */
   lowStockThreshold: number;
+  /** Monto fijo de oferta aplicado globalmente. */
+  offerAmount: number;
+  /** Porcentaje de oferta aplicado globalmente. */
+  offerPercentage: number;
 };

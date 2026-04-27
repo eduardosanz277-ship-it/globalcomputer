@@ -29,6 +29,20 @@ function mapRowsToSettings(
     map.low_stock_notifications_enabled === true ||
     (map.low_stock_notifications_enabled === undefined &&
       map.notifications_enabled === true);
+  const rawOfferAmount = map.offer_amount;
+  const offerAmount =
+    typeof rawOfferAmount === "number"
+      ? rawOfferAmount
+      : typeof rawOfferAmount === "string"
+        ? parseFloat(rawOfferAmount)
+        : Number(rawOfferAmount);
+  const rawOfferPercentage = map.offer_percentage;
+  const offerPercentage =
+    typeof rawOfferPercentage === "number"
+      ? rawOfferPercentage
+      : typeof rawOfferPercentage === "string"
+        ? parseFloat(rawOfferPercentage)
+        : Number(rawOfferPercentage);
 
   return {
     supportEmail:
@@ -39,6 +53,8 @@ function mapRowsToSettings(
       typeof map.support_address === "string" ? map.support_address : "",
     lowStockNotificationsEnabled: lowStockOn,
     lowStockThreshold: Number.isFinite(threshold) ? threshold : 5,
+    offerAmount: Number.isFinite(offerAmount) ? offerAmount : 0,
+    offerPercentage: Number.isFinite(offerPercentage) ? offerPercentage : 0,
   };
 }
 
@@ -66,5 +82,7 @@ export async function updateAppConfigSettingsService(input: AppConfigFormValues)
       value: parsed.lowStockNotificationsEnabled,
     },
     { key: "low_stock_threshold", value: parsed.lowStockThreshold },
+    { key: "offer_amount", value: parsed.offerAmount },
+    { key: "offer_percentage", value: parsed.offerPercentage },
   ]);
 }

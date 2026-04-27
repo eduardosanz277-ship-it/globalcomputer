@@ -1480,6 +1480,17 @@ export const es = {
           thresholdHint:
             "Se alerta cuando la cantidad en stock sea menor o igual a este número (solo si las alertas de stock bajo están activas).",
         },
+        offer: {
+          title: "Ofertas",
+          description:
+            "Define los valores globales de oferta para monto fijo y porcentaje.",
+          amountLabel: "Monto de oferta",
+          amountHint:
+            "Valor numérico fijo que se usará como monto de oferta global.",
+          percentageLabel: "Porcentaje de oferta",
+          percentageHint:
+            "Valor porcentual entre 0 y 100 para la oferta global.",
+        },
         save: "Guardar cambios",
         saving: "Guardando cambios",
         errors: {
@@ -1488,6 +1499,9 @@ export const es = {
           supportPhoneRequired: "El teléfono es obligatorio",
           supportAddressRequired: "La dirección es obligatoria",
           lowStockThresholdMin: "Mínimo 0",
+          offerAmountMin: "Mínimo 0",
+          offerPercentageMin: "Mínimo 0",
+          offerPercentageMax: "Máximo 100",
         },
       },
       toast: {

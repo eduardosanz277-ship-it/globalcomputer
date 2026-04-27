@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { DollarSign, Mail, MapPin, Percent, Phone } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 
 import { ButtonPending } from "@/components/ui/button-pending";
@@ -38,6 +38,9 @@ export function AdminSettingsForm({ initial }: Props) {
     supportPhoneRequired: t("admin.settings.form.errors.supportPhoneRequired"),
     supportAddressRequired: t("admin.settings.form.errors.supportAddressRequired"),
     lowStockThresholdMin: t("admin.settings.form.errors.lowStockThresholdMin"),
+    offerAmountMin: t("admin.settings.form.errors.offerAmountMin"),
+    offerPercentageMin: t("admin.settings.form.errors.offerPercentageMin"),
+    offerPercentageMax: t("admin.settings.form.errors.offerPercentageMax"),
   });
   const form = useForm<AppConfigFormValues>({
     resolver: zodResolver(localizedSchema),
@@ -47,6 +50,8 @@ export function AdminSettingsForm({ initial }: Props) {
       supportAddress: initial.supportAddress,
       lowStockNotificationsEnabled: initial.lowStockNotificationsEnabled,
       lowStockThreshold: initial.lowStockThreshold,
+      offerAmount: initial.offerAmount,
+      offerPercentage: initial.offerPercentage,
     },
   });
 
@@ -64,7 +69,7 @@ export function AdminSettingsForm({ initial }: Props) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-      <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
         <Card className="flex min-h-0 flex-col lg:h-full">
           <CardHeader>
             <CardTitle>{t("admin.settings.form.support.title")}</CardTitle>
@@ -213,6 +218,75 @@ export function AdminSettingsForm({ initial }: Props) {
                   </p>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="flex min-h-0 flex-col lg:h-full">
+          <CardHeader>
+            <CardTitle>{t("admin.settings.form.offer.title")}</CardTitle>
+            <CardDescription>
+              {t("admin.settings.form.offer.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="offerAmount" className="text-sm font-medium">
+                {t("admin.settings.form.offer.amountLabel")}
+                <RequiredMark />
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t("admin.settings.form.offer.amountHint")}
+              </p>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="offerAmount"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  className={cn(adminServiceLikeInputClassName, "pl-9")}
+                  aria-required
+                  {...form.register("offerAmount", {
+                    valueAsNumber: true,
+                  })}
+                />
+              </div>
+              {errors.offerAmount && (
+                <p className="text-sm text-destructive">
+                  {errors.offerAmount.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="offerPercentage" className="text-sm font-medium">
+                {t("admin.settings.form.offer.percentageLabel")}
+                <RequiredMark />
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t("admin.settings.form.offer.percentageHint")}
+              </p>
+              <div className="relative">
+                <Percent className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="offerPercentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  className={cn(adminServiceLikeInputClassName, "pl-9")}
+                  aria-required
+                  {...form.register("offerPercentage", {
+                    valueAsNumber: true,
+                  })}
+                />
+              </div>
+              {errors.offerPercentage && (
+                <p className="text-sm text-destructive">
+                  {errors.offerPercentage.message}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

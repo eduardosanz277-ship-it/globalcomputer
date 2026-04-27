@@ -6,6 +6,9 @@ type AppConfigFormMessages = {
   supportPhoneRequired: string;
   supportAddressRequired: string;
   lowStockThresholdMin: string;
+  offerAmountMin: string;
+  offerPercentageMin: string;
+  offerPercentageMax: string;
 };
 
 const DEFAULT_MESSAGES: AppConfigFormMessages = {
@@ -14,6 +17,9 @@ const DEFAULT_MESSAGES: AppConfigFormMessages = {
   supportPhoneRequired: "El teléfono es obligatorio",
   supportAddressRequired: "La dirección es obligatoria",
   lowStockThresholdMin: "Mínimo 0",
+  offerAmountMin: "Mínimo 0",
+  offerPercentageMin: "Mínimo 0",
+  offerPercentageMax: "Máximo 100",
 };
 
 export function createAppConfigFormSchema(
@@ -31,6 +37,11 @@ export function createAppConfigFormSchema(
       .min(1, messages.supportAddressRequired),
     lowStockNotificationsEnabled: z.boolean(),
     lowStockThreshold: z.number().int().min(0, messages.lowStockThresholdMin),
+    offerAmount: z.number().min(0, messages.offerAmountMin),
+    offerPercentage: z
+      .number()
+      .min(0, messages.offerPercentageMin)
+      .max(100, messages.offerPercentageMax),
   });
 }
 

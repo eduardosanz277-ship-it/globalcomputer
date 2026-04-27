@@ -45,7 +45,7 @@ export const en = {
     passwordLabel: "Password",
     buttons: {
       submit: "Open admin panel",
-      pending: "Signing in…",
+      pending: "Signing in",
     },
     footer: {
       clientPrompt: "Customer or business account?",
@@ -1477,6 +1477,15 @@ export const en = {
           thresholdHint:
             "An alert is triggered when stock is less than or equal to this number (only if low-stock alerts are enabled).",
         },
+        offer: {
+          title: "Offers",
+          description:
+            "Set the global offer values for fixed amount and percentage.",
+          amountLabel: "Offer amount",
+          amountHint: "Fixed numeric value used as the global offer amount.",
+          percentageLabel: "Offer percentage",
+          percentageHint: "Percentage value between 0 and 100 for the global offer.",
+        },
         save: "Save changes",
         saving: "Saving changes",
         errors: {
@@ -1485,6 +1494,9 @@ export const en = {
           supportPhoneRequired: "Phone is required",
           supportAddressRequired: "Address is required",
           lowStockThresholdMin: "Minimum 0",
+          offerAmountMin: "Minimum 0",
+          offerPercentageMin: "Minimum 0",
+          offerPercentageMax: "Maximum 100",
         },
       },
       toast: {
