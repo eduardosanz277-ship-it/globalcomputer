@@ -1750,6 +1750,14 @@ export function SiteHeader({ user }: Props) {
                                 className="h-5 w-5 shrink-0"
                                 aria-hidden
                               />
+                              <Shield
+                                className={cn(
+                                  mobileNavRootIconClass,
+                                  "text-foreground/70",
+                                )}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                               <span
                                 className={cn(
                                   "min-w-0 flex-1 truncate",
@@ -1844,6 +1852,14 @@ export function SiteHeader({ user }: Props) {
                                 className="h-5 w-5 shrink-0"
                                 aria-hidden
                               />
+                              <Tags
+                                className={cn(
+                                  mobileNavRootIconClass,
+                                  "text-foreground/70",
+                                )}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                               <span
                                 className={cn(
                                   "min-w-0 flex-1 truncate",
@@ -1936,6 +1952,14 @@ export function SiteHeader({ user }: Props) {
                             >
                               <ChevronLeft
                                 className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <LayoutGrid
+                                className={cn(
+                                  mobileNavRootIconClass,
+                                  "text-foreground/70",
+                                )}
+                                strokeWidth={2}
                                 aria-hidden
                               />
                               <span
@@ -2033,6 +2057,14 @@ export function SiteHeader({ user }: Props) {
                             >
                               <ChevronLeft
                                 className="h-5 w-5 shrink-0"
+                                aria-hidden
+                              />
+                              <Briefcase
+                                className={cn(
+                                  mobileNavRootIconClass,
+                                  "text-foreground/70",
+                                )}
+                                strokeWidth={2}
                                 aria-hidden
                               />
                               <span
