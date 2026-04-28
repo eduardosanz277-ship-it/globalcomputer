@@ -1412,23 +1412,37 @@ export function SiteHeader({ user }: Props) {
                               href="/"
                               onClick={handleScrollToTopOnHome}
                               className={cn(
-                                "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                             >
+                              <Home
+                                className={mobileNavRootIconClass}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                               {t("header.nav.home")}
                             </Link>
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
                                 pushMobileNavPanel({ kind: "categories" })
                               }
                             >
-                              {t("header.nav.categories")}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <LayoutGrid
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className="truncate">
+                                  {t("header.nav.categories")}
+                                </span>
+                              </span>
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1437,14 +1451,23 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
                                 pushMobileNavPanel({ kind: "security" })
                               }
                             >
-                              {t("header.nav.securitySystems")}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Shield
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className="truncate">
+                                  {t("header.nav.securitySystems")}
+                                </span>
+                              </span>
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1453,14 +1476,23 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
                                 pushMobileNavPanel({ kind: "brands" })
                               }
                             >
-                              {t("header.nav.brands")}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Tags
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className="truncate">
+                                  {t("header.nav.brands")}
+                                </span>
+                              </span>
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1469,14 +1501,23 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
                                 pushMobileNavPanel({ kind: "services" })
                               }
                             >
-                              {t("header.nav.services")}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Briefcase
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className="truncate">
+                                  {t("header.nav.services")}
+                                </span>
+                              </span>
                               <ChevronRight
                                 className="h-4 w-4 shrink-0 opacity-80"
                                 aria-hidden
@@ -1486,10 +1527,15 @@ export function SiteHeader({ user }: Props) {
                               href="/contact"
                               onClick={() => setMobileNavOpen(false)}
                               className={cn(
-                                "rounded-lg px-3 py-2 transition hover:bg-muted",
+                                "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                             >
+                              <Mail
+                                className={mobileNavRootIconClass}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                               {t("header.nav.contact")}
                             </Link>
                             {/*
