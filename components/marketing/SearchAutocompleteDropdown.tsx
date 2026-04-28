@@ -20,6 +20,7 @@ import {
   Fragment,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -65,6 +66,40 @@ type Props = {
   inputClassName?: string;
   dropdownClassName?: string;
 };
+
+function ProductMetaLine({ brand, sku }: { brand: string; sku: string }) {
+  const brandRef = useRef<HTMLSpanElement>(null);
+  const skuRef = useRef<HTMLSpanElement>(null);
+  const [showDot, setShowDot] = useState(false);
+
+  useLayoutEffect(() => {
+    const updateSeparator = () => {
+      const brandTop = brandRef.current?.offsetTop;
+      const skuTop = skuRef.current?.offsetTop;
+      setShowDot(brandTop != null && skuTop != null && brandTop === skuTop);
+    };
+
+    updateSeparator();
+    window.addEventListener("resize", updateSeparator);
+    return () => window.removeEventListener("resize", updateSeparator);
+  }, [brand, sku]);
+
+  return (
+    <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground">
+      <span ref={brandRef}>{brand}</span>
+      {sku ? (
+        <span ref={skuRef} className="inline-flex items-center gap-1.5">
+          {showDot ? (
+            <span className="text-[7px]" aria-hidden>
+              •
+            </span>
+          ) : null}
+          <span>SKU {sku}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 export function SearchAutocompleteDropdown({
   priceTier,
@@ -181,6 +216,20 @@ export function SearchAutocompleteDropdown({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const html = document.documentElement;
+    const previousBodyOverflow = body.style.overflow;
+    const previousHtmlOverflow = html.style.overflow;
+    body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    return () => {
+      body.style.overflow = previousBodyOverflow;
+      html.style.overflow = previousHtmlOverflow;
+    };
+  }, [isOpen]);
+
   const goToSearch = (value = trimmedQuery) => {
     const q = value.trim();
     if (!q) return;
@@ -264,10 +313,7 @@ export function SearchAutocompleteDropdown({
           <span className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {product.title}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            <span>{product.brand}</span>
-            {product.sku ? <span>SKU {product.sku}</span> : null}
-          </span>
+          <ProductMetaLine brand={product.brand} sku={product.sku} />
           <span className="mt-1 flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-primary">
               {formatUsd(sale)}
@@ -363,7 +409,7 @@ export function SearchAutocompleteDropdown({
           id={`${inputId}-suggestions`}
           role="listbox"
           className={cn(
-            "absolute left-0 right-0 top-full z-[140] mt-2 max-h-[min(75vh,620px)] overflow-y-auto rounded-xl border border-border/70 bg-popover p-3 text-popover-foreground shadow-2xl shadow-black/15",
+            "absolute left-0 right-0 top-full z-[140] mt-2 max-h-[min(75vh,620px)] overflow-y-auto overscroll-contain rounded-xl border border-border/70 bg-popover p-3 text-popover-foreground shadow-2xl shadow-black/15",
             dropdownClassName,
           )}
         >
