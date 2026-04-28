@@ -328,6 +328,61 @@ export async function repoListProducts(): Promise<Product[]> {
   return (data as ProductRow[]).map(mapRow);
 }
 
+export async function repoGetProductStockSnapshot(id: string): Promise<{
+  id: string;
+  name: string;
+  sku: string;
+  stock: number;
+} | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, sku, stock")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const row = data as {
+    id: string;
+    name: string;
+    sku: string;
+    stock: number;
+  };
+  return row;
+}
+
+export async function repoGetLastLowStockAlertAt(
+  productId: string,
+): Promise<string | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("low_stock_alert_logs")
+    .select("last_sent_at")
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { last_sent_at?: string | null } | null)?.last_sent_at ?? null;
+}
+
+export async function repoUpsertLowStockAlertAt(
+  productId: string,
+  sentAtIso: string,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase.from("low_stock_alert_logs").upsert(
+    {
+      product_id: productId,
+      last_sent_at: sentAtIso,
+    },
+    { onConflict: "product_id" },
+  );
+
+  if (error) throw error;
+}
+
 export async function repoCreateProduct(payload: ProductInsert): Promise<Product> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
