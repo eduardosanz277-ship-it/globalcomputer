@@ -750,7 +750,8 @@ export function DataTable<TData, TValue>({
                     cursor: "pointer",
                   }),
                   valueContainer: (base, props) => ({
-                    ...(typeof appToolbarSelectStyles.valueContainer === "function"
+                    ...(typeof appToolbarSelectStyles.valueContainer ===
+                    "function"
                       ? appToolbarSelectStyles.valueContainer(base, props)
                       : base),
                     cursor: "pointer",

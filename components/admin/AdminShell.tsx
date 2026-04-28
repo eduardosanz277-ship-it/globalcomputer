@@ -13,13 +13,18 @@ type Props = {
 };
 
 export function AdminShell({ user, children }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [panelLoading, setPanelLoading] = useState(false);
 
   useEffect(() => {
     setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    setPanelLoading(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -63,6 +68,7 @@ export function AdminShell({ user, children }: Props) {
         onToggleCollapsed={() => setCollapsed((c) => !c)}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
+        onStartNavigation={() => setPanelLoading(true)}
       />
 
       <div
@@ -76,8 +82,34 @@ export function AdminShell({ user, children }: Props) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <main className="admin-panel min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
-          {children}
+        <main className="admin-panel relative min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
+          <div
+            className={cn(
+              "transition-[filter,opacity] duration-200 ease-out",
+              panelLoading &&
+                "pointer-events-none select-none blur-[2px] opacity-75",
+            )}
+            aria-hidden={panelLoading}
+          >
+            {children}
+          </div>
+
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-200 ease-out",
+              panelLoading ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden={!panelLoading}
+          >
+            <div className="rounded-2xl border border-white/60 bg-white/70 px-5 py-4 shadow-lg backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {locale === "en" ? "Loading..." : "Cargando..."}
+                </span>
+              </div>
+            </div>
+          </div>
         </main>
       </div>
     </div>

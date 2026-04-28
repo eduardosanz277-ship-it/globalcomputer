@@ -9,7 +9,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
-import { ADMIN_NAV_ITEMS } from "./admin-nav-config";
+import { ADMIN_NAV_GROUPS } from "./admin-nav-config";
 
 type Props = {
   collapsed: boolean;
@@ -17,6 +17,7 @@ type Props = {
   /** Drawer móvil abierto (< md) */
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  onStartNavigation?: () => void;
 };
 
 function pathMatches(pathname: string, href: string) {
@@ -28,6 +29,7 @@ export function AdminSidebar({
   onToggleCollapsed,
   mobileOpen,
   onCloseMobile,
+  onStartNavigation,
 }: Props) {
   const { t } = useI18n();
   const pathname = usePathname() ?? "";
@@ -36,13 +38,15 @@ export function AdminSidebar({
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
     () => {
       const initial: Record<string, boolean> = {};
-      for (const item of ADMIN_NAV_ITEMS) {
-        if (item.children?.length) {
-          const activeChild = item.children.some((c) =>
-            pathMatches(pathname, c.href),
-          );
-          const activeParent = pathMatches(pathname, item.href);
-          initial[item.href] = activeChild || activeParent;
+      for (const group of ADMIN_NAV_GROUPS) {
+        for (const item of group.items) {
+          if (item.children?.length) {
+            const activeChild = item.children.some((c) =>
+              pathMatches(pathname, c.href),
+            );
+            const activeParent = pathMatches(pathname, item.href);
+            initial[item.href] = activeChild || activeParent;
+          }
         }
       }
       return initial;
@@ -55,16 +59,28 @@ export function AdminSidebar({
 
   const nav = useMemo(
     () =>
-      ADMIN_NAV_ITEMS.map((item) => ({
-        ...item,
-        label: t(item.labelKey),
-        children: item.children?.map((sub) => ({
-          ...sub,
-          label: t(sub.labelKey),
+      ADMIN_NAV_GROUPS.map((group) => ({
+        ...group,
+        label: t(group.labelKey),
+        items: group.items.map((item) => ({
+          ...item,
+          label: t(item.labelKey),
+          children: item.children?.map((sub) => ({
+            ...sub,
+            label: t(sub.labelKey),
+          })),
         })),
       })),
     [t],
   );
+
+  const handleLinkNavigation = (href: string) => {
+    const isCurrent = pathMatches(pathname, href);
+    onCloseMobile();
+    if (!isCurrent) {
+      onStartNavigation?.();
+    }
+  };
 
   return (
     <aside
@@ -94,7 +110,7 @@ export function AdminSidebar({
           {collapsedNav ? (
             <Link
               href="/admin/home"
-              onClick={onCloseMobile}
+              onClick={() => handleLinkNavigation("/admin/home")}
               className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl p-0.5 transition-opacity hover:opacity-90"
               title={SITE_BRAND_NAME}
             >
@@ -103,7 +119,7 @@ export function AdminSidebar({
           ) : (
             <Link
               href="/admin/home"
-              onClick={onCloseMobile}
+              onClick={() => handleLinkNavigation("/admin/home")}
               className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-xl px-2.5 transition-opacity hover:opacity-90"
             >
               <AppLogo
@@ -137,108 +153,133 @@ export function AdminSidebar({
         className="flex-1 overflow-y-auto overflow-x-hidden py-3"
         aria-label={t("admin.menu.navigationAria")}
       >
-        <ul className="flex flex-col gap-0.5 px-2">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            const hasChildren = Boolean(item.children?.length);
-            const parentActive =
-              pathMatches(pathname, item.href) ||
-              (hasChildren &&
-                item.children!.some((c) => pathMatches(pathname, c.href)));
-            const submenuOpen = hasChildren
-              ? (openSubmenus[item.href] ?? false)
-              : false;
+        <div className="space-y-3 px-2">
+          {nav.map((group, groupIndex) => (
+            <section key={group.id}>
+              {groupIndex > 0 ? (
+                <div
+                  className={cn(
+                    "-mx-2 mb-3 border-t border-border/70",
+                    collapsedNav && "-mx-2",
+                  )}
+                  aria-hidden
+                />
+              ) : null}
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const hasChildren = Boolean(item.children?.length);
+                  const characteristicsMenuHref = "/admin/general-characteristics";
+                  const isCharacteristicsItem =
+                    item.href === characteristicsMenuHref;
+                  const parentActive =
+                    pathMatches(pathname, item.href) ||
+                    (hasChildren &&
+                      item.children!.some((c) => pathMatches(pathname, c.href)));
+                  const submenuOpen = hasChildren
+                    ? (openSubmenus[item.href] ?? false)
+                    : false;
 
-            return (
-              <li key={item.href}>
-                {hasChildren && collapsedNav ? (
-                  <Link
-                    href={item.href}
-                    onClick={onCloseMobile}
-                    className={cn(
-                      "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      parentActive && "border-l-[3px] border-l-primary",
-                      parentActive
-                        ? "bg-admin-muted text-admin"
-                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-                    )}
-                    title={item.label}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" aria-hidden />
-                  </Link>
-                ) : hasChildren ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => toggleSubmenu(item.href)}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                        parentActive && "border-l-[3px] border-l-primary",
-                        parentActive
-                          ? "bg-admin-muted text-admin"
-                          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                  return (
+                    <li key={item.href}>
+                      {hasChildren && collapsedNav ? (
+                        <Link
+                          href={item.href}
+                          onClick={() => handleLinkNavigation(item.href)}
+                          className={cn(
+                            "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                            parentActive && "border-l-[3px] border-l-primary",
+                            parentActive
+                              ? "bg-admin-muted text-admin"
+                              : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                          )}
+                          title={item.label}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                        </Link>
+                      ) : hasChildren ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => toggleSubmenu(item.href)}
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                              parentActive && "border-l-[3px] border-l-primary",
+                              parentActive
+                                ? "bg-admin-muted text-admin"
+                                : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                            )}
+                          >
+                            <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                            <span className="flex-1 truncate">{item.label}</span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 transition-transform",
+                                submenuOpen && "rotate-180",
+                              )}
+                            />
+                          </button>
+                          {!collapsedNav && submenuOpen && (
+                            <ul className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/80 pl-3">
+                              {item.children!.map((sub) => {
+                                const subActive = pathMatches(pathname, sub.href);
+                                return (
+                                  <li key={sub.href}>
+                                    <Link
+                                      href={sub.href}
+                                      onClick={() => handleLinkNavigation(sub.href)}
+                                      className={cn(
+                                        "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                                        subActive && "border-l-[3px] border-l-primary",
+                                        subActive
+                                          ? "bg-admin-muted font-medium text-admin"
+                                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                                      )}
+                                    >
+                                      {sub.label}
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => {
+                            handleLinkNavigation(item.href);
+                            if (!isCharacteristicsItem) {
+                              setOpenSubmenus((prev) => ({
+                                ...prev,
+                                [characteristicsMenuHref]: false,
+                              }));
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                            pathMatches(pathname, item.href) &&
+                              "border-l-[3px] border-l-primary",
+                            pathMatches(pathname, item.href)
+                              ? "bg-admin-muted text-admin"
+                              : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                            collapsedNav && "justify-center px-0",
+                          )}
+                          title={collapsedNav ? item.label : undefined}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                          {!collapsedNav && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </Link>
                       )}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" aria-hidden />
-                      <span className="flex-1 truncate">{item.label}</span>
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 shrink-0 transition-transform",
-                          submenuOpen && "rotate-180",
-                        )}
-                      />
-                    </button>
-                    {!collapsedNav && submenuOpen && (
-                      <ul className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/80 pl-3">
-                        {item.children!.map((sub) => {
-                          const subActive = pathMatches(pathname, sub.href);
-                          return (
-                            <li key={sub.href}>
-                              <Link
-                                href={sub.href}
-                                onClick={onCloseMobile}
-                                className={cn(
-                                  "block rounded-md px-2 py-1.5 text-sm transition-colors",
-                                  subActive &&
-                                    "border-l-[3px] border-l-primary",
-                                  subActive
-                                    ? "bg-admin-muted font-medium text-admin"
-                                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                                )}
-                              >
-                                {sub.label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </>
-                ) : (
-                  <Link
-                    href={item.href}
-                    onClick={onCloseMobile}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      pathMatches(pathname, item.href) &&
-                        "border-l-[3px] border-l-primary",
-                      pathMatches(pathname, item.href)
-                        ? "bg-admin-muted text-admin"
-                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-                      collapsedNav && "justify-center px-0",
-                    )}
-                    title={collapsedNav ? item.label : undefined}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" aria-hidden />
-                    {!collapsedNav && (
-                      <span className="truncate">{item.label}</span>
-                    )}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       </nav>
 
       <button

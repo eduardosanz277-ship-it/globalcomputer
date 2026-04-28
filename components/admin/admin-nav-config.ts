@@ -2,9 +2,9 @@ import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
   CircleHelp,
-  House,
   BriefcaseBusiness,
   FolderTree,
+  LayoutDashboard,
   Layers,
   ListChecks,
   ListOrdered,
@@ -31,56 +31,117 @@ export type AdminNavItem = {
   children?: AdminNavSubItem[];
 };
 
-export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { href: "/admin/home", labelKey: "admin.menu.home", icon: House },
-  { href: "/admin/products", labelKey: "admin.menu.products", icon: Package },
+export type AdminNavGroup = {
+  id: string;
+  labelKey: string;
+  items: AdminNavItem[];
+};
+
+export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
-    href: "/admin/categories",
-    labelKey: "admin.menu.categories",
-    icon: FolderTree,
+    id: "home",
+    labelKey: "admin.menu.groupHome",
+    items: [
+      {
+        href: "/admin/home",
+        labelKey: "admin.menu.home",
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    href: "/admin/subcategories",
-    labelKey: "admin.menu.subcategories",
-    icon: Layers,
+    id: "catalog",
+    labelKey: "admin.menu.groupCatalog",
+    items: [
+      { href: "/admin/products", labelKey: "admin.menu.products", icon: Package },
+      {
+        href: "/admin/categories",
+        labelKey: "admin.menu.categories",
+        icon: FolderTree,
+      },
+      {
+        href: "/admin/subcategories",
+        labelKey: "admin.menu.subcategories",
+        icon: Layers,
+      },
+      { href: "/admin/brands", labelKey: "admin.menu.brands", icon: Tag },
+      {
+        href: "/admin/brand-types",
+        labelKey: "admin.menu.brandTypes",
+        icon: Shapes,
+      },
+      {
+        href: "/admin/general-characteristics",
+        labelKey: "admin.menu.characteristics",
+        icon: ListChecks,
+        children: [
+          {
+            href: "/admin/general-characteristics",
+            labelKey: "admin.menu.generalCharacteristics",
+          },
+          {
+            href: "/admin/specific-characteristics",
+            labelKey: "admin.menu.specificCharacteristics",
+          },
+        ],
+      },
+    ],
   },
-  { href: "/admin/brands", labelKey: "admin.menu.brands", icon: Tag },
   {
-    href: "/admin/brand-types",
-    labelKey: "admin.menu.brandTypes",
-    icon: Shapes,
+    id: "sales",
+    labelKey: "admin.menu.groupSales",
+    items: [
+      { href: "/admin/orders", labelKey: "admin.menu.orders", icon: ListOrdered },
+    ],
   },
   {
-    href: "/admin/general-characteristics",
-    labelKey: "admin.menu.generalCharacteristics",
-    icon: ListChecks,
+    id: "users",
+    labelKey: "admin.menu.groupUsers",
+    items: [
+      { href: "/admin/users", labelKey: "admin.menu.users", icon: Users },
+      {
+        href: "/admin/suscripciones-empresas",
+        labelKey: "admin.menu.businessSubscriptions",
+        icon: BadgeCheck,
+      },
+    ],
   },
   {
-    href: "/admin/specific-characteristics",
-    labelKey: "admin.menu.specificCharacteristics",
-    icon: ListTodo,
-  },
-  { href: "/admin/orders", labelKey: "admin.menu.orders", icon: ListOrdered },
-  {
-    href: "/admin/suscripciones-empresas",
-    labelKey: "admin.menu.businessSubscriptions",
-    icon: BadgeCheck,
-  },
-  { href: "/admin/users", labelKey: "admin.menu.users", icon: Users },
-  {
-    href: "/admin/contacts",
-    labelKey: "admin.menu.contactMessages",
-    icon: MessageSquareText,
-  },
-  {
-    href: "/admin/faqs",
-    labelKey: "admin.menu.faqs",
-    icon: CircleHelp,
+    id: "communication",
+    labelKey: "admin.menu.groupCommunication",
+    items: [
+      {
+        href: "/admin/contacts",
+        labelKey: "admin.menu.contactMessages",
+        icon: MessageSquareText,
+      },
+      {
+        href: "/admin/faqs",
+        labelKey: "admin.menu.faqs",
+        icon: CircleHelp,
+      },
+    ],
   },
   {
-    href: "/admin/services",
-    labelKey: "admin.menu.services",
-    icon: BriefcaseBusiness,
+    id: "services",
+    labelKey: "admin.menu.groupServices",
+    items: [
+      {
+        href: "/admin/services",
+        labelKey: "admin.menu.services",
+        icon: BriefcaseBusiness,
+      },
+    ],
   },
-  { href: "/admin/settings", labelKey: "admin.menu.settings", icon: Settings },
+  {
+    id: "settings",
+    labelKey: "admin.menu.groupSettings",
+    items: [
+      {
+        href: "/admin/settings",
+        labelKey: "admin.menu.settings",
+        icon: Settings,
+      },
+    ],
+  },
 ];
