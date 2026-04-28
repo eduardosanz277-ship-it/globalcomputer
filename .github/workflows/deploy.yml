@@ -85,6 +85,40 @@ jobs:
       - name: Deploy to Vercel
         run: |
           npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          echo "== Preflight Supabase envs desde .vercel/.env.production.local =="
+          ENV_FILE=".vercel/.env.production.local"
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "ERROR: no existe $ENV_FILE tras vercel pull." >&2
+            exit 1
+          fi
+
+          has_key() {
+            local key="$1"
+            grep -Eq "^${key}=" "$ENV_FILE"
+          }
+
+          if has_key "NEXT_PUBLIC_SUPABASE_URL"; then
+            echo "NEXT_PUBLIC_SUPABASE_URL: OK"
+          elif has_key "SUPABASE_URL"; then
+            echo "SUPABASE_URL: OK (fallback)"
+          else
+            echo "NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL: MISSING"
+            echo "ERROR: falta URL de Supabase en entorno Production de Vercel." >&2
+            exit 1
+          fi
+
+          if has_key "NEXT_PUBLIC_SUPABASE_ANON_KEY"; then
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY: OK"
+          elif has_key "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY"; then
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: OK (fallback)"
+          elif has_key "SUPABASE_ANON_KEY"; then
+            echo "SUPABASE_ANON_KEY: OK (fallback)"
+          else
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY / SUPABASE_ANON_KEY: MISSING"
+            echo "ERROR: falta key pública de Supabase en entorno Production de Vercel." >&2
+            exit 1
+          fi
+
           npx vercel build --prod --token=$VERCEL_TOKEN
           npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
         env:
