@@ -1,49 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useRouter } from "next/navigation";
-import { useServerAction } from "@/hooks/use-server-action";
-import { Form, FormField } from "@/components/ui/form";
-import {
-  FormSelectField,
-  type SelectOption,
-} from "@/components/ui/form-fields";
-import { Button } from "@/components/ui/button";
-import { ButtonPending } from "@/components/ui/button-pending";
-import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   adminServiceLikeInputClassName,
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { Button } from "@/components/ui/button";
+import { ButtonPending } from "@/components/ui/button-pending";
 import {
-  countryCodeToName,
-  DEFAULT_COUNTRY_CODE,
-} from "@/lib/countries-options";
+  FormSelectField,
+  type SelectOption,
+} from "@/components/ui/form-fields";
+import { Form, FormField } from "@/components/ui/form";
+import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   countryHasRegionList,
   getRegionsForCountry,
 } from "@/lib/address-regions";
+import {
+  countryCodeToName,
+  DEFAULT_COUNTRY_CODE,
+} from "@/lib/countries-options";
+import { useServerAction } from "@/hooks/use-server-action";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { addAddressAction, updateAddressAction } from "./actions";
 import type { CuentaAddress } from "./types";
 
 const ADDRESS_FORM_ID = "cuenta-address-form-slide-over";
-
-const addressFormSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  company: z.string(),
-  apartment: z.string(),
-  phone: z.string(),
-  street: z.string().trim().min(1, "La calle es obligatoria"),
-  city: z.string().trim().min(1, "La ciudad es obligatoria"),
-  state: z.string(),
-  postalCode: z.string().trim().min(1, "El código postal es obligatorio"),
-  countryCode: z.string().min(1),
-  isDefault: z.boolean(),
-});
 
 /** País fijo: solo EE. UU.; el desplegable queda deshabilitado. */
 const LOCKED_COUNTRY_OPTIONS: SelectOption[] = [
@@ -53,7 +40,23 @@ const LOCKED_COUNTRY_OPTIONS: SelectOption[] = [
   },
 ];
 
-export type AddressFormValues = z.infer<typeof addressFormSchema>;
+export type AddressFormValues = z.infer<ReturnType<typeof buildAddressSchema>>;
+
+function buildAddressSchema(t: (key: string) => string) {
+  return z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    company: z.string(),
+    apartment: z.string(),
+    phone: z.string(),
+    street: z.string().trim().min(1, t("profile.validationStreetRequired")),
+    city: z.string().trim().min(1, t("profile.validationCityRequired")),
+    state: z.string(),
+    postalCode: z.string().trim().min(1, t("profile.validationPostalRequired")),
+    countryCode: z.string().min(1),
+    isDefault: z.boolean(),
+  });
+}
 
 function emptyFormValues(): AddressFormValues {
   return {
@@ -95,7 +98,11 @@ type Props = {
 };
 
 export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
+
+  const addressFormSchema = useMemo(() => buildAddressSchema(t), [t]);
+
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressFormSchema),
     defaultValues: emptyFormValues(),
@@ -110,8 +117,8 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
     addAddressAction,
     {
-      successMessage: "Dirección agregada",
-      errorMessage: "No se pudo guardar la dirección",
+      successMessage: t("profile.toastAddressAdded"),
+      errorMessage: t("profile.toastAddressAddError"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -122,8 +129,8 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
     updateAddressAction,
     {
-      successMessage: "Dirección actualizada",
-      errorMessage: "No se pudo actualizar la dirección",
+      successMessage: t("profile.toastAddressUpdated"),
+      errorMessage: t("profile.toastAddressUpdateError"),
       onSuccess: () => {
         onOpenChange(false);
         router.refresh();
@@ -172,9 +179,11 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
     <SlideOver
       open={open}
       onClose={() => onOpenChange(false)}
-      title={address ? "Editar dirección" : "Nueva dirección"}
-      description="Completa tus datos de contacto, la dirección postal y el estado. Puedes marcar una dirección como predeterminada."
-      contentAriaLabel="Formulario de dirección"
+      title={
+        address ? t("profile.addressFormEdit") : t("profile.addressFormNew")
+      }
+      description={t("profile.addressFormDescription")}
+      contentAriaLabel={t("profile.addressFormAria")}
       footer={
         <SlideOverFooter>
           <Button
@@ -183,17 +192,17 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
             disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("profile.cancel")}
           </Button>
           <ButtonPending
             type="submit"
             form={ADDRESS_FORM_ID}
             pending={isPending}
-            pendingLabel="Guardando"
+            pendingLabel={t("profile.saving")}
             skipMinWidth
             className="px-6"
           >
-            Guardar
+            {t("profile.save")}
           </ButtonPending>
         </SlideOverFooter>
       }
@@ -208,32 +217,32 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
           <div className="flex flex-col gap-4">
             <FormField
               name="firstName"
-              label="Nombre"
+              label={t("profile.labelFirstName")}
               disabled={isPending}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="lastName"
-              label="Apellido"
+              label={t("profile.labelLastName")}
               disabled={isPending}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="company"
-              label="Compañía"
+              label={t("profile.labelCompany")}
               disabled={isPending}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="phone"
-              label="Teléfono"
+              label={t("profile.labelPhone")}
               type="tel"
               disabled={isPending}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="street"
-              label="Calle"
+              label={t("profile.labelStreet")}
               required
               disabled={isPending}
               error={errors.street?.message}
@@ -241,14 +250,14 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
             />
             <FormField
               name="apartment"
-              label="Apartamento"
+              label={t("profile.labelApartment")}
               disabled={isPending}
-              placeholder="Apto., suite, etc."
+              placeholder={t("profile.apartmentPlaceholder")}
               className={adminServiceLikeInputClassName}
             />
             <FormField
               name="city"
-              label="Ciudad"
+              label={t("profile.labelCity")}
               required
               disabled={isPending}
               error={errors.city?.message}
@@ -256,7 +265,7 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
             />
             <FormSelectField<AddressFormValues>
               name="countryCode"
-              label="País"
+              label={t("profile.labelCountry")}
               options={LOCKED_COUNTRY_OPTIONS}
               instanceId="cuenta-address-country"
               isDisabled
@@ -267,25 +276,25 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
               <FormSelectField<AddressFormValues>
                 key={`state-${countryCode}`}
                 name="state"
-                label="Provincia / Estado"
+                label={t("profile.labelRegion")}
                 options={regionOptions}
                 instanceId={`cuenta-address-region-${countryCode}`}
                 isDisabled={isPending}
                 isSearchable
                 useMenuPortal
-                placeholder="Buscar provincia o estado…"
+                placeholder={t("profile.regionSearchPlaceholder")}
               />
             ) : (
               <FormField
                 name="state"
-                label="Provincia / Estado"
+                label={t("profile.labelRegion")}
                 disabled={isPending}
                 className={adminServiceLikeInputClassName}
               />
             )}
             <FormField
               name="postalCode"
-              label="Código postal"
+              label={t("profile.labelPostalCode")}
               required
               disabled={isPending}
               error={errors.postalCode?.message}
@@ -310,11 +319,10 @@ export function AddressFormSlideOver({ open, onOpenChange, address }: Props) {
                       className="min-w-0 cursor-pointer text-sm leading-snug"
                     >
                       <span className="font-medium text-foreground">
-                        Dirección por defecto
+                        {t("profile.defaultCheckboxTitle")}
                       </span>
                       <span className="mt-0.5 block text-muted-foreground">
-                        Se usará como predeterminada en envíos cuando no elijas
-                        otra.
+                        {t("profile.defaultCheckboxHint")}
                       </span>
                     </label>
                   </div>

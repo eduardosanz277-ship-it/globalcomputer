@@ -1,6 +1,5 @@
 /** Nombre comercial del sitio (marketing, admin, metadatos). */
 export const SITE_BRAND_NAME = "Global Computers USA";
-export const SITE_BRAND_TAGLINE = "Soluciones de seguridad y vigilancia";
 
 /** Contacto público (footer, /contact, etc.). Fallback si falta `support_address` en app_config. */
 export const SITE_CONTACT_ADDRESS = "11629 SW 216th St, Miami, FL 33170";

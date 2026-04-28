@@ -1,17 +1,20 @@
 "use server";
+import { translate } from "@/lib/i18n/get-translation";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 async function getAuthenticatedUserId() {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
   if (error || !user) {
-    throw new Error("Necesitas iniciar sesión nuevamente.");
+    throw new Error(translate(locale, "profile.errorSessionRequired"));
   }
 
   const allowedRoles = new Set(["CLIENT", "BUSINESS", "ADMIN"]);
@@ -93,15 +96,24 @@ async function clearDefaultAddressesForUser(
 }
 
 export async function addAddressAction(payload: AddAddressPayload) {
+  const locale = await getServerLocale();
   const { supabase, userId } = await getAuthenticatedUserId();
   const firstName = payload.firstName?.trim() || null;
   const lastName = payload.lastName?.trim() || null;
   const street = payload.street.trim();
-  if (!street) throw new Error("La calle es obligatoria.");
+  if (!street) {
+    throw new Error(translate(locale, "profile.validationStreetRequired"));
+  }
   const postalCode = payload.postalCode?.trim() ?? "";
-  if (!postalCode) throw new Error("El código postal es obligatorio.");
+  if (!postalCode) {
+    throw new Error(
+      translate(locale, "profile.validationPostalRequired"),
+    );
+  }
   const city = payload.city.trim();
-  if (!city) throw new Error("La ciudad es obligatoria.");
+  if (!city) {
+    throw new Error(translate(locale, "profile.validationCityRequired"));
+  }
   const isDefault = Boolean(payload.isDefault);
   if (isDefault) {
     await clearDefaultAddressesForUser(supabase, userId);
@@ -129,15 +141,24 @@ export async function addAddressAction(payload: AddAddressPayload) {
 export type UpdateAddressPayload = AddAddressPayload & { addressId: string };
 
 export async function updateAddressAction(payload: UpdateAddressPayload) {
+  const locale = await getServerLocale();
   const { supabase, userId } = await getAuthenticatedUserId();
   const firstName = payload.firstName?.trim() || null;
   const lastName = payload.lastName?.trim() || null;
   const street = payload.street.trim();
-  if (!street) throw new Error("La calle es obligatoria.");
+  if (!street) {
+    throw new Error(translate(locale, "profile.validationStreetRequired"));
+  }
   const postalCode = payload.postalCode?.trim() ?? "";
-  if (!postalCode) throw new Error("El código postal es obligatorio.");
+  if (!postalCode) {
+    throw new Error(
+      translate(locale, "profile.validationPostalRequired"),
+    );
+  }
   const city = payload.city.trim();
-  if (!city) throw new Error("La ciudad es obligatoria.");
+  if (!city) {
+    throw new Error(translate(locale, "profile.validationCityRequired"));
+  }
   const isDefault = Boolean(payload.isDefault);
   if (isDefault) {
     await clearDefaultAddressesForUser(supabase, userId);

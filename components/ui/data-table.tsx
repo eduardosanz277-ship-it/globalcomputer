@@ -80,6 +80,13 @@ interface DataTableProps<TData, TValue> {
   defaultPageSize?: number;
   /** Texto del placeholder del buscador */
   searchPlaceholder?: string;
+  /**
+   * Clases extra en el contenedor del campo de búsqueda (p. ej. `max-w-sm` para alinear
+   * con tablas admin que llevan filtros en la misma barra).
+   */
+  toolbarSearchClassName?: string;
+  /** Clases extra en el `<Input>` del buscador (p. ej. `bg-white` alineado al `react-select` del toolbar). */
+  toolbarSearchInputClassName?: string;
   /** Filtros u otros controles a la derecha del buscador (misma fila en escritorio) */
   toolbarFilters?: ReactNode;
   /** Acciones alineadas a la derecha (ej. “Nueva …”) */
@@ -150,6 +157,8 @@ export function DataTable<TData, TValue>({
   pageSizeOptions = [5, 10, 20, 50],
   defaultPageSize = 10,
   searchPlaceholder = "Buscar…",
+  toolbarSearchClassName,
+  toolbarSearchInputClassName,
   toolbarFilters,
   toolbarActions,
   toolbarLayout = "default",
@@ -269,6 +278,7 @@ export function DataTable<TData, TValue>({
           "placeholder:text-muted-foreground/70",
           "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
           isLoading && "cursor-not-allowed opacity-60",
+          toolbarSearchInputClassName,
         )}
         type="search"
         autoComplete="off"
@@ -305,6 +315,7 @@ export function DataTable<TData, TValue>({
             className={cn(
               "data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center",
               stackedWide.search,
+              toolbarSearchClassName,
             )}
           >
             {searchInput}
@@ -346,6 +357,7 @@ export function DataTable<TData, TValue>({
               toolbarSearchActionsOnly &&
                 "md:max-[1439px]:min-w-0 md:max-[1439px]:flex-1",
               "min-[1440px]:max-w-sm min-[1440px]:shrink-0",
+              toolbarSearchClassName,
             )}
           >
             {searchInput}
@@ -390,8 +402,7 @@ export function DataTable<TData, TValue>({
 
       <div
         className={cn(
-          "min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card",
-          "shadow-sm ring-1 ring-border/40",
+          "min-w-0 overflow-hidden rounded-xl border border-border bg-card",
         )}
         role="region"
         aria-label="Resultados de la tabla"
@@ -405,7 +416,7 @@ export function DataTable<TData, TValue>({
               tableClassName,
             )}
           >
-            <thead className="sticky top-0 z-[1] border-b border-border bg-muted/90 backdrop-blur-sm">
+            <thead className="sticky top-0 z-[1] border-b border-border bg-muted">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -440,7 +451,7 @@ export function DataTable<TData, TValue>({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-border/80 bg-card">
+            <tbody className="divide-y divide-border bg-card">
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-0">
@@ -537,8 +548,7 @@ export function DataTable<TData, TValue>({
                   <li key={row.id}>
                     <article
                       className={cn(
-                        "overflow-hidden rounded-xl border border-border/90 bg-card",
-                        "shadow-sm ring-1 ring-border/40",
+                        "overflow-hidden rounded-xl border border-border bg-card",
                         getRowClassName?.(row.original),
                       )}
                     >
@@ -663,7 +673,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       <nav
-        className={cn("border-t border-border/80 pt-4", paginationClassName)}
+        className={cn("border-t border-border pt-4", paginationClassName)}
         aria-label={t("tablePagination.navAriaLabel")}
       >
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-6">

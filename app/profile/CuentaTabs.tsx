@@ -1,8 +1,10 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { cn } from "@/utils/cn";
 import { AddressesSection } from "./AddressesSection";
 import { OrdersSection } from "./OrdersSection";
 import { ProfileForm } from "./ProfileForm";
@@ -15,13 +17,15 @@ type Props = {
   orders: CuentaOrder[];
 };
 
-export const CUENTA_TABS = [
-  { id: "profile", label: "Perfil" },
-  { id: "orders", label: "Pedidos" },
-  { id: "addresses", label: "Direcciones" },
-] as const;
+export const PROFILE_TAB_IDS = ["profile", "orders", "addresses"] as const;
 
-export type CuentaTabId = (typeof CUENTA_TABS)[number]["id"];
+export type CuentaTabId = (typeof PROFILE_TAB_IDS)[number];
+
+const TAB_LABEL_KEY: Record<CuentaTabId, string> = {
+  profile: "profile.tabProfile",
+  orders: "profile.tabOrders",
+  addresses: "profile.tabAddresses",
+};
 
 function tabFromQuery(raw: string | null): CuentaTabId {
   if (raw === "orders" || raw === "addresses" || raw === "profile") {
@@ -31,6 +35,7 @@ function tabFromQuery(raw: string | null): CuentaTabId {
 }
 
 export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -46,16 +51,24 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
     [router],
   );
 
+  const tabTriggerClass =
+    "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:border data-[state=inactive]:border-border/80 data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:shadow-none data-[state=inactive]:hover:bg-muted/30 data-[state=inactive]:hover:text-foreground";
+
   return (
     <Tabs
       value={activeTab}
       onValueChange={(value) => setTab(value as CuentaTabId)}
-      className="space-y-6 rounded-2xl  bg-white/60 shadow-sm"
+      className="space-y-4"
     >
-      <TabsList>
-        {CUENTA_TABS.map((tab) => (
-          <TabsTrigger value={tab.id} key={tab.id}>
-            {tab.label}
+      <TabsList
+        className={cn(
+          "flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-transparent px-0 pt-0 pb-2 [scrollbar-width:thin]",
+          "h-auto w-full flex-nowrap items-center justify-start rounded-none border-x-0 border-t-0 shadow-none",
+        )}
+      >
+        {PROFILE_TAB_IDS.map((tabId) => (
+          <TabsTrigger value={tabId} key={tabId} className={tabTriggerClass}>
+            {t(TAB_LABEL_KEY[tabId])}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -66,7 +79,7 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
         <OrdersSection orders={orders} />
       </TabsContent>
       <TabsContent value="addresses">
-        <AddressesSection addresses={addresses} orders={orders} />
+        <AddressesSection addresses={addresses} />
       </TabsContent>
     </Tabs>
   );

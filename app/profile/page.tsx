@@ -1,17 +1,23 @@
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
+import { translate } from "@/lib/i18n/get-translation";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CuentaTabs } from "./CuentaTabs";
+import { ProfilePageHeading } from "./ProfilePageHeading";
 import { CuentaAddress, CuentaOrder } from "./types";
 
-export const metadata: Metadata = {
-  title: "Mi cuenta",
-  description: "Datos de tu perfil y sesión.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  return {
+    title: translate(locale, "profile.metaTitle"),
+    description: translate(locale, "profile.metaDescription"),
+  };
+}
 
 export default async function CuentaPage() {
   const user = await getCurrentUserService();
@@ -88,21 +94,18 @@ export default async function CuentaPage() {
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
-      <AdminHeader user={headerUser} variant="standalone" brandHref="/" />
+      <AdminHeader
+        user={headerUser}
+        variant="standalone"
+        brandHref="/"
+        hideBell
+      />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <Card className="overflow-hidden border border-border/70 bg-card/80 shadow-2xl shadow-primary/10">
             <CardContent className="space-y-6 text-foreground">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">
-                    Mi cuenta
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Tu panel personal actualizado con tendencias actuales por
-                    sección.
-                  </p>
-                </div>
+                <ProfilePageHeading />
               </div>
 
               <Suspense

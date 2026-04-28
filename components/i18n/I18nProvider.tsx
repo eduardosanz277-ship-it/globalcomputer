@@ -10,11 +10,8 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import {
-  DEFAULT_LOCALE,
-  SUPPORTED_LOCALES,
-  translations,
-} from "@/components/i18n/translations";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@/components/i18n/translations";
+import { translate } from "@/lib/i18n/get-translation";
 import type { Locale } from "@/components/i18n/translations";
 import { setClientLocaleCookie } from "@/lib/i18n/locale-cookie";
 
@@ -101,10 +98,7 @@ export function I18nProvider({
     });
   }, [persistLocale]);
 
-  const t = useCallback(
-    (key: string) => getTranslation(locale, key),
-    [locale],
-  );
+  const t = useCallback((key: string) => translate(locale, key), [locale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({
@@ -128,23 +122,3 @@ export function useI18n() {
   return context;
 }
 
-function getTranslation(locale: Locale, key: string): string {
-  const segments = key.split(".");
-  let current: unknown = translations[locale];
-  for (const segment of segments) {
-    if (typeof current !== "object" || current === null) {
-      return key;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  if (typeof current === "string") return current;
-
-  let fallback: unknown = translations[DEFAULT_LOCALE];
-  for (const segment of segments) {
-    if (typeof fallback !== "object" || fallback === null) {
-      return key;
-    }
-    fallback = (fallback as Record<string, unknown>)[segment];
-  }
-  return typeof fallback === "string" ? fallback : key;
-}

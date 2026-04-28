@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { MapPin, Plus } from "lucide-react";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
-import { useServerAction } from "@/hooks/use-server-action";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { SUPPORTED_LOCALES } from "@/components/i18n/translations";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,11 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useServerAction } from "@/hooks/use-server-action";
 import { cn } from "@/utils/cn";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
+import { MapPin, Plus } from "lucide-react";
+import { translate } from "@/lib/i18n/get-translation";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { AddressFormSlideOver } from "./AddressFormSlideOver";
 import { deleteAddressAction } from "./actions";
-import type { CuentaAddress, CuentaOrder } from "./types";
+import type { CuentaAddress } from "./types";
 
 function escapeHtmlBasic(text: string): string {
   return text
@@ -27,7 +30,7 @@ function escapeHtmlBasic(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function addressRecipientLine(address: CuentaAddress): string {
+function addressRecipientLine(address: CuentaAddress, fallback: string): string {
   const name = [address.firstName?.trim(), address.lastName?.trim()]
     .filter(Boolean)
     .join(" ")
@@ -35,7 +38,7 @@ function addressRecipientLine(address: CuentaAddress): string {
   if (name) return name;
   const co = address.company?.trim();
   if (co) return co;
-  return "Dirección";
+  return fallback;
 }
 
 /** Segunda línea: ciudad, estado y CP sin comas colgantes. */
@@ -49,12 +52,15 @@ function addressLocalityLine(address: CuentaAddress): string | null {
   return cityState || zip || null;
 }
 
-function addressConfirmLabel(address: CuentaAddress): string {
-  const recipient = addressRecipientLine(address);
+function addressConfirmLabel(
+  address: CuentaAddress,
+  fallback: string,
+): string {
+  const recipient = addressRecipientLine(address, fallback);
   const street = address.street?.trim() ?? "";
   const apt = address.apartment?.trim();
   const location = [street, apt].filter(Boolean).join(" · ");
-  if (recipient !== "Dirección" && location)
+  if (recipient !== fallback && location)
     return `${recipient} — ${location}`;
   if (location) return location;
   return recipient;
@@ -62,11 +68,13 @@ function addressConfirmLabel(address: CuentaAddress): string {
 
 type Props = {
   addresses: CuentaAddress[];
-  orders?: CuentaOrder[];
 };
 
 export function AddressesSection({ addresses }: Props) {
+  const { t, locale } = useI18n();
   const router = useRouter();
+  const addressFallback = t("profile.addressFallback");
+
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [dialogAddress, setDialogAddress] = useState<CuentaAddress | null>(
     null,
@@ -74,8 +82,8 @@ export function AddressesSection({ addresses }: Props) {
 
   const { executeAsync: deleteAddressAsync, isPending: deletingAddress } =
     useServerAction(deleteAddressAction, {
-      successMessage: "Dirección eliminada",
-      errorMessage: "No se pudo eliminar la dirección",
+      successMessage: t("profile.toastAddressDeleted"),
+      errorMessage: t("profile.toastAddressDeleteError"),
       onSettled: () => router.refresh(),
     });
 
@@ -95,40 +103,59 @@ export function AddressesSection({ addresses }: Props) {
   };
 
   const handleDelete = async (address: CuentaAddress) => {
-    const label = addressConfirmLabel(address);
-    const raw = label === "Dirección" ? "esta dirección" : label;
+    const label = addressConfirmLabel(address, addressFallback);
+    const raw =
+      label === addressFallback
+        ? t("profile.deleteTargetGeneric")
+        : label;
     await swalSaasConfirmAsync({
-      title: "¿Eliminar dirección?",
-      html: `Vas a eliminar <strong>${escapeHtmlBasic(raw)}</strong>. Esta acción <strong>no se puede deshacer</strong>.`,
-      confirmButtonText: "Eliminar",
+      title: t("profile.deleteDialogTitle"),
+      html: `${t("profile.deleteDialogBefore")} <strong>${escapeHtmlBasic(raw)}</strong>. ${t("profile.deleteDialogAfter")}`,
+      confirmButtonText: t("profile.deleteConfirm"),
       variant: "destructive",
       iconType: "warning",
-      loadingConfirmText: "Eliminando",
+      loadingConfirmText: t("profile.deleting"),
       preConfirm: () => deleteAddressAsync({ addressId: address.id }),
     });
   };
 
   const listBusy = addressDialogOpen || deletingAddress;
 
+  const addressesCountLabel = useMemo(
+    () =>
+      addresses.length === 0
+        ? t("profile.addressesNoneSaved")
+        : addresses.length === 1
+          ? t("profile.addressesCountOne")
+          : t("profile.addressesCountMany").replace(
+              "{count}",
+              String(addresses.length),
+            ),
+    [addresses.length, t],
+  );
+
+  /** Mismo ancho es/en para Agregar/Add en reposo (icono + gap + texto). Si listBusy, ancho natural. */
+  const addButtonIdleMinWidth = useMemo(() => {
+    const maxAdd = Math.max(
+      ...SUPPORTED_LOCALES.map((loc) => translate(loc, "profile.add").length),
+    );
+    return `calc(3rem + 1rem + 0.375rem + ${maxAdd}ch)`;
+  }, []);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Direcciones guardadas</CardTitle>
-        <CardDescription>
-          Tus direcciones para envíos y facturación. Puedes guardar varias y
-          gestionarlas desde aquí.
-        </CardDescription>
+        <CardTitle>{t("profile.addressesTitle")}</CardTitle>
+        <CardDescription>{t("profile.addressesDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 p-3 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-foreground">
-              Tus direcciones
+              {t("profile.addressesListTitle")}
             </p>
             <p className="text-xs text-muted-foreground">
-              {addresses.length === 0
-                ? "Ninguna guardada aún"
-                : `${addresses.length} dirección${addresses.length === 1 ? "" : "es"}`}
+              {addressesCountLabel}
             </p>
           </div>
           <Button
@@ -136,10 +163,13 @@ export function AddressesSection({ addresses }: Props) {
             variant="default"
             onClick={openCreate}
             disabled={listBusy}
-            className="w-full gap-1.5 px-6 sm:w-auto sm:shrink-0"
+            style={
+              listBusy ? undefined : { minWidth: addButtonIdleMinWidth }
+            }
+            className="w-full gap-1.5 px-6 sm:w-auto sm:shrink-0 sm:justify-center"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
-            Agregar
+            {t("profile.add")}
           </Button>
         </div>
         {addresses.length === 0 ? (
@@ -152,11 +182,10 @@ export function AddressesSection({ addresses }: Props) {
             </div>
             <div className="max-w-sm space-y-1">
               <p className="text-sm font-medium text-foreground">
-                Sin direcciones todavía
+                {t("profile.emptyAddressesTitle")}
               </p>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Añade una dirección de envío o facturación para agilizar tus
-                próximas compras.
+                {t("profile.emptyAddressesBody")}
               </p>
             </div>
             <Button
@@ -168,14 +197,14 @@ export function AddressesSection({ addresses }: Props) {
               disabled={listBusy}
             >
               <Plus className="h-4 w-4" aria-hidden />
-              Añadir la primera
+              {t("profile.addFirst")}
             </Button>
           </div>
         ) : (
           <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {addresses.map((address) => {
               const locality = addressLocalityLine(address);
-              const recipient = addressRecipientLine(address);
+              const recipient = addressRecipientLine(address, addressFallback);
               const streetLine = address.street?.trim() ?? "";
               const apartmentLine = address.apartment?.trim();
               const companyLine = address.company?.trim();
@@ -185,8 +214,8 @@ export function AddressesSection({ addresses }: Props) {
                   Boolean,
                 ).length,
               );
-              /** Compañía debajo del título solo si ya hay persona; si no hay nombre, la compañía va en el h4. */
-              const showCompanySubline = hasRecipientName && Boolean(companyLine);
+              const showCompanySubline =
+                hasRecipientName && Boolean(companyLine);
               const showPhoneSubline = Boolean(phoneLine);
               const isMinimalHeader =
                 !showCompanySubline && !showPhoneSubline;
@@ -253,7 +282,7 @@ export function AddressesSection({ addresses }: Props) {
                                   <span aria-hidden className="select-none">
                                     ✓
                                   </span>
-                                  Predeterminada
+                                  {t("profile.defaultBadge")}
                                 </span>
                               ) : null}
                             </div>
@@ -269,14 +298,17 @@ export function AddressesSection({ addresses }: Props) {
                             ) : null}
                           </div>
                           <div
-                            className={cn("shrink-0", !isMinimalHeader && "pt-0.5")}
+                            className={cn(
+                              "shrink-0",
+                              !isMinimalHeader && "pt-0.5",
+                            )}
                           >
                             <AdminEditDeleteRowMenu
                               onEdit={() => openEdit(address)}
                               onDelete={() => void handleDelete(address)}
                               isDeleting={deletingAddress}
                               disabled={addressDialogOpen}
-                              deletingLabel="Eliminando"
+                              deletingLabel={t("profile.deleting")}
                             />
                           </div>
                         </div>
@@ -287,7 +319,7 @@ export function AddressesSection({ addresses }: Props) {
                         </p>
                         {apartmentLine ? (
                           <p className="text-sm leading-snug text-muted-foreground [overflow-wrap:anywhere]">
-                            Apartamento: {apartmentLine}
+                            {t("profile.apartmentLabel")}: {apartmentLine}
                           </p>
                         ) : null}
                         {locality ? (
@@ -308,6 +340,7 @@ export function AddressesSection({ addresses }: Props) {
         )}
 
         <AddressFormSlideOver
+          key={locale}
           open={addressDialogOpen}
           onOpenChange={handleDialogOpenChange}
           address={dialogAddress}

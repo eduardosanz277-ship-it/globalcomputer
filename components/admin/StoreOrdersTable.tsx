@@ -38,6 +38,8 @@ import {
 import { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import { Check, Edit3, Eye, FilterX, Loader2, Package } from "lucide-react";
 import { createPortal } from "react-dom";
+import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
+import { STORE_ORDERS_STATUS_FILTER_WIDE_CH } from "@/lib/store-orders-status-filter-width";
 
 const STATUS_OPTIONS: SiteOrderStatus[] = [
   "confirmada",
@@ -51,7 +53,6 @@ const STATUS_MENU_ESTIMATED_HEIGHT_PX = 168;
 const VIEWPORT_GUTTER_PX = 8;
 const TRIGGER_GAP_PX = 2;
 const ADMIN_HEADER_SAFE_TOP_PX = 68;
-const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
 const CUSTOMER_COLUMN_CLASS =
   "min-w-[19rem] max-w-[min(30rem,40vw)] md:max-w-[min(26rem,36vw)]";
 const TOTAL_COLUMN_CLASS = "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem]";
@@ -85,12 +86,9 @@ function orderStatusBadgeClass(status: SiteOrderStatus) {
 }
 
 function formatOrderDate(raw: string | null | undefined, locale: "es" | "en") {
-  if (!raw) return <AdminTableEmptyEmDash />;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return <AdminTableEmptyEmDash />;
-  return parsed
-    .toLocaleString(locale === "en" ? "en-US" : "es-ES")
-    .replace(", ", " ");
+  const formatted = formatStoreOrderDateTime(raw, locale);
+  if (formatted == null) return <AdminTableEmptyEmDash />;
+  return formatted;
 }
 
 function createdAtSortMs(row: AdminStoreOrderRow): number {
@@ -621,7 +619,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           )}
           style={
             {
-              ["--orders-status-filter-w" as string]: `${STATUS_FILTER_WIDE_CH}ch`,
+              ["--orders-status-filter-w" as string]: `${STORE_ORDERS_STATUS_FILTER_WIDE_CH}ch`,
             } as CSSProperties
           }
         >
@@ -720,7 +718,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           <DialogHeader className="space-y-0 border-b border-border/60 bg-muted/25 px-6 pb-5 pt-6 text-left">
             <div className="flex gap-4 pr-10">
               <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10"
+                className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10 sm:flex"
                 aria-hidden
               >
                 <Package className="h-5 w-5" strokeWidth={2} />

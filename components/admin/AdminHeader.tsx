@@ -14,7 +14,7 @@ import { AppLogo } from "@/components/brand/AppLogo";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
-import { SITE_BRAND_NAME, SITE_BRAND_TAGLINE } from "@/lib/site";
+import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 
 export type AdminHeaderUser = {
@@ -34,6 +34,8 @@ type Props = {
   variant?: "admin" | "standalone";
   /** Destino del logo y nombre (p. ej. `/admin/home`, `/`) */
   brandHref?: string;
+  /** Oculta el botón de campana (p. ej. cuenta `/profile`). */
+  hideBell?: boolean;
 };
 
 export function AdminHeader({
@@ -41,6 +43,7 @@ export function AdminHeader({
   onOpenMobileMenu,
   variant = "admin",
   brandHref: brandHrefProp,
+  hideBell = false,
 }: Props) {
   const brandHref =
     brandHrefProp ?? (variant === "standalone" ? "/" : "/admin/home");
@@ -113,7 +116,7 @@ export function AdminHeader({
               {SITE_BRAND_NAME}
             </span>
             <span className="hidden truncate text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/90 sm:block">
-              {SITE_BRAND_TAGLINE}
+              {t("header.brandTagline")}
             </span>
           </span>
         ) : (
@@ -129,18 +132,34 @@ export function AdminHeader({
           variant === "admin" && "md:ml-auto md:flex-1",
         )}
       >
-        <button
-          type="button"
-          className="rounded-lg py-1.5 text-muted-foreground transition hover:text-foreground"
-          aria-label={t("admin.header.notifications")}
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        {/* Campana (Bell): oculto en /profile con hideBell. Para volver a mostrarla ahí, quitar hideBell en app/profile/page.tsx.
+            Markup conservado abajo (!hideBell): button + aria-label t(admin.header.notifications) + Bell h-5 w-5.
+        */}
+        {!hideBell ? (
+          <button
+            type="button"
+            className="rounded-lg py-1.5 text-muted-foreground transition hover:text-foreground"
+            aria-label={t("admin.header.notifications")}
+          >
+            <Bell className="h-5 w-5" />
+          </button>
+        ) : null}
 
         <LanguageSelector
-          className="hidden gap-1 md:flex"
+          className={cn(
+            "flex shrink-0 gap-1",
+            variant === "admin" && "hidden md:flex",
+          )}
           buttonClassName="bg-muted/80"
           aria-label={t("admin.header.languageToggle")}
+        />
+
+        <span
+          className={cn(
+            "h-7 w-px shrink-0 bg-border",
+            variant === "admin" && "hidden md:block",
+          )}
+          aria-hidden
         />
 
         <div

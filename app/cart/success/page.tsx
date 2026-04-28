@@ -1,16 +1,24 @@
 import { CartCheckoutSuccessClient } from "@/components/store/CartCheckoutSuccessClient";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { translate } from "@/lib/i18n/get-translation";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { cn } from "@/utils/cn";
 import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Pago recibido",
-  description: "Gracias por tu compra.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  return {
+    title: translate(locale, "storefront.cartSuccess.metaTitle"),
+    description: translate(locale, "storefront.cartSuccess.metaDescription"),
+  };
+}
 
-export default function CarritoExitoPage() {
+export default async function CarritoExitoPage() {
+  const locale = await getServerLocale();
+  const t = (key: string) => translate(locale, key);
+
   return (
     <div className="min-h-[50vh] bg-gradient-to-b from-muted/25 to-background px-4 py-16 sm:px-6">
       <CartCheckoutSuccessClient />
@@ -19,24 +27,23 @@ export default function CarritoExitoPage() {
           <CheckCircle2 className="h-9 w-9" strokeWidth={1.75} aria-hidden />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          ¡Gracias por tu compra!
+          {t("storefront.cartSuccess.heading")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Stripe ha procesado el pago. Si hace falta, recibirás el recibo por correo. En este
-          dispositivo el carrito se ha vaciado.
+          {t("storefront.cartSuccess.description")}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/products"
             className={cn(buttonVariants({ variant: "default" }), "rounded-xl")}
           >
-            Seguir comprando
+            {t("storefront.cart.continueShopping")}
           </Link>
           <Link
             href="/"
             className={cn(buttonVariants({ variant: "outline" }), "rounded-xl")}
           >
-            Inicio
+            {t("storefront.cartSuccess.homeLink")}
           </Link>
         </div>
       </div>

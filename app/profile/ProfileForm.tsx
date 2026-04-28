@@ -1,5 +1,8 @@
 "use client";
 
+import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { SUPPORTED_LOCALES } from "@/components/i18n/translations";
 import { ButtonPending } from "@/components/ui/button-pending";
 import {
   Card,
@@ -8,10 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Form, FormField } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label, RequiredMark } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { translate } from "@/lib/i18n/get-translation";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { updateProfileNameAction } from "./actions";
 
@@ -25,6 +31,7 @@ type Props = {
 };
 
 export function ProfileForm({ initialName, email }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const form = useForm<FormValues>({
     defaultValues: {
@@ -32,11 +39,19 @@ export function ProfileForm({ initialName, email }: Props) {
     },
   });
   const { execute, isPending } = useServerAction(updateProfileNameAction, {
-    successMessage: "Nombre actualizado",
-    errorMessage: "No se pudo actualizar el nombre",
+    successMessage: t("profile.toastNameUpdated"),
+    errorMessage: t("profile.toastNameUpdateError"),
     onSettled: () => router.refresh(),
   });
   const isSubmittingRef = useRef(false);
+
+  /** En reposo: mismo ancho es/en según el texto más largo de Guardar/Save. Al guardar, el botón usa su ancho natural (spinner + Saving/Guardando). */
+  const saveButtonIdleMinWidth = useMemo(() => {
+    const maxSave = Math.max(
+      ...SUPPORTED_LOCALES.map((loc) => translate(loc, "profile.save").length),
+    );
+    return `calc(3rem + ${maxSave}ch)`;
+  }, []);
 
   const onSubmit = async (values: FormValues) => {
     if (isSubmittingRef.current) return;
@@ -51,44 +66,55 @@ export function ProfileForm({ initialName, email }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Perfil</CardTitle>
-        <CardDescription>Actualiza tu información.</CardDescription>
+        <CardTitle>{t("profile.profileCardTitle")}</CardTitle>
+        <CardDescription>{t("profile.profileCardDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form form={form} onSubmit={onSubmit}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <FormField
-                name="name"
-                label="Nombre completo"
-                required
-                error={form.formState.errors.name?.message}
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                {t("profile.fullName")}
+                <RequiredMark />
+              </Label>
+              <Input
+                id="name"
+                className={adminServiceLikeInputClassName}
+                aria-required
+                {...form.register("name")}
               />
+              {form.formState.errors.name?.message ? (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.name.message}
+                </p>
+              ) : null}
             </div>
-            <div className="flex-1">
-              <label
-                className="text-sm font-medium text-muted-foreground"
-                htmlFor="account-email"
-              >
-                Email
-              </label>
-              <p
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="account-email" className="text-sm font-medium">
+                {t("profile.email")}
+              </Label>
+              <Input
                 id="account-email"
-                className="mt-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground"
-              >
-                {email}
-              </p>
+                type="email"
+                value={email}
+                readOnly
+                disabled
+                className={adminServiceLikeInputClassName}
+              />
             </div>
           </div>
           <div className="mt-4 flex justify-end">
             <ButtonPending
               type="submit"
               pending={isPending}
-              pendingLabel="Guardando"
+              pendingLabel={t("profile.saving")}
               skipMinWidth
-              className="w-auto px-6"
+              style={
+                isPending ? undefined : { minWidth: saveButtonIdleMinWidth }
+              }
+              className="justify-center px-6"
             >
-              Guardar
+              {t("profile.save")}
             </ButtonPending>
           </div>
         </Form>
