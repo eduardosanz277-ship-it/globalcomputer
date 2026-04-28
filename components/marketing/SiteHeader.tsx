@@ -306,6 +306,9 @@ export function SiteHeader({ user }: Props) {
   /** Específicos y tipos por marca (subenlaces). */
   const mobileNavCatalogRowClass = "text-sm font-medium text-foreground/90";
 
+  /** Icono a la izquierda en el menú móvil/tablet (`lg:hidden`). */
+  const mobileNavRootIconClass = "h-4 w-4 shrink-0 text-foreground/80";
+
   const handleScrollToTopOnHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
     setMobileNavOpen(false);
     if (pathname !== "/") return;
