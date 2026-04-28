@@ -1,24 +1,25 @@
-import Stripe from "stripe";
-import { NextResponse } from "next/server";
 import { syncOrderWithStripeSession } from "@/modules/commerce/store-orders.service";
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
-const stripeSecret =
-  process.env.STRIPE_SECRET_KEY ?? process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY;
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-if (!stripeSecret) {
-  throw new Error("Falta STRIPE_SECRET_KEY para el webhook de Stripe.");
-}
-
-if (!stripeWebhookSecret) {
-  throw new Error("Falta STRIPE_WEBHOOK_SECRET para validar el webhook.");
-}
-
-const stripe = new Stripe(stripeSecret, { apiVersion: "2026-03-25.dahlia" });
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const stripeSecret =
+    process.env.STRIPE_SECRET_KEY ?? process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY;
+  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripeSecret) {
+    throw new Error("Falta STRIPE_SECRET_KEY para el webhook de Stripe.");
+  }
+
+  if (!stripeWebhookSecret) {
+    throw new Error("Falta STRIPE_WEBHOOK_SECRET para validar el webhook.");
+  }
+
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2026-03-25.dahlia" });
+
   const signature = req.headers.get("stripe-signature") ?? "";
   const body = await req.text();
 
