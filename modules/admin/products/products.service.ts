@@ -6,10 +6,13 @@ import {
   repoCreateProduct,
   repoDeleteProduct,
   repoDeleteProductImagesByIds,
+  repoGetLastLowStockAlertAt,
+  repoGetProductStockSnapshot,
   repoInsertProductImages,
   repoListProductImageUrlsByIds,
   repoListProducts,
   repoReplaceProductCharacteristicValues,
+  repoUpsertLowStockAlertAt,
   repoUnsetPrimaryProductImage,
   repoUpdateProduct,
   repoUpdateProductManualPdfUrl,
@@ -27,6 +30,7 @@ import type {
   ProductUpdate,
 } from "./products.types";
 import { slugify } from "@/lib/slugify";
+import { sendLowStockAlertEmail } from "@/lib/email/sendLowStockAlertEmail";
 
 function ensureAdmin(role?: UserRole) {
   if (role !== "ADMIN") {
@@ -125,6 +129,87 @@ function resolveProductSlug(name: string): string {
 }
 
 const PRODUCT_IMAGES_BUCKET = "global_bucket";
+
+async function getLowStockNotificationConfig() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("app_config")
+    .select("key, value")
+    .in("key", [
+      "support_email",
+      "low_stock_notifications_enabled",
+      "notifications_enabled",
+      "low_stock_threshold",
+    ]);
+
+  if (error) throw error;
+
+  const map = Object.fromEntries((data ?? []).map((row) => [row.key, row.value]));
+
+  const supportEmail =
+    typeof map.support_email === "string" ? map.support_email.trim() : "";
+  const lowStockEnabled =
+    map.low_stock_notifications_enabled === true ||
+    (map.low_stock_notifications_enabled === undefined &&
+      map.notifications_enabled === true);
+  const rawThreshold = map.low_stock_threshold;
+  const parsedThreshold =
+    typeof rawThreshold === "number"
+      ? rawThreshold
+      : typeof rawThreshold === "string"
+        ? parseInt(rawThreshold, 10)
+        : Number(rawThreshold);
+  const threshold = Number.isFinite(parsedThreshold) ? parsedThreshold : 5;
+
+  return {
+    supportEmail,
+    lowStockEnabled,
+    threshold,
+  };
+}
+
+async function notifyLowStockIfNeeded(params: {
+  productId: string;
+  productName: string;
+  productSku: string;
+  previousStock: number | null;
+  newStock: number;
+}) {
+  const config = await getLowStockNotificationConfig();
+  if (!config.lowStockEnabled) return;
+  if (!config.supportEmail) return;
+  if (params.newStock < 0) return;
+  if (params.newStock > config.threshold) return;
+
+  const crossedFromAbove =
+    params.previousStock == null || params.previousStock > config.threshold;
+  if (!crossedFromAbove) return;
+
+  try {
+    const now = new Date();
+    const lastSentAtRaw = await repoGetLastLowStockAlertAt(params.productId);
+    if (lastSentAtRaw) {
+      const lastSentAtMs = new Date(lastSentAtRaw).getTime();
+      if (Number.isFinite(lastSentAtMs)) {
+        const diffMs = now.getTime() - lastSentAtMs;
+        if (diffMs < 24 * 60 * 60 * 1000) {
+          return;
+        }
+      }
+    }
+
+    await sendLowStockAlertEmail({
+      to: config.supportEmail,
+      productName: params.productName,
+      productSku: params.productSku,
+      stock: params.newStock,
+      threshold: config.threshold,
+    });
+    await repoUpsertLowStockAlertAt(params.productId, now.toISOString());
+  } catch (error) {
+    console.error("[low-stock-email] Error enviando alerta:", error);
+  }
+}
 
 function sanitizeFileName(name: string) {
   const base = name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
@@ -290,6 +375,14 @@ export async function createProductService(
       await repoUpdateProductManualPdfUrl(created.id, manualUrl);
     }
 
+    await notifyLowStockIfNeeded({
+      productId: created.id,
+      productName: created.name,
+      productSku: created.sku,
+      previousStock: null,
+      newStock: created.stock,
+    });
+
     return created;
   } catch (e) {
     throw mapDbError(e, "No se pudo crear el producto");
@@ -319,6 +412,8 @@ export async function updateProductService(
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
 
   try {
+    const before = await repoGetProductStockSnapshot(id);
+
     const payloadWithSlug = {
       ...parsed.data,
       slug: resolveProductSlug(parsed.data.name),
@@ -367,6 +462,14 @@ export async function updateProductService(
     }
 
     await repoReplaceProductCharacteristicValues(id, parsedCharacteristics);
+
+    await notifyLowStockIfNeeded({
+      productId: id,
+      productName: payloadWithSlug.name,
+      productSku: payloadWithSlug.sku,
+      previousStock: before?.stock ?? null,
+      newStock: payloadWithSlug.stock,
+    });
 
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar el producto");
