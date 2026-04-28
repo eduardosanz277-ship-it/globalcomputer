@@ -36,9 +36,18 @@ import {
 } from "@/components/admin/admin-form-classes";
 import { cn } from "@/utils/cn";
 import { StorefrontProductGrid } from "./StorefrontProductGrid";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
 const DEFAULT_PAGE_SIZE = 20;
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
 
 /** react-select dentro del SlideOver: menú por encima del área scroll (mismo criterio que `FormSelectField` con portal). */
 const catalogSlideOverSelectStyles: typeof appSelectStyles = {
@@ -155,10 +164,18 @@ function FilterPanelSection({
 type Props = {
   products: StorefrontProduct[];
   priceTier: StorefrontPriceTier;
+  initialSearch?: string;
 };
 
-export function StorefrontProductCatalog({ products, priceTier }: Props) {
+export function StorefrontProductCatalog({
+  products,
+  priceTier,
+  initialSearch = "",
+}: Props) {
   const { locale, t } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const collatorLocale = locale === "en" ? "en" : "es";
 
   const sortOptions = useMemo<SortOption[]>(
@@ -179,7 +196,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     8;
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [brandIds, setBrandIds] = useState<Record<string, boolean>>({});
   const [categoryIds, setCategoryIds] = useState<Record<string, boolean>>({});
   const [specificIds, setSpecificIds] = useState<Record<string, boolean>>({});
@@ -199,6 +216,10 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     Record<FilterSectionKey, boolean>
   >(EMPTY_FILTER_SECTIONS_STATE);
   const pageSizeSelectId = useId();
+
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
 
   const sectionHasActiveSelection = (key: FilterSectionKey): boolean => {
     if (key === "category") return Object.values(categoryIds).some(Boolean);
@@ -374,7 +395,7 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     ((sliderMaxValue - sliderMinBound) / sliderSpan) * 100;
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = normalizeSearchText(search);
     const selectedBrands = Object.entries(brandIds)
       .filter(([, v]) => v)
       .map(([id]) => id);
@@ -402,23 +423,35 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
 
     let list = products.filter((p) => {
       if (q) {
-        const nameHay = [
+        const productHaystack = normalizeSearchText(
+          [
           storefrontProductDisplayName(p, locale),
           p.name,
           p.name_en,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        const brandHay = [
+          p.sku,
+          p.slug,
           storefrontLocalizedText(locale, p.brand_name, p.brand_name_en),
           p.brand_name,
           p.brand_name_en,
+          p.category_name
+            ? storefrontLocalizedText(locale, p.category_name, p.category_name_en)
+            : null,
+          p.category_name,
+          p.category_name_en,
+          ...p.characteristic_specifics.flatMap((s) => [
+            storefrontLocalizedText(locale, s.name, s.name_en),
+            s.name,
+            s.name_en,
+            storefrontLocalizedText(locale, s.general_name, s.general_name_en),
+            s.general_name,
+            s.general_name_en,
+            s.value,
+          ]),
         ]
           .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!nameHay.includes(q) && !brandHay.includes(q)) return false;
+          .join(" "),
+        );
+        if (!productHaystack.includes(q)) return false;
       }
       if (hasBrandFilter && !selectedBrands.includes(p.brand_id)) return false;
 
@@ -615,6 +648,14 @@ export function StorefrontProductCatalog({ products, priceTier }: Props) {
     setStockFilters({});
     setDiscountOnly(false);
     setSortBy("relevance");
+    if (searchParams.has("q")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("q");
+      const nextQuery = params.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    }
   };
 
   const toggleBrand = (id: string) => {

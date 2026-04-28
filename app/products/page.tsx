@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
-import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
-import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
+import { SearchResultsPage } from "@/components/store/SearchResultsPage";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
-import { LocalizedText } from "@/components/i18n/LocalizedText";
 
 export const dynamic = "force-dynamic";
 
@@ -27,46 +23,31 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
+type ProductsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function ProductosPage() {
-  const [products, user] = await Promise.all([
+function firstSearchParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
+export default async function ProductosPage({ searchParams }: ProductsPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const query = firstSearchParam(resolvedSearchParams.q).trim();
+  const [products, user, locale] = await Promise.all([
     listAllActiveStorefrontProducts(),
     getCurrentUserService(),
+    getServerLocale(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
 
   return (
-    <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
-      <div className="border-b border-border/60 bg-card/40">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <MarketingBreadcrumb
-            items={[
-              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
-              { label: <LocalizedText es="Catálogo" en="Catalog" /> },
-            ]}
-            className={inter.className}
-          />
-
-          <div className="mt-4">
-            {/* description="Listado de todos los artículos activos en la tienda." */}
-            {/* descriptionClassName={`${inter.className} mt-1 max-w-[700px] text-[15px] font-normal text-muted-foreground sm:text-base`} */}
-            <HomeSectionHeading
-              align="left"
-              title={<LocalizedText es="Todos los productos" en="All products" />}
-              titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <StorefrontProductCatalog products={products} priceTier={priceTier} />
-      </div>
-    </main>
+    <SearchResultsPage
+      products={products}
+      priceTier={priceTier}
+      query={query}
+      locale={locale}
+    />
   );
 }

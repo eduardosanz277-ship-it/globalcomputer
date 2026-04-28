@@ -8,6 +8,7 @@ export const STOREFRONT_PRODUCT_NEW_DAYS = 5;
 
 export type StorefrontProduct = {
   id: string;
+  sku: string;
   name: string;
   /** Nombre en inglés (cuando existe en BD). */
   name_en: string | null;
@@ -39,6 +40,7 @@ export type StorefrontProduct = {
     general_id: string;
     general_name: string;
     general_name_en: string | null;
+    value: string | null;
   }[];
   product_images: {
     id: string;

@@ -3,6 +3,7 @@
 import { AppLogo } from "@/components/brand/AppLogo";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { SearchAutocompleteDropdown } from "@/components/marketing/SearchAutocompleteDropdown";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
 import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
 import { useGcCart } from "@/components/store/useGcCart";
@@ -39,7 +40,6 @@ import {
   MapPin,
   Menu,
   Package,
-  Search,
   Shield,
   ShoppingCart,
   Tags,
@@ -412,16 +412,11 @@ export function SiteHeader({ user }: Props) {
           className={cn(
             "lg:hidden",
             shelfRevealClass,
-            accountOpen ? "overflow-visible" : "overflow-hidden",
+            "overflow-visible",
             "grid-rows-[1fr] opacity-100",
           )}
         >
-          <div
-            className={cn(
-              "min-h-0",
-              accountOpen ? "overflow-visible" : "overflow-hidden",
-            )}
-          >
+          <div className="min-h-0 overflow-visible">
             <div
               className={cn(
                 "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-2.5 sm:px-3 sm:pb-2",
@@ -458,20 +453,12 @@ export function SiteHeader({ user }: Props) {
                 </span>
               </Link>
 
-              <label className="relative col-span-4 row-start-2 block min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1">
-                <span className="sr-only">{t("header.searchLabel")}</span>
-                <Search
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <input
-                  type="search"
-                  name="q"
-                  placeholder={t("header.searchPlaceholder")}
-                  autoComplete="off"
-                  className="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
-                />
-              </label>
+              <SearchAutocompleteDropdown
+                priceTier={storefrontPriceTier}
+                className="col-span-4 row-start-2 block min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1"
+                inputClassName="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
+                dropdownClassName="left-0 right-0"
+              />
               <div
                 ref={accountRefMobile}
                 className="relative row-start-1 col-start-3 justify-self-end sm:col-start-4"
@@ -645,16 +632,11 @@ export function SiteHeader({ user }: Props) {
         <div
           className={cn(
             shelfRevealClass,
-            accountOpen ? "overflow-visible" : "overflow-hidden",
+            "overflow-visible",
             "relative z-[80] grid-rows-[1fr] opacity-100",
           )}
         >
-          <div
-            className={cn(
-              "min-h-0",
-              accountOpen ? "overflow-visible" : "overflow-hidden",
-            )}
-          >
+          <div className="min-h-0 overflow-visible">
             <div className="mx-auto hidden min-h-[4rem] max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2 sm:min-h-[4.75rem] sm:gap-x-3 sm:px-6 lg:grid lg:px-8">
               <div className="flex min-w-0 justify-self-start">
                 <Link
@@ -678,20 +660,10 @@ export function SiteHeader({ user }: Props) {
               </div>
 
               <div className="w-full min-w-0 px-1 sm:px-2 lg:px-3 xl:px-4">
-                <label className="relative block w-full">
-                  <span className="sr-only">{t("header.searchLabel")}</span>
-                  <Search
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:right-3.5"
-                    aria-hidden
-                  />
-                  <input
-                    type="search"
-                    name="q"
-                    placeholder={t("header.searchPlaceholder")}
-                    autoComplete="off"
-                    className="h-11 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
-                  />
-                </label>
+                <SearchAutocompleteDropdown
+                  priceTier={storefrontPriceTier}
+                  inputClassName="h-11 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-4 pr-12 text-sm outline-none ring-offset-background transition placeholder:text-brand-gray-light focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-12 sm:pl-5 sm:pr-14"
+                />
               </div>
 
               <div className="flex min-w-0 justify-self-end gap-0.5 sm:gap-2">

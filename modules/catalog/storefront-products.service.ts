@@ -28,6 +28,7 @@ function relationSlug(
 /** Select de producto para tienda (reutilizable en otros módulos del catálogo). */
 export const STOREFRONT_PRODUCT_SELECT = `
   id,
+  sku,
   name,
   name_en,
   slug,
@@ -215,6 +216,7 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
     general_id: string;
     general_name: string;
     general_name_en: string | null;
+    value: string | null;
   }[];
 } {
   const raw = row.product_characteristic_values;
@@ -228,6 +230,7 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
       general_id: string;
       general_name: string;
       general_name_en: string | null;
+      value: string | null;
     }
   >();
 
@@ -308,6 +311,11 @@ function parseProductCharacteristicsFromRow(row: Record<string, unknown>): {
         general_id: genId,
         general_name: gName,
         general_name_en: gNameEn,
+          value:
+            (cv as { value?: unknown }).value != null &&
+            String((cv as { value?: unknown }).value).trim() !== ""
+              ? String((cv as { value?: unknown }).value)
+              : null,
       });
     }
   }
@@ -342,6 +350,7 @@ export function mapStorefrontProductRow(
       : null;
   return {
     id: String(row.id),
+    sku: String(row.sku ?? ""),
     name: String(row.name),
     name_en,
     created_at: String(row.created_at ?? ""),

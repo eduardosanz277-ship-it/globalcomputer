@@ -189,7 +189,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center text-xs text-zinc-600 sm:flex-row sm:text-left">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/20 pt-8 text-center text-xs text-zinc-400 sm:flex-row sm:text-left">
           <p>
             © {new Date().getFullYear()} Global Computers USA.{" "}
             {t("footer.rightsReserved")} {t("footer.createdBy")}
