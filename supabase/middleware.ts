@@ -40,8 +40,19 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresca la sesión y propaga cookies; no insertar lógica entre createServerClient y getUser()
-  await supabase.auth.getUser();
+  // Refresca la sesión y propaga cookies; ignora refresh token inválido (cookies obsoletas).
+  try {
+    await supabase.auth.getUser();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isRefreshMissing =
+      /refresh_token_not_found/i.test(message) ||
+      /invalid refresh token/i.test(message) ||
+      /refresh token not found/i.test(message);
+    if (!isRefreshMissing) {
+      throw error;
+    }
+  }
 
   return supabaseResponse;
 }

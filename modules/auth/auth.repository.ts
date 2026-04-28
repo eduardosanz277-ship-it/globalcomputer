@@ -47,6 +47,19 @@ function isPostgresUniqueViolation(err: unknown): boolean {
 
 const OTP_COOLDOWN_SECONDS = 60;
 
+function isRefreshTokenNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const e = error as { code?: unknown; message?: unknown; status?: unknown };
+  const code = typeof e.code === "string" ? e.code : "";
+  const message = typeof e.message === "string" ? e.message : "";
+  const status = typeof e.status === "number" ? e.status : NaN;
+  return (
+    code === "refresh_token_not_found" ||
+    (Number.isFinite(status) && status === 400 && /invalid refresh token/i.test(message)) ||
+    /refresh token not found/i.test(message)
+  );
+}
+
 export async function repoGetOtpCooldown(email: string): Promise<Date | null> {
   const normalizedEmail = email.trim().toLowerCase();
   const supabase = await createSupabaseServerClient();
@@ -267,10 +280,18 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
   const supabase = await createSupabaseServerClient();
 
   // getUser() valida el JWT en el servidor; getSession() puede estar desfasado en RSC.
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] | null = null;
+  let error: Error | null = null;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+    error = result.error;
+  } catch (e) {
+    if (isRefreshTokenNotFoundError(e)) {
+      return null;
+    }
+    throw e;
+  }
 
   if (error || !user) return null;
 
