@@ -1,24 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseServiceEnv } from "@/lib/supabaseEnv";
 
 /**
  * Cliente con **service role** (solo servidor: Server Actions / Route Handlers).
  * No importar desde componentes cliente.
  */
 export function createSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-
-  if (!url) {
-    throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL");
-  }
-  if (!key) {
-    console.error(
-      "SUPABASE_SERVICE_ROLE_KEY no definida en entorno del servidor; lista admin de pedidos no funcionará.",
-    );
-    throw new Error(
-      "Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor (operaciones admin: eliminar usuario, etc.)",
-    );
-  }
+  const { url, serviceRoleKey: key } = getSupabaseServiceEnv();
 
   return createClient(url, key, {
     auth: {
