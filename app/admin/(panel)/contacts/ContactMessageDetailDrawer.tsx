@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Clock3, Mail, Phone } from "lucide-react";
 import { SlideOver } from "@/components/ui/slide-over";
+import { AdminDetailPanelItem } from "@/components/admin/admin-detail-panel-item";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import type { ContactMessageAdmin } from "@/modules/admin/contact-messages/contact-messages.types";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
@@ -12,30 +12,6 @@ type Props = {
   message: ContactMessageAdmin | null;
   onClose: () => void;
 };
-
-function DetailItem({
-  label,
-  value,
-  icon,
-  labelClassName,
-}: {
-  label: string;
-  value: ReactNode;
-  icon?: ReactNode;
-  labelClassName?: string;
-}) {
-  return (
-    <article className="rounded-xl border border-border/70 bg-card p-4">
-      <p
-        className={labelClassName ?? "inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"}
-      >
-        {icon ? <span>{icon}</span> : null}
-        {label}
-      </p>
-      <div className="mt-2 text-sm text-foreground">{value}</div>
-    </article>
-  );
-}
 
 export function ContactMessageDetailDrawer({ message, onClose }: Props) {
   const { t, locale } = useI18n();
@@ -63,7 +39,7 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
               </div>
             </article>
 
-            <DetailItem
+            <AdminDetailPanelItem
               label={t("admin.contacts.drawer.contact")}
               labelClassName="inline-flex items-center gap-2 text-sm font-medium text-foreground"
               value={
@@ -89,7 +65,7 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
               }
             />
 
-            <DetailItem
+            <AdminDetailPanelItem
               label={t("admin.contacts.drawer.metadata")}
               labelClassName="inline-flex items-center gap-2 text-sm font-medium text-foreground"
               value={

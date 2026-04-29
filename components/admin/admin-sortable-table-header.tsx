@@ -30,7 +30,7 @@ export function SortableHeader<TData>({
       <button
         type="button"
         className={cn(
-          "hidden max-w-full items-center gap-1.5 rounded-md px-0.5 py-0.5 -mx-0.5 md:inline-flex",
+          "hidden max-w-full items-center justify-start gap-1.5 rounded-md px-0.5 py-0.5 -mx-0.5 md:inline-flex",
           "text-xs font-medium uppercase tracking-wide text-muted-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         )}

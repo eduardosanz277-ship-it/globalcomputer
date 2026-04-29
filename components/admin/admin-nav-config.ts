@@ -14,6 +14,7 @@ import {
   Package,
   Settings,
   Shapes,
+  Star,
   Tag,
   Users,
 } from "lucide-react";
@@ -119,6 +120,21 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/admin/faqs",
         labelKey: "admin.menu.faqs",
         icon: CircleHelp,
+      },
+      {
+        href: "/admin/reviews/products",
+        labelKey: "admin.menu.reviews",
+        icon: Star,
+        children: [
+          {
+            href: "/admin/reviews/products",
+            labelKey: "admin.menu.reviewsProducts",
+          },
+          {
+            href: "/admin/reviews/site",
+            labelKey: "admin.menu.reviewsSite",
+          },
+        ],
       },
     ],
   },

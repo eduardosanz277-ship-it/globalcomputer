@@ -63,7 +63,7 @@ function reviewerLabelFromRow(row: Record<string, unknown>): string {
 
 /**
  * Listado público de reseñas de producto (usa service role: RLS de `reviews` solo
- * permite SELECT a `authenticated`).
+ * permite SELECT a `authenticated`). Solo entradas con `active = true` (visibles en tienda).
  */
 export async function listProductReviewsForLeaveReviewPage(): Promise<
   ProductReviewListItem[]
@@ -74,6 +74,7 @@ export async function listProductReviewsForLeaveReviewPage(): Promise<
     .select(
       "id, rating, comment, created_at, reviewer_name, products(name), profiles(full_name)",
     )
+    .eq("active", true)
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
 
@@ -106,6 +107,7 @@ export async function listProductReviewsByProductId(
     .from("reviews")
     .select("id, rating, comment, created_at, reviewer_name, profiles(full_name)")
     .eq("product_id", productId)
+    .eq("active", true)
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
 
@@ -130,7 +132,7 @@ export async function listProductReviewsByProductId(
   }));
 }
 
-/** Reseñas de la tienda (tabla `site_reviews`), más recientes primero. */
+/** Reseñas de la tienda (`site_reviews`), solo visibles (`active = true`), más recientes primero. */
 export async function listSiteReviewsForLeaveReviewPage(): Promise<
   SiteReviewListItem[]
 > {
@@ -138,6 +140,7 @@ export async function listSiteReviewsForLeaveReviewPage(): Promise<
   const { data, error } = await supabase
     .from("site_reviews")
     .select("id, name, email, rating, comment, created_at")
+    .eq("active", true)
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
 
@@ -165,14 +168,14 @@ export type StoreRatingSummary = {
 };
 
 /**
- * Promedio de valoraciones de la tienda: reseñas de producto (`reviews`) +
- * reseñas generales del sitio (`site_reviews`).
+ * Promedio de valoraciones de la tienda: solo reseñas visibles (`active = true`)
+ * en `reviews` y `site_reviews`.
  */
 export async function getStoreRatingSummary(): Promise<StoreRatingSummary> {
   const supabase = createSupabaseAdminClient();
   const [reviewsRes, siteRes] = await Promise.all([
-    supabase.from("reviews").select("rating"),
-    supabase.from("site_reviews").select("rating"),
+    supabase.from("reviews").select("rating").eq("active", true),
+    supabase.from("site_reviews").select("rating").eq("active", true),
   ]);
 
   if (reviewsRes.error) {

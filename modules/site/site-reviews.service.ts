@@ -63,6 +63,7 @@ export async function listRecentSiteReviews(
   const { data, error } = await supabase
     .from("site_reviews")
     .select("id, name, email, rating, comment, created_at")
+    .eq("active", true)
     .order("created_at", { ascending: false })
     .limit(limit);
 

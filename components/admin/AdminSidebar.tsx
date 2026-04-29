@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -24,6 +24,43 @@ function pathMatches(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Estado inicial: acordeones abiertos si la ruta actual cae en esa sección. */
+function computeOpenSubmenus(pathname: string): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  for (const group of ADMIN_NAV_GROUPS) {
+    for (const item of group.items) {
+      if (item.children?.length) {
+        const activeChild = item.children.some((c) =>
+          pathMatches(pathname, c.href),
+        );
+        const activeParent = pathMatches(pathname, item.href);
+        next[item.href] = activeChild || activeParent;
+      }
+    }
+  }
+  return next;
+}
+
+/** Cierra acordeones cuya sección ya no coincide con la ruta (al navegar fuera). */
+function closeSubmenusOutsidePath(
+  pathname: string,
+  prev: Record<string, boolean>,
+): Record<string, boolean> {
+  const next = { ...prev };
+  for (const group of ADMIN_NAV_GROUPS) {
+    for (const item of group.items) {
+      if (!item.children?.length) continue;
+      const inSection =
+        pathMatches(pathname, item.href) ||
+        item.children.some((c) => pathMatches(pathname, c.href));
+      if (!inSection) {
+        next[item.href] = false;
+      }
+    }
+  }
+  return next;
+}
+
 export function AdminSidebar({
   collapsed,
   onToggleCollapsed,
@@ -36,22 +73,12 @@ export function AdminSidebar({
   /** En escritorio: barra estrecha con iconos; en móvil (drawer) siempre expandida */
   const collapsedNav = collapsed && !mobileOpen;
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
-    () => {
-      const initial: Record<string, boolean> = {};
-      for (const group of ADMIN_NAV_GROUPS) {
-        for (const item of group.items) {
-          if (item.children?.length) {
-            const activeChild = item.children.some((c) =>
-              pathMatches(pathname, c.href),
-            );
-            const activeParent = pathMatches(pathname, item.href);
-            initial[item.href] = activeChild || activeParent;
-          }
-        }
-      }
-      return initial;
-    },
+    () => computeOpenSubmenus(pathname),
   );
+
+  useEffect(() => {
+    setOpenSubmenus((prev) => closeSubmenusOutsidePath(pathname, prev));
+  }, [pathname]);
 
   const toggleSubmenu = (key: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -169,9 +196,6 @@ export function AdminSidebar({
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children?.length);
-                  const characteristicsMenuHref = "/admin/general-characteristics";
-                  const isCharacteristicsItem =
-                    item.href === characteristicsMenuHref;
                   const parentActive =
                     pathMatches(pathname, item.href) ||
                     (hasChildren &&
@@ -247,15 +271,7 @@ export function AdminSidebar({
                       ) : (
                         <Link
                           href={item.href}
-                          onClick={() => {
-                            handleLinkNavigation(item.href);
-                            if (!isCharacteristicsItem) {
-                              setOpenSubmenus((prev) => ({
-                                ...prev,
-                                [characteristicsMenuHref]: false,
-                              }));
-                            }
-                          }}
+                          onClick={() => handleLinkNavigation(item.href)}
                           className={cn(
                             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                             pathMatches(pathname, item.href) &&

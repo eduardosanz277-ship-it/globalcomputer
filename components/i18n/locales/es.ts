@@ -1214,6 +1214,137 @@ export const es = {
         deleteError: "No se pudo eliminar la pregunta frecuente",
       },
     },
+    reviews: {
+      products: {
+        title: "Reseñas de productos",
+        description:
+          "Consulta las valoraciones de productos, activa o desactiva su visibilidad y elimínalas si es necesario.",
+        error: {
+          default: "No se pudieron cargar las reseñas.",
+          hint:
+            "Comprueba que tu sesión sea de administrador y que las tablas y políticas RLS estén aplicadas en Supabase.",
+        },
+        filters: {
+          searchPlaceholder:
+            "Buscar por producto o nombre del reseñante…",
+        },
+        table: {
+          product: "Producto",
+          productSortIdle: "Ordenar por producto",
+          productSortAsc: "Ordenado de la A a la Z. Clic para invertir",
+          productSortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
+          reviewer: "Reseñante",
+          rating: "Valoración",
+          ratingSortIdle: "Ordenar por valoración",
+          ratingSortAsc: "Menor valoración primero. Clic para invertir",
+          ratingSortDesc: "Mayor valoración primero. Clic para quitar orden",
+          date: "Fecha",
+          dateSortIdle: "Ordenar por fecha",
+          dateSortAsc: "Más antigua primero. Clic para invertir",
+          dateSortDesc: "Más reciente primero. Clic para quitar orden",
+          dateTooltip: "Fecha de creación",
+          active: "Visible",
+          activeSortIdle: "Ordenar por visibilidad",
+          activeSortAsc: "Ocultas primero. Clic para invertir",
+          activeSortDesc: "Visibles primero. Clic para quitar orden",
+          activeAria: "Alternar visibilidad de la reseña",
+          actions: "Acciones",
+          deleteAria: "Eliminar reseña",
+        },
+        confirm: {
+          deleteTitle: "¿Eliminar reseña?",
+          deleteMessagePrefix: "Se eliminará la reseña del producto",
+          deleteConfirm: "Eliminar",
+        },
+        toast: {
+          deleted: "Reseña eliminada",
+          deleteError: "No se pudo eliminar la reseña",
+          updateError: "No se pudo actualizar la visibilidad",
+        },
+        menu: {
+          deleting: "Eliminando",
+          openActions: "Abrir menú de acciones",
+        },
+        detail: {
+          slideTitle: "Detalles de la reseña",
+          slideDescription:
+            "Datos de la valoración, el comentario y la visibilidad en la tienda.",
+          contentAria: "Detalles de la reseña del producto",
+          product: "Producto",
+          email: "Correo del reseñante",
+          comment: "Comentario",
+          commentEmpty: "Sin comentario",
+          visible: "Visibilidad",
+          visibleYes: "Visible",
+          visibleNo: "Oculta",
+          createdAt: "Fecha de creación",
+        },
+      },
+      site: {
+        title: "Reseñas del sitio",
+        description:
+          "Gestiona las valoraciones generales del sitio: visibilidad y eliminación.",
+        error: {
+          default: "No se pudieron cargar las reseñas.",
+          hint:
+            "Comprueba que tu sesión sea de administrador y que las tablas y políticas RLS estén aplicadas en Supabase.",
+        },
+        filters: {
+          searchPlaceholder:
+            "Buscar por reseñante o correo…",
+        },
+        table: {
+          reviewer: "Reseñante",
+          reviewerSortIdle: "Ordenar por reseñante",
+          reviewerSortAsc: "Ordenado de la A a la Z. Clic para invertir",
+          reviewerSortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
+          rating: "Valoración",
+          ratingSortIdle: "Ordenar por valoración",
+          ratingSortAsc: "Menor valoración primero. Clic para invertir",
+          ratingSortDesc: "Mayor valoración primero. Clic para quitar orden",
+          date: "Fecha",
+          dateSortIdle: "Ordenar por fecha",
+          dateSortAsc: "Más antigua primero. Clic para invertir",
+          dateSortDesc: "Más reciente primero. Clic para quitar orden",
+          dateTooltip: "Fecha de creación",
+          active: "Visible",
+          activeSortIdle: "Ordenar por visibilidad",
+          activeSortAsc: "Ocultas primero. Clic para invertir",
+          activeSortDesc: "Visibles primero. Clic para quitar orden",
+          activeAria: "Alternar visibilidad de la reseña",
+          actions: "Acciones",
+          deleteAria: "Eliminar reseña",
+        },
+        confirm: {
+          deleteTitle: "¿Eliminar reseña?",
+          deleteMessagePrefix: "Se eliminará la reseña de",
+          deleteConfirm: "Eliminar",
+        },
+        toast: {
+          deleted: "Reseña eliminada",
+          deleteError: "No se pudo eliminar la reseña",
+          updateError: "No se pudo actualizar la visibilidad",
+        },
+        menu: {
+          deleting: "Eliminando",
+          openActions: "Abrir menú de acciones",
+        },
+        detail: {
+          slideTitle: "Detalles de la reseña",
+          slideDescription:
+            "Datos de la valoración, el comentario y la visibilidad en el sitio.",
+          contentAria: "Detalles de la reseña del sitio",
+          name: "Reseñante",
+          email: "Correo",
+          comment: "Comentario",
+          commentEmpty: "Sin comentario",
+          visible: "Visibilidad",
+          visibleYes: "Visible",
+          visibleNo: "Oculta",
+          createdAt: "Fecha de creación",
+        },
+      },
+    },
     services: {
       title: "Servicios",
       description:
@@ -1733,6 +1864,9 @@ export const es = {
       users: "Usuarios",
       contactMessages: "Mensajes de contacto",
       faqs: "FAQs",
+      reviews: "Reseñas",
+      reviewsProducts: "Productos",
+      reviewsSite: "Sitio",
       services: "Servicios",
       settings: "Configuración",
     },

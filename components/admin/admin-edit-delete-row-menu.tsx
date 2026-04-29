@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { Eye, MoreVertical, Pencil, Trash2 } from "lucide-react";
 
 const MENU_MIN_WIDTH_PX = 208; // 13rem — mismo ancho que `UsersRowActionsMenu`
@@ -28,9 +29,12 @@ export function AdminEditDeleteRowMenu({
   editLabel,
   /** Desactiva el menú (p. ej. otro panel abierto) sin mostrar el estado “Eliminando”. */
   disabled = false,
+  /** Alineación del botón ⋮ dentro de la celda (`end` = histórico tablas admin). */
+  triggerAlign = "end",
 }: {
   onView?: () => void;
-  onEdit: () => void;
+  /** Si no se pasa (p. ej. solo Ver detalles + Eliminar), no se muestra Editar. */
+  onEdit?: () => void;
   onDelete: () => void | Promise<void>;
   isDeleting: boolean;
   deletingLabel?: string;
@@ -42,6 +46,7 @@ export function AdminEditDeleteRowMenu({
   showDelete?: boolean;
   editLabel?: string;
   disabled?: boolean;
+  triggerAlign?: "start" | "end";
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -122,69 +127,77 @@ export function AdminEditDeleteRowMenu({
         role="menu"
       >
         {onView ? (
-          <>
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
-              disabled={busy}
-              onClick={() => {
-                onView();
-                setOpen(false);
-              }}
-            >
-              <Eye
-                className="h-4 w-4 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              {viewLabel ?? t("admin.users.menu.viewDetails")}
-            </button>
-            <div className="my-1 h-px bg-border/70" role="separator" />
-          </>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
+            disabled={busy}
+            onClick={() => {
+              onView();
+              setOpen(false);
+            }}
+          >
+            <Eye
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            {viewLabel ?? t("admin.users.menu.viewDetails")}
+          </button>
         ) : null}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
-          disabled={busy}
-          onClick={() => {
-            onEdit();
-            setOpen(false);
-          }}
-        >
-          <Pencil
-            className="h-4 w-4 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-          {editLabel ?? t("admin.common.actionEdit")}
-        </button>
+        {onView && onEdit ? (
+          <div className="my-1 h-px bg-border/70" role="separator" />
+        ) : null}
+        {onEdit ? (
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-muted/80"
+            disabled={busy}
+            onClick={() => {
+              onEdit();
+              setOpen(false);
+            }}
+          >
+            <Pencil
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            {editLabel ?? t("admin.common.actionEdit")}
+          </button>
+        ) : null}
+        {showDelete && (onView || onEdit) ? (
+          <div className="my-1 h-px bg-border/70" role="separator" />
+        ) : null}
         {showDelete ? (
-          <>
-            <div className="my-1 h-px bg-border/70" role="separator" />
-            <button
-              type="button"
-              role="menuitem"
-              className={
-                busy
-                  ? "flex w-full cursor-not-allowed items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground/60"
-                  : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
-              }
-              disabled={busy}
-              onClick={() => {
-                setOpen(false);
-                void onDelete();
-              }}
-            >
-              <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-              {isDeleting ? deletingLabel : deleteLabel}
-            </button>
-          </>
+          <button
+            type="button"
+            role="menuitem"
+            className={
+              busy
+                ? "flex w-full cursor-not-allowed items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground/60"
+                : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
+            }
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              void onDelete();
+            }}
+          >
+            <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+            {isDeleting ? deletingLabel : deleteLabel}
+          </button>
         ) : null}
       </div>
     ) : null;
 
   return (
-    <div className="relative flex justify-end" ref={wrapRef}>
+    <div
+      className={cn(
+        "relative flex",
+        triggerAlign === "start" ? "justify-start" : "justify-end",
+      )}
+      ref={wrapRef}
+    >
       <Button
         ref={triggerRef}
         type="button"
