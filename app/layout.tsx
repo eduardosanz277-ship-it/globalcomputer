@@ -67,7 +67,7 @@ export default async function RootLayout({
         <I18nProvider initialLocale={locale}>
           <ScrollToTopOnPathname />
           <ConditionalSiteHeader user={user} />
-          <main className="flex-1">{children}</main>
+          <main className="relative isolate z-0 flex-1">{children}</main>
           <ConditionalSiteFooter contact={contact} />
           <HomeBackToTopButton />
           <ToastContainer position="top-right" autoClose={3000} />
