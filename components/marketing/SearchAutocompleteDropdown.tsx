@@ -216,20 +216,6 @@ export function SearchAutocompleteDropdown({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const body = document.body;
-    const html = document.documentElement;
-    const previousBodyOverflow = body.style.overflow;
-    const previousHtmlOverflow = html.style.overflow;
-    body.style.overflow = "hidden";
-    html.style.overflow = "hidden";
-    return () => {
-      body.style.overflow = previousBodyOverflow;
-      html.style.overflow = previousHtmlOverflow;
-    };
-  }, [isOpen]);
-
   const goToSearch = (value = trimmedQuery) => {
     const q = value.trim();
     if (!q) return;
