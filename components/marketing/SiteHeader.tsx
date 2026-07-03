@@ -49,7 +49,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 
 const SITE_NAME = "Global Computers USA";
@@ -74,7 +81,7 @@ function NavMegaMenuLoading() {
 }
 
 const desktopNavPrimaryLabelClass =
-  "font-roboto text-[15px] font-normal leading-none";
+  "font-roboto text-[15px] font-light leading-none";
 
 const desktopNavRowHeightClass = "h-10";
 
@@ -124,7 +131,7 @@ function DesktopNavDropdownTrigger({
   return (
     <span
       className={cn(
-        "flex cursor-default snap-start items-center pr-3 sm:pr-4",
+        "flex cursor-pointer snap-start items-center pr-3 sm:pr-4",
         desktopNavRowHeightClass,
         desktopNavPrimaryLabelClass,
       )}
@@ -132,7 +139,11 @@ function DesktopNavDropdownTrigger({
       <span className="relative inline-flex h-full items-center">
         <span className="inline-flex items-center gap-1">
           <span>{label}</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <ChevronDown
+            className="h-3.5 w-3.5 shrink-0"
+            strokeWidth={2.75}
+            aria-hidden
+          />
         </span>
         <span
           aria-hidden
@@ -370,8 +381,7 @@ export function SiteHeader({ user }: Props) {
     "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-white/95 transition";
 
   /** Barra principal y drawer: 15px, peso 500 */
-  const navPrimaryLabelClass =
-    "font-roboto text-[15px] font-medium";
+  const navPrimaryLabelClass = "font-roboto text-[15px] font-medium";
 
   /** Generales / marcas (cabecera de fila o desplegable) en menú móvil. */
   const mobileNavCatalogHeadingClass = "text-sm font-bold text-foreground/90";
@@ -1379,7 +1389,12 @@ export function SiteHeader({ user }: Props) {
               )}
               aria-label={t("header.mobileMenuLabel")}
             >
-              <div className={cn("flex items-center justify-between border-b border-border/70 bg-[#e4e7ec] py-3", landingInsetClass)}>
+              <div
+                className={cn(
+                  "flex items-center justify-between border-b border-border/70 bg-[#e4e7ec] py-3",
+                  landingInsetClass,
+                )}
+              >
                 <span className="font-roboto text-[15px] font-medium">
                   {t("header.menuTitle")}
                 </span>
