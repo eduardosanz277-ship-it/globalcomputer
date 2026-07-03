@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 const SITE_NAME = "Global Computers USA";
@@ -70,6 +70,76 @@ function NavMegaMenuLoading() {
         Cargando
       </span>
     </div>
+  );
+}
+
+const desktopNavPrimaryLabelClass =
+  "font-roboto text-[15px] font-normal leading-none";
+
+const desktopNavRowHeightClass = "h-10";
+
+const desktopNavUnderlineClass =
+  "pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-white transition-transform duration-200 ease-out";
+
+function DesktopNavLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: ReactNode;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "group/navitem flex snap-start items-center pr-3 sm:pr-4",
+        desktopNavRowHeightClass,
+        desktopNavPrimaryLabelClass,
+      )}
+    >
+      <span className="relative inline-flex h-full items-center">
+        <span>{children}</span>
+        <span
+          aria-hidden
+          className={cn(
+            desktopNavUnderlineClass,
+            "group-hover/navitem:scale-x-100",
+          )}
+        />
+      </span>
+    </Link>
+  );
+}
+
+function DesktopNavDropdownTrigger({
+  label,
+  hoverClass,
+}: {
+  label: string;
+  hoverClass: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex cursor-default snap-start items-center pr-3 sm:pr-4",
+        desktopNavRowHeightClass,
+        desktopNavPrimaryLabelClass,
+      )}
+    >
+      <span className="relative inline-flex h-full items-center">
+        <span className="inline-flex items-center gap-1">
+          <span>{label}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        </span>
+        <span
+          aria-hidden
+          className={cn(desktopNavUnderlineClass, hoverClass)}
+        />
+      </span>
+    </span>
   );
 }
 
@@ -290,15 +360,18 @@ export function SiteHeader({ user }: Props) {
   const megaPanelClass =
     "overflow-hidden rounded-lg border border-white/10 bg-primary text-left text-white shadow-md";
 
-  /** Misma altura que `py-1` del `<nav>`: continúa la franja verde hasta el borde inferior; el panel queda pegado a esa línea sin perder el hover. */
-  const navMegaMenuBridgeClass = "h-1 shrink-0 bg-primary";
+  /** Mismo inset horizontal que las secciones del landing (hero, destacados, etc.). */
+  const landingInsetClass = "px-4 sm:px-6 lg:px-8";
+
+  /** Contenedor centrado del landing (`max-w-7xl` + inset). */
+  const landingContainerClass = cn("mx-auto max-w-7xl", landingInsetClass);
 
   const navMegaRowClass =
     "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-white/95 transition";
 
-  /** Barra principal y drawer: mayúsculas, 15px, peso 500, letter-spacing 1px */
+  /** Barra principal y drawer: 15px, peso 500 */
   const navPrimaryLabelClass =
-    "font-roboto text-[15px] font-medium uppercase tracking-[1px]";
+    "font-roboto text-[15px] font-medium";
 
   /** Generales / marcas (cabecera de fila o desplegable) en menú móvil. */
   const mobileNavCatalogHeadingClass = "text-sm font-bold text-foreground/90";
@@ -936,34 +1009,25 @@ export function SiteHeader({ user }: Props) {
         >
           <div className="min-h-0 overflow-visible lg:min-h-0">
             <nav
-              className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 overflow-visible px-4 py-1 sm:gap-3 sm:px-6 lg:px-8"
+              className={cn(
+                landingContainerClass,
+                desktopNavRowHeightClass,
+                "flex flex-wrap items-center justify-start gap-2 overflow-visible sm:gap-3",
+              )}
               aria-label={t("header.mainNavLabel")}
             >
-              <Link
-                href="/"
-                className={cn(
-                  "snap-start rounded-xl px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
-                  navPrimaryLabelClass,
-                )}
-                onClick={handleScrollToTopOnHome}
-              >
+              <DesktopNavLink href="/" onClick={handleScrollToTopOnHome}>
                 {t("header.nav.home")}
-              </Link>
+              </DesktopNavLink>
 
-              <div className="group/cat relative">
-                <span
-                  className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/cat:bg-white/10 sm:px-4",
-                    navPrimaryLabelClass,
-                  )}
-                >
-                  {t("header.nav.categories")}
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                </span>
+              <div className="group/cat relative flex items-center">
+                <DesktopNavDropdownTrigger
+                  label={t("header.nav.categories")}
+                  hoverClass="group-hover/cat:scale-x-100"
+                />
                 {(navLoading ||
                   (navData?.catalogCategories?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
                     <div
                       className={cn(
                         megaPanelClass,
@@ -1049,20 +1113,14 @@ export function SiteHeader({ user }: Props) {
                 )}
               </div>
 
-              <div className="group/nav relative">
-                <span
-                  className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/nav:bg-white/10 sm:px-4",
-                    navPrimaryLabelClass,
-                  )}
-                >
-                  {t("header.nav.securitySystems")}
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                </span>
+              <div className="group/nav relative flex items-center">
+                <DesktopNavDropdownTrigger
+                  label={t("header.nav.securitySystems")}
+                  hoverClass="group-hover/nav:scale-x-100"
+                />
                 {(navLoading ||
                   (navData?.characteristicsGeneral?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
                     <div
                       className={cn(
                         megaPanelClass,
@@ -1146,19 +1204,13 @@ export function SiteHeader({ user }: Props) {
                 )}
               </div>
 
-              <div className="group/shop relative">
-                <span
-                  className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/shop:bg-white/10 sm:px-4",
-                    navPrimaryLabelClass,
-                  )}
-                >
-                  {t("header.nav.brands")}
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                </span>
+              <div className="group/shop relative flex items-center">
+                <DesktopNavDropdownTrigger
+                  label={t("header.nav.brands")}
+                  hoverClass="group-hover/shop:scale-x-100"
+                />
                 {(navLoading || (navData?.brands?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/shop:pointer-events-auto group-hover/shop:visible group-hover/shop:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/shop:pointer-events-auto group-hover/shop:visible group-hover/shop:opacity-100">
                     <div
                       className={cn(
                         megaPanelClass,
@@ -1242,19 +1294,13 @@ export function SiteHeader({ user }: Props) {
                 )}
               </div>
 
-              <div className="group/svc relative">
-                <span
-                  className={cn(
-                    "flex cursor-default snap-start items-center gap-1 rounded-xl px-3 py-1.5 text-white transition group-hover/svc:bg-white/10 sm:px-4",
-                    navPrimaryLabelClass,
-                  )}
-                >
-                  {t("header.nav.services")}
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                </span>
+              <div className="group/svc relative flex items-center">
+                <DesktopNavDropdownTrigger
+                  label={t("header.nav.services")}
+                  hoverClass="group-hover/svc:scale-x-100"
+                />
                 {(navLoading || (navData?.services?.length ?? 0) > 0) && (
-                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] flex flex-col pt-0 opacity-0 transition-none group-hover/svc:pointer-events-auto group-hover/svc:visible group-hover/svc:opacity-100">
-                    <div className={navMegaMenuBridgeClass} aria-hidden />
+                  <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/svc:pointer-events-auto group-hover/svc:visible group-hover/svc:opacity-100">
                     <div
                       className={cn(
                         megaPanelClass,
@@ -1287,15 +1333,9 @@ export function SiteHeader({ user }: Props) {
                 )}
               </div>
 
-              <Link
-                href="/contact"
-                className={cn(
-                  "group snap-start rounded-xl px-3 py-1.5 text-white transition hover:bg-white/10 sm:px-4",
-                  navPrimaryLabelClass,
-                )}
-              >
+              <DesktopNavLink href="/contact">
                 {t("header.nav.contact")}
-              </Link>
+              </DesktopNavLink>
 
               {/*
               <Link
