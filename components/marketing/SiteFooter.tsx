@@ -25,7 +25,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent"
         aria-hidden
       />
-      <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pt-[50px] pb-10 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
@@ -189,7 +189,7 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/20 pt-8 text-center text-xs text-zinc-400 sm:flex-row sm:text-left">
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/20 pt-8 text-center text-xs text-zinc-400 sm:flex-row sm:text-left">
           <p>
             © {new Date().getFullYear()} Global Computers USA.{" "}
             {t("footer.rightsReserved")} {t("footer.createdBy")}

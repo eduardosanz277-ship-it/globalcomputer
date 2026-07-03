@@ -26,7 +26,7 @@ export function StorefrontProductGrid({
 
   if (products.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
+      <p className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-12 text-center text-sm text-muted-foreground">
         {t("storefront.grid.emptySection")}
       </p>
     );

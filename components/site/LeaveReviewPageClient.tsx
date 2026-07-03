@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -12,19 +11,14 @@ import {
 } from "lucide-react";
 import Select from "react-select";
 import { Button } from "@/components/ui/button";
-import { ButtonPending } from "@/components/ui/button-pending";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
-import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  LeaveReviewForm,
-  LEAVE_REVIEW_SITE_FORM_ID,
-} from "@/components/site/LeaveReviewForm";
+import { LeaveReviewSiteFormSlideOver } from "@/components/site/LeaveReviewSiteFormSlideOver";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
@@ -316,15 +310,8 @@ export function LeaveReviewPageClient({
   initialProductReviews,
   initialSiteReviews,
 }: Props) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("products");
   const [panelOpen, setPanelOpen] = useState(false);
-  const [reviewFormPending, setReviewFormPending] = useState(false);
-
-  const handleReviewSuccess = () => {
-    setPanelOpen(false);
-    router.refresh();
-  };
 
   return (
     <>
@@ -365,41 +352,10 @@ export function LeaveReviewPageClient({
         </div>
       </div>
 
-      <SlideOver
+      <LeaveReviewSiteFormSlideOver
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
-        title="Deja una reseña"
-        description="Opina sobre tu experiencia de compra en la tienda. Si inicias sesión, podemos asociar tu comentario a tu cuenta."
-        panelClassName="lg:max-w-[min(32rem,92vw)]"
-        contentAriaLabel="Formulario de reseña de la tienda"
-        footer={
-          <SlideOverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={reviewFormPending}
-              onClick={() => setPanelOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <ButtonPending
-              type="submit"
-              form={LEAVE_REVIEW_SITE_FORM_ID}
-              pending={reviewFormPending}
-              pendingLabel="Enviando"
-            >
-              Enviar reseña
-            </ButtonPending>
-          </SlideOverFooter>
-        }
-      >
-        <LeaveReviewForm
-          key={panelOpen ? "open" : "closed"}
-          variant="panel"
-          onSuccess={handleReviewSuccess}
-          onPendingChange={setReviewFormPending}
-        />
-      </SlideOver>
+      />
     </>
   );
 }

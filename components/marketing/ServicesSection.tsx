@@ -2,11 +2,13 @@
 
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { landingSectionPaddingYClass } from "@/components/marketing/landing-section-classes";
 import {
   resolvePrimaryServiceImage,
   type ServiceRow,
 } from "@/components/marketing/service-card-shared";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
+import { cn } from "@/utils/cn";
 
 const fallbackServices: Array<{
   name: string;
@@ -74,7 +76,10 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
   return (
     <section
       id="servicios"
-      className="scroll-mt-32 border-b border-border bg-muted/40 py-16 sm:scroll-mt-36 sm:py-24"
+      className={cn(
+        "scroll-mt-32 border-b border-border bg-muted/40 sm:scroll-mt-36",
+        landingSectionPaddingYClass,
+      )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
@@ -116,7 +121,7 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
           */}
         </div>
 
-        <div className="mt-6 lg:mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 lg:mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-h-0">
           {list.map((s) => (
             <ServiceCardLink
               key={s.id}

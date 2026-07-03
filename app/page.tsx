@@ -1,5 +1,9 @@
 import { FAQSection } from "@/components/marketing/FAQSection";
+import { FeaturedProductsEmptyState } from "@/components/marketing/FeaturedProductsEmptyState";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { HomeReviewsSection } from "@/components/marketing/HomeReviewsSection";
+import { landingSectionPaddingYClass } from "@/components/marketing/landing-section-classes";
+import { OffersEmptyState } from "@/components/marketing/OffersEmptyState";
 import {
   ServicesSection,
   type ServiceWithI18n,
@@ -23,6 +27,7 @@ import { listActiveSiteFaqs } from "@/modules/site/faqs.service";
 import {
   getStoreRatingSummary,
   listProductReviewsForLeaveReviewPage,
+  listSiteReviewsForLeaveReviewPage,
 } from "@/modules/site/leave-review-data.service";
 import { cn } from "@/utils/cn";
 import type { LucideIcon } from "lucide-react";
@@ -30,11 +35,8 @@ import {
   ArrowRight,
   Cable,
   Camera,
-  CheckCircle2,
   HardDrive,
   LayoutGrid,
-  Star,
-  UserRound
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -97,6 +99,7 @@ export default async function HomePage() {
     user,
     nav,
     productReviews,
+    siteReviews,
     siteFaqs,
     contact,
     storeRatingSummary,
@@ -112,6 +115,7 @@ export default async function HomePage() {
     getCurrentUserService(),
     getNavigationData(),
     listProductReviewsForLeaveReviewPage(),
+    listSiteReviewsForLeaveReviewPage(),
     listActiveSiteFaqs(),
     getPublicSiteContact(),
     getStoreRatingSummary(),
@@ -139,16 +143,6 @@ export default async function HomePage() {
       slug: brand.slug,
       imageUrl: brandImageById.get(brand.id) ?? null,
     }));
-  const topProductReviews = [...productReviews]
-    .sort((a, b) => {
-      if (b.rating !== a.rating) return b.rating - a.rating;
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return (
-        (Number.isNaN(dateB) ? 0 : dateB) - (Number.isNaN(dateA) ? 0 : dateA)
-      );
-    })
-    .slice(0, 3);
 
   return (
     <main className="overflow-x-hidden">
@@ -201,7 +195,10 @@ export default async function HomePage() {
       {/* Featured products — mismo gris que el fondo de página bajo el Hero (bg-background) */}
       <section
         id="destacados"
-        className="scroll-mt-32 border-b border-border/60 bg-background py-20 sm:scroll-mt-36 sm:py-24"
+        className={cn(
+          "scroll-mt-32 border-b border-border/60 bg-background sm:scroll-mt-36",
+          landingSectionPaddingYClass,
+        )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -223,15 +220,17 @@ export default async function HomePage() {
               className="sm:max-w-xl"
               titleClassName="text-3xl sm:text-4xl"
             />
-            <Link
-              href="/products/featured"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
-              )}
-            >
-              <LocalizedText es="Ver catálogo" en="View catalog" />
-            </Link>
+            {featuredProducts.length > 0 ? (
+              <Link
+                href="/products/featured"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
+                )}
+              >
+                <LocalizedText es="Ver catálogo" en="View catalog" />
+              </Link>
+            ) : null}
           </div>
 
           <div className="mt-6 lg:mt-8">
@@ -242,12 +241,7 @@ export default async function HomePage() {
                 priceTier={priceTier}
               />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                <LocalizedText
-                  es="Pronto añadiremos productos destacados a esta sección."
-                  en="Featured products will appear here soon."
-                />
-              </p>
+              <FeaturedProductsEmptyState />
             )}
           </div>
         </div>
@@ -403,7 +397,10 @@ export default async function HomePage() {
       {/* Ofertas */}
       <section
         id="ofertas"
-        className="scroll-mt-32 border-t border-white/10 bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to py-20 sm:scroll-mt-36 sm:py-24"
+        className={cn(
+          "scroll-mt-32 border-t border-white/10 bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to sm:scroll-mt-36",
+          landingSectionPaddingYClass,
+        )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -421,15 +418,17 @@ export default async function HomePage() {
               titleClassName="text-3xl text-white sm:text-4xl"
               descriptionClassName="text-white/80"
             />
-            <Link
-              href="/products"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
-              )}
-            >
-              <LocalizedText es="Ver catálogo" en="View catalog" />
-            </Link>
+            {offerProducts.length > 0 ? (
+              <Link
+                href="/products"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
+                )}
+              >
+                <LocalizedText es="Ver catálogo" en="View catalog" />
+              </Link>
+            ) : null}
           </div>
           {/*
           <div className="mt-6 lg:mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -477,11 +476,15 @@ export default async function HomePage() {
           </div>
           */}
           <div className="mt-6 lg:mt-8">
-            <StorefrontProductGrid
-              products={offerProducts}
-              priceTier={priceTier}
-              gridClassName="lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4"
-            />
+            {offerProducts.length > 0 ? (
+              <StorefrontProductGrid
+                products={offerProducts}
+                priceTier={priceTier}
+                gridClassName="lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4"
+              />
+            ) : (
+              <OffersEmptyState />
+            )}
           </div>
         </div>
       </section>
@@ -513,77 +516,19 @@ export default async function HomePage() {
       </section> */}
 
       {/* Social proof */}
-      <section className="bg-muted/70 py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <HomeSectionHeading
-            // eyebrow="Testimonios"
-            title={<LocalizedText es="Historias reales" en="Real stories" />}
-            description={
-              <LocalizedText
-                es="Personas como tú que ya confiaron en nosotros."
-                en="People like you who already trusted us."
-              />
-            }
-            titleClassName="text-3xl sm:text-4xl"
-          />
-          <div className="mt-6 lg:mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {topProductReviews.map((review) => (
-              <figure
-                key={review.id}
-                className="flex h-full flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div
-                    className="flex items-center gap-0.5 text-amber-500"
-                    aria-hidden
-                  >
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  <CheckCircle2
-                    className="h-5 w-5 shrink-0 text-primary"
-                    aria-hidden
-                  />
-                </div>
-                <p className="mt-3 text-sm font-semibold text-foreground">
-                  {review.productName}
-                </p>
-                <blockquote className="mt-4 flex-1 border-l-2 border-primary/40 pl-4 text-sm italic leading-relaxed text-muted-foreground">
-                  {review.comment ?? (
-                    <LocalizedText
-                      es="Sin comentario escrito."
-                      en="No written comment."
-                    />
-                  )}
-                </blockquote>
-                <figcaption className="mt-5 text-sm font-bold text-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <UserRound className="h-4 w-4 text-primary/85" aria-hidden />
-                    {review.reviewerLabel}
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Link
-              href="/leave-review"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "rounded-full border-primary/30 bg-card px-6 font-semibold hover:bg-primary/5",
-              )}
-            >
-              <LocalizedText es="Ver todas las reseñas" en="See all reviews" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HomeReviewsSection
+        productReviews={productReviews}
+        siteReviews={siteReviews}
+        sectionClassName={cn("bg-muted/70", landingSectionPaddingYClass)}
+      />
 
       {/* Marcas */}
       <section
         id="marcas"
-        className="scroll-mt-32 border-t border-border/60 bg-background py-20 sm:scroll-mt-36 sm:py-24"
+        className={cn(
+          "scroll-mt-32 border-t border-border/60 bg-background sm:scroll-mt-36",
+          landingSectionPaddingYClass,
+        )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">

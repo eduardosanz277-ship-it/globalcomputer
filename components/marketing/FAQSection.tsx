@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
+import { landingSectionPaddingYClass } from "@/components/marketing/landing-section-classes";
 import { FAQItem } from "./FAQItem";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { cn } from "@/utils/cn";
 
 type FaqItemData = {
   id: string;
@@ -44,7 +46,12 @@ export function FAQSection({ items }: Props) {
   }
 
   return (
-    <section className="border-t border-border/60 bg-muted/70 py-20 sm:py-24">
+    <section
+      className={cn(
+        "border-t border-border/60 bg-muted/70",
+        landingSectionPaddingYClass,
+      )}
+    >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5 shadow-soft backdrop-blur-sm sm:p-8 lg:p-10">
           <HomeSectionHeading
