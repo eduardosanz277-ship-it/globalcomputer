@@ -1379,8 +1379,8 @@ export function SiteHeader({ user }: Props) {
               )}
               aria-label={t("header.mobileMenuLabel")}
             >
-              <div className="flex items-center justify-between border-b border-border/70 bg-[#e4e7ec] px-4 py-3">
-                <span className="font-roboto text-[15px] font-medium uppercase tracking-[1px]">
+              <div className={cn("flex items-center justify-between border-b border-border/70 bg-[#e4e7ec] py-3", landingInsetClass)}>
+                <span className="font-roboto text-[15px] font-medium">
                   {t("header.menuTitle")}
                 </span>
                 <div className="flex items-center gap-2">
@@ -1419,12 +1419,13 @@ export function SiteHeader({ user }: Props) {
                         style={{ width: `${100 / mobileNavStack.length}%` }}
                       >
                         {panel.kind === "root" ? (
-                          <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain p-3">
+                          <div className="grid min-h-0 flex-1 auto-rows-min gap-0.5 overflow-y-auto overscroll-contain py-3">
                             <Link
                               href="/"
                               onClick={handleScrollToTopOnHome}
                               className={cn(
-                                "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex items-center gap-2 rounded-lg py-2 transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                             >
@@ -1438,7 +1439,8 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex w-full items-center justify-between gap-2 rounded-lg py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
@@ -1463,7 +1465,8 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex w-full items-center justify-between gap-2 rounded-lg py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
@@ -1488,7 +1491,8 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex w-full items-center justify-between gap-2 rounded-lg py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
@@ -1513,7 +1517,8 @@ export function SiteHeader({ user }: Props) {
                             <button
                               type="button"
                               className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex w-full items-center justify-between gap-2 rounded-lg py-2 text-left transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                               onClick={() =>
@@ -1539,7 +1544,8 @@ export function SiteHeader({ user }: Props) {
                               href="/contact"
                               onClick={() => setMobileNavOpen(false)}
                               className={cn(
-                                "flex items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-muted",
+                                landingInsetClass,
+                                "flex items-center gap-2 rounded-lg py-2 transition hover:bg-muted",
                                 navPrimaryLabelClass,
                               )}
                             >
