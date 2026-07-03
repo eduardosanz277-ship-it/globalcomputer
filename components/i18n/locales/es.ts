@@ -125,8 +125,8 @@ export const es = {
     nav: {
       home: "Inicio",
       categories: "Categorías",
-      securitySystems: "Sistemas de Seguridad",
-      brands: "Ver Marcas",
+      securitySystems: "Sistemas de seguridad",
+      brands: "Ver marcas",
       services: "Servicios",
       contact: "Contacto",
       cart: "Carrito",

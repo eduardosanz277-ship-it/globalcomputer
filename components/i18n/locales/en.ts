@@ -123,8 +123,8 @@ export const en = {
     nav: {
       home: "Home",
       categories: "Categories",
-      securitySystems: "Security Systems",
-      brands: "View Brands",
+      securitySystems: "Security systems",
+      brands: "View brands",
       services: "Services",
       contact: "Contact",
       cart: "Cart",
