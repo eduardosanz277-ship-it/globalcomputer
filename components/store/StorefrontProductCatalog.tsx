@@ -91,15 +91,6 @@ const DEFAULT_EXPANDED_FILTER_SECTIONS: Record<FilterSectionKey, boolean> = {
   offers: false,
 };
 
-const EMPTY_FILTER_SECTIONS_STATE: Record<FilterSectionKey, boolean> = {
-  category: false,
-  brand: false,
-  price: false,
-  specific: false,
-  stock: false,
-  offers: false,
-};
-
 function salePrice(p: StorefrontProduct, tier: StorefrontPriceTier): number {
   const pct = activeDiscountPercent(p, tier);
   return priceAfterDiscount(p.price, pct);
@@ -212,9 +203,6 @@ export function StorefrontProductCatalog({
   const [expandedSections, setExpandedSections] = useState<
     Record<FilterSectionKey, boolean>
   >(DEFAULT_EXPANDED_FILTER_SECTIONS);
-  const [stickyOpenSections, setStickyOpenSections] = useState<
-    Record<FilterSectionKey, boolean>
-  >(EMPTY_FILTER_SECTIONS_STATE);
   const pageSizeSelectId = useId();
 
   useEffect(() => {
@@ -241,34 +229,8 @@ export function StorefrontProductCatalog({
   });
 
   useEffect(() => {
-    if (!panelOpen) {
-      setStickyOpenSections(EMPTY_FILTER_SECTIONS_STATE);
-      return;
-    }
-    const active = currentActiveSectionMap();
-    setExpandedSections({
-      ...DEFAULT_EXPANDED_FILTER_SECTIONS,
-      category: DEFAULT_EXPANDED_FILTER_SECTIONS.category || active.category,
-      brand: DEFAULT_EXPANDED_FILTER_SECTIONS.brand || active.brand,
-      price: DEFAULT_EXPANDED_FILTER_SECTIONS.price || active.price,
-      specific: DEFAULT_EXPANDED_FILTER_SECTIONS.specific || active.specific,
-      stock: DEFAULT_EXPANDED_FILTER_SECTIONS.stock || active.stock,
-      offers: DEFAULT_EXPANDED_FILTER_SECTIONS.offers || active.offers,
-    });
-    setStickyOpenSections(active);
-  }, [panelOpen]);
-
-  useEffect(() => {
     if (!panelOpen) return;
     const active = currentActiveSectionMap();
-    setStickyOpenSections((prev) => ({
-      category: prev.category || active.category,
-      brand: prev.brand || active.brand,
-      price: prev.price || active.price,
-      specific: prev.specific || active.specific,
-      stock: prev.stock || active.stock,
-      offers: prev.offers || active.offers,
-    }));
     setExpandedSections((prev) => ({
       category: prev.category || active.category,
       brand: prev.brand || active.brand,
@@ -672,8 +634,7 @@ export function StorefrontProductCatalog({
 
   const toggleFilterSection = (key: FilterSectionKey) => {
     setExpandedSections((prev) => {
-      if (prev[key] && (sectionHasActiveSelection(key) || stickyOpenSections[key]))
-        return prev;
+      if (prev[key] && sectionHasActiveSelection(key)) return prev;
       return { ...prev, [key]: !prev[key] };
     });
   };
