@@ -216,7 +216,7 @@ export default async function HomePage() {
               }
               description={
                 <LocalizedText
-                  es="Los favoritos de quienes ya instalaron con nosotros. Conecta tu catalogo real cuando quieras."
+                  es="Los favoritos de quienes ya instalaron con nosotros. Conecta tu catálogo real cuando quieras."
                   en="Favorites from customers who already installed with us."
                 />
               }
@@ -230,7 +230,7 @@ export default async function HomePage() {
                 "shrink-0 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5",
               )}
             >
-              <LocalizedText es="Ver catalogo" en="View catalog" />
+              <LocalizedText es="Ver catálogo" en="View catalog" />
             </Link>
           </div>
 
@@ -244,7 +244,7 @@ export default async function HomePage() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 <LocalizedText
-                  es="Pronto anadiremos productos destacados a esta seccion."
+                  es="Pronto añadiremos productos destacados a esta sección."
                   en="Featured products will appear here soon."
                 />
               </p>
@@ -428,7 +428,7 @@ export default async function HomePage() {
                 "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
               )}
             >
-              <LocalizedText es="Ver catalogo" en="View catalog" />
+              <LocalizedText es="Ver catálogo" en="View catalog" />
             </Link>
           </div>
           {/*
@@ -520,7 +520,7 @@ export default async function HomePage() {
             title={<LocalizedText es="Historias reales" en="Real stories" />}
             description={
               <LocalizedText
-                es="Personas como tu que ya confiaron en nosotros."
+                es="Personas como tú que ya confiaron en nosotros."
                 en="People like you who already trusted us."
               />
             }
@@ -574,7 +574,7 @@ export default async function HomePage() {
                 "rounded-full border-primary/30 bg-card px-6 font-semibold hover:bg-primary/5",
               )}
             >
-              <LocalizedText es="Ver todas resenas" en="See all reviews" />
+              <LocalizedText es="Ver todas las reseñas" en="See all reviews" />
             </Link>
           </div>
         </div>
@@ -597,7 +597,7 @@ export default async function HomePage() {
               }
               description={
                 <LocalizedText
-                  es="Explora equipos reales por marca y encuentra justo lo que necesitas para tu instalacion."
+                  es="Explora equipos reales por marca y encuentra justo lo que necesitas para tu instalación."
                   en="Explore real equipment by brand and find exactly what your installation needs."
                 />
               }

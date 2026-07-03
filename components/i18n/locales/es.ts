@@ -136,7 +136,7 @@ export const es = {
     faq: {
       title: "Preguntas frecuentes",
       description:
-        "Respuestas claras a las dudas mas comunes para ayudarte a elegir mejor y comprar con total confianza.",
+        "Respuestas claras a las dudas más comunes para ayudarte a elegir mejor y comprar con total confianza.",
     },
   },
   footer: {

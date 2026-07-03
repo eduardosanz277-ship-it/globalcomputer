@@ -11,8 +11,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 const TRUST_PILLS = [
-  { Icon: Truck, label: "Envio a EE. UU.", labelEn: "Shipping in the U.S." },
-  { Icon: ShieldCheck, label: "Garantia real", labelEn: "Real warranty" },
+  { Icon: Truck, label: "Envío a EE. UU.", labelEn: "Shipping in the U.S." },
+  { Icon: ShieldCheck, label: "Garantía real", labelEn: "Real warranty" },
   { Icon: Headphones, label: "Te ayudamos", labelEn: "We help you" },
 ] as const;
 
@@ -25,7 +25,7 @@ const HERO_STATS = [
 const TRUST_BAR_TAIL = [
   {
     Icon: Truck,
-    text: "Envio nacional",
+    text: "Envío nacional",
     textEn: "Nationwide shipping",
     sub: "EE. UU.",
     subEn: "U.S.",
@@ -144,7 +144,7 @@ export function StoreHero({
               </h1>
               <p className="mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:text-[18px]">
                 {t(
-                  "Camaras, grabadoras y kits con precios visibles y equipo que te orienta. Asi deberia ser comprar tecnologia.",
+                  "Cámaras, grabadoras y kits con precios visibles y equipo que te orienta. Así debería ser comprar tecnología.",
                   "Cameras, recorders, and kits with transparent pricing and a team that guides you. This is how buying technology should feel.",
                 )}
               </p>
@@ -187,7 +187,7 @@ export function StoreHero({
                   <Phone className="h-4 w-4 shrink-0" aria-hidden />
                   <span className="flex flex-col items-start leading-tight">
                     <span className="text-[11px] font-medium text-white/80 sm:text-xs">
-                      {t("Necesitas ayuda?", "Need help?")}
+                      {t("¿Necesitas ayuda?", "Need help?")}
                     </span>
                     <span className="text-sm font-semibold text-white sm:text-base">
                       {contact.phoneDisplay}
@@ -212,7 +212,7 @@ export function StoreHero({
 
               <div className="mt-6">
                 <p className="text-sm font-semibold uppercase tracking-wider text-white/75 sm:text-base">
-                  {t("Explora por categoria", "Explore by category")}
+                  {t("Explora por categoría", "Explore by category")}
                 </p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {categories.map((c) => (

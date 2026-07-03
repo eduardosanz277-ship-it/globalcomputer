@@ -16,10 +16,10 @@ const fallbackServices: Array<{
   key: "installation" | "maintenance" | "advisory";
 }> = [
   {
-    name: "Instalacion profesional",
+    name: "Instalación profesional",
     nameEn: "Professional installation",
     description:
-      "Te ayudamos a montar y configurar tu sistema para que funcione desde el dia 1.",
+      "Te ayudamos a montar y configurar tu sistema para que funcione desde el día 1.",
     descriptionEn:
       "We help you install and configure your system so it works from day one.",
     key: "installation",
@@ -28,13 +28,13 @@ const fallbackServices: Array<{
     name: "Mantenimiento",
     nameEn: "Maintenance",
     description:
-      "Revisiones y soporte tecnico para mantener el rendimiento y la seguridad.",
+      "Revisiones y soporte técnico para mantener el rendimiento y la seguridad.",
     descriptionEn:
       "Checkups and technical support to preserve performance and security.",
     key: "maintenance",
   },
   {
-    name: "Asesoria personalizada",
+    name: "Asesoría personalizada",
     nameEn: "Personalized advisory",
     description:
       "Recomendaciones según tu espacio, presupuesto y nivel de seguridad requerido.",
@@ -82,11 +82,11 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
             align="left"
             // eyebrow="Servicios"
             title={t(
-              "Servicios para tu instalacion",
+              "Servicios para tu instalación",
               "Services for your installation",
             )}
             description={t(
-              "Instalacion profesional, mantenimiento preventivo y asesoria especializada para que tu sistema de seguridad funcione siempre sin complicaciones.",
+              "Instalación profesional, mantenimiento preventivo y asesoría especializada para que tu sistema de seguridad funcione siempre sin complicaciones.",
               "Professional installation, preventive maintenance, and specialized advisory so your security system keeps working without complications.",
             )}
             className="max-w-none"
