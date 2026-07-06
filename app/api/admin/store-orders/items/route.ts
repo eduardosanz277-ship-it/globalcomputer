@@ -29,6 +29,6 @@ export async function POST(req: Request) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ error: "No se pudieron cargar los items." }, { status: 500 });
+    return NextResponse.json({ error: "No se pudieron cargar los artículos." }, { status: 500 });
   }
 }
