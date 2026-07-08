@@ -1,3 +1,5 @@
+import type { PricingStrategy } from "./product-pricing-calculator";
+
 export type ProductImage = {
   id: string;
   url: string;
@@ -26,9 +28,14 @@ export type Product = {
   specifications: string | null;
   specificationsEn: string | null;
   stock: number;
-  price: number;
+  pricingStrategy: PricingStrategy;
+  cost: number;
+  marginClientPct: number;
+  marginBusinessPct: number;
+  priceClient: number;
+  priceBusiness: number;
+  discountClientPct: number;
   discountBusinessPct: number;
-  discountClient: number;
   manualPdfUrl: string | null;
   active: boolean;
   /** Prioridad para bloques de destacados en la tienda (columna `featured`). */
@@ -71,9 +78,14 @@ export type ProductInsert = {
   specifications: string;
   specificationsEn: string;
   stock: number;
-  price: number;
+  pricingStrategy: PricingStrategy;
+  cost: number;
+  marginClientPct: number;
+  marginBusinessPct: number;
+  priceClient: number;
+  priceBusiness: number;
+  discountClientPct: number;
   discountBusinessPct: number;
-  discountClient: number;
   manualPdfUrl: string;
   active: boolean;
   featured: boolean;

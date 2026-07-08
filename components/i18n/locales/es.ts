@@ -561,6 +561,67 @@ export const es = {
           discountBusiness: "Descuento empresa (%)",
           discountClient: "Descuento cliente (%)",
         },
+        pricing: {
+          strategyTitle: "Estrategia de precios",
+          strategyDescription:
+            "Elige cómo definir los precios base por rol. Los descuentos se aplican en la tienda según el perfil del usuario.",
+          modesAria: "Modo de cálculo de precios",
+          modes: {
+            fromCost: "Desde costo",
+            fromPublic: "Desde precio cliente",
+            fromBusiness: "Desde precio empresa",
+            manual: "Precios manuales",
+          },
+          modeHints: {
+            fromCost:
+              "Ejemplo: costo $100, margen cliente 40% → precio cliente $140; margen empresa 25% → precio empresa $125.",
+            fromPublic:
+              "Ejemplo: precio cliente $140 y margen empresa 25% → precio empresa $105.",
+            fromBusiness:
+              "Ejemplo: precio empresa $120 y margen cliente 40% → precio cliente $168.",
+            manual:
+              "Ingresa directamente el precio cliente y el precio empresa.",
+          },
+          inputsTitle: "Parámetros",
+          fields: {
+            cost: "Costo",
+            costHint: "Costo base del producto antes de márgenes.",
+            clientMargin: "Margen cliente final (%)",
+            clientMarginHint: "Porcentaje aplicado sobre el costo.",
+            clientMarginFromBusinessHint:
+              "Porcentaje de incremento aplicado sobre el precio empresa.",
+            businessMargin: "Margen empresa (%)",
+            businessMarginHint: "Porcentaje aplicado sobre el costo.",
+            businessMarginFromClientHint:
+              "Porcentaje de reducción aplicado sobre el precio cliente.",
+            clientPrice: "Precio cliente",
+            clientPriceHint: "Precio base para clientes.",
+            clientMarginFromClientHint:
+              "Porcentaje usado para inferir el costo a partir del precio cliente.",
+            businessPrice: "Precio empresa",
+            businessPriceHint: "Precio base para empresas.",
+            clientDiscount: "Descuento cliente (%)",
+            clientDiscountHint:
+              "Opcional. Se aplica en la tienda sobre el precio cliente.",
+            businessDiscount: "Descuento empresa (%)",
+            businessDiscountHint:
+              "Opcional. Se aplica en la tienda sobre el precio empresa.",
+          },
+          previewTitle: "Precio final por rol",
+          previewDescription:
+            "Vista previa de lo que pagará cada tipo de usuario en la tienda.",
+          preview: {
+            clientSubtitle:
+              "Precio base {list} · descuento {discount}%",
+            businessSubtitle:
+              "Precio base {list} · descuento {discount}%",
+            inactiveMode: "Completa los parámetros del modo activo para ver la vista previa.",
+            configureActiveMode:
+              "Completa los parámetros del modo seleccionado para actualizar el precio guardado.",
+          },
+          storedSummary:
+            "Se guardará: precio cliente {client}, precio empresa {business}, descuento cliente {discountClient}%, descuento empresa {discountBusiness}%.",
+        },
         catalog: {
           title: "Categoría en catálogo",
           description:

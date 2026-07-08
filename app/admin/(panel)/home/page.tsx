@@ -17,7 +17,7 @@ type ProductRecentRow = {
   id: string;
   name: string;
   name_en: string | null;
-  price: number;
+  price_client: number;
   stock: number;
   active: boolean;
   brands:
@@ -139,7 +139,7 @@ export default async function AdminHomePage() {
     /** Últimos N productos por fecha de última modificación (`updated_at`). */
     supabase
       .from("products")
-      .select("id, name, name_en, price, stock, active, brands(name, name_en)")
+      .select("id, name, name_en, price_client, stock, active, brands(name, name_en)")
       .order("updated_at", { ascending: false })
       .limit(8),
     supabase.from("products").select("brands(name, name_en)"),
@@ -155,7 +155,7 @@ export default async function AdminHomePage() {
       nameEn: row.name_en,
       brand: names.name,
       brandEn: names.nameEn,
-      price: row.price,
+      price: row.price_client,
       stock: row.stock,
       active: row.active,
     };

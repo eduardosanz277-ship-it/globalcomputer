@@ -54,6 +54,7 @@ import {
 import { Trash2, RefreshCcw, X } from "lucide-react";
 import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { ProductPricingTab } from "./ProductPricingTab";
 
 const PRODUCT_FORM_ID = "product-form-slide-over";
 
@@ -91,9 +92,14 @@ export function ProductFormDialog({
       specifications: "",
       specificationsEn: "",
       stock: 0,
-      price: 0,
+      pricingStrategy: "cost",
+      cost: 0,
+      marginClientPct: 0,
+      marginBusinessPct: 0,
+      priceClient: 0,
+      priceBusiness: 0,
+      discountClientPct: 0,
       discountBusinessPct: 0,
-      discountClient: 0,
       active: true,
       featured: false,
       manualPdfUrl: "",
@@ -146,9 +152,14 @@ export function ProductFormDialog({
         specifications: product.specifications ?? "",
         specificationsEn: product.specificationsEn ?? "",
         stock: product.stock,
-        price: product.price,
+        pricingStrategy: product.pricingStrategy,
+        cost: product.cost,
+        marginClientPct: product.marginClientPct,
+        marginBusinessPct: product.marginBusinessPct,
+        priceClient: product.priceClient,
+        priceBusiness: product.priceBusiness,
+        discountClientPct: product.discountClientPct,
         discountBusinessPct: product.discountBusinessPct,
-        discountClient: product.discountClient,
         active: product.active,
         featured: product.featured,
         manualPdfUrl: product.manualPdfUrl ?? "",
@@ -174,9 +185,14 @@ export function ProductFormDialog({
         specifications: "",
         specificationsEn: "",
         stock: 0,
-        price: 0,
+        pricingStrategy: "cost",
+        cost: 0,
+        marginClientPct: 0,
+        marginBusinessPct: 0,
+        priceClient: 0,
+        priceBusiness: 0,
+        discountClientPct: 0,
         discountBusinessPct: 0,
-        discountClient: 0,
         active: true,
         featured: false,
         manualPdfUrl: "",
@@ -426,6 +442,7 @@ export function ProductFormDialog({
     >
       <ProductFormBody
         key={formKey}
+        pricingResetKey={formKey}
         form={form}
         onSubmit={handleSubmit}
         isPending={isPending}
@@ -452,6 +469,7 @@ function ProductFormBody({
   onSubmit,
   isPending,
   product,
+  pricingResetKey,
   categoryOptions,
   subcategoriesForCategory,
   brandOptions,
@@ -476,6 +494,7 @@ function ProductFormBody({
   ) => void;
   isPending: boolean;
   product: Product | null;
+  pricingResetKey: string;
   categoryOptions: Array<{ value: string; label: string }>;
   subcategoriesForCategory: AdminSubcategory[];
   brandOptions: Array<{ value: string; label: string }>;
@@ -962,60 +981,13 @@ function ProductFormBody({
           </section>
         )}
 
-        {activeTab === "pricing" && (
-          <section className={adminSlideOverSectionClassName}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField
-                name="stock"
-                label={t("admin.products.form.fields.stock")}
-                type="number"
-                required
-                disabled={isPending}
-                error={errors.stock?.message}
-                className={adminServiceLikeInputClassName}
-                min={0}
-              />
-              <FormField
-                name="price"
-                label={t("admin.products.form.fields.price")}
-                type="number"
-                step="0.01"
-                required
-                disabled={isPending}
-                error={errors.price?.message}
-                className={adminServiceLikeInputClassName}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField
-                name="discountBusinessPct"
-                label={t("admin.products.form.fields.discountBusiness")}
-                type="number"
-                step="0.01"
-                required
-                disabled={isPending}
-                error={errors.discountBusinessPct?.message}
-                className={adminServiceLikeInputClassName}
-                min={0}
-                max={100}
-              />
-              <FormField
-                name="discountClient"
-                label={t("admin.products.form.fields.discountClient")}
-                type="number"
-                step="0.01"
-                required
-                disabled={isPending}
-                error={errors.discountClient?.message}
-                className={adminServiceLikeInputClassName}
-                min={0}
-                max={100}
-              />
-            </div>
-          </section>
-        )}
+        <div className={cn(activeTab !== "pricing" && "hidden")}>
+          <ProductPricingTab
+            form={form}
+            isPending={isPending}
+            sectionClassName={adminSlideOverSectionClassName}
+          />
+        </div>
 
         {activeTab === "media" && (
           <>

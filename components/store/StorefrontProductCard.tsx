@@ -4,7 +4,8 @@ import { ButtonPending } from "@/components/ui/button-pending";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
-  priceAfterDiscount,
+  resolveStorefrontBasePrice,
+  resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import { stockBadgeClass } from "@/lib/storefront-stock";
@@ -110,8 +111,9 @@ export function StorefrontProductCard({
 
   const img = storefrontPrimaryImageUrl(p);
   const pct = activeDiscountPercent(p, priceTier);
-  const sale = priceAfterDiscount(p.price, pct);
-  const showCompare = pct > 0 && sale < p.price;
+  const listPrice = resolveStorefrontBasePrice(p, priceTier);
+  const sale = resolveStorefrontUnitPrice(p, priceTier);
+  const showCompare = pct > 0 && sale < listPrice;
   const stockUi = stockBadgeClass(p.stock, locale);
   const canBuy = p.stock > 0;
   const isNew = isStorefrontProductNew(p);
@@ -332,7 +334,7 @@ export function StorefrontProductCard({
                   "shrink-0 text-[13px] font-normal tabular-nums text-muted-foreground line-through decoration-muted-foreground/70",
                 )}
               >
-                {formatUsd(p.price)}
+                {formatUsd(listPrice)}
               </span>
             </>
           ) : (

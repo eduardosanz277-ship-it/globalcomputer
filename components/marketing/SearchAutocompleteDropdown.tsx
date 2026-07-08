@@ -3,8 +3,7 @@
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import {
-  activeDiscountPercent,
-  priceAfterDiscount,
+  resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import type {
@@ -44,14 +43,15 @@ function productSalePrice(
   product: SearchSuggestionProduct,
   priceTier: StorefrontPriceTier,
 ) {
-  const pct = activeDiscountPercent(
+  return resolveStorefrontUnitPrice(
     {
+      price_client: product.price,
+      price_business: product.priceBusiness,
+      discount_client_pct: product.discountClientPct,
       discount_business_pct: product.discountBusinessPct,
-      discount_client: product.discountClient,
     },
     priceTier,
   );
-  return priceAfterDiscount(product.price, pct);
 }
 
 type FlatItem =

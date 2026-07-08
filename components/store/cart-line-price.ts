@@ -1,6 +1,5 @@
 import {
-  activeDiscountPercent,
-  priceAfterDiscount,
+  resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -10,8 +9,7 @@ export function cartLineUnitPrice(
   product: StorefrontProduct,
   tier: StorefrontPriceTier,
 ): number {
-  const pct = activeDiscountPercent(product, tier);
-  return priceAfterDiscount(product.price, pct);
+  return resolveStorefrontUnitPrice(product, tier);
 }
 
 export function computeCartSubtotal(

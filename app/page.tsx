@@ -122,7 +122,7 @@ export default async function HomePage() {
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
-    (p) => p.discount_client > 0 || p.discount_business_pct > 0,
+    (p) => p.discount_client_pct > 0 || p.discount_business_pct > 0,
   );
   const offerProducts = discountedProducts.slice(0, 4);
   const brands = nav?.brands ?? [];

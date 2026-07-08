@@ -557,6 +557,67 @@ export const en = {
           discountBusiness: "Business discount (%)",
           discountClient: "Client discount (%)",
         },
+        pricing: {
+          strategyTitle: "Pricing strategy",
+          strategyDescription:
+            "Choose how to define base prices per role. Discounts apply in the store based on the user profile.",
+          modesAria: "Pricing calculation mode",
+          modes: {
+            fromCost: "From cost",
+            fromPublic: "From client price",
+            fromBusiness: "From business price",
+            manual: "Manual prices",
+          },
+          modeHints: {
+            fromCost:
+              "Example: cost $100, 40% client margin → client price $140; 25% business margin → business price $125.",
+            fromPublic:
+              "Example: client price $140 and 25% business margin → business price $105.",
+            fromBusiness:
+              "Example: business price $120 and 40% client margin → client price $168.",
+            manual:
+              "Enter the client price and business price directly.",
+          },
+          inputsTitle: "Parameters",
+          fields: {
+            cost: "Cost",
+            costHint: "Base product cost before margins.",
+            clientMargin: "Final client margin (%)",
+            clientMarginHint: "Percentage applied on cost.",
+            clientMarginFromBusinessHint:
+              "Percentage increase applied to the company price.",
+            businessMargin: "Business margin (%)",
+            businessMarginHint: "Percentage applied on cost.",
+            businessMarginFromClientHint:
+              "Reduction percentage applied to the client price.",
+            clientPrice: "Client price",
+            clientPriceHint: "List price for clients.",
+            clientMarginFromClientHint:
+              "Percentage used to infer cost from the client price.",
+            businessPrice: "Business price",
+            businessPriceHint:
+              "Base business price.",
+            clientDiscount: "Client discount (%)",
+            clientDiscountHint:
+              "Optional. Applied in the store on the client price.",
+            businessDiscount: "Business discount (%)",
+            businessDiscountHint:
+              "Optional. Applied in the store on the business price.",
+          },
+          previewTitle: "Final price per role",
+          previewDescription:
+            "Preview of what each user type will pay in the store.",
+          preview: {
+            clientSubtitle: "Base price {list} · discount {discount}%",
+            businessSubtitle: "Base price {list} · discount {discount}%",
+            inactiveMode:
+              "Fill in the active mode parameters to see the preview.",
+            configureActiveMode:
+              "Fill in the selected mode parameters to update the stored price.",
+          },
+          storedSummary:
+            "Will be saved: client price {client}, business price {business}, client discount {discountClient}%, business discount {discountBusiness}%.",
+        },
         catalog: {
           title: "Catalog category",
           description:

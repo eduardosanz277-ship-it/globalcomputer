@@ -39,7 +39,8 @@ import {
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
-  priceAfterDiscount,
+  resolveStorefrontBasePrice,
+  resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import { stockBadgeClass } from "@/lib/storefront-stock";
@@ -646,15 +647,10 @@ export function StorefrontProductDetailView({
   const images = product.images;
   const hasImages = images.length > 0;
 
-  const pct = activeDiscountPercent(
-    {
-      discount_client: product.discount_client,
-      discount_business_pct: product.discount_business_pct,
-    },
-    priceTier,
-  );
-  const sale = priceAfterDiscount(product.price, pct);
-  const showCompare = pct > 0 && sale < product.price;
+  const pct = activeDiscountPercent(product, priceTier);
+  const listPrice = resolveStorefrontBasePrice(product, priceTier);
+  const sale = resolveStorefrontUnitPrice(product, priceTier);
+  const showCompare = pct > 0 && sale < listPrice;
   const stockUi = stockBadgeClass(product.stock, locale);
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
@@ -989,7 +985,7 @@ export function StorefrontProductDetailView({
                     {formatUsd(sale)}
                   </span>
                   <span className="text-lg tabular-nums text-muted-foreground line-through decoration-2 decoration-muted-foreground/70">
-                    {formatUsd(product.price)}
+                    {formatUsd(listPrice)}
                   </span>
                 </div>
                 <span
@@ -1145,7 +1141,7 @@ export function StorefrontProductDetailView({
             subcategoryId={product.subcategory_id}
             marcaId={product.brand_id}
             tipoProductoId={product.brand_type_id}
-            precio={product.price}
+            precio={product.price_client}
             products={similarProducts}
             priceTier={priceTier}
           />

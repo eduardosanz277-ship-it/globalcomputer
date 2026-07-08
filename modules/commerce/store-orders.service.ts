@@ -1,9 +1,8 @@
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import {
-  activeDiscountPercent,
-  priceAfterDiscount,
   resolveStorefrontPriceTier,
+  resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
@@ -115,8 +114,7 @@ export async function createSiteOrder(
       throw new SiteOrderError("La cantidad debe ser al menos 1.", 400);
     }
 
-    const pct = activeDiscountPercent(product, tier);
-    const unitPrice = priceAfterDiscount(product.price, pct);
+    const unitPrice = resolveStorefrontUnitPrice(product, tier);
     const linePrice = unitPrice * item.qty;
     totalAmount += linePrice;
 

@@ -123,8 +123,8 @@ export async function listSimilarStorefrontProducts(
       .from("products")
       .select(STOREFRONT_PRODUCT_SELECT)
       .eq("active", true)
-      .gte("price", lo)
-      .lte("price", hi)
+      .gte("price_client", lo)
+      .lte("price_client", hi)
       .order("name")
       .limit(48);
 

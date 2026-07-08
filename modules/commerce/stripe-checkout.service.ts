@@ -3,9 +3,8 @@ import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import { getPublicSiteOffer } from "@/lib/site-offer.server";
 import type { GcCartItem } from "@/lib/store-cart";
 import {
-  activeDiscountPercent,
-  priceAfterDiscount,
   resolveStorefrontPriceTier,
+  resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { SessionUser } from "@/modules/auth/auth.types";
@@ -42,8 +41,7 @@ function getStripe(): Stripe {
 }
 
 function unitPriceUsd(product: StorefrontProduct, tier: ReturnType<typeof resolveStorefrontPriceTier>): number {
-  const pct = activeDiscountPercent(product, tier);
-  return priceAfterDiscount(product.price, pct);
+  return resolveStorefrontUnitPrice(product, tier);
 }
 
 function dollarsToCents(amount: number): number {

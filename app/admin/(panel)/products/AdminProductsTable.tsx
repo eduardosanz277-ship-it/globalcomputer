@@ -314,7 +314,7 @@ export function AdminProductsTable({
           catalogLabel={p.catalogLabel}
           brandName={p.brandName}
           brandTypeName={p.brandTypeName}
-          price={p.price}
+          price={p.priceClient}
           stock={p.stock}
           active={p.active}
           className="hover:bg-muted/50 transition-colors duration-150"
@@ -446,9 +446,10 @@ export function AdminProductsTable({
         },
       },
       {
-        accessorKey: "price",
+        accessorKey: "priceClient",
         enableSorting: true,
-        sortingFn: (rowA, rowB) => rowA.original.price - rowB.original.price,
+        sortingFn: (rowA, rowB) =>
+          rowA.original.priceClient - rowB.original.priceClient,
         meta: { cellClassName: "w-[7.5rem]" },
         header: ({ column }) => (
           <SortableHeader
@@ -461,7 +462,7 @@ export function AdminProductsTable({
         ),
         cell: ({ row }) => (
           <span className="text-base font-semibold text-foreground">
-            {formatCurrency(row.original.price)}
+            {formatCurrency(row.original.priceClient)}
           </span>
         ),
       },
@@ -515,7 +516,8 @@ export function AdminProductsTable({
       },
       {
         id: "discounts",
-        accessorFn: (row) => `${row.discountBusinessPct} ${row.discountClient}`,
+        accessorFn: (row) =>
+          `${row.discountBusinessPct} ${row.discountClientPct}`,
         meta: { cellClassName: "w-[10rem]" },
         header: t("admin.products.table.discounts"),
         cell: ({ row }) => (
@@ -526,7 +528,7 @@ export function AdminProductsTable({
             </span>
             <span className={discountBadgeClass("client")}>
               {t("admin.products.table.discountClientShort")}{" "}
-              {row.original.discountClient}%
+              {row.original.discountClientPct}%
             </span>
           </div>
         ),

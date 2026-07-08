@@ -18,11 +18,16 @@ type ProductRow = {
   specifications: string | null;
   specifications_en: string | null;
   stock: number;
-  price: number;
+  pricing_strategy: string;
+  cost: number;
+  margin_client_pct: number;
+  margin_business_pct: number;
+  price_client: number;
+  price_business: number;
   active: boolean;
   featured: boolean;
   discount_business_pct: number;
-  discount_client: number;
+  discount_client_pct: number;
   manual_pdf_url: string | null;
   brand_id: string;
   brand_type_id: string | null;
@@ -281,11 +286,16 @@ function mapRow(row: ProductRow): Product {
     specifications: row.specifications,
     specificationsEn: row.specifications_en,
     stock: row.stock,
-    price: row.price,
+    pricingStrategy: row.pricing_strategy as Product["pricingStrategy"],
+    cost: row.cost,
+    marginClientPct: row.margin_client_pct,
+    marginBusinessPct: row.margin_business_pct,
+    priceClient: row.price_client,
+    priceBusiness: row.price_business,
     active: row.active,
     featured: row.featured,
     discountBusinessPct: row.discount_business_pct,
-    discountClient: row.discount_client,
+    discountClientPct: row.discount_client_pct,
     manualPdfUrl: row.manual_pdf_url,
     brandId: row.brand_id,
     brandName: relationName(row.brands),
@@ -304,7 +314,7 @@ function mapRow(row: ProductRow): Product {
 }
 
 const PRODUCT_SELECT =
-  "id, sku, slug, name, name_en, description, description_en, specifications, specifications_en, stock, price, active, featured, discount_business_pct, discount_client, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name, name_en), brand_types(name, name_en), categories(name, name_en), subcategories(name, name_en, category_id, categories(name, name_en)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, name_en, product_characteristics_general(name, name_en)))";
+  "id, sku, slug, name, name_en, description, description_en, specifications, specifications_en, stock, pricing_strategy, cost, margin_client_pct, margin_business_pct, price_client, price_business, active, featured, discount_business_pct, discount_client_pct, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name, name_en), brand_types(name, name_en), categories(name, name_en), subcategories(name, name_en, category_id, categories(name, name_en)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, name_en, product_characteristics_general(name, name_en)))";
 
 function placementToDbColumns(payload: ProductInsert): {
   category_id: string | null;
@@ -397,11 +407,16 @@ export async function repoCreateProduct(payload: ProductInsert): Promise<Product
       specifications: payload.specifications || null,
       specifications_en: payload.specificationsEn || null,
       stock: payload.stock,
-      price: payload.price,
+      pricing_strategy: payload.pricingStrategy,
+      cost: payload.cost,
+      margin_client_pct: payload.marginClientPct,
+      margin_business_pct: payload.marginBusinessPct,
+      price_client: payload.priceClient,
+      price_business: payload.priceBusiness,
       active: payload.active,
       featured: payload.featured,
       discount_business_pct: payload.discountBusinessPct,
-      discount_client: payload.discountClient,
+      discount_client_pct: payload.discountClientPct,
       manual_pdf_url: payload.manualPdfUrl || null,
       brand_id: payload.brandId,
       brand_type_id: payload.brandTypeId || null,
@@ -431,11 +446,16 @@ export async function repoUpdateProduct(
       specifications: payload.specifications || null,
       specifications_en: payload.specificationsEn || null,
       stock: payload.stock,
-      price: payload.price,
+      pricing_strategy: payload.pricingStrategy,
+      cost: payload.cost,
+      margin_client_pct: payload.marginClientPct,
+      margin_business_pct: payload.marginBusinessPct,
+      price_client: payload.priceClient,
+      price_business: payload.priceBusiness,
       active: payload.active,
       featured: payload.featured,
       discount_business_pct: payload.discountBusinessPct,
-      discount_client: payload.discountClient,
+      discount_client_pct: payload.discountClientPct,
       manual_pdf_url: payload.manualPdfUrl || null,
       brand_id: payload.brandId,
       brand_type_id: payload.brandTypeId || null,

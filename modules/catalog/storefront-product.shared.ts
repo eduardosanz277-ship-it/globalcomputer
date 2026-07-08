@@ -14,10 +14,11 @@ export type StorefrontProduct = {
   name_en: string | null;
   created_at: string;
   updated_at: string;
-  price: number;
+  price_client: number;
+  price_business: number;
   stock: number;
   discount_business_pct: number;
-  discount_client: number;
+  discount_client_pct: number;
   slug: string;
   brand_id: string;
   brand_type_id: string | null;

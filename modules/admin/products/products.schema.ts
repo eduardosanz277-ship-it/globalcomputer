@@ -3,6 +3,7 @@ import {
   RICH_HTML_DESCRIPTION_MAX_ERROR,
   RICH_HTML_DESCRIPTION_MAX_LENGTH,
 } from "@/modules/admin/shared/rich-html-description";
+import type { PricingStrategy } from "./product-pricing-calculator";
 
 const percentSchema = z.coerce
   .number({ invalid_type_error: "Ingresa un número válido" })
@@ -12,6 +13,13 @@ const percentSchema = z.coerce
 const moneySchema = z.coerce
   .number({ invalid_type_error: "Ingresa un precio válido" })
   .min(0, "El precio no puede ser negativo");
+
+const pricingStrategySchema = z.enum([
+  "cost",
+  "client_price",
+  "business_price",
+  "manual",
+] satisfies [PricingStrategy, PricingStrategy, PricingStrategy, PricingStrategy]);
 
 /** Mismo tope que descripción: HTML enriquecido (`RICH_HTML_DESCRIPTION_MAX_LENGTH`). */
 const richHtmlDescriptionField = z
@@ -55,9 +63,14 @@ export const productFormSchema = z.object({
     .number({ invalid_type_error: "Ingresa un stock válido" })
     .int("El stock debe ser entero")
     .min(0, "El stock no puede ser negativo"),
-  price: moneySchema,
+  pricingStrategy: pricingStrategySchema,
+  cost: moneySchema,
+  marginClientPct: percentSchema,
+  marginBusinessPct: percentSchema,
+  priceClient: moneySchema,
+  priceBusiness: moneySchema,
+  discountClientPct: percentSchema,
   discountBusinessPct: percentSchema,
-  discountClient: percentSchema,
   active: z.boolean(),
   featured: z.boolean(),
   manualPdfUrl: z

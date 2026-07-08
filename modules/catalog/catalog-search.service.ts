@@ -18,9 +18,10 @@ export type SearchSuggestionProduct = {
   url: string;
   imageUrl: string | null;
   price: number;
+  priceBusiness: number;
   stock: number;
   discountBusinessPct: number;
-  discountClient: number;
+  discountClientPct: number;
 };
 
 export type SearchSuggestionLink = {
@@ -126,10 +127,11 @@ export async function getCatalogSearchSuggestions(
       category: localizedCategory,
       url: `/products/${product.slug}`,
       imageUrl: storefrontPrimaryImageUrl(product),
-      price: product.price,
+      price: product.price_client,
+      priceBusiness: product.price_business,
       stock: product.stock,
       discountBusinessPct: product.discount_business_pct,
-      discountClient: product.discount_client,
+      discountClientPct: product.discount_client_pct,
     }));
 
   const brandMatches = navigation.brands

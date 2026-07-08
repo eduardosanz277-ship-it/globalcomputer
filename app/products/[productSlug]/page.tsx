@@ -76,7 +76,7 @@ export default async function ProductoDetallePage({ params }: Props) {
       subcategoryId: product.subcategory_id,
       marcaId: product.brand_id,
       tipoProductoId: product.brand_type_id,
-      precio: product.price,
+      precio: product.price_client,
     }),
   ]);
 

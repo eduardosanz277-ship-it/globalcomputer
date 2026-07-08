@@ -17,9 +17,10 @@ export type StorefrontProductDetail = {
   /** HTML enriquecido (mismo tratamiento que `description`). */
   specifications: string | null;
   stock: number;
-  price: number;
+  price_client: number;
+  price_business: number;
   discount_business_pct: number;
-  discount_client: number;
+  discount_client_pct: number;
   manual_pdf_url: string | null;
   brand_id: string;
   brand_type_id: string | null;
@@ -72,9 +73,10 @@ const DETAIL_SELECT = `
   description,
   specifications,
   stock,
-  price,
+  price_client,
+  price_business,
   discount_business_pct,
-  discount_client,
+  discount_client_pct,
   manual_pdf_url,
   brand_id,
   brand_type_id,
@@ -220,9 +222,10 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
         ? String(row.specifications)
         : null,
     stock: Number(row.stock ?? 0),
-    price: Number(row.price),
+    price_client: Number(row.price_client ?? 0),
+    price_business: Number(row.price_business ?? 0),
     discount_business_pct: Number(row.discount_business_pct ?? 0),
-    discount_client: Number(row.discount_client ?? 0),
+    discount_client_pct: Number(row.discount_client_pct ?? 0),
     manual_pdf_url:
       row.manual_pdf_url != null && String(row.manual_pdf_url).trim() !== ""
         ? String(row.manual_pdf_url)

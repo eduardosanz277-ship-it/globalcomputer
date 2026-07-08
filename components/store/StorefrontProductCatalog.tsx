@@ -20,7 +20,8 @@ import {
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import {
   activeDiscountPercent,
-  priceAfterDiscount,
+  resolveStorefrontBasePrice,
+  resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -92,13 +93,15 @@ const DEFAULT_EXPANDED_FILTER_SECTIONS: Record<FilterSectionKey, boolean> = {
 };
 
 function salePrice(p: StorefrontProduct, tier: StorefrontPriceTier): number {
-  const pct = activeDiscountPercent(p, tier);
-  return priceAfterDiscount(p.price, pct);
+  return resolveStorefrontUnitPrice(p, tier);
 }
 
 function hasDiscount(p: StorefrontProduct, tier: StorefrontPriceTier): boolean {
   const pct = activeDiscountPercent(p, tier);
-  return pct > 0 && priceAfterDiscount(p.price, pct) < p.price;
+  return (
+    pct > 0 &&
+    resolveStorefrontUnitPrice(p, tier) < resolveStorefrontBasePrice(p, tier)
+  );
 }
 
 function clamp(value: number, min: number, max: number): number {

@@ -314,10 +314,16 @@ export function ProductDetailDrawer({
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
               <p className="text-xs text-muted-foreground">
-                {t("admin.products.table.price")}
+                {t("admin.products.form.pricing.fields.clientPrice")}
               </p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
-                {formatCurrencyUsd(product.price)}
+                {formatCurrencyUsd(product.priceClient)}
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("admin.products.form.pricing.fields.businessPrice")}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
+                {formatCurrencyUsd(product.priceBusiness)}
               </p>
               <div className="mt-3">
                 <p className="text-xs text-muted-foreground">
@@ -329,7 +335,8 @@ export function ProductDetailDrawer({
                     {product.discountBusinessPct}%
                   </span>
                   <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {t("admin.products.detail.client")} {product.discountClient}%
+                    {t("admin.products.detail.client")}{" "}
+                    {product.discountClientPct}%
                   </span>
                 </div>
               </div>
