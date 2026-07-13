@@ -5,15 +5,21 @@ import {
   repoDeleteServiceImagesByIds,
   repoDeleteService,
   repoGetNextServiceImageSortOrder,
+  repoGetServiceById,
   repoInsertServiceImages,
   repoListServiceImageStorageRefsByIds,
   repoListServices,
   repoUnsetPrimaryServiceImage,
+  repoUpdateServiceBanner,
   repoUpdateServiceImagesMetadata,
   repoUpdateService,
 } from "./services.repository";
 import type {
   ExistingServiceImageOutput,
+  ServiceBannerAsset,
+  ServiceBannerBreakpoint,
+  ServiceBannerFiles,
+  ServiceBannerRemovals,
   ServiceInsert,
   ServiceUpdate,
 } from "./services.types";
@@ -44,9 +50,29 @@ function mapDbError(err: unknown, fallback: string): Error {
 
 const SERVICE_IMAGES_BUCKET = "global_bucket";
 
+const BANNER_BREAKPOINTS: ServiceBannerBreakpoint[] = [
+  "mobile",
+  "tablet",
+  "desktop",
+];
+
 function sanitizeFileName(name: string) {
   const base = name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
   return base || "image";
+}
+
+async function removeStorageObject(
+  storageBucket: string | null | undefined,
+  storagePath: string | null | undefined,
+) {
+  if (!storageBucket?.trim() || !storagePath?.trim()) return;
+  const { error } = await createSupabaseAdminClient()
+    .storage.from(storageBucket)
+    .remove([storagePath]);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.warn("No se pudo eliminar archivo de storage:", error.message);
+  }
 }
 
 async function uploadServiceImages(
@@ -100,6 +126,83 @@ async function uploadServiceImages(
   await repoInsertServiceImages(uploaded);
 }
 
+function getBannerAsset(
+  service: Awaited<ReturnType<typeof repoGetServiceById>>,
+  breakpoint: ServiceBannerBreakpoint,
+): ServiceBannerAsset {
+  if (!service) {
+    return { url: null, storageBucket: null, storagePath: null };
+  }
+  if (breakpoint === "mobile") return service.bannerMobile;
+  if (breakpoint === "tablet") return service.bannerTablet;
+  return service.bannerDesktop;
+}
+
+async function uploadServiceBanner(
+  serviceId: string,
+  breakpoint: ServiceBannerBreakpoint,
+  file: File,
+  previous: ServiceBannerAsset,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const fileName = `${breakpoint}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const storagePath = `services/${serviceId}/banners/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(SERVICE_IMAGES_BUCKET)
+    .upload(storagePath, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+    });
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage
+    .from(SERVICE_IMAGES_BUCKET)
+    .getPublicUrl(storagePath);
+
+  await repoUpdateServiceBanner(serviceId, breakpoint, {
+    url: data.publicUrl,
+    storageBucket: SERVICE_IMAGES_BUCKET,
+    storagePath,
+  });
+
+  if (
+    previous.storagePath &&
+    previous.storageBucket &&
+    previous.storagePath !== storagePath
+  ) {
+    await removeStorageObject(previous.storageBucket, previous.storagePath);
+  }
+}
+
+async function syncServiceBanners(
+  serviceId: string,
+  bannerFiles?: ServiceBannerFiles,
+  bannerRemovals?: ServiceBannerRemovals,
+) {
+  const current = await repoGetServiceById(serviceId);
+
+  for (const breakpoint of BANNER_BREAKPOINTS) {
+    const file = bannerFiles?.[breakpoint] ?? null;
+    const shouldRemove = Boolean(bannerRemovals?.[breakpoint]);
+    const previous = getBannerAsset(current, breakpoint);
+
+    if (file && file.size > 0) {
+      await uploadServiceBanner(serviceId, breakpoint, file, previous);
+      continue;
+    }
+
+    if (shouldRemove && previous.url) {
+      await repoUpdateServiceBanner(serviceId, breakpoint, {
+        url: null,
+        storageBucket: null,
+        storagePath: null,
+      });
+      await removeStorageObject(previous.storageBucket, previous.storagePath);
+    }
+  }
+}
+
 export async function getAllServicesService() {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -109,7 +212,8 @@ export async function getAllServicesService() {
 export async function createServiceService(
   payload: ServiceInsert,
   imageFiles?: File[],
-  primaryImageIndex = 0
+  primaryImageIndex = 0,
+  bannerFiles?: ServiceBannerFiles,
 ) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -128,6 +232,7 @@ export async function createServiceService(
           : 0;
       await uploadServiceImages(created.id, validFiles, primaryIndex);
     }
+    await syncServiceBanners(created.id, bannerFiles);
     return created;
   } catch (e) {
     throw mapDbError(e, "No se pudo crear el servicio");
@@ -140,7 +245,9 @@ export async function updateServiceService(
   imageFiles?: File[],
   primaryImageIndex = 0,
   updatedExistingImages?: ExistingServiceImageOutput[],
-  removedImageIds?: string[]
+  removedImageIds?: string[],
+  bannerFiles?: ServiceBannerFiles,
+  bannerRemovals?: ServiceBannerRemovals,
 ) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -161,13 +268,7 @@ export async function updateServiceService(
       await repoDeleteServiceImagesByIds(id, removedImageIds ?? []);
 
       for (const ref of refs) {
-        const { error } = await createSupabaseAdminClient().storage
-          .from(ref.storageBucket)
-          .remove([ref.storagePath]);
-        if (error) {
-          // eslint-disable-next-line no-console
-          console.warn("No se pudo eliminar archivo de storage:", error.message);
-        }
+        await removeStorageObject(ref.storageBucket, ref.storagePath);
       }
     }
 
@@ -183,6 +284,8 @@ export async function updateServiceService(
           : 0;
       await uploadServiceImages(id, validFiles, primaryIndex);
     }
+
+    await syncServiceBanners(id, bannerFiles, bannerRemovals);
   } catch (e) {
     throw mapDbError(e, "No se pudo actualizar el servicio");
   }
@@ -192,7 +295,22 @@ export async function deleteServiceService(id: string) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
   try {
+    const service = await repoGetServiceById(id);
     await repoDeleteService(id);
+    if (service) {
+      await removeStorageObject(
+        service.bannerMobile.storageBucket,
+        service.bannerMobile.storagePath,
+      );
+      await removeStorageObject(
+        service.bannerTablet.storageBucket,
+        service.bannerTablet.storagePath,
+      );
+      await removeStorageObject(
+        service.bannerDesktop.storageBucket,
+        service.bannerDesktop.storagePath,
+      );
+    }
   } catch (e) {
     throw mapDbError(e, "No se pudo eliminar el servicio");
   }

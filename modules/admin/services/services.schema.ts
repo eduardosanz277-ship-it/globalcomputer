@@ -8,13 +8,17 @@ type ServiceFormMessages = {
   nameRequired: string;
   nameEnRequired: string;
   maxChars: string;
+  shortDescriptionMaxChars: string;
 };
 
 const DEFAULT_MESSAGES: ServiceFormMessages = {
   nameRequired: "El nombre es obligatorio",
   nameEnRequired: "El nombre en inglés es obligatorio",
   maxChars: "Máximo 200 caracteres",
+  shortDescriptionMaxChars: "Máximo 300 caracteres",
 };
+
+export const SERVICE_SHORT_DESCRIPTION_MAX_LENGTH = 300;
 
 export function createServiceFormSchema(
   messages: ServiceFormMessages = DEFAULT_MESSAGES,
@@ -29,6 +33,20 @@ export function createServiceFormSchema(
       .string()
       .min(1, messages.nameEnRequired)
       .max(200, messages.maxChars)
+      .transform((s) => s.trim()),
+    shortDescription: z
+      .string()
+      .max(
+        SERVICE_SHORT_DESCRIPTION_MAX_LENGTH,
+        messages.shortDescriptionMaxChars,
+      )
+      .transform((s) => s.trim()),
+    shortDescriptionEn: z
+      .string()
+      .max(
+        SERVICE_SHORT_DESCRIPTION_MAX_LENGTH,
+        messages.shortDescriptionMaxChars,
+      )
       .transform((s) => s.trim()),
     description: z
       .string()

@@ -1,4 +1,5 @@
 import DOMPurify from "isomorphic-dompurify";
+import { trimLeadingEmptyDescriptionBlocks } from "@/lib/normalizeProductDescriptionHtml";
 
 /**
  * Opciones de DOMPurify para descripciones de producto enriquecidas:
@@ -32,5 +33,6 @@ const PURIFY_CONFIG: NonNullable<
  * Siempre usar antes de `dangerouslySetInnerHTML`.
  */
 export function sanitizeProductDescriptionHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty ?? "", PURIFY_CONFIG);
+  const sanitized = DOMPurify.sanitize(dirty ?? "", PURIFY_CONFIG);
+  return trimLeadingEmptyDescriptionBlocks(sanitized);
 }

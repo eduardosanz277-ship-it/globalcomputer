@@ -19,14 +19,24 @@ export type NewServiceImageOutput = {
   isPrimary: boolean;
 };
 
+export type ServiceBannerBreakpoint = "mobile" | "tablet" | "desktop";
+
 export type ServiceFormSubmitData = {
   name: string;
   nameEn: string;
+  shortDescription: string;
+  shortDescriptionEn: string;
   description: string;
   descriptionEn: string;
   newImages: NewServiceImageOutput[];
   updatedExistingImages: ExistingServiceImageOutput[];
   removedImages: string[];
+  bannerMobileFile: File | null;
+  bannerTabletFile: File | null;
+  bannerDesktopFile: File | null;
+  removeBannerMobile: boolean;
+  removeBannerTablet: boolean;
+  removeBannerDesktop: boolean;
 };
 
 export type ServiceImageItem = {

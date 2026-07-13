@@ -70,33 +70,44 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     const primaryImageIndex = orderedNewImages.findIndex(
       (img) => img.isPrimary,
     );
+    const values = {
+      name: formData.name,
+      nameEn: formData.nameEn,
+      shortDescription: formData.shortDescription,
+      shortDescriptionEn: formData.shortDescriptionEn,
+      description: formData.description,
+      descriptionEn: formData.descriptionEn,
+    };
+    const bannerFiles = {
+      mobile: formData.bannerMobileFile,
+      tablet: formData.bannerTabletFile,
+      desktop: formData.bannerDesktopFile,
+    };
+    const bannerRemovals = {
+      mobile: formData.removeBannerMobile,
+      tablet: formData.removeBannerTablet,
+      desktop: formData.removeBannerDesktop,
+    };
 
     if (service) {
       executeUpdate(
         service.id,
-        {
-          name: formData.name,
-          nameEn: formData.nameEn,
-          description: formData.description,
-          descriptionEn: formData.descriptionEn,
-        },
+        values,
         files,
         primaryImageIndex >= 0 ? primaryImageIndex : 0,
         formData.updatedExistingImages,
         formData.removedImages,
+        bannerFiles,
+        bannerRemovals,
       );
       return;
     }
 
     executeCreate(
-      {
-        name: formData.name,
-        nameEn: formData.nameEn,
-        description: formData.description,
-        descriptionEn: formData.descriptionEn,
-      },
+      values,
       files,
       primaryImageIndex >= 0 ? primaryImageIndex : 0,
+      bannerFiles,
     );
   };
 
@@ -134,11 +145,21 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       }
     >
       <ServiceForm
+        key={service ? `edit-${service.id}-${open}` : `new-${open}`}
         formId={SERVICE_FORM_ID}
         initialName={service?.name ?? ""}
         initialNameEn={service?.nameEn ?? service?.name ?? ""}
+        initialShortDescription={service?.shortDescription ?? ""}
+        initialShortDescriptionEn={
+          service?.shortDescriptionEn ?? service?.shortDescription ?? ""
+        }
         initialDescription={service?.description ?? ""}
-        initialDescriptionEn={service?.descriptionEn ?? service?.description ?? ""}
+        initialDescriptionEn={
+          service?.descriptionEn ?? service?.description ?? ""
+        }
+        initialBannerMobileUrl={service?.bannerMobile.url ?? null}
+        initialBannerTabletUrl={service?.bannerTablet.url ?? null}
+        initialBannerDesktopUrl={service?.bannerDesktop.url ?? null}
         existingImages={existingImages}
         onSubmit={handleSubmit}
         isSubmitting={isPending}

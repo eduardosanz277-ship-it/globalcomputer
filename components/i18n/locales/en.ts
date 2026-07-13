@@ -1431,7 +1431,8 @@ export const en = {
       form: {
         titleNew: "New service",
         titleEdit: "Edit service",
-        description: "Manage service name, description, and images.",
+        description:
+          "Manage service name, short description, description, and images.",
         tabs: {
           ariaLabel: "Service form sections",
           basic: "Basic information",
@@ -1446,8 +1447,35 @@ export const en = {
         labelNameEn: "Service name",
         placeholderName: "e.g. Instalacion y puesta en marcha",
         placeholderNameEn: "e.g. Installation and setup",
+        labelShortDescription: "Summary (Spanish)",
+        labelShortDescriptionEn: "Summary",
+        placeholderShortDescription: "e.g. Control, security, and peace of mind",
+        placeholderShortDescriptionEn:
+          "e.g. Control, security, and peace of mind",
+        shortDescriptionHint:
+          "Brief text for the service banner (max. 300 characters).",
         labelDescription: "Description (Spanish)",
         labelDescriptionEn: "Description",
+        banners: {
+          title: "Service banners",
+          description:
+            "Upload a background image for mobile, tablet, and desktop. Used in the service page hero.",
+          mobile: "Mobile banner",
+          tablet: "Tablet banner",
+          desktop: "Desktop banner",
+          mobileHint: "Recommended for small screens (up to ~767px).",
+          tabletHint: "Recommended for tablets (~768px–1023px).",
+          desktopHint: "Recommended for desktop (1024px and up).",
+          empty: "No image",
+          upload: "Upload",
+          replace: "Replace",
+          remove: "Remove",
+          uploadAria: "Upload banner image",
+          replaceAria: "Replace banner image",
+          removeAria: "Remove banner image",
+          invalidFile:
+            "Invalid file. Use JPG, PNG, WEBP, or GIF up to 5 MB.",
+        },
         media: {
           title: "Images",
           description:
@@ -1483,6 +1511,7 @@ export const en = {
           nameRequired: "Service name is required.",
           nameEnRequired: "English service name is required.",
           maxChars: "Maximum 200 characters",
+          shortDescriptionMaxChars: "Maximum 300 characters",
         },
       },
       toast: {

@@ -535,6 +535,16 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
   font-size: 0.9375rem;
   line-height: 1.65;
   color: rgba(42, 44, 48, 0.92);
+  text-align: left;
+}
+
+.product-description-html > :first-child {
+  margin-top: 0;
+}
+
+.product-description-html p[style*="text-align"],
+.product-description-html div[style*="text-align"] {
+  text-align: left !important;
 }
 
 .product-description-html h1,

@@ -7,6 +7,8 @@ import {
 } from "@/modules/admin/services/services.service";
 import type {
   ExistingServiceImageOutput,
+  ServiceBannerFiles,
+  ServiceBannerRemovals,
   ServiceInsert,
   ServiceUpdate,
 } from "@/modules/admin/services/services.types";
@@ -26,9 +28,15 @@ export async function deleteServiceAction(id: string) {
 export async function createServiceWithImageAction(
   values: ServiceInsert,
   imageFiles?: File[],
-  primaryImageIndex?: number
+  primaryImageIndex?: number,
+  bannerFiles?: ServiceBannerFiles,
 ) {
-  await createServiceService(values, imageFiles, primaryImageIndex ?? 0);
+  await createServiceService(
+    values,
+    imageFiles,
+    primaryImageIndex ?? 0,
+    bannerFiles,
+  );
 }
 
 export async function updateServiceWithImageAction(
@@ -37,7 +45,9 @@ export async function updateServiceWithImageAction(
   imageFiles?: File[],
   primaryImageIndex?: number,
   updatedExistingImages?: ExistingServiceImageOutput[],
-  removedImageIds?: string[]
+  removedImageIds?: string[],
+  bannerFiles?: ServiceBannerFiles,
+  bannerRemovals?: ServiceBannerRemovals,
 ) {
   await updateServiceService(
     id,
@@ -45,6 +55,8 @@ export async function updateServiceWithImageAction(
     imageFiles,
     primaryImageIndex ?? 0,
     updatedExistingImages,
-    removedImageIds
+    removedImageIds,
+    bannerFiles,
+    bannerRemovals,
   );
 }

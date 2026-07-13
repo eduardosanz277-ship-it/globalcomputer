@@ -1,6 +1,8 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   Service,
+  ServiceBannerAsset,
+  ServiceBannerBreakpoint,
   ServiceImage,
   ServiceInsert,
   ServiceUpdate,
@@ -10,9 +12,20 @@ type ServiceRow = {
   id: string;
   name: string;
   name_en: string | null;
+  short_description: string | null;
+  short_description_en: string | null;
   description: string | null;
   description_en: string | null;
   slug: string;
+  banner_mobile_url: string | null;
+  banner_mobile_storage_bucket: string | null;
+  banner_mobile_storage_path: string | null;
+  banner_tablet_url: string | null;
+  banner_tablet_storage_bucket: string | null;
+  banner_tablet_storage_path: string | null;
+  banner_desktop_url: string | null;
+  banner_desktop_storage_bucket: string | null;
+  banner_desktop_storage_path: string | null;
   service_images?: Array<{
     id: string;
     url: string;
@@ -23,6 +36,21 @@ type ServiceRow = {
   created_at: string;
   updated_at: string;
 };
+
+const SERVICE_SELECT =
+  "id, name, name_en, slug, short_description, short_description_en, description, description_en, banner_mobile_url, banner_mobile_storage_bucket, banner_mobile_storage_path, banner_tablet_url, banner_tablet_storage_bucket, banner_tablet_storage_path, banner_desktop_url, banner_desktop_storage_bucket, banner_desktop_storage_path, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)";
+
+function mapBanner(
+  url: string | null,
+  storageBucket: string | null,
+  storagePath: string | null,
+): ServiceBannerAsset {
+  return {
+    url: url?.trim() || null,
+    storageBucket: storageBucket?.trim() || null,
+    storagePath: storagePath?.trim() || null,
+  };
+}
 
 function mapRow(row: ServiceRow): Service {
   const images: ServiceImage[] =
@@ -40,10 +68,27 @@ function mapRow(row: ServiceRow): Service {
     id: row.id,
     name: row.name,
     nameEn: row.name_en ?? null,
+    shortDescription: row.short_description ?? null,
+    shortDescriptionEn: row.short_description_en ?? null,
     description: row.description,
     descriptionEn: row.description_en ?? null,
     imageUrl: primaryImage?.url ?? null,
     images,
+    bannerMobile: mapBanner(
+      row.banner_mobile_url,
+      row.banner_mobile_storage_bucket,
+      row.banner_mobile_storage_path,
+    ),
+    bannerTablet: mapBanner(
+      row.banner_tablet_url,
+      row.banner_tablet_storage_bucket,
+      row.banner_tablet_storage_path,
+    ),
+    bannerDesktop: mapBanner(
+      row.banner_desktop_url,
+      row.banner_desktop_storage_bucket,
+      row.banner_desktop_storage_path,
+    ),
     slug: row.slug,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -54,13 +99,23 @@ export async function repoListServices(): Promise<Service[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("services")
-    .select(
-      "id, name, name_en, slug, description, description_en, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
-    )
+    .select(SERVICE_SELECT)
     .order("name", { ascending: true });
 
   if (error) throw error;
   return (data as ServiceRow[]).map(mapRow);
+}
+
+export async function repoGetServiceById(id: string): Promise<Service | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("services")
+    .select(SERVICE_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return mapRow(data as ServiceRow);
 }
 
 export async function repoCreateService(payload: ServiceInsert): Promise<Service> {
@@ -71,12 +126,12 @@ export async function repoCreateService(payload: ServiceInsert): Promise<Service
       name: payload.name,
       name_en: payload.nameEn,
       slug: payload.slug,
+      short_description: payload.shortDescription || null,
+      short_description_en: payload.shortDescriptionEn || null,
       description: payload.description || null,
       description_en: payload.descriptionEn || null,
     })
-    .select(
-      "id, name, name_en, slug, description, description_en, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)"
-    )
+    .select(SERVICE_SELECT)
     .single();
 
   if (error) throw error;
@@ -94,11 +149,45 @@ export async function repoUpdateService(
       name: payload.name,
       name_en: payload.nameEn,
       slug: payload.slug,
+      short_description: payload.shortDescription || null,
+      short_description_en: payload.shortDescriptionEn || null,
       description: payload.description || null,
       description_en: payload.descriptionEn || null,
     })
     .eq("id", id);
 
+  if (error) throw error;
+}
+
+export async function repoUpdateServiceBanner(
+  serviceId: string,
+  breakpoint: ServiceBannerBreakpoint,
+  asset: ServiceBannerAsset,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const payload =
+    breakpoint === "mobile"
+      ? {
+          banner_mobile_url: asset.url,
+          banner_mobile_storage_bucket: asset.storageBucket,
+          banner_mobile_storage_path: asset.storagePath,
+        }
+      : breakpoint === "tablet"
+        ? {
+            banner_tablet_url: asset.url,
+            banner_tablet_storage_bucket: asset.storageBucket,
+            banner_tablet_storage_path: asset.storagePath,
+          }
+        : {
+            banner_desktop_url: asset.url,
+            banner_desktop_storage_bucket: asset.storageBucket,
+            banner_desktop_storage_path: asset.storagePath,
+          };
+
+  const { error } = await supabase
+    .from("services")
+    .update(payload)
+    .eq("id", serviceId);
   if (error) throw error;
 }
 

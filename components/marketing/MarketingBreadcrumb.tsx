@@ -29,31 +29,34 @@ export function MarketingBreadcrumb({ items, className }: Props) {
       aria-label={t("common.breadcrumb")}
       className={cn(
         inter.className,
-        "text-sm font-normal text-muted-foreground sm:text-[15px]",
+        "text-sm font-normal text-[#55575b] sm:text-[15px]",
+        "max-md:overflow-x-auto max-md:py-1 max-md:scrollbar-none",
         className,
       )}
     >
-      {items.map((item, i) => {
-        const isLast = i === items.length - 1;
-        return (
-          <span key={i} className="inline">
-            {i > 0 ? (
-              <span className="mx-2" aria-hidden>
-                /
-              </span>
-            ) : null}
-            {isLast ? (
-              <span className="font-bold text-muted-foreground">
-                {item.label}
-              </span>
-            ) : (
-              <Link href={item.href!} className="hover:text-foreground">
-                {item.label}
-              </Link>
-            )}
-          </span>
-        );
-      })}
+      <div className="flex flex-nowrap items-center max-md:w-max max-md:gap-0.5 md:block">
+        {items.map((item, i) => {
+          const isLast = i === items.length - 1;
+          return (
+            <span key={i} className="inline-flex shrink-0 items-center">
+              {i > 0 ? (
+                <span className="mx-2.5" aria-hidden>
+                  /
+                </span>
+              ) : null}
+              {isLast ? (
+                <span className="font-bold text-[#55575b]">
+                  {item.label}
+                </span>
+              ) : (
+                <Link href={item.href!} className="hover:text-foreground">
+                  {item.label}
+                </Link>
+              )}
+            </span>
+          );
+        })}
+      </div>
     </nav>
   );
 }

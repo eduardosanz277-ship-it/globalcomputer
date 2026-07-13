@@ -14,14 +14,20 @@ import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor"
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Dropzone } from "./Dropzone";
 import { ImageGrid } from "./ImageGrid";
+import { ServiceBannerSlot } from "./ServiceBannerSlot";
 import { useServiceImagesManager } from "./use-service-images-manager";
 import type { ExistingServiceImageInput, ServiceFormSubmitData } from "./types";
 
 type ServiceFormProps = {
   initialName?: string;
   initialNameEn?: string;
+  initialShortDescription?: string;
+  initialShortDescriptionEn?: string;
   initialDescription?: string;
   initialDescriptionEn?: string;
+  initialBannerMobileUrl?: string | null;
+  initialBannerTabletUrl?: string | null;
+  initialBannerDesktopUrl?: string | null;
   existingImages: ExistingServiceImageInput[];
   onSubmit: (data: ServiceFormSubmitData) => Promise<void> | void;
   onCancel?: () => void;
@@ -34,8 +40,13 @@ type ServiceFormProps = {
 export function ServiceForm({
   initialName = "",
   initialNameEn = "",
+  initialShortDescription = "",
+  initialShortDescriptionEn = "",
   initialDescription = "",
   initialDescriptionEn = "",
+  initialBannerMobileUrl = null,
+  initialBannerTabletUrl = null,
+  initialBannerDesktopUrl = null,
   existingImages,
   onSubmit,
   onCancel,
@@ -47,8 +58,20 @@ export function ServiceForm({
   const { t, locale } = useI18n();
   const [name, setName] = useState(initialName);
   const [nameEn, setNameEn] = useState(initialNameEn);
+  const [shortDescription, setShortDescription] = useState(
+    initialShortDescription,
+  );
+  const [shortDescriptionEn, setShortDescriptionEn] = useState(
+    initialShortDescriptionEn,
+  );
   const [description, setDescription] = useState(initialDescription);
   const [descriptionEn, setDescriptionEn] = useState(initialDescriptionEn);
+  const [bannerMobileFile, setBannerMobileFile] = useState<File | null>(null);
+  const [bannerTabletFile, setBannerTabletFile] = useState<File | null>(null);
+  const [bannerDesktopFile, setBannerDesktopFile] = useState<File | null>(null);
+  const [removeBannerMobile, setRemoveBannerMobile] = useState(false);
+  const [removeBannerTablet, setRemoveBannerTablet] = useState(false);
+  const [removeBannerDesktop, setRemoveBannerDesktop] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameEnError, setNameEnError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"basic" | "media">("basic");
@@ -81,13 +104,68 @@ export function ServiceForm({
     await onSubmit({
       name: cleanedName,
       nameEn: cleanedNameEn,
+      shortDescription: shortDescription.trim(),
+      shortDescriptionEn: shortDescriptionEn.trim(),
       description: description.trim(),
       descriptionEn: descriptionEn.trim(),
       newImages: images.newImages,
       updatedExistingImages: images.updatedExistingImages,
       removedImages: images.removedImages,
+      bannerMobileFile,
+      bannerTabletFile,
+      bannerDesktopFile,
+      removeBannerMobile,
+      removeBannerTablet,
+      removeBannerDesktop,
     });
   };
+
+  const shortDescriptionTextareaClassName = cn(
+    "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm transition",
+    "min-h-[4.5rem] resize-y leading-relaxed",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+    "placeholder:text-muted-foreground/70",
+    "dark:bg-card",
+  );
+
+  const shortDescriptionField =
+    basicLanguageTab === "es" ? (
+      <div className="space-y-2">
+        <Label htmlFor="service-short-description">
+          {t("admin.services.form.labelShortDescription")}
+        </Label>
+        <p className="text-xs text-muted-foreground">
+          {t("admin.services.form.shortDescriptionHint")}
+        </p>
+        <textarea
+          id="service-short-description"
+          rows={3}
+          value={shortDescription}
+          onChange={(e) => setShortDescription(e.target.value)}
+          placeholder={t("admin.services.form.placeholderShortDescription")}
+          disabled={isSubmitting}
+          className={shortDescriptionTextareaClassName}
+        />
+      </div>
+    ) : (
+      <div className="space-y-2">
+        <Label htmlFor="service-short-description-en">
+          {t("admin.services.form.labelShortDescriptionEn")}
+        </Label>
+        <p className="text-xs text-muted-foreground">
+          {t("admin.services.form.shortDescriptionHint")}
+        </p>
+        <textarea
+          id="service-short-description-en"
+          rows={3}
+          value={shortDescriptionEn}
+          onChange={(e) => setShortDescriptionEn(e.target.value)}
+          placeholder={t("admin.services.form.placeholderShortDescriptionEn")}
+          disabled={isSubmitting}
+          className={shortDescriptionTextareaClassName}
+        />
+      </div>
+    );
 
   return (
     <form
@@ -280,6 +358,8 @@ export function ServiceForm({
               </div>
             )}
 
+            {shortDescriptionField}
+
             {basicLanguageTab === "es" ? (
               <ProductDescriptionEditor
                 id="service-description-rich-es"
@@ -299,35 +379,99 @@ export function ServiceForm({
             )}
           </section>
         ) : (
-          <section className={adminSlideOverSectionClassName}>
-            <header>
-              <h2 className="text-sm font-semibold tracking-wide text-foreground">
-                {t("admin.services.form.media.title")}
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("admin.services.form.media.description")}
-              </p>
-            </header>
+          <div className="space-y-4">
+            <section className={adminSlideOverSectionClassName}>
+              <header>
+                <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                  {t("admin.services.form.banners.title")}
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("admin.services.form.banners.description")}
+                </p>
+              </header>
 
-            <Dropzone onFilesAdded={images.addFiles} />
-
-            {images.items.length > 0 ? (
-              <ImageGrid
-                items={images.items}
-                onReorder={images.moveImage}
-                onRemove={images.removeImage}
-                onSetPrimary={images.markPrimary}
-                onMoveUp={(key) => images.moveByKeyboard(key, "up")}
-                onMoveDown={(key) => images.moveByKeyboard(key, "down")}
-                className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] sm:grid-cols-none"
-                itemClassName="w-[12rem] shrink-0"
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                {t("admin.services.form.media.empty")}
+              <div className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] md:flex-col md:gap-3 md:overflow-visible md:pb-0">
+                <ServiceBannerSlot
+                  breakpoint="mobile"
+                  className="w-[12rem] shrink-0 md:w-full"
+                  existingUrl={initialBannerMobileUrl}
+                  file={bannerMobileFile}
+                  markedForRemoval={removeBannerMobile}
+                  disabled={isSubmitting}
+                  onFileChange={(file) => {
+                    setBannerMobileFile(file);
+                    setRemoveBannerMobile(false);
+                  }}
+                  onRemove={() => {
+                    setBannerMobileFile(null);
+                    setRemoveBannerMobile(true);
+                  }}
+                />
+                <ServiceBannerSlot
+                  breakpoint="tablet"
+                  className="w-[12rem] shrink-0 md:w-full"
+                  existingUrl={initialBannerTabletUrl}
+                  file={bannerTabletFile}
+                  markedForRemoval={removeBannerTablet}
+                  disabled={isSubmitting}
+                  onFileChange={(file) => {
+                    setBannerTabletFile(file);
+                    setRemoveBannerTablet(false);
+                  }}
+                  onRemove={() => {
+                    setBannerTabletFile(null);
+                    setRemoveBannerTablet(true);
+                  }}
+                />
+                <ServiceBannerSlot
+                  breakpoint="desktop"
+                  className="w-[12rem] shrink-0 md:w-full"
+                  existingUrl={initialBannerDesktopUrl}
+                  file={bannerDesktopFile}
+                  markedForRemoval={removeBannerDesktop}
+                  disabled={isSubmitting}
+                  onFileChange={(file) => {
+                    setBannerDesktopFile(file);
+                    setRemoveBannerDesktop(false);
+                  }}
+                  onRemove={() => {
+                    setBannerDesktopFile(null);
+                    setRemoveBannerDesktop(true);
+                  }}
+                />
               </div>
-            )}
-          </section>
+            </section>
+
+            <section className={adminSlideOverSectionClassName}>
+              <header>
+                <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                  {t("admin.services.form.media.title")}
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("admin.services.form.media.description")}
+                </p>
+              </header>
+
+              <Dropzone onFilesAdded={images.addFiles} />
+
+              {images.items.length > 0 ? (
+                <ImageGrid
+                  items={images.items}
+                  onReorder={images.moveImage}
+                  onRemove={images.removeImage}
+                  onSetPrimary={images.markPrimary}
+                  onMoveUp={(key) => images.moveByKeyboard(key, "up")}
+                  onMoveDown={(key) => images.moveByKeyboard(key, "down")}
+                  className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 [scrollbar-width:thin] sm:grid-cols-none"
+                  itemClassName="w-[12rem] shrink-0"
+                />
+              ) : (
+                <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                  {t("admin.services.form.media.empty")}
+                </div>
+              )}
+            </section>
+          </div>
         )}
       </div>
 

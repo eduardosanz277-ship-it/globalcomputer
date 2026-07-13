@@ -1,14 +1,9 @@
-import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
-import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { ServiceDescriptionContent } from "@/components/services/ServiceDescriptionContent";
+import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
 import { Inter } from "next/font/google";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
-import {
-  getServiceBySlugOrId,
-  StorefrontService,
-} from "@/modules/catalog/storefront-services.service";
+import { getServiceBySlugOrId } from "@/modules/catalog/storefront-services.service";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,11 +20,16 @@ export async function generateMetadata({ params }: Props) {
   const resolved = await getServiceBySlugOrId(serviceSlug);
   const service = resolved?.service;
   if (!service) return { title: "Servicio" };
+  const short =
+    service.short_description?.trim() ||
+    service.description
+      ?.replace(/<[^>]+>/g, " ")
+      .slice(0, 155)
+      .trim();
   return {
     title: service.name,
     description:
-      service.description?.slice(0, 155).trim() ||
-      `${service.name} · Servicios de Global Computers USA.`,
+      short || `${service.name} · Servicios de Global Computers USA.`,
   };
 }
 
@@ -42,64 +42,30 @@ export default async function ServiceSlugPage({ params }: Props) {
     redirect(`/services/${service.slug}`);
   }
 
-  const images = service.images
-    .slice()
-    .sort((a, b) => {
-      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
-      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-    });
-  const primaryImageUrl = images[0]?.url ?? null;
+  const breadcrumbItems = [
+    { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+    {
+      label: <LocalizedText es="Servicios" en="Services" />,
+      href: "/services",
+    },
+    { label: <LocalizedText es={service.name} en={service.name_en} /> },
+  ];
 
   return (
-    <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
-      <div className="border-b border-border/60 bg-card/40">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <MarketingBreadcrumb
-            className={inter.className}
-            items={[
-              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
-              {
-                label: <LocalizedText es="Servicios" en="Services" />,
-                href: "/services",
-              },
-              { label: <LocalizedText es={service.name} en={service.name_en} /> },
-            ]}
-          />
-          <div className="mt-4">
-            <HomeSectionHeading
-              className="max-w-none"
-              align="left"
-              title={<LocalizedText es={service.name} en={service.name_en} />}
-              titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-            />
-          </div>
-        </div>
-      </div>
+    <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background lg:bg-background">
+      <ServiceHeroBanner
+        serviceName={service.name}
+        serviceNameEn={service.name_en}
+        shortDescription={service.short_description}
+        shortDescriptionEn={service.short_description_en}
+        bannerMobileUrl={service.banner_mobile_url}
+        bannerTabletUrl={service.banner_tablet_url}
+        bannerDesktopUrl={service.banner_desktop_url}
+        breadcrumbItems={breadcrumbItems}
+        breadcrumbClassName={inter.className}
+      />
 
-  {primaryImageUrl ? (
-    <section className="relative w-full overflow-hidden border-y border-border/40 bg-black/90">
-      <div className="relative h-[46vh] min-h-[17rem] w-full sm:h-[56vh] lg:h-[64vh]">
-        <Image
-          src={primaryImageUrl}
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover opacity-40 blur-sm"
-          priority
-        />
-        <Image
-          src={primaryImageUrl}
-          alt={service.name_en?.trim() || service.name}
-          fill
-          sizes="100vw"
-          className="object-contain"
-          priority
-        />
-      </div>
-    </section>
-  ) : null}
-
-      <div className="relative z-10 mx-auto -mt-6 max-w-7xl px-4 pb-12 sm:-mt-10 sm:px-6 lg:-mt-14 lg:px-8">
+      <div className="relative z-10 w-full max-lg:-mt-4 max-lg:pb-0 lg:z-20 lg:-mt-12 lg:mx-auto lg:max-w-7xl lg:px-8 lg:pb-12">
         <ServiceDescriptionContent
           description={service.description}
           descriptionEn={service.description_en}

@@ -1438,7 +1438,8 @@ export const es = {
       form: {
         titleNew: "Nuevo servicio",
         titleEdit: "Editar servicio",
-        description: "Gestiona nombre, descripción e imágenes del servicio.",
+        description:
+          "Gestiona nombre, descripción corta, descripción e imágenes del servicio.",
         tabs: {
           ariaLabel: "Secciones del formulario de servicio",
           basic: "Información básica",
@@ -1453,8 +1454,34 @@ export const es = {
         labelNameEn: "Nombre del servicio en inglés",
         placeholderName: "Ej. Instalación y puesta en marcha",
         placeholderNameEn: "Ej. Installation and setup",
+        labelShortDescription: "Resumen",
+        labelShortDescriptionEn: "Resumen en inglés",
+        placeholderShortDescription: "Ej. Control, seguridad y tranquilidad",
+        placeholderShortDescriptionEn:
+          "Ej. Control, security, and peace of mind",
+        shortDescriptionHint:
+          "Texto breve del banner del servicio (máx. 300 caracteres).",
         labelDescription: "Descripción",
         labelDescriptionEn: "Descripción en inglés",
+        banners: {
+          title: "Banners del servicio",
+          description:
+            "Sube una imagen de fondo para móvil, tablet y escritorio. Se usan en el hero de la página del servicio.",
+          mobile: "Banner móvil",
+          tablet: "Banner tablet",
+          desktop: "Banner escritorio",
+          mobileHint: "Recomendado para pantallas pequeñas (hasta ~767px).",
+          tabletHint: "Recomendado para tablets (~768px–1023px).",
+          desktopHint: "Recomendado para escritorio (1024px o más).",
+          empty: "Sin imagen",
+          upload: "Subir",
+          replace: "Reemplazar",
+          remove: "Quitar",
+          uploadAria: "Subir imagen del banner",
+          replaceAria: "Reemplazar imagen del banner",
+          removeAria: "Eliminar imagen del banner",
+          invalidFile: "Archivo no válido. Usa JPG, PNG, WEBP o GIF de hasta 5 MB.",
+        },
         media: {
           title: "Imágenes",
           description:
@@ -1491,6 +1518,7 @@ export const es = {
           nameRequired: "El nombre del servicio es obligatorio.",
           nameEnRequired: "El nombre del servicio en inglés es obligatorio.",
           maxChars: "Máximo 200 caracteres",
+          shortDescriptionMaxChars: "Máximo 300 caracteres",
         },
       },
       toast: {

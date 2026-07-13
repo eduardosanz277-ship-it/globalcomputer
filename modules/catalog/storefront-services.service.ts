@@ -13,10 +13,48 @@ export type StorefrontService = {
   name: string;
   name_en: string | null;
   slug: string;
+  short_description: string | null;
+  short_description_en: string | null;
   description: string | null;
   description_en: string | null;
+  banner_mobile_url: string | null;
+  banner_tablet_url: string | null;
+  banner_desktop_url: string | null;
   images: ServiceImageRow[];
 };
+
+const SERVICE_SELECT =
+  "id, name, name_en, slug, short_description, short_description_en, description, description_en, banner_mobile_url, banner_tablet_url, banner_desktop_url, service_images(id, url, is_primary, sort_order)";
+
+function mapService(data: {
+  id: string;
+  name: string;
+  name_en: string | null;
+  slug: string | null;
+  short_description: string | null;
+  short_description_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  banner_mobile_url: string | null;
+  banner_tablet_url: string | null;
+  banner_desktop_url: string | null;
+  service_images: ServiceImageRow[] | null;
+}): StorefrontService {
+  return {
+    id: data.id,
+    name: data.name,
+    name_en: data.name_en ?? null,
+    slug: data.slug ?? slugify(data.name),
+    short_description: data.short_description ?? null,
+    short_description_en: data.short_description_en ?? null,
+    description: data.description,
+    description_en: data.description_en ?? null,
+    banner_mobile_url: data.banner_mobile_url ?? null,
+    banner_tablet_url: data.banner_tablet_url ?? null,
+    banner_desktop_url: data.banner_desktop_url ?? null,
+    images: (data.service_images ?? []) as ServiceImageRow[],
+  };
+}
 
 export async function getServiceBySlug(
   slug: string,
@@ -25,7 +63,7 @@ export async function getServiceBySlug(
   const supabase = await getCatalogSupabase();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)")
+    .select(SERVICE_SELECT)
     .eq("slug", normalizedSlug)
     .maybeSingle();
 
@@ -34,15 +72,7 @@ export async function getServiceBySlug(
     return null;
   }
   if (!data) return null;
-  return {
-    id: data.id,
-    name: data.name,
-    name_en: data.name_en ?? null,
-    slug: data.slug ?? slugify(data.name),
-    description: data.description,
-    description_en: data.description_en ?? null,
-    images: (data.service_images ?? []) as ServiceImageRow[],
-  };
+  return mapService(data);
 }
 
 export async function getServiceById(
@@ -51,7 +81,7 @@ export async function getServiceById(
   const supabase = await getCatalogSupabase();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)")
+    .select(SERVICE_SELECT)
     .eq("id", id)
     .maybeSingle();
 
@@ -60,15 +90,7 @@ export async function getServiceById(
     return null;
   }
   if (!data) return null;
-  return {
-    id: data.id,
-    name: data.name,
-    name_en: data.name_en ?? null,
-    slug: data.slug ?? slugify(data.name),
-    description: data.description,
-    description_en: data.description_en ?? null,
-    images: (data.service_images ?? []) as ServiceImageRow[],
-  };
+  return mapService(data);
 }
 
 export async function getServiceBySlugOrId(
