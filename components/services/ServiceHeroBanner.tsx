@@ -42,13 +42,14 @@ function resolveTextAlign(value?: TextAlign | null): TextAlign {
 }
 
 function textBlockAlignClass(align: TextAlign): string {
+  // En móvil el título y el resumen siempre van centrados.
   if (align === "center") {
     return "mx-auto max-w-none text-center md:max-w-[70%] lg:max-w-[60%]";
   }
   if (align === "right") {
-    return "ml-auto mr-0 max-w-none text-right md:max-w-[50%] lg:max-w-[45%]";
+    return "mx-auto max-w-none text-center md:ml-auto md:mr-0 md:max-w-[50%] md:text-right lg:max-w-[45%]";
   }
-  return "mx-0 max-w-none text-left md:max-w-[50%] lg:max-w-[45%]";
+  return "mx-auto max-w-none text-center md:mx-0 md:max-w-[50%] md:text-left lg:max-w-[45%]";
 }
 
 function HeroBannerOverlay({
