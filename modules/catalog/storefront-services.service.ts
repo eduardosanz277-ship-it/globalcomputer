@@ -15,6 +15,7 @@ export type StorefrontService = {
   slug: string;
   short_description: string | null;
   short_description_en: string | null;
+  text_align: "left" | "center" | "right";
   description: string | null;
   description_en: string | null;
   banner_mobile_url: string | null;
@@ -24,7 +25,12 @@ export type StorefrontService = {
 };
 
 const SERVICE_SELECT =
-  "id, name, name_en, slug, short_description, short_description_en, description, description_en, banner_mobile_url, banner_tablet_url, banner_desktop_url, service_images(id, url, is_primary, sort_order)";
+  "id, name, name_en, slug, short_description, short_description_en, text_align, description, description_en, banner_mobile_url, banner_tablet_url, banner_desktop_url, service_images(id, url, is_primary, sort_order)";
+
+function mapTextAlign(value: string | null | undefined): "left" | "center" | "right" {
+  if (value === "center" || value === "right") return value;
+  return "left";
+}
 
 function mapService(data: {
   id: string;
@@ -33,6 +39,7 @@ function mapService(data: {
   slug: string | null;
   short_description: string | null;
   short_description_en: string | null;
+  text_align?: string | null;
   description: string | null;
   description_en: string | null;
   banner_mobile_url: string | null;
@@ -47,6 +54,7 @@ function mapService(data: {
     slug: data.slug ?? slugify(data.name),
     short_description: data.short_description ?? null,
     short_description_en: data.short_description_en ?? null,
+    text_align: mapTextAlign(data.text_align),
     description: data.description,
     description_en: data.description_en ?? null,
     banner_mobile_url: data.banner_mobile_url ?? null,

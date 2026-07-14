@@ -43,7 +43,7 @@ export function ServiceDescriptionContent({
     <section
       className={cn(
         "w-full rounded-2xl border border-border/60 bg-white py-3 shadow-sm",
-        "max-lg:relative max-lg:z-20 max-lg:max-w-none max-lg:rounded-b-none max-lg:rounded-t-2xl max-lg:border-b-0 max-lg:border-t max-lg:px-4 max-lg:pb-4 max-lg:pt-4 max-lg:shadow-none",
+        "max-lg:relative max-lg:z-20 max-lg:max-w-none max-lg:rounded-b-none max-lg:rounded-t-2xl max-lg:border-b-0 max-lg:border-t max-lg:px-4 max-lg:pb-6 max-lg:pt-4 max-lg:shadow-none",
         "lg:isolate lg:bg-white lg:px-5",
         className,
       )}

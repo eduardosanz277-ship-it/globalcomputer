@@ -14,12 +14,15 @@ export type ServiceBannerAsset = {
 };
 
 /** Servicio (tabla `services`). */
+export type ServiceTextAlign = "left" | "center" | "right";
+
 export type Service = {
   id: string;
   name: string;
   nameEn: string | null;
   shortDescription: string | null;
   shortDescriptionEn: string | null;
+  textAlign: ServiceTextAlign;
   description: string | null;
   descriptionEn: string | null;
   imageUrl: string | null;
@@ -37,6 +40,7 @@ export type ServiceInsert = {
   nameEn: string;
   shortDescription: string;
   shortDescriptionEn: string;
+  textAlign: ServiceTextAlign;
   description: string;
   descriptionEn: string;
   slug?: string;
@@ -47,6 +51,7 @@ export type ServiceUpdate = {
   nameEn: string;
   shortDescription: string;
   shortDescriptionEn: string;
+  textAlign: ServiceTextAlign;
   description: string;
   descriptionEn: string;
   slug?: string;

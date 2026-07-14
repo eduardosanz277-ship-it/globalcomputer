@@ -1461,6 +1461,12 @@ export const es = {
           "Ej. Control, security, and peace of mind",
         shortDescriptionHint:
           "Texto breve del banner del servicio (máx. 300 caracteres).",
+        labelTextAlign: "Alineación del texto",
+        textAlignHint:
+          "Posición horizontal del título y el resumen en el banner del servicio.",
+        textAlignLeft: "Izquierda",
+        textAlignCenter: "Centro",
+        textAlignRight: "Derecha",
         labelDescription: "Descripción",
         labelDescriptionEn: "Descripción en inglés",
         banners: {

@@ -48,6 +48,7 @@ export function createServiceFormSchema(
         messages.shortDescriptionMaxChars,
       )
       .transform((s) => s.trim()),
+    textAlign: z.enum(["left", "center", "right"]).default("left"),
     description: z
       .string()
       .max(RICH_HTML_DESCRIPTION_MAX_LENGTH, RICH_HTML_DESCRIPTION_MAX_ERROR)

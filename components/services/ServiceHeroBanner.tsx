@@ -7,11 +7,14 @@ import { inter } from "@/lib/fonts/inter";
 import Image from "next/image";
 import { cn } from "@/utils/cn";
 
+type TextAlign = "left" | "center" | "right";
+
 type Props = {
   serviceName: string;
   serviceNameEn: string | null;
   shortDescription?: string | null;
   shortDescriptionEn?: string | null;
+  textAlign?: TextAlign | null;
   bannerMobileUrl?: string | null;
   bannerTabletUrl?: string | null;
   bannerDesktopUrl?: string | null;
@@ -30,7 +33,23 @@ type HeroOverlayProps = {
   /** Espacio superior dentro del área de contenido (bajo el breadcrumb). */
   contentOffsetClass: string;
   usingDefaults?: boolean;
+  textAlign: TextAlign;
 };
+
+function resolveTextAlign(value?: TextAlign | null): TextAlign {
+  if (value === "center" || value === "right") return value;
+  return "left";
+}
+
+function textBlockAlignClass(align: TextAlign): string {
+  if (align === "center") {
+    return "mx-auto max-w-none text-center md:max-w-[70%] lg:max-w-[60%]";
+  }
+  if (align === "right") {
+    return "ml-auto mr-0 max-w-none text-right md:max-w-[50%] lg:max-w-[45%]";
+  }
+  return "mx-0 max-w-none text-left md:max-w-[50%] lg:max-w-[45%]";
+}
 
 function HeroBannerOverlay({
   breadcrumbItems,
@@ -41,15 +60,18 @@ function HeroBannerOverlay({
   summaryEn,
   contentOffsetClass,
   usingDefaults = false,
+  textAlign,
 }: HeroOverlayProps) {
+  const useSoftHeroText = usingDefaults || textAlign === "center";
+
   return (
     <div className="absolute inset-0 z-10 flex flex-col">
       <div className="shrink-0">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:py-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:pt-6 md:pb-4 lg:px-8">
           <MarketingBreadcrumb
             className={cn(
               breadcrumbClassName,
-              usingDefaults && "text-[#383a3e]",
+              useSoftHeroText && "text-[#383a3e]",
             )}
             items={breadcrumbItems}
           />
@@ -59,19 +81,12 @@ function HeroBannerOverlay({
         className={cn("pointer-events-none min-h-0 flex-1", contentOffsetClass)}
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div
-            className={cn(
-              "w-full",
-              usingDefaults
-                ? "mx-auto max-w-none text-center md:max-w-[70%] lg:max-w-[60%]"
-                : "mx-auto max-w-none text-center md:mx-0 md:max-w-[50%] md:text-left lg:max-w-[45%]",
-            )}
-          >
+          <div className={cn("w-full", textBlockAlignClass(textAlign))}>
             <h1
               className={cn(
                 inter.className,
                 "text-[24px] font-bold leading-tight tracking-[0.006em] sm:text-[28px] lg:text-[35px] lg:leading-[2.5rem]",
-                usingDefaults ? "text-[#383a3e]" : "text-foreground",
+                useSoftHeroText ? "text-[#383a3e]" : "text-foreground",
               )}
             >
               <LocalizedText es={serviceName} en={serviceNameEn} />
@@ -81,7 +96,7 @@ function HeroBannerOverlay({
                 className={cn(
                   inter.className,
                   "mt-3 text-[15px] font-medium leading-relaxed sm:text-base lg:mt-3.5 lg:text-[1.2rem] lg:leading-[1.7rem]",
-                  usingDefaults ? "text-[#383a3e]" : "text-foreground",
+                  useSoftHeroText ? "text-[#383a3e]" : "text-foreground",
                 )}
               >
                 <LocalizedText es={summaryEs} en={summaryEn} />
@@ -99,6 +114,7 @@ export function ServiceHeroBanner({
   serviceNameEn,
   shortDescription,
   shortDescriptionEn,
+  textAlign,
   bannerMobileUrl,
   bannerTabletUrl,
   bannerDesktopUrl,
@@ -113,6 +129,7 @@ export function ServiceHeroBanner({
     shortDescription,
     shortDescriptionEn,
   });
+  const resolvedAlign = resolveTextAlign(textAlign);
 
   return (
     <section
@@ -132,6 +149,7 @@ export function ServiceHeroBanner({
           summaryEn={content.summaryEn}
           contentOffsetClass="pt-[1.5%]"
           usingDefaults={content.usingDefaults}
+          textAlign={resolvedAlign}
         />
       </div>
 
@@ -171,11 +189,12 @@ export function ServiceHeroBanner({
           summaryEs={content.summaryEs}
           summaryEn={content.summaryEn}
           contentOffsetClass={
-            content.usingDefaults
+            content.usingDefaults || resolvedAlign === "center"
               ? "pt-[1%] lg:pt-[1.5%]"
               : "pt-[3%] lg:pt-[4%]"
           }
           usingDefaults={content.usingDefaults}
+          textAlign={resolvedAlign}
         />
       </div>
     </section>

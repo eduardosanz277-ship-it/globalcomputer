@@ -26,6 +26,7 @@ export type ServiceFormSubmitData = {
   nameEn: string;
   shortDescription: string;
   shortDescriptionEn: string;
+  textAlign: "left" | "center" | "right";
   description: string;
   descriptionEn: string;
   newImages: NewServiceImageOutput[];

@@ -75,6 +75,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       nameEn: formData.nameEn,
       shortDescription: formData.shortDescription,
       shortDescriptionEn: formData.shortDescriptionEn,
+      textAlign: formData.textAlign,
       description: formData.description,
       descriptionEn: formData.descriptionEn,
     };
@@ -153,6 +154,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
         initialShortDescriptionEn={
           service?.shortDescriptionEn ?? service?.shortDescription ?? ""
         }
+        initialTextAlign={service?.textAlign ?? "left"}
         initialDescription={service?.description ?? ""}
         initialDescriptionEn={
           service?.descriptionEn ?? service?.description ?? ""

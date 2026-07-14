@@ -17,7 +17,7 @@ export default async function ContactPage() {
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/30 via-background to-background">
       <div className="border-b border-border/60 bg-card/40">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:pt-6 md:pb-4 lg:px-8">
           <MarketingBreadcrumb
             items={[
               { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },

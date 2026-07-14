@@ -14,6 +14,7 @@ type ServiceRow = {
   name_en: string | null;
   short_description: string | null;
   short_description_en: string | null;
+  text_align: string | null;
   description: string | null;
   description_en: string | null;
   slug: string;
@@ -38,7 +39,7 @@ type ServiceRow = {
 };
 
 const SERVICE_SELECT =
-  "id, name, name_en, slug, short_description, short_description_en, description, description_en, banner_mobile_url, banner_mobile_storage_bucket, banner_mobile_storage_path, banner_tablet_url, banner_tablet_storage_bucket, banner_tablet_storage_path, banner_desktop_url, banner_desktop_storage_bucket, banner_desktop_storage_path, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)";
+  "id, name, name_en, slug, short_description, short_description_en, text_align, description, description_en, banner_mobile_url, banner_mobile_storage_bucket, banner_mobile_storage_path, banner_tablet_url, banner_tablet_storage_bucket, banner_tablet_storage_path, banner_desktop_url, banner_desktop_storage_bucket, banner_desktop_storage_path, created_at, updated_at, service_images(id, url, is_primary, sort_order, created_at)";
 
 function mapBanner(
   url: string | null,
@@ -50,6 +51,11 @@ function mapBanner(
     storageBucket: storageBucket?.trim() || null,
     storagePath: storagePath?.trim() || null,
   };
+}
+
+function mapTextAlign(value: string | null): Service["textAlign"] {
+  if (value === "center" || value === "right") return value;
+  return "left";
 }
 
 function mapRow(row: ServiceRow): Service {
@@ -70,6 +76,7 @@ function mapRow(row: ServiceRow): Service {
     nameEn: row.name_en ?? null,
     shortDescription: row.short_description ?? null,
     shortDescriptionEn: row.short_description_en ?? null,
+    textAlign: mapTextAlign(row.text_align),
     description: row.description,
     descriptionEn: row.description_en ?? null,
     imageUrl: primaryImage?.url ?? null,
@@ -128,6 +135,7 @@ export async function repoCreateService(payload: ServiceInsert): Promise<Service
       slug: payload.slug,
       short_description: payload.shortDescription || null,
       short_description_en: payload.shortDescriptionEn || null,
+      text_align: payload.textAlign || "left",
       description: payload.description || null,
       description_en: payload.descriptionEn || null,
     })
@@ -151,6 +159,7 @@ export async function repoUpdateService(
       slug: payload.slug,
       short_description: payload.shortDescription || null,
       short_description_en: payload.shortDescriptionEn || null,
+      text_align: payload.textAlign || "left",
       description: payload.description || null,
       description_en: payload.descriptionEn || null,
     })

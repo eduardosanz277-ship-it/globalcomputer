@@ -58,6 +58,7 @@ export default async function ServiceSlugPage({ params }: Props) {
         serviceNameEn={service.name_en}
         shortDescription={service.short_description}
         shortDescriptionEn={service.short_description_en}
+        textAlign={service.text_align}
         bannerMobileUrl={service.banner_mobile_url}
         bannerTabletUrl={service.banner_tablet_url}
         bannerDesktopUrl={service.banner_desktop_url}

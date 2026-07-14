@@ -12,6 +12,7 @@ import { Label, RequiredMark } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
 import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
 import { Dropzone } from "./Dropzone";
 import { ImageGrid } from "./ImageGrid";
 import { ServiceBannerSlot } from "./ServiceBannerSlot";
@@ -23,6 +24,7 @@ type ServiceFormProps = {
   initialNameEn?: string;
   initialShortDescription?: string;
   initialShortDescriptionEn?: string;
+  initialTextAlign?: "left" | "center" | "right";
   initialDescription?: string;
   initialDescriptionEn?: string;
   initialBannerMobileUrl?: string | null;
@@ -42,6 +44,7 @@ export function ServiceForm({
   initialNameEn = "",
   initialShortDescription = "",
   initialShortDescriptionEn = "",
+  initialTextAlign = "left",
   initialDescription = "",
   initialDescriptionEn = "",
   initialBannerMobileUrl = null,
@@ -63,6 +66,9 @@ export function ServiceForm({
   );
   const [shortDescriptionEn, setShortDescriptionEn] = useState(
     initialShortDescriptionEn,
+  );
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right">(
+    initialTextAlign,
   );
   const [description, setDescription] = useState(initialDescription);
   const [descriptionEn, setDescriptionEn] = useState(initialDescriptionEn);
@@ -106,6 +112,7 @@ export function ServiceForm({
       nameEn: cleanedNameEn,
       shortDescription: shortDescription.trim(),
       shortDescriptionEn: shortDescriptionEn.trim(),
+      textAlign,
       description: description.trim(),
       descriptionEn: descriptionEn.trim(),
       newImages: images.newImages,
@@ -121,7 +128,7 @@ export function ServiceForm({
   };
 
   const shortDescriptionTextareaClassName = cn(
-    "w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm transition",
+    "block w-full rounded-lg border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm transition",
     "min-h-[4.5rem] resize-y leading-relaxed",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
     "placeholder:text-muted-foreground/70",
@@ -166,6 +173,24 @@ export function ServiceForm({
         />
       </div>
     );
+
+  const textAlignOptions = [
+    {
+      value: "left" as const,
+      label: t("admin.services.form.textAlignLeft"),
+      Icon: AlignLeft,
+    },
+    {
+      value: "center" as const,
+      label: t("admin.services.form.textAlignCenter"),
+      Icon: AlignCenter,
+    },
+    {
+      value: "right" as const,
+      label: t("admin.services.form.textAlignRight"),
+      Icon: AlignRight,
+    },
+  ];
 
   return (
     <form
@@ -359,6 +384,46 @@ export function ServiceForm({
             )}
 
             {shortDescriptionField}
+
+            <div className="space-y-2">
+              <Label id="service-text-align-label">
+                {t("admin.services.form.labelTextAlign")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.services.form.textAlignHint")}
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby="service-text-align-label"
+                className="inline-flex h-10 w-full overflow-hidden rounded-lg border border-border/80 bg-white shadow-sm dark:bg-card sm:w-auto"
+              >
+                {textAlignOptions.map(({ value, label, Icon }, index) => {
+                  const selected = textAlign === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={label}
+                      disabled={isSubmitting}
+                      onClick={() => setTextAlign(value)}
+                      className={cn(
+                        "inline-flex h-full flex-1 items-center justify-center gap-2 px-3 text-sm font-medium transition sm:min-w-[6.5rem] sm:flex-none",
+                        index > 0 && "border-l border-border/80",
+                        selected
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                        isSubmitting && "cursor-not-allowed opacity-60",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {basicLanguageTab === "es" ? (
               <ProductDescriptionEditor
