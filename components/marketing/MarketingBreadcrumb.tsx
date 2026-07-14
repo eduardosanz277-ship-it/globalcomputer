@@ -45,7 +45,7 @@ export function MarketingBreadcrumb({ items, className }: Props) {
                 </span>
               ) : null}
               {isLast ? (
-                <span className="font-bold text-[#55575b]">
+                <span className="font-bold">
                   {item.label}
                 </span>
               ) : (

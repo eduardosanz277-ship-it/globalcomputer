@@ -47,7 +47,10 @@ function HeroBannerOverlay({
       <div className="shrink-0">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:py-6 lg:px-8">
           <MarketingBreadcrumb
-            className={breadcrumbClassName}
+            className={cn(
+              breadcrumbClassName,
+              usingDefaults && "text-[#383a3e]",
+            )}
             items={breadcrumbItems}
           />
         </div>
