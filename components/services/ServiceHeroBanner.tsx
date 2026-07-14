@@ -71,11 +71,8 @@ function HeroBannerOverlay({
               className={cn(
                 inter.className,
                 "text-[24px] font-bold leading-tight tracking-[0.006em] sm:text-[28px] lg:text-[35px] lg:leading-[2.5rem]",
-                usingDefaults
-                  ? "text-white"
-                  : "text-foreground [-webkit-text-stroke:0.55px_rgba(255,255,255,0.8)]",
+                usingDefaults ? "text-[#383a3e]" : "text-foreground",
               )}
-              style={usingDefaults ? undefined : { paintOrder: "stroke fill" }}
             >
               <LocalizedText es={serviceName} en={serviceNameEn} />
             </h1>
@@ -84,13 +81,8 @@ function HeroBannerOverlay({
                 className={cn(
                   inter.className,
                   "mt-3 text-[15px] font-medium leading-relaxed sm:text-base lg:mt-3.5 lg:text-[1.2rem] lg:leading-[1.7rem]",
-                  usingDefaults
-                    ? "text-white"
-                    : "text-foreground [-webkit-text-stroke:0.45px_rgba(255,255,255,0.75)]",
+                  usingDefaults ? "text-[#383a3e]" : "text-foreground",
                 )}
-                style={
-                  usingDefaults ? undefined : { paintOrder: "stroke fill" }
-                }
               >
                 <LocalizedText es={summaryEs} en={summaryEn} />
               </p>
