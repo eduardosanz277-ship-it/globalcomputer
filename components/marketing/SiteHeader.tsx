@@ -80,6 +80,142 @@ function NavMegaMenuLoading() {
   );
 }
 
+const navMegaCascadeWidthClass = "w-[min(100vw-2rem,16rem)]";
+
+/**
+ * Posiciona el submenú alineado con la fila activa, sin que el scroll
+ * del listado principal lo recorte. Ajusta hacia arriba si se sale del viewport.
+ */
+function useNavCascadeSubmenuTop(activeId: string | null) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const submenuRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef(new Map<string, HTMLElement>());
+  const [top, setTop] = useState(0);
+
+  const setRowRef = (id: string, el: HTMLElement | null) => {
+    if (el) rowRefs.current.set(id, el);
+    else rowRefs.current.delete(id);
+  };
+
+  useLayoutEffect(() => {
+    const update = () => {
+      if (!activeId || !rootRef.current) {
+        setTop(0);
+        return;
+      }
+      const row = rowRefs.current.get(activeId);
+      if (!row) return;
+
+      // Primera opción: alinear el submenú con el tope del panel principal.
+      const firstRow = scrollRef.current?.firstElementChild;
+      if (firstRow && row === firstRow) {
+        setTop(0);
+        return;
+      }
+
+      const rootRect = rootRef.current.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      let next = rowRect.top - rootRect.top;
+      const panel = submenuRef.current;
+      if (panel) {
+        const styles = getComputedStyle(panel);
+        const padTop = Number.parseFloat(styles.paddingTop) || 0;
+        const borderTop = Number.parseFloat(styles.borderTopWidth) || 0;
+        next -= padTop + borderTop;
+
+        // Aplicar tentativamente para medir la 1ª subopción real y corregir.
+        const prevTop = panel.style.top;
+        panel.style.top = `${Math.max(0, next)}px`;
+        const firstSubRow = panel.querySelector<HTMLElement>(
+          "a, [role='presentation']",
+        );
+        if (firstSubRow) {
+          next -= firstSubRow.getBoundingClientRect().top - rowRect.top;
+        }
+
+        const overflow =
+          rootRect.top + next + panel.offsetHeight - (window.innerHeight - 8);
+        if (overflow > 0) next -= overflow;
+        next = Math.max(0, next);
+        panel.style.top = prevTop;
+      }
+      setTop(next);
+    };
+
+    update();
+    const raf = requestAnimationFrame(update);
+    const scrollEl = scrollRef.current;
+    scrollEl?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(raf);
+      scrollEl?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [activeId]);
+
+  return { rootRef, scrollRef, submenuRef, setRowRef, top };
+}
+
+function NavMegaCascadeShell({
+  megaPanelClass,
+  loading,
+  onMouseLeave,
+  activeId,
+  submenu,
+  children,
+}: {
+  megaPanelClass: string;
+  loading: boolean;
+  onMouseLeave: () => void;
+  activeId: string | null;
+  submenu: ReactNode | null;
+  children: (setRowRef: (id: string, el: HTMLElement | null) => void) => ReactNode;
+}) {
+  const { rootRef, scrollRef, submenuRef, setRowRef, top } =
+    useNavCascadeSubmenuTop(activeId);
+
+  return (
+    <div
+      ref={rootRef}
+      className={cn("relative font-roboto", navMegaCascadeWidthClass)}
+      onMouseLeave={onMouseLeave}
+    >
+      {loading ? (
+        <div className={cn(megaPanelClass, navMegaCascadeWidthClass)}>
+          <NavMegaMenuLoading />
+        </div>
+      ) : (
+        <>
+          <div
+            ref={scrollRef}
+            className={cn(
+              megaPanelClass,
+              "max-h-[70vh] overflow-y-auto py-2",
+            )}
+          >
+            {children(setRowRef)}
+          </div>
+          {submenu ? (
+            <div
+              ref={submenuRef}
+              className={cn(
+                megaPanelClass,
+                navMegaCascadeWidthClass,
+                "absolute left-full z-10 max-h-[70vh] overflow-y-auto border-l-0 py-2",
+              )}
+              style={{ top }}
+            >
+              {submenu}
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+
 const desktopNavPrimaryLabelClass =
   "font-roboto text-[15px] font-light leading-none";
 
@@ -369,7 +505,7 @@ export function SiteHeader({ user }: Props) {
   const shelfRevealClass = "grid";
 
   const megaPanelClass =
-    "overflow-hidden rounded-lg border border-white/10 bg-primary text-left text-white shadow-md";
+    "overflow-hidden rounded-none border border-white/10 bg-primary text-left text-white shadow-md";
 
   /** Mismo inset horizontal que las secciones del landing (hero, destacados, etc.). */
   const landingInsetClass = "px-4 sm:px-6 lg:px-8";
@@ -1038,87 +1174,71 @@ export function SiteHeader({ user }: Props) {
                 {(navLoading ||
                   (navData?.catalogCategories?.length ?? 0) > 0) && (
                   <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/cat:pointer-events-auto group-hover/cat:visible group-hover/cat:opacity-100">
-                    <div
-                      className={cn(
-                        megaPanelClass,
-                        "flex items-stretch font-roboto",
-                        categoryPanelHasSubs
-                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                      )}
+                    <NavMegaCascadeShell
+                      megaPanelClass={megaPanelClass}
+                      loading={navLoading}
+                      activeId={
+                        categoryPanelHasSubs ? (hoveredCategoryId ?? null) : null
+                      }
                       onMouseLeave={() => setHoveredCategoryId(null)}
-                    >
-                      {navLoading ? (
-                        <NavMegaMenuLoading />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "shrink-0 overflow-y-auto py-2",
-                              categoryPanelHasSubs
-                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                : "w-full max-h-[70vh]",
-                            )}
-                          >
-                            {navData!.catalogCategories.map((cat) => {
-                              const rowActive = hoveredCategoryId === cat.id;
-                              const hasSubs = cat.subcategories.length > 0;
-                              return (
+                      submenu={
+                        categoryPanelHasSubs && activeCategory ? (
+                          <ul>
+                            {activeCategory.subcategories.map((sub) => (
+                              <li key={sub.id}>
                                 <Link
-                                  key={cat.id}
-                                  href={catalogCategoryUrl(cat)}
-                                  onMouseEnter={() =>
-                                    setHoveredCategoryId(cat.id)
-                                  }
+                                  href={catalogSubcategoryUrl(
+                                    activeCategory,
+                                    sub,
+                                  )}
                                   onClick={armDesktopNavStripSuppress}
                                   className={cn(
                                     navMegaRowClass,
-                                    "justify-between",
                                     "hover:bg-white/10",
-                                    rowActive && "bg-white/10",
                                   )}
                                 >
                                   <span className="truncate">
-                                    {localizeName(cat)}
+                                    {localizeName(sub)}
                                   </span>
-                                  {hasSubs ? (
-                                    <ChevronRight
-                                      className="h-4 w-4 shrink-0 text-white"
-                                      aria-hidden
-                                    />
-                                  ) : null}
                                 </Link>
-                              );
-                            })}
-                          </div>
-                          {categoryPanelHasSubs && activeCategory ? (
-                            <div className="min-w-0 flex-1 py-2">
-                              <ul className="py-1">
-                                {activeCategory.subcategories.map((sub) => (
-                                  <li key={sub.id}>
-                                    <Link
-                                      href={catalogSubcategoryUrl(
-                                        activeCategory,
-                                        sub,
-                                      )}
-                                      onClick={armDesktopNavStripSuppress}
-                                      className={cn(
-                                        navMegaRowClass,
-                                        "hover:bg-white/10",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {localizeName(sub)}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null
+                      }
+                    >
+                      {(setRowRef) =>
+                        navData!.catalogCategories.map((cat) => {
+                          const rowActive = hoveredCategoryId === cat.id;
+                          const hasSubs = cat.subcategories.length > 0;
+                          return (
+                            <Link
+                              key={cat.id}
+                              ref={(el) => setRowRef(cat.id, el)}
+                              href={catalogCategoryUrl(cat)}
+                              onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                              onClick={armDesktopNavStripSuppress}
+                              className={cn(
+                                navMegaRowClass,
+                                "justify-between",
+                                "hover:bg-white/10",
+                                rowActive && "bg-white/10",
+                              )}
+                            >
+                              <span className="truncate">
+                                {localizeName(cat)}
+                              </span>
+                              {hasSubs ? (
+                                <ChevronRight
+                                  className="h-4 w-4 shrink-0 text-white"
+                                  aria-hidden
+                                />
+                              ) : null}
+                            </Link>
+                          );
+                        })
+                      }
+                    </NavMegaCascadeShell>
                   </div>
                 )}
               </div>
@@ -1131,85 +1251,71 @@ export function SiteHeader({ user }: Props) {
                 {(navLoading ||
                   (navData?.characteristicsGeneral?.length ?? 0) > 0) && (
                   <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:opacity-100">
-                    <div
-                      className={cn(
-                        megaPanelClass,
-                        "flex items-stretch font-roboto",
-                        generalPanelHasSubs
-                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                      )}
+                    <NavMegaCascadeShell
+                      megaPanelClass={megaPanelClass}
+                      loading={navLoading}
+                      activeId={
+                        generalPanelHasSubs ? (hoveredGeneralId ?? null) : null
+                      }
                       onMouseLeave={() => setHoveredGeneralId(null)}
-                    >
-                      {navLoading ? (
-                        <NavMegaMenuLoading />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "shrink-0 overflow-y-auto py-2",
-                              generalPanelHasSubs
-                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                : "w-full max-h-[70vh]",
-                            )}
-                          >
-                            {navData!.characteristicsGeneral.map((general) => {
-                              const rowActive = hoveredGeneralId === general.id;
-                              const hasSubs = general.specifics.length > 0;
-                              return (
-                                <div
-                                  key={general.id}
-                                  role="presentation"
-                                  onMouseEnter={() =>
-                                    setHoveredGeneralId(general.id)
-                                  }
+                      submenu={
+                        generalPanelHasSubs && activeGeneral ? (
+                          <ul>
+                            {activeGeneral.specifics.map((specific) => (
+                              <li key={specific.id}>
+                                <Link
+                                  href={catalogSpecificUrl(
+                                    activeGeneral,
+                                    specific,
+                                  )}
                                   className={cn(
                                     navMegaRowClass,
-                                    "cursor-default justify-between select-none",
                                     "hover:bg-white/10",
-                                    rowActive && "bg-white/10",
                                   )}
                                 >
                                   <span className="truncate">
-                                    {t("header.viewBy")} {localizeName(general)}
+                                    {localizeName(specific)}
                                   </span>
-                                  {hasSubs ? (
-                                    <ChevronRight
-                                      className="h-4 w-4 shrink-0 text-white"
-                                      aria-hidden
-                                    />
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {generalPanelHasSubs && activeGeneral ? (
-                            <div className="min-w-0 flex-1 py-2">
-                              <ul className="py-1">
-                                {activeGeneral.specifics.map((specific) => (
-                                  <li key={specific.id}>
-                                    <Link
-                                      href={catalogSpecificUrl(
-                                        activeGeneral,
-                                        specific,
-                                      )}
-                                      className={cn(
-                                        navMegaRowClass,
-                                        "hover:bg-white/10",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {localizeName(specific)}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null
+                      }
+                    >
+                      {(setRowRef) =>
+                        navData!.characteristicsGeneral.map((general) => {
+                          const rowActive = hoveredGeneralId === general.id;
+                          const hasSubs = general.specifics.length > 0;
+                          return (
+                            <div
+                              key={general.id}
+                              ref={(el) => setRowRef(general.id, el)}
+                              role="presentation"
+                              onMouseEnter={() =>
+                                setHoveredGeneralId(general.id)
+                              }
+                              className={cn(
+                                navMegaRowClass,
+                                "cursor-default justify-between select-none",
+                                "hover:bg-white/10",
+                                rowActive && "bg-white/10",
+                              )}
+                            >
+                              <span className="truncate">
+                                {t("header.viewBy")} {localizeName(general)}
+                              </span>
+                              {hasSubs ? (
+                                <ChevronRight
+                                  className="h-4 w-4 shrink-0 text-white"
+                                  aria-hidden
+                                />
+                              ) : null}
                             </div>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                          );
+                        })
+                      }
+                    </NavMegaCascadeShell>
                   </div>
                 )}
               </div>
@@ -1221,85 +1327,66 @@ export function SiteHeader({ user }: Props) {
                 />
                 {(navLoading || (navData?.brands?.length ?? 0) > 0) && (
                   <div className="pointer-events-none invisible absolute left-0 top-full z-[60] -mt-1 flex flex-col pt-1 opacity-0 transition-none group-hover/shop:pointer-events-auto group-hover/shop:visible group-hover/shop:opacity-100">
-                    <div
-                      className={cn(
-                        megaPanelClass,
-                        "flex items-stretch font-roboto",
-                        brandPanelHasSubs
-                          ? "w-[min(100vw-2rem,30rem)] max-w-[30rem]"
-                          : "w-[min(100vw-2rem,16rem)] max-w-[16rem]",
-                      )}
+                    <NavMegaCascadeShell
+                      megaPanelClass={megaPanelClass}
+                      loading={navLoading}
+                      activeId={
+                        brandPanelHasSubs ? (hoveredBrandId ?? null) : null
+                      }
                       onMouseLeave={() => setHoveredBrandId(null)}
-                    >
-                      {navLoading ? (
-                        <NavMegaMenuLoading />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "shrink-0 overflow-y-auto py-2",
-                              brandPanelHasSubs
-                                ? "w-[46%] border-r border-white/10 max-h-[70vh]"
-                                : "w-full max-h-[70vh]",
-                            )}
-                          >
-                            {navData!.brands.map((brand) => {
-                              const rowActive = hoveredBrandId === brand.id;
-                              const hasSubs = brand.brandTypes.length > 0;
-                              return (
+                      submenu={
+                        brandPanelHasSubs && activeBrand ? (
+                          <ul>
+                            {activeBrand.brandTypes.map((type) => (
+                              <li key={type.id}>
                                 <Link
-                                  key={brand.id}
-                                  href={catalogBrandUrl(brand)}
-                                  onMouseEnter={() =>
-                                    setHoveredBrandId(brand.id)
-                                  }
+                                  href={catalogBrandTypeUrl(activeBrand, type)}
                                   className={cn(
                                     navMegaRowClass,
-                                    "justify-between",
                                     "hover:bg-white/10",
-                                    rowActive && "bg-white/10",
                                   )}
                                 >
                                   <span className="truncate">
-                                    {localizeName(brand)}
+                                    {localizeName(type)}
                                   </span>
-                                  {hasSubs ? (
-                                    <ChevronRight
-                                      className="h-4 w-4 shrink-0 text-white"
-                                      aria-hidden
-                                    />
-                                  ) : null}
                                 </Link>
-                              );
-                            })}
-                          </div>
-                          {brandPanelHasSubs && activeBrand ? (
-                            <div className="min-w-0 flex-1 py-2">
-                              <ul className="py-1">
-                                {activeBrand.brandTypes.map((type) => (
-                                  <li key={type.id}>
-                                    <Link
-                                      href={catalogBrandTypeUrl(
-                                        activeBrand,
-                                        type,
-                                      )}
-                                      className={cn(
-                                        navMegaRowClass,
-                                        "hover:bg-white/10",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {localizeName(type)}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null
+                      }
+                    >
+                      {(setRowRef) =>
+                        navData!.brands.map((brand) => {
+                          const rowActive = hoveredBrandId === brand.id;
+                          const hasSubs = brand.brandTypes.length > 0;
+                          return (
+                            <Link
+                              key={brand.id}
+                              ref={(el) => setRowRef(brand.id, el)}
+                              href={catalogBrandUrl(brand)}
+                              onMouseEnter={() => setHoveredBrandId(brand.id)}
+                              className={cn(
+                                navMegaRowClass,
+                                "justify-between",
+                                "hover:bg-white/10",
+                                rowActive && "bg-white/10",
+                              )}
+                            >
+                              <span className="truncate">
+                                {localizeName(brand)}
+                              </span>
+                              {hasSubs ? (
+                                <ChevronRight
+                                  className="h-4 w-4 shrink-0 text-white"
+                                  aria-hidden
+                                />
+                              ) : null}
+                            </Link>
+                          );
+                        })
+                      }
+                    </NavMegaCascadeShell>
                   </div>
                 )}
               </div>
