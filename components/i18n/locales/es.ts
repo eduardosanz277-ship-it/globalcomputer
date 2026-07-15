@@ -87,6 +87,7 @@ export const es = {
   common: {
     breadcrumb: "Migas de pan",
     home: "Inicio",
+    backToHome: "Volver al inicio",
   },
   header: {
     brandTagline: "Soluciones de seguridad y vigilancia",

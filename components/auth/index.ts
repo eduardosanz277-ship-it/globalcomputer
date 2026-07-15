@@ -14,3 +14,4 @@ export {
   AuthInlineLinkRow,
 } from "./auth-footer-links";
 export { AuthAlert } from "./auth-alert";
+export { AuthBackToHome } from "./auth-back-to-home";

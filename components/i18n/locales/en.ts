@@ -85,6 +85,7 @@ export const en = {
   common: {
     breadcrumb: "Breadcrumb",
     home: "Home",
+    backToHome: "Back to home",
   },
   header: {
     brandTagline: "Security and Surveillance Solutions",
