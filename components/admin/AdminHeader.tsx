@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
-  Bell,
   ChevronDown,
   Home,
   LayoutDashboard,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBell";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
@@ -132,18 +132,7 @@ export function AdminHeader({
           variant === "admin" && "md:ml-auto md:flex-1",
         )}
       >
-        {/* Campana (Bell): oculto en /profile con hideBell. Para volver a mostrarla ahí, quitar hideBell en app/profile/page.tsx.
-            Markup conservado abajo (!hideBell): button + aria-label t(admin.header.notifications) + Bell h-5 w-5.
-        */}
-        {!hideBell ? (
-          <button
-            type="button"
-            className="rounded-lg py-1.5 text-muted-foreground transition hover:text-foreground"
-            aria-label={t("admin.header.notifications")}
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-        ) : null}
+        {!hideBell ? <AdminNotificationsBell /> : null}
 
         <LanguageSelector
           className={cn(
