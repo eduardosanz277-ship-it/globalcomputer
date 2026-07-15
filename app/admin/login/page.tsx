@@ -14,6 +14,7 @@ import {
   AuthInlineLinkRow,
   AuthLayout,
   AuthPrimaryButton,
+  AuthBackToHome,
 } from "@/components/auth";
 import { Form } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
@@ -111,6 +112,7 @@ export default function AdminLoginPage() {
           </AuthInlineLinkRow>
         </AuthFooterLinks>
       </AuthCard>
+      <AuthBackToHome />
     </AuthLayout>
   );
 }
