@@ -61,6 +61,17 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
                       </p>
                     </div>
                   </div>
+                  <p
+                    className={`inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
+                      message.isRead
+                        ? "border border-emerald-200/90 bg-emerald-50 text-emerald-900 dark:text-emerald-200"
+                        : "border border-amber-200/90 bg-amber-50 text-amber-900"
+                    }`}
+                  >
+                    {message.isRead
+                      ? t("admin.contacts.status.read")
+                      : t("admin.contacts.status.unread")}
+                  </p>
                 </div>
               }
             />
@@ -71,7 +82,10 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
               value={
                 <p className="inline-flex items-center gap-2 text-muted-foreground">
                   <Clock3 className="h-4 w-4" aria-hidden />
-                  {formatDateDdMmYyyyHhMm(message.createdAt, locale).replace(", ", " ")}
+                  {formatDateDdMmYyyyHhMm(message.createdAt, locale).replace(
+                    ", ",
+                    " ",
+                  )}
                 </p>
               }
             />

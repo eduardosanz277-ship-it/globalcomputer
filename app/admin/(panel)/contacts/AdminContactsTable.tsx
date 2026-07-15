@@ -124,16 +124,24 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
         meta: {
           cellClassName: CONTACT_COLUMN_CLASS,
         },
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-foreground">
-              {row.original.name}
-            </p>
-            <p className="truncate text-sm text-muted-foreground">
-              {row.original.email}
-            </p>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const unread = !row.original.isRead;
+          return (
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "truncate text-base text-foreground",
+                  unread ? "font-bold" : "font-semibold",
+                )}
+              >
+                {row.original.name}
+              </p>
+              <p className="truncate text-sm text-muted-foreground">
+                {row.original.email}
+              </p>
+            </div>
+          );
+        },
       },
       {
         id: "phone",
@@ -165,7 +173,12 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
         ),
         meta: { cellClassName: SUBJECT_COLUMN_CLASS },
         cell: ({ row }) => (
-          <span className="block truncate text-sm font-medium text-foreground">
+          <span
+            className={cn(
+              "block truncate text-sm text-foreground",
+              !row.original.isRead ? "font-semibold" : "font-medium",
+            )}
+          >
             {row.original.subject}
           </span>
         ),
