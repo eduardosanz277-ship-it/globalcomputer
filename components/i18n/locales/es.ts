@@ -1597,8 +1597,16 @@ export const es = {
       title: "Mensajes de contacto",
       description:
         "Consulta los mensajes enviados desde el formulario público de contacto.",
+      status: {
+        unread: "No leído",
+        read: "Leído",
+      },
       filters: {
         searchPlaceholder: "Buscar por nombre, correo, asunto o mensaje…",
+        all: "Todos los estados",
+        statusAria: "Filtrar por estado de lectura",
+        clear: "Limpiar filtro",
+        clearAria: "Limpiar filtro de estado de lectura",
       },
       table: {
         contact: "Contacto",
@@ -1611,6 +1619,10 @@ export const es = {
         subjectSortAsc: "Ordenado de la A a la Z. Clic para invertir",
         subjectSortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
         message: "Mensaje",
+        status: "Estado",
+        statusSortIdle: "Ordenar por estado de lectura",
+        statusSortAsc: "No leídos primero. Clic para invertir",
+        statusSortDesc: "Leídos primero. Clic para quitar orden",
         date: "Fecha",
         dateSortIdle: "Ordenar por fecha",
         dateSortAsc: "Más antiguo primero. Clic para invertir",
@@ -1623,6 +1635,9 @@ export const es = {
         ariaLabel: "Detalle del mensaje de contacto",
         contact: "Contacto",
         metadata: "Metadatos",
+      },
+      toast: {
+        markReadError: "No se pudo marcar el mensaje como leído.",
       },
       error: {
         default: "No se pudieron cargar los mensajes.",
@@ -1969,6 +1984,15 @@ export const es = {
       languageToggle: "Cambiar idioma",
       openNavigationMenu: "Abrir menú de navegación",
       notifications: "Notificaciones",
+      notificationsBadge: "{count} mensajes de contacto no leídos",
+      notificationsPanelTitle: "Notificaciones",
+      notificationsUnreadSummary:
+        "{count} mensajes de contacto sin leer",
+      notificationsAllCaughtUp: "No tienes mensajes sin leer",
+      notificationsEmptyTitle: "Todo al día",
+      notificationsEmptyDescription:
+        "Cuando lleguen mensajes de contacto nuevos, aparecerán aquí.",
+      notificationsViewAll: "Ver mensajes de contacto",
       welcome: "Bienvenido,",
       goToSite: "Ir al sitio",
       adminPanel: "Panel de administración",

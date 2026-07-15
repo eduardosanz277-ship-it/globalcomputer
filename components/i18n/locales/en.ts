@@ -1591,8 +1591,16 @@ export const en = {
       title: "Contact messages",
       description:
         "Review messages sent from the public contact form.",
+      status: {
+        unread: "Unread",
+        read: "Read",
+      },
       filters: {
         searchPlaceholder: "Search by name, email, subject, or message…",
+        all: "All statuses",
+        statusAria: "Filter by read status",
+        clear: "Clear filter",
+        clearAria: "Clear read status filter",
       },
       table: {
         contact: "Contact",
@@ -1605,6 +1613,10 @@ export const en = {
         subjectSortAsc: "Sorted A to Z. Click to reverse",
         subjectSortDesc: "Sorted Z to A. Click to clear sort",
         message: "Message",
+        status: "Status",
+        statusSortIdle: "Sort by read status",
+        statusSortAsc: "Unread first. Click to reverse",
+        statusSortDesc: "Read first. Click to clear sort",
         date: "Date",
         dateSortIdle: "Sort by date",
         dateSortAsc: "Oldest first. Click to reverse",
@@ -1617,6 +1629,9 @@ export const en = {
         ariaLabel: "Contact message detail",
         contact: "Contact",
         metadata: "Metadata",
+      },
+      toast: {
+        markReadError: "Could not mark the message as read.",
       },
       error: {
         default: "Messages could not be loaded.",
@@ -1964,6 +1979,14 @@ export const en = {
       languageToggle: "Switch language",
       openNavigationMenu: "Open navigation menu",
       notifications: "Notifications",
+      notificationsBadge: "{count} unread contact messages",
+      notificationsPanelTitle: "Notifications",
+      notificationsUnreadSummary: "{count} unread contact messages",
+      notificationsAllCaughtUp: "You're all caught up",
+      notificationsEmptyTitle: "All clear",
+      notificationsEmptyDescription:
+        "New contact messages will show up here when they arrive.",
+      notificationsViewAll: "View contact messages",
       welcome: "Welcome,",
       goToSite: "Go to site",
       adminPanel: "Administration panel",
