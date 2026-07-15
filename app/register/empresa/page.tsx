@@ -10,6 +10,7 @@ import {
   AuthInlineLinkRow,
   AuthLayout,
   AuthPrimaryButton,
+  AuthBackToHome,
 } from "@/components/auth";
 import { Form } from "@/components/ui/form";
 import { useServerAction } from "@/hooks/use-server-action";
@@ -127,6 +128,7 @@ export default function RegisterEmpresaPage() {
           </AuthInlineLinkRow>
         </AuthFooterLinks>
       </AuthCard>
+      <AuthBackToHome />
     </AuthLayout>
   );
 }
