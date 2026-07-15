@@ -18,6 +18,7 @@ import {
   AuthInput,
   AuthLayout,
   AuthPrimaryButton,
+  AuthBackToHome,
 } from "@/components/auth";
 import { AuthPageSuspenseFallback } from "@/components/auth/auth-page-suspense-fallback";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -350,6 +351,7 @@ function LoginPageContent() {
           </AuthFooterLinks>
         ) : null}
       </AuthCard>
+      <AuthBackToHome />
     </AuthLayout>
   );
 }
