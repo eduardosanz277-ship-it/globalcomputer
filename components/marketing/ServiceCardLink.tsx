@@ -57,7 +57,6 @@ export function ServiceCardLink({
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-primary/20 via-card to-muted/50" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
       </Link>
 
       <div className="flex min-h-0 flex-1 flex-col p-5">
