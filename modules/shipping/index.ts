@@ -13,6 +13,7 @@ export type {
 } from "./shipping.types";
 
 export {
+  buildWhatsAppQuoteMessage,
   buildWhatsAppUrl,
   calculateShipping,
   calculateShippingSurcharge,

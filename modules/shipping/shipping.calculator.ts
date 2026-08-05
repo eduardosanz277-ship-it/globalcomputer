@@ -1,8 +1,11 @@
+import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import type {
   ShippingFreeSurchargeBehavior,
   ShippingOverLimitAction,
   ShippingQuote,
   ShippingQuoteLineInput,
+  ShippingQuoteLocale,
+  ShippingQuoteOfferInput,
   ShippingRate,
   ShippingSettings,
 } from "./shipping.types";
@@ -15,6 +18,124 @@ export function buildWhatsAppUrl(phone: string, message: string): string | null 
   const text = message.trim();
   const q = text ? `?text=${encodeURIComponent(text)}` : "";
   return `https://wa.me/${digits}${q}`;
+}
+
+function formatUsdPlain(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
+function formatOfferPercentage(value: number): string {
+  return Number.isInteger(value)
+    ? value.toString()
+    : value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+const WHATSAPP_QUOTE_COPY: Record<
+  ShippingQuoteLocale,
+  {
+    orderDetails: string;
+    summary: string;
+    subtotal: string;
+    discount: (pct: string) => string;
+    orderTotal: string;
+    shippingPending: string;
+    closing: string;
+  }
+> = {
+  es: {
+    orderDetails: "Detalle del pedido",
+    summary: "Resumen",
+    subtotal: "Subtotal",
+    discount: (pct) => `Descuento (${pct}%)`,
+    orderTotal: "Total del pedido",
+    shippingPending: "Envío: Pendiente de cotización",
+    closing: "Gracias. Quedo atento(a) a la cotización del envío.",
+  },
+  en: {
+    orderDetails: "Order details",
+    summary: "Summary",
+    subtotal: "Subtotal",
+    discount: (pct) => `Discount (${pct}%)`,
+    orderTotal: "Order total",
+    shippingPending: "Shipping: Pending quote",
+    closing: "Thank you. I look forward to receiving the shipping quote.",
+  },
+};
+
+function resolveQuoteLocale(locale?: string | null): ShippingQuoteLocale {
+  return locale === "en" ? "en" : "es";
+}
+
+/**
+ * Mensaje WhatsApp: texto configurado en admin + desglose del pedido (según locale).
+ */
+export function buildWhatsAppQuoteMessage(
+  configuredMessage: string,
+  lines: ShippingQuoteLineInput[],
+  subtotal: number,
+  offer?: ShippingQuoteOfferInput | null,
+  locale?: string | null,
+): string {
+  const lang = resolveQuoteLocale(locale);
+  const copy = WHATSAPP_QUOTE_COPY[lang];
+  const intro = configuredMessage.trim();
+  const detailLines = lines.filter(
+    (line) =>
+      Math.max(0, Math.floor(line.quantity)) > 0 &&
+      Boolean(line.productName?.trim()) &&
+      Number.isFinite(line.unitPrice),
+  );
+
+  if (detailLines.length === 0) {
+    return intro;
+  }
+
+  const offerResult = computeSiteOfferOnSubtotal(subtotal, {
+    offerAmount: offer?.offerAmount ?? 0,
+    offerPercentage: offer?.offerPercentage ?? 0,
+  });
+
+  const productBlock = detailLines
+    .map((line) => {
+      const qty = Math.max(0, Math.floor(line.quantity));
+      const unit = Math.max(0, Number(line.unitPrice) || 0);
+      const lineTotal = roundMoney(unit * qty);
+      const name = line.productName!.trim();
+      return `• ${name}\n${qty} × ${formatUsdPlain(unit)} = ${formatUsdPlain(lineTotal)}`;
+    })
+    .join("\n\n");
+
+  const summaryLines: string[] = [
+    `${copy.subtotal}: ${formatUsdPlain(roundMoney(subtotal))}`,
+  ];
+  if (offerResult.applies) {
+    summaryLines.push(
+      `${copy.discount(formatOfferPercentage(offer?.offerPercentage ?? 0))}: −${formatUsdPlain(offerResult.discountUsd)}`,
+    );
+  }
+  summaryLines.push(
+    `${copy.orderTotal}: ${formatUsdPlain(offerResult.totalAfterDiscountUsd)}`,
+    copy.shippingPending,
+  );
+
+  const orderBlock = [
+    "────────────────",
+    copy.orderDetails,
+    "",
+    productBlock,
+    "",
+    "────────────────",
+    copy.summary,
+    "",
+    ...summaryLines,
+    "",
+    copy.closing,
+  ].join("\n");
+
+  return intro ? `${intro}\n\n${orderBlock}` : orderBlock;
 }
 
 export function shouldRedirectToWhatsApp(
