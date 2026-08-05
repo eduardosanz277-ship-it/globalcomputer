@@ -140,7 +140,7 @@ export function StoreHero({
 
         <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8 lg:pt-16">
           <div className="grid items-center gap-8 md:gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 xl:gap-16">
-            <div className="animate-fade-up">
+            <div className="animate-fade-up text-center sm:text-left">
               {/* <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-secondary/95 backdrop-blur-md sm:text-xs">
                 Tienda de confianza
               </p> */}
@@ -155,14 +155,14 @@ export function StoreHero({
                   {t("simple y clara", "simple and clear")}
                 </span>
               </h1>
-              <p className="mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:text-[18px]">
+              <p className="mx-auto mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:mx-0 sm:text-[18px]">
                 {t(
                   "Cámaras, grabadoras y kits con precios visibles y equipo que te orienta. Así debería ser comprar tecnología.",
                   "Cameras, recorders, and kits with transparent pricing and a team that guides you. This is how buying technology should feel.",
                 )}
               </p>
 
-              <ul className="mt-7 flex flex-wrap gap-2 sm:gap-2.5">
+              <ul className="mt-7 flex flex-wrap justify-center gap-2 sm:justify-start sm:gap-2.5">
                 {TRUST_PILLS.map(({ Icon, label, labelEn }) => (
                   <li
                     key={label}
@@ -177,7 +177,7 @@ export function StoreHero({
                 ))}
               </ul>
 
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-9 flex flex-wrap justify-center gap-3 sm:justify-start">
                 <Link
                   href="/products"
                   className={cn(
@@ -223,11 +223,11 @@ export function StoreHero({
                 />
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 text-center sm:text-left">
                 <p className="text-sm font-semibold uppercase tracking-wider text-white/75 sm:text-base">
                   {t("Explora por categoría", "Explore by category")}
                 </p>
-                <ul className="mt-3 flex flex-wrap gap-2">
+                <ul className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
                   {categories.map((c) => (
                     <li key={c.id} className="max-w-full">
                       <Link
