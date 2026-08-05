@@ -182,7 +182,7 @@ export function StoreHero({
                   href="/products"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground shadow-xl shadow-black/25 transition hover:scale-[1.02] hover:bg-primary/90 sm:w-auto",
+                    "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground transition hover:scale-[1.02] hover:bg-primary sm:w-auto",
                   )}
                 >
                   <span className="text-base sm:text-[1.05rem]">
@@ -193,13 +193,13 @@ export function StoreHero({
                   href={`tel:${contact.phoneTel}`}
                   className={cn(
                     buttonVariants({ size: "lg", variant: "outline" }),
-                    "group h-14 w-full gap-2 rounded-full border-2 border-white/35 bg-white/5 px-5 font-semibold text-white backdrop-blur-md hover:bg-white/15 sm:w-auto",
+                    "group h-14 w-full gap-2 rounded-full border-2 border-white/35 bg-white/5 px-5 font-semibold text-white backdrop-blur-md transition hover:scale-[1.02] hover:bg-white/15 sm:w-auto",
                   )}
                   aria-label={`${t("Llamar para ayuda al", "Call for help at")} ${contact.phoneDisplay}`}
                 >
                   <Phone className="h-4 w-4 shrink-0" aria-hidden />
                   <span className="flex flex-col items-start leading-tight">
-                    <span className="text-[11px] font-medium text-white/80 sm:text-xs">
+                    <span className="text-[11px] font-medium text-white sm:text-xs">
                       {t("¿Necesitas ayuda?", "Need help?")}
                     </span>
                     <span className="text-sm font-semibold text-white sm:text-base">
