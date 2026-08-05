@@ -58,7 +58,7 @@ export default async function SecuritySystemPage() {
           />
         </div>
       </div>
-      <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-6 max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {generals.map((g) => (
             <Link

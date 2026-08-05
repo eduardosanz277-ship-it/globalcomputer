@@ -294,7 +294,7 @@ export const en = {
         "An item in your cart is no longer available.",
       remove: "Remove",
       removeFromCartAria: "Remove from cart",
-      noPhoto: "No photo",
+      noPhoto: "No image",
       each: "ea",
       drawerTitle: "Your shopping cart",
       drawerDescription: "Review added items before continuing.",
@@ -309,13 +309,28 @@ export const en = {
       stripeInfo:
         "You will complete your purchase on the secure Stripe Checkout page, where you can review the total amount and selected items, and confirm taxes and shipping costs, as applicable.",
       openCheckout: "Opening checkout",
-      payWithStripe: "Pay with Stripe",
+      payWithStripe: "Pay",
       viewCart: "View cart",
       sectionSeparatorAria: "Cart sections separator",
       offerBanner:
         "Save {pct}% on purchases of {amount} or more!",
       offerDiscountLabel: "Offer discount ({pct}%)",
       estimatedTotal: "Estimated total",
+      amountsUpdating: "Updating amounts…",
+      shippingBaseLabel: "Base shipping",
+      shippingSurchargeLabel: "Special product surcharge",
+      shippingTotalLabel: "Shipping total",
+      requestShippingQuote: "Request a quote",
+      requestShippingQuoteUnavailable:
+        "Configure shipping WhatsApp in the admin panel",
+      shippingQuoteTitle: "Shipping requires a personalized quote.",
+      shippingQuoteDescription:
+        "Your order exceeds the limit for automatic shipping calculation. Request a quote and an advisor will reply on WhatsApp with the shipping cost for this order.",
+    },
+    productDetail: {
+      specialShippingTitle: "Special shipping",
+      specialShippingDescription:
+        "This product requires an independent shipping quote.",
     },
     cartSuccess: {
       metaTitle: "Payment received",
@@ -521,6 +536,7 @@ export const en = {
           general: "General information",
           description: "Description",
           pricing: "Pricing and inventory",
+          shipping: "Shipping",
           media: "Media",
           characteristics: "Characteristics",
           specifications: "Specifications",
@@ -557,6 +573,20 @@ export const en = {
           price: "Price",
           discountBusiness: "Business discount (%)",
           discountClient: "Client discount (%)",
+          shippingType: "Shipping type",
+          shippingTypeStandard: "Standard",
+          shippingTypeStandardHint:
+            "Uses the catalog’s normal shipping rules and rates.",
+          shippingTypeNonStandard: "Non-standard",
+          shippingTypeNonStandardHint:
+            "Applies an extra per-unit shipping surcharge.",
+          shippingSurchargePerUnit: "Shipping surcharge per unit",
+          shippingSurchargePerUnitPlaceholder: "E.g. 149.99",
+        },
+        shipping: {
+          title: "Shipping",
+          description:
+            "Choose whether the product uses standard shipping or a per-unit surcharge.",
         },
         pricing: {
           strategyTitle: "Pricing strategy",
@@ -1955,6 +1985,7 @@ export const en = {
       groupUsers: "Users",
       groupCommunication: "Communication",
       groupServices: "Services",
+      groupShipping: "Shipping",
       groupSettings: "Settings",
       home: "Dashboard",
       products: "Products",
@@ -1974,7 +2005,115 @@ export const en = {
       reviewsProducts: "Products",
       reviewsSite: "Site",
       services: "Services",
+      shipping: "Shipping",
+      shippingGeneral: "General",
+      shippingRates: "Rates",
       settings: "Settings",
+    },
+    shipping: {
+      general: {
+        title: "Shipping settings",
+        description:
+          "Configure automatic calculation limits, WhatsApp quotes, and free shipping.",
+        save: "Save changes",
+        saving: "Saving changes",
+        toast: {
+          saved: "Shipping settings saved",
+        },
+        autoCalc: {
+          title: "Automatic calculation",
+          description:
+            "If the subtotal exceeds the maximum amount, checkout will request a quote.",
+        },
+        freeShipping: {
+          title: "Free shipping",
+          description:
+            "When it applies, the base rate becomes $0. Surcharges depend on the selected behavior.",
+        },
+        fields: {
+          autoCalcMaxSubtotal: "Maximum amount for automatic calculation",
+          overLimitAction: "Action when the limit is exceeded",
+          whatsappPhone: "WhatsApp number",
+          whatsappPhoneHint:
+            "Local number only. Country code +1 is added automatically.",
+          whatsappPhonePlaceholder: "555 123 4567",
+          whatsappMessage: "Default WhatsApp message",
+          freeShippingEnabled: "Enable free shipping",
+          freeShippingEnabledHint:
+            "If enabled and the subtotal reaches the minimum, the base rate is $0.",
+          freeShippingMinSubtotal: "Minimum amount for free shipping",
+          freeShippingBehavior: "Free shipping behavior",
+        },
+        overLimit: {
+          whatsapp: "Redirect to WhatsApp",
+          hint: "Architecture is ready for additional actions later.",
+        },
+        behavior: {
+          keep: "Keep non-standard product surcharges",
+          keepHint: "Base rate is $0; per-unit surcharges still apply.",
+          waive: "Also remove surcharges",
+          waiveHint: "Fully free shipping (no special surcharges).",
+        },
+      },
+      rates: {
+        title: "Shipping rates",
+        description:
+          "Subtotal ranges and costs. Ranges must not overlap.",
+        add: "New rate",
+        buttonNew: "New",
+        searchPlaceholder: "Search rates…",
+        emptyTitle: "No rates",
+        emptyDescription: "Create the first shipping range.",
+        confirmDelete: "Delete",
+        confirm: {
+          deleteTitle: "Delete rate?",
+          deleteMessage:
+            "You are about to delete the range <strong>{from} – {to}</strong>. This action cannot be undone.",
+          deleteConfirm: "Delete",
+          deleteDeleting: "Deleting",
+        },
+        table: {
+          from: "From",
+          to: "To",
+          cost: "Cost",
+          sortOrder: "Range",
+          active: "Active",
+          statusActive: "Active",
+          statusInactive: "Inactive",
+          updatedAt: "Last updated",
+          updatedTooltip: "Last updated",
+          updatedAtSortIdle: "Sort by last updated",
+          updatedAtSortAsc: "Oldest first. Click to reverse",
+          updatedAtSortDesc: "Newest first. Click to clear sort",
+          actions: "Actions",
+        },
+        form: {
+          createTitle: "New rate",
+          editTitle: "Edit rate",
+          description: "Define the subtotal range and shipping cost.",
+          ariaLabel: "Shipping rate form",
+          minAmount: "From",
+          maxAmount: "To",
+          cost: "Cost",
+          minAmountPlaceholder: "0.00",
+          maxAmountPlaceholder: "100.00",
+          costPlaceholder: "14.99",
+          sortOrder: "Order",
+          active: "Active",
+          activeHint: "Only active rates are used at checkout.",
+          create: "Create rate",
+          save: "Save",
+          saving: "Saving",
+          cancel: "Cancel",
+        },
+        toast: {
+          created: "Rate created",
+          updated: "Rate updated",
+          deleted: "Rate deleted",
+          updateError: "Could not update the rate",
+          deleteError: "Could not delete the rate",
+        },
+      },
     },
     header: {
       languageToggle: "Switch language",

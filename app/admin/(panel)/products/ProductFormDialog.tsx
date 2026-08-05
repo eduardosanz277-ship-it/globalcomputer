@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -31,7 +31,7 @@ import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label, RequiredMark } from "@/components/ui/label";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
 import { cn } from "@/utils/cn";
 import {
@@ -57,6 +57,9 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { ProductPricingTab } from "./ProductPricingTab";
 
 const PRODUCT_FORM_ID = "product-form-slide-over";
+
+/** Alto mínimo de las demás pestañas = alto natural de Información general. */
+const productFormSectionClassName = adminSlideOverSectionClassName;
 
 type Props = {
   open: boolean;
@@ -100,6 +103,8 @@ export function ProductFormDialog({
       priceBusiness: 0,
       discountClientPct: 0,
       discountBusinessPct: 0,
+      shippingType: "standard",
+      shippingSurchargePerUnit: undefined as unknown as number,
       active: true,
       featured: false,
       manualPdfUrl: "",
@@ -160,6 +165,12 @@ export function ProductFormDialog({
         priceBusiness: product.priceBusiness,
         discountClientPct: product.discountClientPct,
         discountBusinessPct: product.discountBusinessPct,
+        shippingType: product.shippingType,
+        shippingSurchargePerUnit:
+          product.shippingType === "non_standard" &&
+          product.shippingSurchargePerUnit > 0
+            ? product.shippingSurchargePerUnit
+            : (undefined as unknown as number),
         active: product.active,
         featured: product.featured,
         manualPdfUrl: product.manualPdfUrl ?? "",
@@ -193,6 +204,8 @@ export function ProductFormDialog({
         priceBusiness: 0,
         discountClientPct: 0,
         discountBusinessPct: 0,
+        shippingType: "standard",
+        shippingSurchargePerUnit: undefined as unknown as number,
         active: true,
         featured: false,
         manualPdfUrl: "",
@@ -214,7 +227,9 @@ export function ProductFormDialog({
   const localizedBrandTypeName = (type: BrandType): string =>
     locale === "en" ? type.nameEn?.trim() || type.name : type.name;
   const localizedBrandTypeBrandName = (type: BrandType): string =>
-    locale === "en" ? type.brandNameEn?.trim() || type.brandName : type.brandName;
+    locale === "en"
+      ? type.brandNameEn?.trim() || type.brandName
+      : type.brandName;
   const localizedCategoryName = (category: AdminCategory): string =>
     locale === "en" ? category.nameEn?.trim() || category.name : category.name;
 
@@ -514,11 +529,14 @@ function ProductFormBody({
   const watchedPlacementCategoryId = form.watch("placementCategoryId");
   const images = useServiceImagesManager(existingImages);
   const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
+  const generalSectionRef = useRef<HTMLElement>(null);
+  const [sectionMinHeightPx, setSectionMinHeightPx] = useState<number>();
 
   type ProductFormTabId =
     | "general"
     | "description"
     | "pricing"
+    | "shipping"
     | "media"
     | "characteristics"
     | "specifications";
@@ -527,6 +545,7 @@ function ProductFormBody({
     { id: "general", label: t("admin.products.form.tabs.general") },
     { id: "description", label: t("admin.products.form.tabs.description") },
     { id: "pricing", label: t("admin.products.form.tabs.pricing") },
+    { id: "shipping", label: t("admin.products.form.tabs.shipping") },
     { id: "media", label: t("admin.products.form.tabs.media") },
     {
       id: "characteristics",
@@ -545,6 +564,31 @@ function ProductFormBody({
   const [specificationsLanguageTab, setSpecificationsLanguageTab] = useState<
     "es" | "en"
   >(locale === "en" ? "en" : "es");
+
+  useLayoutEffect(() => {
+    if (activeTab !== "general") return;
+    const el = generalSectionRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      const next = Math.ceil(el.getBoundingClientRect().height);
+      if (next > 0) setSectionMinHeightPx(next);
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [
+    activeTab,
+    watchedPlacementCategoryId,
+    locale,
+    subcategoriesForCategory.length,
+  ]);
+
+  const sectionMinHeightStyle = sectionMinHeightPx
+    ? ({ minHeight: sectionMinHeightPx } as const)
+    : undefined;
 
   useEffect(() => {
     const next = locale === "en" ? "en" : "es";
@@ -573,7 +617,10 @@ function ProductFormBody({
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label, locale));
     return [
-      { value: "all", label: t("admin.products.form.characteristics.filterAll") },
+      {
+        value: "all",
+        label: t("admin.products.form.characteristics.filterAll"),
+      },
       ...dynamic,
     ];
   }, [locale, specificOptions, t]);
@@ -625,12 +672,21 @@ function ProductFormBody({
     );
   };
 
+  const removeContentTopMargin =
+    activeTab === "shipping" ||
+    activeTab === "media" ||
+    activeTab === "characteristics" ||
+    activeTab === "specifications";
+
   return (
     <Form
       id={PRODUCT_FORM_ID}
       form={form}
       onSubmit={onSubmitForm}
-      className="flex min-h-0 min-w-0 flex-col gap-0"
+      className={cn(
+        "flex min-h-0 min-w-0 flex-col gap-0",
+        removeContentTopMargin && "space-y-0",
+      )}
     >
       <div
         role="tablist"
@@ -658,7 +714,10 @@ function ProductFormBody({
 
       <div className="relative z-0 min-h-0 flex-1 space-y-4">
         {activeTab === "general" && (
-          <section className={adminSlideOverSectionClassName}>
+          <section
+            ref={generalSectionRef}
+            className={productFormSectionClassName}
+          >
             <div className="w-full">
               <div>
                 <FormField
@@ -783,7 +842,9 @@ function ProductFormBody({
                 </Label>
                 {!watchedPlacementCategoryId ? (
                   <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                    {t("admin.products.form.fields.subcategoryPickCategoryHint")}
+                    {t(
+                      "admin.products.form.fields.subcategoryPickCategoryHint",
+                    )}
                   </p>
                 ) : subcategoriesForCategory.length === 0 ? (
                   <p className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
@@ -811,10 +872,14 @@ function ProductFormBody({
                             />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-foreground">
-                                {t("admin.products.form.fields.subcategoryOnlyCategory")}
+                                {t(
+                                  "admin.products.form.fields.subcategoryOnlyCategory",
+                                )}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {t("admin.products.form.fields.subcategoryNone")}
+                                {t(
+                                  "admin.products.form.fields.subcategoryNone",
+                                )}
                               </p>
                             </div>
                           </label>
@@ -866,14 +931,19 @@ function ProductFormBody({
               <FormSwitchField<ProductFormValues>
                 name="featured"
                 label={t("admin.products.form.fields.featured")}
-                description={t("admin.products.form.fields.featuredDescription")}
+                description={t(
+                  "admin.products.form.fields.featuredDescription",
+                )}
               />
             </div>
           </section>
         )}
 
         {activeTab === "description" && (
-          <section className={adminSlideOverSectionClassName}>
+          <section
+            className={productFormSectionClassName}
+            style={sectionMinHeightStyle}
+          >
             <div className="space-y-2">
               <div
                 role="tablist"
@@ -950,7 +1020,9 @@ function ProductFormBody({
               name="description"
               control={form.control}
               render={({ field }) => (
-                <div className={cn(descriptionLanguageTab !== "es" && "hidden")}>
+                <div
+                  className={cn(descriptionLanguageTab !== "es" && "hidden")}
+                >
                   <ProductDescriptionEditor
                     id="product-description-rich"
                     label={t("admin.products.form.fields.description")}
@@ -966,7 +1038,9 @@ function ProductFormBody({
               name="descriptionEn"
               control={form.control}
               render={({ field }) => (
-                <div className={cn(descriptionLanguageTab !== "en" && "hidden")}>
+                <div
+                  className={cn(descriptionLanguageTab !== "en" && "hidden")}
+                >
                   <ProductDescriptionEditor
                     id="product-description-rich-en"
                     label={t("admin.products.form.fields.descriptionEn")}
@@ -985,13 +1059,170 @@ function ProductFormBody({
           <ProductPricingTab
             form={form}
             isPending={isPending}
-            sectionClassName={adminSlideOverSectionClassName}
+            sectionClassName={productFormSectionClassName}
+            sectionStyle={sectionMinHeightStyle}
           />
         </div>
 
+        {activeTab === "shipping" && (
+          <section
+            className={productFormSectionClassName}
+            style={sectionMinHeightStyle}
+          >
+            <header className="space-y-1">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                {t("admin.products.form.shipping.title")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.products.form.shipping.description")}
+              </p>
+            </header>
+
+            <Controller
+              name="shippingType"
+              control={form.control}
+              render={({ field }) => (
+                <div
+                  role="radiogroup"
+                  aria-label={t("admin.products.form.fields.shippingType")}
+                  className="space-y-2"
+                >
+                  <div className="rounded-lg border border-border/60 p-3">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <Input
+                        type="radio"
+                        name="product-shipping-type"
+                        checked={field.value === "standard"}
+                        onChange={() => {
+                          field.onChange("standard");
+                          form.setValue("shippingSurchargePerUnit", 0, {
+                            shouldValidate: false,
+                            shouldDirty: true,
+                          });
+                          form.clearErrors("shippingSurchargePerUnit");
+                        }}
+                        disabled={isPending}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {t("admin.products.form.fields.shippingTypeStandard")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(
+                            "admin.products.form.fields.shippingTypeStandardHint",
+                          )}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="rounded-lg border border-border/60 p-3">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <Input
+                        type="radio"
+                        name="product-shipping-type"
+                        checked={field.value === "non_standard"}
+                        onChange={() => {
+                          field.onChange("non_standard");
+                          const current = form.getValues(
+                            "shippingSurchargePerUnit",
+                          );
+                          if (!(typeof current === "number" && current > 0)) {
+                            form.setValue(
+                              "shippingSurchargePerUnit",
+                              undefined as unknown as number,
+                              {
+                                shouldValidate: false,
+                                shouldDirty: true,
+                              },
+                            );
+                          }
+                          form.clearErrors("shippingSurchargePerUnit");
+                        }}
+                        disabled={isPending}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {t(
+                            "admin.products.form.fields.shippingTypeNonStandard",
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(
+                            "admin.products.form.fields.shippingTypeNonStandardHint",
+                          )}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+            />
+            {errors.shippingType?.message ? (
+              <p className="text-sm text-destructive">
+                {String(errors.shippingType.message)}
+              </p>
+            ) : null}
+
+            {form.watch("shippingType") === "non_standard" && (
+              <Controller
+                name="shippingSurchargePerUnit"
+                control={form.control}
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingSurchargePerUnit">
+                      {t("admin.products.form.fields.shippingSurchargePerUnit")}
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="shippingSurchargePerUnit"
+                      type="number"
+                      step="0.01"
+                      placeholder={t(
+                        "admin.products.form.fields.shippingSurchargePerUnitPlaceholder",
+                      )}
+                      disabled={isPending}
+                      className={adminServiceLikeInputClassName}
+                      autoComplete="off"
+                      name={field.name}
+                      ref={field.ref}
+                      value={
+                        field.value === undefined || field.value === null
+                          ? ""
+                          : field.value
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === "") {
+                          field.onChange(undefined);
+                          form.clearErrors("shippingSurchargePerUnit");
+                          return;
+                        }
+                        const n = Number(raw);
+                        field.onChange(Number.isFinite(n) ? n : undefined);
+                        void form.trigger("shippingSurchargePerUnit");
+                      }}
+                      onBlur={() => {
+                        field.onBlur();
+                        void form.trigger("shippingSurchargePerUnit");
+                      }}
+                    />
+                    {errors.shippingSurchargePerUnit?.message ? (
+                      <p className="mt-1 text-sm text-destructive" role="alert">
+                        {String(errors.shippingSurchargePerUnit.message)}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              />
+            )}
+          </section>
+        )}
+
         {activeTab === "media" && (
           <>
-            <section className={adminSlideOverSectionClassName}>
+            <section className={productFormSectionClassName}>
               <header className="space-y-1">
                 <h2 className="text-sm font-semibold tracking-wide text-foreground">
                   {t("admin.products.form.media.imagesTitle")}
@@ -1021,15 +1252,13 @@ function ProductFormBody({
               )}
             </section>
 
-            <section className={adminSlideOverSectionClassName}>
+            <section className={productFormSectionClassName}>
               <header className="space-y-1">
                 <h2 className="text-sm font-semibold tracking-wide text-foreground">
                   {t("admin.products.form.media.manualTitle")}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {
-                    t("admin.products.form.media.manualDescription")
-                  }
+                  {t("admin.products.form.media.manualDescription")}
                 </p>
               </header>
 
@@ -1107,7 +1336,9 @@ function ProductFormBody({
                                       aria-hidden
                                     />
                                     <span className="sr-only">
-                                      {t("admin.products.form.media.manualReplace")}
+                                      {t(
+                                        "admin.products.form.media.manualReplace",
+                                      )}
                                     </span>
                                   </label>
                                 </TooltipTrigger>
@@ -1129,7 +1360,9 @@ function ProductFormBody({
                                   >
                                     <Trash2 className="h-4 w-4" aria-hidden />
                                     <span className="sr-only">
-                                      {t("admin.products.form.media.manualDelete")}
+                                      {t(
+                                        "admin.products.form.media.manualDelete",
+                                      )}
                                     </span>
                                   </button>
                                 </TooltipTrigger>
@@ -1154,7 +1387,10 @@ function ProductFormBody({
         )}
 
         {activeTab === "characteristics" && (
-          <section className={adminSlideOverSectionClassName}>
+          <section
+            className={productFormSectionClassName}
+            style={sectionMinHeightStyle}
+          >
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
                 {t("admin.products.form.characteristics.title")}
@@ -1297,9 +1533,12 @@ function ProductFormBody({
                               className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                               aria-label={t(
                                 "admin.products.form.characteristics.removeAria",
-                              ).replace("{name}", locale === "en"
-                                ? item.nameEn?.trim() || item.name
-                                : item.name)}
+                              ).replace(
+                                "{name}",
+                                locale === "en"
+                                  ? item.nameEn?.trim() || item.name
+                                  : item.name,
+                              )}
                             >
                               <X className="h-3 w-3" aria-hidden />
                             </button>
@@ -1315,7 +1554,10 @@ function ProductFormBody({
         )}
 
         {activeTab === "specifications" && (
-          <section className={adminSlideOverSectionClassName}>
+          <section
+            className={productFormSectionClassName}
+            style={sectionMinHeightStyle}
+          >
             <div className="space-y-2">
               <div
                 role="tablist"
@@ -1392,7 +1634,9 @@ function ProductFormBody({
               name="specifications"
               control={form.control}
               render={({ field }) => (
-                <div className={cn(specificationsLanguageTab !== "es" && "hidden")}>
+                <div
+                  className={cn(specificationsLanguageTab !== "es" && "hidden")}
+                >
                   <ProductDescriptionEditor
                     id="product-specifications-rich"
                     label={t("admin.products.form.fields.specifications")}
@@ -1408,7 +1652,9 @@ function ProductFormBody({
               name="specificationsEn"
               control={form.control}
               render={({ field }) => (
-                <div className={cn(specificationsLanguageTab !== "en" && "hidden")}>
+                <div
+                  className={cn(specificationsLanguageTab !== "en" && "hidden")}
+                >
                   <ProductDescriptionEditor
                     id="product-specifications-rich-en"
                     label={t("admin.products.form.fields.specificationsEn")}

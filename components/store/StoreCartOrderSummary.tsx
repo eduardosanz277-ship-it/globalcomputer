@@ -10,11 +10,66 @@ import type { PublicSiteOffer } from "@/lib/site-offer.types";
 import { gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+import type { ShippingQuote } from "@/modules/shipping/shipping.types";
 import { cn } from "@/utils/cn";
-import { Gift, Loader2 } from "lucide-react";
+import { Gift, Info, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "react-toastify";
+
+/** Skeleton de importe: mantiene layout estable mientras se actualizan precios (patrón ecommerce). */
+function CartAmountSkeleton({
+  size = "md",
+}: {
+  size?: "sm" | "md" | "lg";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-block animate-pulse rounded-md",
+        "bg-zinc-300/90 dark:bg-zinc-600/80",
+        size === "sm" && "h-3.5 w-14",
+        size === "md" && "h-4 w-16",
+        size === "lg" && "h-5 w-[4.75rem]",
+      )}
+      aria-hidden
+    />
+  );
+}
+
+function CartAmountValue({
+  pending,
+  size = "md",
+  updatingLabel,
+  children,
+  className,
+}: {
+  pending: boolean;
+  size?: "sm" | "md" | "lg";
+  updatingLabel: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex min-h-[1em] items-center justify-end",
+        className,
+      )}
+      aria-busy={pending || undefined}
+      aria-live="polite"
+    >
+      {pending ? (
+        <>
+          <CartAmountSkeleton size={size} />
+          <span className="sr-only">{updatingLabel}</span>
+        </>
+      ) : (
+        children
+      )}
+    </span>
+  );
+}
 
 export function StoreCartOrderSummary({
   items,
@@ -22,9 +77,9 @@ export function StoreCartOrderSummary({
   loading,
   tier,
   variant,
-  /** Panel lateral: al abrirse (`true`) se consulta de nuevo la oferta. */
   panelOpen,
   onContinueShopping,
+  onUiPendingChange,
 }: {
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
@@ -33,6 +88,8 @@ export function StoreCartOrderSummary({
   variant: "drawer" | "page";
   panelOpen?: boolean;
   onContinueShopping?: () => void;
+  /** Notifica al padre para sincronizar skeleton del listado con los importes. */
+  onUiPendingChange?: (pending: boolean) => void;
 }) {
   const { t } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
@@ -43,6 +100,12 @@ export function StoreCartOrderSummary({
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [liveOffer, setLiveOffer] = useState<PublicSiteOffer | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(
+    null,
+  );
+  const [shippingLoading, setShippingLoading] = useState(
+    () => items.length > 0,
+  );
 
   useEffect(() => {
     if (variant === "drawer" && !panelOpen) return;
@@ -66,8 +129,51 @@ export function StoreCartOrderSummary({
     };
   }, [variant, panelOpen]);
 
+  useEffect(() => {
+    if (variant === "drawer" && !panelOpen) return;
+    if (items.length === 0) {
+      setShippingQuote(null);
+      setShippingLoading(false);
+      return;
+    }
+    /** Mantener skeleton de envío alineado mientras aún cargan los productos. */
+    if (hasUnresolvedProducts) {
+      setShippingQuote(null);
+      setShippingLoading(true);
+      return;
+    }
+
+    let cancelled = false;
+    setShippingLoading(true);
+    (async () => {
+      try {
+        const res = await fetch("/api/shop/shipping/quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items }),
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          if (!cancelled) setShippingQuote(null);
+          return;
+        }
+        const data = (await res.json()) as ShippingQuote;
+        if (!cancelled) setShippingQuote(data);
+      } catch {
+        if (!cancelled) setShippingQuote(null);
+      } finally {
+        if (!cancelled) setShippingLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, hasUnresolvedProducts, variant, panelOpen]);
+
   async function goToStripeCheckout() {
     if (items.length === 0 || hasUnresolvedProducts) return;
+    if (shippingQuote?.requiresQuote) return;
     setCheckoutLoading(true);
     try {
       const res = await fetch("/api/checkout/session", {
@@ -97,8 +203,17 @@ export function StoreCartOrderSummary({
     }
   }
 
+  const requiresQuote = Boolean(shippingQuote?.requiresQuote);
   const checkoutDisabled =
-    loading || items.length === 0 || hasUnresolvedProducts || checkoutLoading;
+    loading ||
+    items.length === 0 ||
+    hasUnresolvedProducts ||
+    checkoutLoading ||
+    shippingLoading ||
+    requiresQuote ||
+    shippingQuote?.status === "no_rate" ||
+    shippingQuote?.status === "invalid";
+
   const offerResolved: PublicSiteOffer = liveOffer ?? {
     offerAmount: 0,
     offerPercentage: 0,
@@ -116,11 +231,77 @@ export function StoreCartOrderSummary({
     totalAfterDiscountUsd,
   } = computeSiteOfferOnSubtotal(subtotal, offerResolved);
 
+  const shippingTotal =
+    shippingQuote && shippingQuote.status === "ok"
+      ? shippingQuote.shippingTotal
+      : 0;
+  const orderTotal = requiresQuote
+    ? totalAfterDiscountUsd
+    : totalAfterDiscountUsd + shippingTotal;
+
   const offerText = t("storefront.cart.offerBanner")
     .replace("{pct}", formatOfferPercentage(offerPercentage))
     .replace("{amount}", formatUsd(offerAmount));
 
-  const amountPending = loading && items.length > 0 && hasUnresolvedProducts;
+  /** Productos, mutación o envío: un solo pending para importes (y listado vía callback). */
+  const pricesPending =
+    items.length > 0 &&
+    (loading || shippingLoading || hasUnresolvedProducts);
+
+  useEffect(() => {
+    onUiPendingChange?.(pricesPending);
+  }, [pricesPending, onUiPendingChange]);
+
+  useEffect(() => {
+    return () => {
+      onUiPendingChange?.(false);
+    };
+  }, [onUiPendingChange]);
+
+  const updatingLabel = t("storefront.cart.amountsUpdating");
+
+  const payButton = (
+    <Button
+      type="button"
+      size={variant === "page" ? "lg" : "default"}
+      className={cn(
+        "w-full rounded-xl",
+        variant === "drawer" && "sm:flex-1",
+      )}
+      disabled={checkoutDisabled}
+      onClick={goToStripeCheckout}
+    >
+      {checkoutLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+          {t("storefront.cart.openCheckout")}
+        </>
+      ) : (
+        t("storefront.cart.payWithStripe")
+      )}
+    </Button>
+  );
+
+  const quoteButton =
+    requiresQuote && shippingQuote?.whatsappUrl ? (
+      <a
+        href={shippingQuote.whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          buttonVariants({ size: variant === "page" ? "lg" : "default" }),
+          "inline-flex w-full items-center justify-center gap-2 rounded-xl",
+          variant === "drawer" && "sm:flex-1",
+        )}
+      >
+        <MessageCircle className="h-4 w-4" aria-hidden />
+        {t("storefront.cart.requestShippingQuote")}
+      </a>
+    ) : requiresQuote ? (
+      <Button type="button" className="w-full rounded-xl" disabled>
+        {t("storefront.cart.requestShippingQuoteUnavailable")}
+      </Button>
+    ) : null;
 
   return (
     <div
@@ -131,8 +312,8 @@ export function StoreCartOrderSummary({
         variant === "drawer" && "px-0",
       )}
     >
-      {hasOffer ? (
-        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+      {hasOffer && !offerApplies ? (
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-sm font-medium text-emerald-800">
           <Gift
             className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700"
             aria-hidden
@@ -164,81 +345,173 @@ export function StoreCartOrderSummary({
             {totalUnits === 1
               ? t("storefront.cart.itemOne")
               : t("storefront.cart.itemMany")}
-            )
+            ):
           </span>
-          <span
-            className={cn(
-              "font-bold tabular-nums text-foreground",
-              offerApplies ? "text-base" : "text-xl",
-            )}
+          <CartAmountValue
+            pending={pricesPending}
+            size="md"
+            updatingLabel={updatingLabel}
+            className="text-base font-bold tabular-nums text-foreground"
           >
-            {amountPending ? "—" : formatUsd(subtotal)}
-          </span>
+            {formatUsd(subtotal)}
+          </CartAmountValue>
         </div>
 
         {offerApplies ? (
+          <div
+            className={cn(
+              "flex items-baseline justify-between gap-2 text-emerald-800 dark:text-emerald-200/90",
+              variant === "page" && "text-sm",
+              variant === "drawer" && "text-xs",
+            )}
+          >
+            <span className="font-semibold">
+              {t("storefront.cart.offerDiscountLabel").replace(
+                "{pct}",
+                formatOfferPercentage(offerPercentage),
+              )}
+              :
+            </span>
+            <CartAmountValue
+              pending={pricesPending}
+              size="sm"
+              updatingLabel={updatingLabel}
+              className="font-semibold tabular-nums"
+            >
+              {`−${formatUsd(discountUsd)}`}
+            </CartAmountValue>
+          </div>
+        ) : null}
+
+        {requiresQuote ? (
+          <div
+            role="status"
+            className="rounded-xl border border-amber-200/70 border-l-[3px] border-l-amber-400/80 bg-amber-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
+          >
+            <div className="min-w-0 space-y-1.5">
+              <p className="flex items-start gap-1.5 font-semibold leading-snug text-amber-950/90">
+                <Info
+                  className="mt-px h-3.5 w-3.5 shrink-0 text-amber-600/80"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <span className="min-w-0 break-words">
+                  {t("storefront.cart.shippingQuoteTitle")}
+                </span>
+              </p>
+              <p className="leading-relaxed text-amber-900/70">
+                {t("storefront.cart.shippingQuoteDescription")}
+              </p>
+            </div>
+          </div>
+        ) : (
           <>
             <div
               className={cn(
-                "flex items-baseline justify-between gap-2 text-emerald-800 dark:text-emerald-200/90",
+                "flex items-baseline justify-between gap-2",
                 variant === "page" && "text-sm",
                 variant === "drawer" && "text-xs",
               )}
             >
-              <span className="font-semibold">
-                {t("storefront.cart.offerDiscountLabel").replace(
-                  "{pct}",
-                  formatOfferPercentage(offerPercentage),
-                )}
+              <span className="font-semibold text-foreground">
+                {t("storefront.cart.shippingBaseLabel")}:
               </span>
-              <span className="font-semibold tabular-nums">
-                {amountPending ? "—" : `−${formatUsd(discountUsd)}`}
-              </span>
+              <CartAmountValue
+                pending={pricesPending}
+                size="sm"
+                updatingLabel={updatingLabel}
+                className="font-semibold tabular-nums text-foreground"
+              >
+                {formatUsd(shippingQuote?.baseRate ?? 0)}
+              </CartAmountValue>
             </div>
-            <div className="flex items-baseline justify-between gap-2 border-t border-border/60 pt-3">
-              <span
+            {pricesPending || (shippingQuote?.surchargesTotal ?? 0) > 0 ? (
+              <div
                 className={cn(
-                  "font-semibold text-foreground",
-                  variant === "page" ? "text-lg" : "text-base sm:text-lg",
+                  "flex items-baseline justify-between gap-2",
+                  variant === "page" && "text-sm",
+                  variant === "drawer" && "text-xs",
                 )}
               >
-                {t("storefront.cart.estimatedTotal")}
+                <span className="font-semibold text-foreground">
+                  {t("storefront.cart.shippingSurchargeLabel")}:
+                </span>
+                <CartAmountValue
+                  pending={pricesPending}
+                  size="sm"
+                  updatingLabel={updatingLabel}
+                  className="font-semibold tabular-nums text-foreground"
+                >
+                  {formatUsd(shippingQuote?.surchargesTotal ?? 0)}
+                </CartAmountValue>
+              </div>
+            ) : null}
+            <div
+              className={cn(
+                "flex items-baseline justify-between gap-2",
+                variant === "page" && "text-sm",
+                variant === "drawer" && "text-xs",
+              )}
+            >
+              <span className="font-semibold text-foreground">
+                {t("storefront.cart.shippingTotalLabel")}:
               </span>
-              <span
-                className={cn(
-                  "font-semibold tabular-nums text-foreground",
-                  variant === "page" ? "text-xl" : "text-lg sm:text-xl",
-                )}
+              <CartAmountValue
+                pending={pricesPending}
+                size="sm"
+                updatingLabel={updatingLabel}
+                className="font-semibold tabular-nums text-foreground"
               >
-                {amountPending ? "—" : formatUsd(totalAfterDiscountUsd)}
-              </span>
+                {formatUsd(shippingTotal)}
+              </CartAmountValue>
             </div>
           </>
-        ) : null}
+        )}
 
+        <div className="flex items-baseline justify-between gap-2 border-t border-border pt-3">
+          <span
+            className={cn(
+              "font-semibold text-foreground",
+              variant === "page" ? "text-lg" : "text-base sm:text-lg",
+            )}
+          >
+            {t("storefront.cart.estimatedTotal")}:
+          </span>
+          <CartAmountValue
+            pending={pricesPending}
+            size="lg"
+            updatingLabel={updatingLabel}
+            className={cn(
+              "font-semibold tabular-nums text-foreground",
+              variant === "page" ? "text-xl" : "text-lg sm:text-xl",
+            )}
+          >
+            {formatUsd(orderTotal)}
+          </CartAmountValue>
+        </div>
+
+        {/* Temporalmente oculto
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           {t("storefront.cart.stripeInfo")}
         </p>
+        */}
       </div>
+
+      {variant === "page" || (variant === "drawer" && items.length > 0) ? (
+        <div
+          className={cn(
+            "h-px w-full bg-border",
+            variant === "drawer" && "-mx-4",
+            variant === "page" && "lg:-mx-6",
+          )}
+          role="separator"
+          aria-label={t("storefront.cart.sectionSeparatorAria")}
+        />
+      ) : null}
 
       {variant === "page" ? (
         <div className="flex flex-col gap-2 pt-2">
-          <Button
-            type="button"
-            size="lg"
-            className="w-full rounded-xl"
-            disabled={checkoutDisabled}
-            onClick={goToStripeCheckout}
-          >
-            {checkoutLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                {t("storefront.cart.openCheckout")}
-              </>
-            ) : (
-              t("storefront.cart.payWithStripe")
-            )}
-          </Button>
+          {requiresQuote ? quoteButton : payButton}
           <Link
             href="/products"
             className={cn(
@@ -274,21 +547,7 @@ export function StoreCartOrderSummary({
               {t("storefront.cart.viewCart")}
             </Link>
           )}
-          <Button
-            type="button"
-            className="w-full rounded-xl sm:flex-1"
-            disabled={checkoutDisabled}
-            onClick={goToStripeCheckout}
-          >
-            {checkoutLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                {t("storefront.cart.openCheckout")}
-              </>
-            ) : (
-              t("storefront.cart.payWithStripe")
-            )}
-          </Button>
+          {requiresQuote ? quoteButton : payButton}
         </div>
       ) : null}
     </div>

@@ -71,6 +71,18 @@ export const productFormSchema = z.object({
   priceBusiness: moneySchema,
   discountClientPct: percentSchema,
   discountBusinessPct: percentSchema,
+  shippingType: z.enum(["standard", "non_standard"]),
+  /** Validación de obligatorio / > 0 solo si `shippingType === non_standard` (ver `superRefine`). */
+  shippingSurchargePerUnit: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    if (typeof val === "number" && Number.isNaN(val)) return undefined;
+    const n = typeof val === "number" ? val : Number(val);
+    return Number.isFinite(n) ? n : Number.NaN;
+  }, z
+    .number({
+      invalid_type_error: "Ingresa un recargo válido",
+    })
+    .optional()),
   active: z.boolean(),
   featured: z.boolean(),
   manualPdfUrl: z
@@ -106,7 +118,34 @@ export const productFormSchema = z.object({
         message: "Selecciona una subcategoría válida",
       },
     ),
-});
+})
+  .superRefine((data, ctx) => {
+    if (data.shippingType !== "non_standard") return;
+    const surcharge = data.shippingSurchargePerUnit;
+    if (surcharge === undefined || surcharge === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El recargo es obligatorio",
+        path: ["shippingSurchargePerUnit"],
+      });
+      return;
+    }
+    if (!(Number(surcharge) > 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El recargo debe ser mayor que 0",
+        path: ["shippingSurchargePerUnit"],
+      });
+    }
+  })
+  .transform((data) =>
+    data.shippingType === "standard"
+      ? { ...data, shippingSurchargePerUnit: 0 }
+      : {
+          ...data,
+          shippingSurchargePerUnit: data.shippingSurchargePerUnit as number,
+        },
+  );
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 export type ProductCharacteristicValueInputValues = z.infer<

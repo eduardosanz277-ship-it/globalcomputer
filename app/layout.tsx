@@ -70,7 +70,17 @@ export default async function RootLayout({
           <main className="relative isolate z-0 flex-1">{children}</main>
           <ConditionalSiteFooter contact={contact} />
           <HomeBackToTopButton />
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            pauseOnHover
+            pauseOnFocusLoss
+            newestOnTop
+            closeOnClick
+            draggable
+            style={{ zIndex: 10000 }}
+            toastClassName="pointer-events-auto"
+          />
         </I18nProvider>
       </body>
     </html>

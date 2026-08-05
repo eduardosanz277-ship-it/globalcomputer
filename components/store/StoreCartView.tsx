@@ -11,6 +11,7 @@ import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import { cn } from "@/utils/cn";
 import { ShoppingBasket } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const { t } = useI18n();
@@ -19,6 +20,8 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const { productsById, loading } = useCartProductsMap(ids);
   const { mutationPending, runCartMutation } = useRunCartMutation();
   const listBusy = loading || mutationPending;
+  /** Empieza en true para no pintar el listado un frame antes que los importes. */
+  const [summaryPending, setSummaryPending] = useState(true);
 
   if (items.length === 0) {
     return (
@@ -56,11 +59,12 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           productsById={productsById}
           loading={loading}
           mutationPending={mutationPending}
+          summaryPending={summaryPending}
           runCartMutation={runCartMutation}
           tier={tier}
         />
         <div
-          className="-mx-4 h-px bg-border/70 lg:hidden"
+          className="h-px bg-border lg:hidden"
           role="separator"
           aria-label={t("storefront.cart.sectionSeparatorAria")}
         />
@@ -73,6 +77,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           loading={listBusy}
           tier={tier}
           variant="page"
+          onUiPendingChange={setSummaryPending}
         />
       </aside>
     </div>

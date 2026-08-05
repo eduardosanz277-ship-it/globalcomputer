@@ -15,6 +15,7 @@ import {
   Minus,
   Plus,
   Star,
+  Info,
   UserRound,
   ZoomIn,
 } from "lucide-react";
@@ -43,6 +44,7 @@ import {
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
+import { plainTextFromHtml } from "@/lib/plainTextFromHtml";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
@@ -636,7 +638,7 @@ export function StorefrontProductDetailView({
   initialProductReviews,
   similarProducts,
 }: Props) {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -655,6 +657,7 @@ export function StorefrontProductDetailView({
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
   const isNew = isNewFromCreatedAt(product.created_at);
+  const hasDescription = Boolean(plainTextFromHtml(product.description));
 
   useEffect(() => {
     setCartQty(1);
@@ -905,10 +908,10 @@ export function StorefrontProductDetailView({
             ) : null}
           </div>
 
-          {product.description?.trim() ? (
+          {hasDescription ? (
             <div className="hidden lg:block">
               <ProductDescriptionCollapsible
-                description={product.description}
+                description={product.description ?? ""}
               />
             </div>
           ) : null}
@@ -1068,6 +1071,29 @@ export function StorefrontProductDetailView({
             </div>
           </div>
 
+          {product.shipping_type === "non_standard" ? (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-200/70 border-l-[3px] border-l-amber-400/80 bg-amber-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
+            >
+              <div className="min-w-0 space-y-1.5">
+                <p className="flex items-start gap-1.5 font-semibold leading-snug text-amber-950/90">
+                  <Info
+                    className="mt-px h-3.5 w-3.5 shrink-0 text-amber-600/80"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 break-words">
+                    {t("storefront.productDetail.specialShippingTitle")}
+                  </span>
+                </p>
+                <p className="leading-relaxed text-amber-900/70">
+                  {t("storefront.productDetail.specialShippingDescription")}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           {product.manual_pdf_url ? (
             <a
               href={product.manual_pdf_url}
@@ -1080,10 +1106,10 @@ export function StorefrontProductDetailView({
             </a>
           ) : null}
 
-          {product.description?.trim() ? (
+          {hasDescription ? (
             <div className="lg:hidden">
               <ProductDescriptionCollapsible
-                description={product.description}
+                description={product.description ?? ""}
               />
             </div>
           ) : null}

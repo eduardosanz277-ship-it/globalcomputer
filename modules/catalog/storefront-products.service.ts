@@ -39,6 +39,8 @@ export const STOREFRONT_PRODUCT_SELECT = `
   stock,
   discount_business_pct,
   discount_client_pct,
+  shipping_type,
+  shipping_surcharge_per_unit,
   brand_id,
   brand_type_id,
   category_id,
@@ -361,6 +363,9 @@ export function mapStorefrontProductRow(
     stock: Number(row.stock ?? 0),
     discount_business_pct: Number(row.discount_business_pct ?? 0),
     discount_client_pct: Number(row.discount_client_pct ?? 0),
+    shipping_type:
+      row.shipping_type === "non_standard" ? "non_standard" : "standard",
+    shipping_surcharge_per_unit: Number(row.shipping_surcharge_per_unit ?? 0),
     brand_id: String(row.brand_id),
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,

@@ -148,7 +148,7 @@ export default async function CatalogoSlugPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div className="mx-auto mt-6 max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
           <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>
@@ -229,7 +229,7 @@ export default async function CatalogoSlugPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div className="mx-auto mt-6 max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
           <StorefrontProductCatalog products={products} priceTier={priceTier} />
         </div>
       </main>

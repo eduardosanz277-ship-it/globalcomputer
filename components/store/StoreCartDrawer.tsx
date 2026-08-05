@@ -12,6 +12,7 @@ import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import { cn } from "@/utils/cn";
 import { ShoppingBasket } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 export function StoreCartDrawer({
   open,
@@ -28,6 +29,8 @@ export function StoreCartDrawer({
   const { productsById, loading } = useCartProductsMap(ids);
   const { mutationPending, runCartMutation } = useRunCartMutation();
   const listBusy = loading || mutationPending;
+  /** Empieza en true para no pintar el listado un frame antes que los importes. */
+  const [summaryPending, setSummaryPending] = useState(true);
 
   /** Solo el carrito vacío real; no mezclar con `loading` (evita skeleton + pie inconsistente al borrar). */
   const isCartEmpty = items.length === 0;
@@ -43,7 +46,7 @@ export function StoreCartDrawer({
       contentClassName="bg-muted/90"
       footer={
         !isCartEmpty ? (
-          <SlideOverFooter className="flex-col items-stretch gap-0 border-t border-border/70 bg-muted/10 py-5">
+          <SlideOverFooter className="flex-col items-stretch gap-0 border-t border-border bg-muted/10 px-4 py-5">
             <StoreCartOrderSummary
               items={items}
               productsById={productsById}
@@ -52,6 +55,7 @@ export function StoreCartDrawer({
               variant="drawer"
               panelOpen={open}
               onContinueShopping={onClose}
+              onUiPendingChange={setSummaryPending}
             />
           </SlideOverFooter>
         ) : null
@@ -89,6 +93,7 @@ export function StoreCartDrawer({
             productsById={productsById}
             loading={loading}
             mutationPending={mutationPending}
+            summaryPending={summaryPending}
             runCartMutation={runCartMutation}
             tier={tier}
             dense

@@ -19,6 +19,8 @@ export type StorefrontProduct = {
   stock: number;
   discount_business_pct: number;
   discount_client_pct: number;
+  shipping_type: "standard" | "non_standard";
+  shipping_surcharge_per_unit: number;
   slug: string;
   brand_id: string;
   brand_type_id: string | null;

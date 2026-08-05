@@ -18,7 +18,7 @@ import {
 } from "@/modules/catalog/storefront-product.shared";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
-import { Trash2 } from "lucide-react";
+import { ImageOff, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -39,11 +39,11 @@ function CartLineSkeleton({ dense }: { dense?: boolean }) {
         dense && "p-2.5",
       )}
     >
-      <div className="h-20 w-20 shrink-0 animate-pulse rounded-xl bg-muted md:h-24 md:w-24" />
+      <div className="h-20 w-20 shrink-0 animate-pulse rounded-xl bg-zinc-300/90 dark:bg-zinc-600/80 md:h-24 md:w-24" />
       <div className="min-w-0 flex-1 space-y-2 py-0.5">
-        <div className="h-4 w-56 max-w-[85%] animate-pulse rounded bg-muted" />
-        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-8 w-28 animate-pulse rounded-lg bg-muted" />
+        <div className="h-4 w-56 max-w-[85%] animate-pulse rounded bg-zinc-300/90 dark:bg-zinc-600/80" />
+        <div className="h-3 w-24 animate-pulse rounded bg-zinc-300/90 dark:bg-zinc-600/80" />
+        <div className="h-8 w-28 animate-pulse rounded-lg bg-zinc-300/90 dark:bg-zinc-600/80" />
       </div>
     </div>
   );
@@ -137,8 +137,16 @@ function CartLineRow({
             sizes="96px"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-            {t("storefront.cart.noPhoto")}
+          <div
+            className="flex h-full w-full items-center justify-center text-muted-foreground"
+            role="img"
+            aria-label={t("storefront.card.imageMissingAria")}
+          >
+            <ImageOff
+              className="h-7 w-7 shrink-0 opacity-50"
+              strokeWidth={1.25}
+              aria-hidden
+            />
           </div>
         )}
       </Link>
@@ -197,6 +205,7 @@ export function StoreCartLineItems({
   productsById,
   loading,
   mutationPending,
+  summaryPending,
   runCartMutation,
   tier,
   dense,
@@ -206,6 +215,8 @@ export function StoreCartLineItems({
   productsById: Record<string, StorefrontProduct>;
   loading: boolean;
   mutationPending: boolean;
+  /** Pending de importes/envío: listado y precios se revelan a la vez. */
+  summaryPending?: boolean;
   runCartMutation: (fn: () => Promise<void>) => Promise<void>;
   tier: StorefrontPriceTier;
   dense?: boolean;
@@ -215,7 +226,7 @@ export function StoreCartLineItems({
     return null;
   }
 
-  const showSkeleton = loading || mutationPending;
+  const showSkeleton = loading || mutationPending || Boolean(summaryPending);
 
   if (showSkeleton) {
     const skeletonCount = Math.max(items.length, 2);

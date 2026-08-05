@@ -21,6 +21,8 @@ export type StorefrontProductDetail = {
   price_business: number;
   discount_business_pct: number;
   discount_client_pct: number;
+  shipping_type: "standard" | "non_standard";
+  shipping_surcharge_per_unit: number;
   manual_pdf_url: string | null;
   brand_id: string;
   brand_type_id: string | null;
@@ -77,6 +79,8 @@ const DETAIL_SELECT = `
   price_business,
   discount_business_pct,
   discount_client_pct,
+  shipping_type,
+  shipping_surcharge_per_unit,
   manual_pdf_url,
   brand_id,
   brand_type_id,
@@ -226,6 +230,9 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     price_business: Number(row.price_business ?? 0),
     discount_business_pct: Number(row.discount_business_pct ?? 0),
     discount_client_pct: Number(row.discount_client_pct ?? 0),
+    shipping_type:
+      row.shipping_type === "non_standard" ? "non_standard" : "standard",
+    shipping_surcharge_per_unit: Number(row.shipping_surcharge_per_unit ?? 0),
     manual_pdf_url:
       row.manual_pdf_url != null && String(row.manual_pdf_url).trim() !== ""
         ? String(row.manual_pdf_url)

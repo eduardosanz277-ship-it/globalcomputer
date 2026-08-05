@@ -1223,6 +1223,7 @@ export function StorefrontProductCatalog({
                       isClearable={false}
                       options={pageSizeSelectOptions}
                       value={pageSizeValue}
+                      menuPlacement="top"
                       onChange={(opt) => {
                         if (opt) {
                           setPageSize(opt.value);

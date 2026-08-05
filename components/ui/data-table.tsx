@@ -46,8 +46,9 @@ export type DataTableColumnMeta = {
 };
 
 /**
- * Ids de columna cuya primera celda (datos) en vista **card** (`md:hidden`) comparte fila
- * con el menú de acciones, igual que la tabla de Usuarios (etiqueta + ⋮ arriba; valor debajo).
+ * Ids de columna cuya primera celda en vista **card** (`md:hidden`) comparte
+ * bloque con el menú de acciones (etiqueta + valor con el mismo `gap-1` que el
+ * resto de campos; acciones a la derecha).
  */
 const CARD_PRIMARY_COLUMN_IDS = new Set([
   "user",
@@ -57,6 +58,7 @@ const CARD_PRIMARY_COLUMN_IDS = new Set([
   "name",
   "specific",
   "service",
+  "minAmount",
 ]);
 
 function cellAlignClasses(meta: DataTableColumnMeta | undefined) {
@@ -94,7 +96,8 @@ interface DataTableProps<TData, TValue> {
   /**
    * `stacked`: una fila buscar, otra filtros (p. ej. dos columnas), otra acciones.
    * Útil cuando hay varios filtros y se quiere orden vertical claro.
-   * En `default`, desde `min-[1440px]` el orden es: buscar → filtros → acciones (estas últimas al final).
+   * En `default`, con filtros: desde `min-[1440px]` el orden es buscar → filtros → acciones.
+   * Solo buscar + acciones: desde `md` siempre en la misma fila.
    * En `stacked`, búsqueda y bloques siguientes pasan a una fila desde `min-[1440px]`.
    */
   toolbarLayout?: "default" | "stacked";
@@ -125,6 +128,14 @@ interface DataTableProps<TData, TValue> {
    * Las columnas ordenables deben marcar `enableSorting: true`; el resto hereda `enableSorting: false`.
    */
   enableSorting?: boolean;
+  /** Ordenación inicial (p. ej. `[{ id: "minAmount", desc: false }]`). */
+  defaultSorting?: SortingState;
+  /** Título del empty state cuando no hay filas en `data`. */
+  emptyTitle?: string;
+  /** Descripción opcional del empty state sin datos. */
+  emptyDescription?: string;
+  /** Título cuando hay datos pero el filtro no coincide. */
+  emptyNoMatchTitle?: string;
   /** Clases por fila (p. ej. fondo según estado). Si no se pasa, se usa hover por defecto. */
   getRowClassName?: (row: TData) => string | undefined;
   /** Handler opcional para hacer clickeable cada fila. */
@@ -172,6 +183,10 @@ export function DataTable<TData, TValue>({
   paginationClassName,
   paginationButtonVariant = "outline",
   enableSorting = false,
+  defaultSorting = [],
+  emptyTitle = "No hay datos disponibles.",
+  emptyDescription,
+  emptyNoMatchTitle = "Sin coincidencias con la búsqueda.",
   getRowClassName,
   onRowClick,
   renderMobileRow,
@@ -187,7 +202,7 @@ export function DataTable<TData, TValue>({
     if (externalGlobalFilter === undefined) setInternalGlobalFilter(value);
     onExternalGlobalFilterChange?.(value);
   };
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: defaultPageSize,
@@ -346,17 +361,20 @@ export function DataTable<TData, TValue>({
           className={cn(
             "data-table-toolbar flex min-w-0 flex-col gap-3",
             toolbarSearchActionsOnly &&
-              "md:max-[1439px]:flex-row md:max-[1439px]:flex-nowrap md:max-[1439px]:items-center md:max-[1439px]:gap-3",
+              "data-table-toolbar--search-actions md:flex-row md:flex-nowrap md:items-center md:gap-3",
             /* ≥1440px: [Buscar][filtros…][acciones al final]; el wrapper intermedio usa `contents` */
-            "min-[1440px]:flex-row min-[1440px]:flex-nowrap min-[1440px]:items-center min-[1440px]:gap-3",
+            !toolbarSearchActionsOnly &&
+              "min-[1440px]:flex-row min-[1440px]:flex-nowrap min-[1440px]:items-center min-[1440px]:gap-3",
           )}
         >
           <div
             className={cn(
               "data-table-toolbar__search relative flex w-full min-w-0 max-w-full shrink-0 items-center",
+              toolbarSearchActionsOnly && "md:min-w-0 md:flex-1",
+              !toolbarSearchActionsOnly &&
+                "min-[1440px]:max-w-sm min-[1440px]:shrink-0",
               toolbarSearchActionsOnly &&
-                "md:max-[1439px]:min-w-0 md:max-[1439px]:flex-1",
-              "min-[1440px]:max-w-sm min-[1440px]:shrink-0",
+                "md:max-w-none min-[1440px]:max-w-sm min-[1440px]:flex-none min-[1440px]:shrink-0",
               toolbarSearchClassName,
             )}
           >
@@ -367,7 +385,7 @@ export function DataTable<TData, TValue>({
               className={cn(
                 "flex w-full min-w-0 flex-col gap-2",
                 toolbarSearchActionsOnly
-                  ? "md:max-[1439px]:w-auto md:max-[1439px]:shrink-0"
+                  ? "md:w-auto md:shrink-0"
                   : "md:max-[1439px]:flex-row md:max-[1439px]:items-center md:max-[1439px]:gap-3",
                 /* ≥1440px: los hijos (filtros, acciones) pasan al flex del toolbar */
                 "min-[1440px]:contents",
@@ -388,8 +406,9 @@ export function DataTable<TData, TValue>({
                 <div
                   className={cn(
                     "data-table-toolbar__actions flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2",
-                    "md:max-[1439px]:w-auto md:max-[1439px]:flex-row md:max-[1439px]:items-center md:max-[1439px]:justify-end",
-                    "min-[1440px]:ml-auto min-[1440px]:w-auto min-[1440px]:shrink-0 min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:justify-end",
+                    toolbarSearchActionsOnly
+                      ? "md:w-auto md:flex-row md:items-center md:justify-end min-[1440px]:ml-auto"
+                      : "md:max-[1439px]:w-auto md:max-[1439px]:flex-row md:max-[1439px]:items-center md:max-[1439px]:justify-end min-[1440px]:ml-auto min-[1440px]:w-auto min-[1440px]:shrink-0 min-[1440px]:flex-row min-[1440px]:items-center min-[1440px]:justify-end",
                   )}
                 >
                   {toolbarActions}
@@ -513,9 +532,10 @@ export function DataTable<TData, TValue>({
                     <EmptyState
                       variant={data.length === 0 ? "no-data" : "no-match"}
                       title={
-                        data.length === 0
-                          ? "No hay datos disponibles."
-                          : "Sin coincidencias con la búsqueda."
+                        data.length === 0 ? emptyTitle : emptyNoMatchTitle
+                      }
+                      description={
+                        data.length === 0 ? emptyDescription : undefined
                       }
                     />
                   </td>
@@ -600,25 +620,19 @@ export function DataTable<TData, TValue>({
                             (h) => h.column.id === primaryCell.column.id,
                           );
                           return (
-                            <>
-                              <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-5">
-                                <span className="min-w-0 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  {primaryHeader && !primaryHeader.isPlaceholder
-                                    ? flexRender(
-                                        primaryHeader.column.columnDef.header,
-                                        primaryHeader.getContext(),
-                                      )
-                                    : null}
-                                </span>
-                                <div className="shrink-0">
-                                  {flexRender(
-                                    actionCell.column.columnDef.cell,
-                                    actionCell.getContext(),
-                                  )}
-                                </div>
-                              </div>
-                              <div className="divide-y divide-border/70">
-                                <div className="px-4 pb-3 pt-1 sm:px-5">
+                            <div className="divide-y divide-border/70">
+                              <div className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5">
+                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                  <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {primaryHeader &&
+                                    !primaryHeader.isPlaceholder
+                                      ? flexRender(
+                                          primaryHeader.column.columnDef
+                                            .header,
+                                          primaryHeader.getContext(),
+                                        )
+                                      : null}
+                                  </span>
                                   <div className="min-w-0 text-sm text-foreground">
                                     {flexRender(
                                       primaryCell.column.columnDef.cell,
@@ -626,11 +640,17 @@ export function DataTable<TData, TValue>({
                                     )}
                                   </div>
                                 </div>
-                                {restBodyCells.map((cell) =>
-                                  renderFieldRow(cell),
-                                )}
+                                <div className="shrink-0 self-start">
+                                  {flexRender(
+                                    actionCell.column.columnDef.cell,
+                                    actionCell.getContext(),
+                                  )}
+                                </div>
                               </div>
-                            </>
+                              {restBodyCells.map((cell) =>
+                                renderFieldRow(cell),
+                              )}
+                            </div>
                           );
                         }
 
@@ -661,10 +681,9 @@ export function DataTable<TData, TValue>({
             <div className="px-4 py-0">
               <EmptyState
                 variant={data.length === 0 ? "no-data" : "no-match"}
-                title={
-                  data.length === 0
-                    ? "No hay datos disponibles."
-                    : "Sin coincidencias con la búsqueda."
+                title={data.length === 0 ? emptyTitle : emptyNoMatchTitle}
+                description={
+                  data.length === 0 ? emptyDescription : undefined
                 }
               />
             </div>

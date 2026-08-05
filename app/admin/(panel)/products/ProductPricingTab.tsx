@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Building2, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ type Props = {
   form: UseFormReturn<ProductFormValues>;
   isPending: boolean;
   sectionClassName: string;
+  sectionStyle?: CSSProperties;
 };
 
 const STRATEGIES: PricingStrategy[] = [
@@ -139,6 +140,7 @@ export function ProductPricingTab({
   form,
   isPending,
   sectionClassName,
+  sectionStyle,
 }: Props) {
   const { t, locale } = useI18n();
   const errors = form.formState.errors;
@@ -276,7 +278,7 @@ export function ProductPricingTab({
   );
 
   return (
-    <section className={cn(sectionClassName, "space-y-6")}>
+    <section className={cn(sectionClassName, "space-y-6")} style={sectionStyle}>
       <PricingInputField
         id="product-stock"
         label={t("admin.products.form.fields.stock")}

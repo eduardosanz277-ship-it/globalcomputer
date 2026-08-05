@@ -17,6 +17,8 @@ import {
   type CheckoutShippingAddressRow,
 } from "@/modules/commerce/checkout-address.repository";
 import { countryToStripeIso2 } from "@/modules/commerce/country-to-stripe-iso";
+import { quoteShippingService } from "@/modules/shipping/shipping.service";
+import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 import Stripe from "stripe";
 
 export class CheckoutSessionError extends Error {
@@ -294,6 +296,52 @@ export async function createHostedCheckoutSession(
     );
   }
 
+  const shippingLines: ShippingQuoteLineInput[] = prepared.map(
+    ({ product, qty }) => ({
+      productId: product.id,
+      quantity: qty,
+      shippingType: product.shipping_type ?? "standard",
+      shippingSurchargePerUnit: product.shipping_surcharge_per_unit ?? 0,
+    }),
+  );
+  const shippingQuote = await quoteShippingService({
+    subtotal: subtotalUsd,
+    lines: shippingLines,
+  });
+
+  if (shippingQuote.requiresQuote) {
+    throw new CheckoutSessionError(
+      "Este pedido supera el límite de cálculo automático de envío. Solicita una cotización por WhatsApp.",
+    );
+  }
+  if (shippingQuote.status !== "ok") {
+    throw new CheckoutSessionError(
+      "No hay una tarifa de envío disponible para este subtotal. Revisa la configuración de envíos.",
+    );
+  }
+
+  const shippingCents = dollarsToCents(shippingQuote.shippingTotal);
+  /** Stripe exige shipping_options con al menos un importe (puede ser 0). */
+  const shippingOptions: NonNullable<
+    SessionCreateParams["shipping_options"]
+  > = [
+    {
+      shipping_rate_data: {
+        type: "fixed_amount",
+        fixed_amount: {
+          amount: shippingCents,
+          currency: "usd",
+        },
+        display_name:
+          shippingQuote.shippingTotal <= 0
+            ? "Envío"
+            : shippingQuote.surchargesTotal > 0
+              ? "Envío (tarifa + recargos)"
+              : "Envío",
+      },
+    },
+  ];
+
   const base = getAppBaseUrl();
   const stripe = getStripe();
 
@@ -309,17 +357,19 @@ export async function createHostedCheckoutSession(
     client_reference_id: user?.id,
     ...identity,
     automatic_tax: { enabled: true },
-    /** Dirección de entrega en la propia página de Stripe (Checkout). */
     shipping_address_collection: {
       allowed_countries: shippingAllowedCountries(),
     },
-    /** Teléfono de contacto (útil para mensajería). Opcional en Checkout. */
+    shipping_options: shippingOptions,
     phone_number_collection: {
       enabled: true,
     },
     metadata: {
       source: "storefront",
       site_offer_applied: siteOfferApplied ? "true" : "false",
+      shipping_base: String(shippingQuote.baseRate),
+      shipping_surcharges: String(shippingQuote.surchargesTotal),
+      shipping_total: String(shippingQuote.shippingTotal),
     },
   });
 

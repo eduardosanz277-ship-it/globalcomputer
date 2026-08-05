@@ -16,6 +16,7 @@ import {
   Shapes,
   Star,
   Tag,
+  Truck,
   Users,
 } from "lucide-react";
 
@@ -146,6 +147,27 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/admin/services",
         labelKey: "admin.menu.services",
         icon: BriefcaseBusiness,
+      },
+    ],
+  },
+  {
+    id: "shipping",
+    labelKey: "admin.menu.groupShipping",
+    items: [
+      {
+        href: "/admin/shipping/general",
+        labelKey: "admin.menu.shipping",
+        icon: Truck,
+        children: [
+          {
+            href: "/admin/shipping/general",
+            labelKey: "admin.menu.shippingGeneral",
+          },
+          {
+            href: "/admin/shipping/rates",
+            labelKey: "admin.menu.shippingRates",
+          },
+        ],
       },
     ],
   },

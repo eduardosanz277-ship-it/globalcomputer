@@ -113,12 +113,30 @@ body {
   }
 }
 
-/* DataTable toolbar: 1024px–1300px — buscar + filtrar misma fila (50/50); acciones debajo a la derecha */
+/* DataTable toolbar: 1024px–1300px — buscar + filtrar misma fila; acciones debajo.
+   No aplica a toolbars solo buscar + acciones (p. ej. Tarifas / Servicios). */
 @media (min-width: 1024px) and (max-width: 1300px) {
-  .data-table-toolbar:not(.data-table-toolbar--stacked) {
+  .data-table-toolbar:not(.data-table-toolbar--stacked):not(
+      .data-table-toolbar--search-actions
+    ) {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/*
+ * react-toastify + Radix Dialog (SlideOver modal):
+ * el modal pone pointer-events:none en body y el toast no recibe hover → no pausa autoClose.
+ */
+.Toastify {
+  z-index: 10000 !important;
+  pointer-events: none;
+}
+.Toastify__toast-container {
+  pointer-events: none;
+}
+.Toastify__toast {
+  pointer-events: auto !important;
 }
 
 /* —— SweetAlert2: modal de confirmación estilo SaaS (ver `utils/swal-saas.ts`) —— */

@@ -36,6 +36,8 @@ export type Product = {
   priceBusiness: number;
   discountClientPct: number;
   discountBusinessPct: number;
+  shippingType: "standard" | "non_standard";
+  shippingSurchargePerUnit: number;
   manualPdfUrl: string | null;
   active: boolean;
   /** Prioridad para bloques de destacados en la tienda (columna `featured`). */
@@ -86,6 +88,8 @@ export type ProductInsert = {
   priceBusiness: number;
   discountClientPct: number;
   discountBusinessPct: number;
+  shippingType: "standard" | "non_standard";
+  shippingSurchargePerUnit: number;
   manualPdfUrl: string;
   active: boolean;
   featured: boolean;

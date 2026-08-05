@@ -31,6 +31,7 @@ export function Form<TFieldValues extends FieldValues>({
     <FormProvider {...form}>
       <form
         id={id}
+        noValidate
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-4", className)}
       >
