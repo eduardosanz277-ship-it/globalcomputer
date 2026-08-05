@@ -91,7 +91,7 @@ export function StoreCartOrderSummary({
   /** Notifica al padre para sincronizar skeleton del listado con los importes. */
   onUiPendingChange?: (pending: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
   const totalUnits = gcCartTotalUnits(items);
   const hasUnresolvedProducts = items.some(
@@ -150,7 +150,7 @@ export function StoreCartOrderSummary({
         const res = await fetch("/api/shop/shipping/quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items }),
+          body: JSON.stringify({ items, locale }),
           cache: "no-store",
         });
         if (!res.ok) {
@@ -169,7 +169,7 @@ export function StoreCartOrderSummary({
     return () => {
       cancelled = true;
     };
-  }, [items, hasUnresolvedProducts, variant, panelOpen]);
+  }, [items, hasUnresolvedProducts, variant, panelOpen, locale]);
 
   async function goToStripeCheckout() {
     if (items.length === 0 || hasUnresolvedProducts) return;
