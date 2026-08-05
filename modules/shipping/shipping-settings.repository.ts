@@ -12,6 +12,7 @@ type ShippingSettingsRow = {
   over_limit_action: ShippingOverLimitAction;
   whatsapp_phone: string;
   whatsapp_message: string;
+  whatsapp_message_en: string | null;
   free_shipping_enabled: boolean;
   free_shipping_min_subtotal: number | string;
   free_shipping_surcharge_behavior: ShippingFreeSurchargeBehavior;
@@ -25,6 +26,7 @@ function mapSettings(row: ShippingSettingsRow): ShippingSettings {
     overLimitAction: row.over_limit_action,
     whatsappPhone: row.whatsapp_phone ?? "",
     whatsappMessage: row.whatsapp_message ?? "",
+    whatsappMessageEn: row.whatsapp_message_en ?? "",
     freeShippingEnabled: Boolean(row.free_shipping_enabled),
     freeShippingMinSubtotal: Number(row.free_shipping_min_subtotal),
     freeShippingSurchargeBehavior: row.free_shipping_surcharge_behavior,
@@ -33,7 +35,7 @@ function mapSettings(row: ShippingSettingsRow): ShippingSettings {
 }
 
 const SELECT =
-  "id, auto_calc_max_subtotal, over_limit_action, whatsapp_phone, whatsapp_message, free_shipping_enabled, free_shipping_min_subtotal, free_shipping_surcharge_behavior, updated_at";
+  "id, auto_calc_max_subtotal, over_limit_action, whatsapp_phone, whatsapp_message, whatsapp_message_en, free_shipping_enabled, free_shipping_min_subtotal, free_shipping_surcharge_behavior, updated_at";
 
 export async function repoGetShippingSettings(): Promise<ShippingSettings> {
   const supabase = createSupabaseAdminClient();
@@ -62,6 +64,7 @@ export async function repoUpdateShippingSettings(
       over_limit_action: input.overLimitAction,
       whatsapp_phone: input.whatsappPhone,
       whatsapp_message: input.whatsappMessage,
+      whatsapp_message_en: input.whatsappMessageEn,
       free_shipping_enabled: input.freeShippingEnabled,
       free_shipping_min_subtotal: input.freeShippingMinSubtotal,
       free_shipping_surcharge_behavior: input.freeShippingSurchargeBehavior,
