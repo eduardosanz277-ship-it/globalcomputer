@@ -22,6 +22,7 @@ import {
   listAllActiveStorefrontProducts,
   listFeaturedStorefrontProducts,
 } from "@/modules/catalog/storefront-products.service";
+import { listStorefrontServiceHeroSlides } from "@/modules/catalog/storefront-services.service";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
 import { listActiveSiteFaqs } from "@/modules/site/faqs.service";
 import {
@@ -103,6 +104,7 @@ export default async function HomePage() {
     siteFaqs,
     contact,
     storeRatingSummary,
+    heroSlides,
   ] = await Promise.all([
     supabase
       .from("services")
@@ -119,6 +121,7 @@ export default async function HomePage() {
     listActiveSiteFaqs(),
     getPublicSiteContact(),
     getStoreRatingSummary(),
+    listStorefrontServiceHeroSlides(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
@@ -150,6 +153,7 @@ export default async function HomePage() {
         categories={nav?.catalogCategories ?? []}
         contact={contact}
         ratingSummary={storeRatingSummary}
+        heroSlides={heroSlides}
       />
 
       {/*
