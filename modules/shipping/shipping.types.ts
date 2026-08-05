@@ -14,6 +14,7 @@ export type ShippingSettings = {
   overLimitAction: ShippingOverLimitAction;
   whatsappPhone: string;
   whatsappMessage: string;
+  whatsappMessageEn: string;
   freeShippingEnabled: boolean;
   freeShippingMinSubtotal: number;
   freeShippingSurchargeBehavior: ShippingFreeSurchargeBehavior;
@@ -44,6 +45,7 @@ export type ShippingSettingsInput = {
   overLimitAction: ShippingOverLimitAction;
   whatsappPhone: string;
   whatsappMessage: string;
+  whatsappMessageEn: string;
   freeShippingEnabled: boolean;
   freeShippingMinSubtotal: number;
   freeShippingSurchargeBehavior: ShippingFreeSurchargeBehavior;
@@ -55,7 +57,19 @@ export type ShippingQuoteLineInput = {
   quantity: number;
   shippingType: ProductShippingType;
   shippingSurchargePerUnit: number;
+  /** Nombre para el mensaje de cotización WhatsApp (opcional). */
+  productName?: string;
+  /** Precio unitario USD para el desglose WhatsApp (opcional). */
+  unitPrice?: number;
 };
+
+/** Oferta de sitio para desglose del mensaje WhatsApp. */
+export type ShippingQuoteOfferInput = {
+  offerAmount: number;
+  offerPercentage: number;
+};
+
+export type ShippingQuoteLocale = "es" | "en";
 
 export type ShippingQuoteBreakdownLine = {
   productId: string;

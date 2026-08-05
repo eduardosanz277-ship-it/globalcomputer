@@ -4,6 +4,8 @@ export type {
   ShippingOverLimitAction,
   ShippingQuote,
   ShippingQuoteLineInput,
+  ShippingQuoteLocale,
+  ShippingQuoteOfferInput,
   ShippingRate,
   ShippingRateInput,
   ShippingSettings,
