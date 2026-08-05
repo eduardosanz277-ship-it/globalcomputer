@@ -2037,7 +2037,8 @@ export const en = {
           whatsappPhoneHint:
             "Local number only. Country code +1 is added automatically.",
           whatsappPhonePlaceholder: "555 123 4567",
-          whatsappMessage: "Default WhatsApp message",
+          whatsappMessage: "Default message (ES)",
+          whatsappMessageEn: "Default message (EN)",
           freeShippingEnabled: "Enable free shipping",
           freeShippingEnabledHint:
             "If enabled and the subtotal reaches the minimum, the base rate is $0.",

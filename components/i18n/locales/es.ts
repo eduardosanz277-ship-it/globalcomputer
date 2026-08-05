@@ -2042,7 +2042,8 @@ export const es = {
           whatsappPhoneHint:
             "Solo el número local. Se antepone automáticamente el código +1.",
           whatsappPhonePlaceholder: "555 123 4567",
-          whatsappMessage: "Mensaje predeterminado de WhatsApp",
+          whatsappMessage: "Mensaje predeterminado (ES)",
+          whatsappMessageEn: "Mensaje predeterminado (EN)",
           freeShippingEnabled: "Habilitar envío gratuito",
           freeShippingEnabledHint:
             "Si está activo y el subtotal alcanza el mínimo, la tarifa base es $0.",
