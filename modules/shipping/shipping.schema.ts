@@ -53,6 +53,11 @@ export const shippingSettingsFormSchema = z.object({
     .trim()
     .min(1, "El mensaje es obligatorio")
     .max(2000, "Máximo 2000 caracteres"),
+  whatsappMessageEn: z
+    .string()
+    .trim()
+    .min(1, "El mensaje en inglés es obligatorio")
+    .max(2000, "Máximo 2000 caracteres"),
   freeShippingEnabled: z.boolean(),
   freeShippingMinSubtotal: money,
   freeShippingSurchargeBehavior: z.enum([

@@ -38,6 +38,7 @@ export function ShippingGeneralForm({ initial }: Props) {
       overLimitAction: initial.overLimitAction,
       whatsappPhone: initial.whatsappPhone,
       whatsappMessage: initial.whatsappMessage,
+      whatsappMessageEn: initial.whatsappMessageEn,
       freeShippingEnabled: initial.freeShippingEnabled,
       freeShippingMinSubtotal: initial.freeShippingMinSubtotal,
       freeShippingSurchargeBehavior: initial.freeShippingSurchargeBehavior,
@@ -60,6 +61,7 @@ export function ShippingGeneralForm({ initial }: Props) {
       overLimitAction: initial.overLimitAction,
       whatsappPhone: initial.whatsappPhone,
       whatsappMessage: initial.whatsappMessage,
+      whatsappMessageEn: initial.whatsappMessageEn,
       freeShippingEnabled: initial.freeShippingEnabled,
       freeShippingMinSubtotal: initial.freeShippingMinSubtotal,
       freeShippingSurchargeBehavior: initial.freeShippingSurchargeBehavior,
@@ -157,6 +159,28 @@ export function ShippingGeneralForm({ initial }: Props) {
               {errors.whatsappMessage ? (
                 <p className="text-sm text-destructive">
                   {errors.whatsappMessage.message}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsappMessageEn">
+                {t("admin.shipping.general.fields.whatsappMessageEn")}
+                <RequiredMark />
+              </Label>
+              <textarea
+                id="whatsappMessageEn"
+                rows={4}
+                className={cn(
+                  "w-full rounded-lg border border-input/90 bg-background px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
+                  adminServiceLikeInputClassName,
+                  "h-auto min-h-[6rem] resize-y leading-relaxed",
+                )}
+                {...form.register("whatsappMessageEn")}
+              />
+              {errors.whatsappMessageEn ? (
+                <p className="text-sm text-destructive">
+                  {errors.whatsappMessageEn.message}
                 </p>
               ) : null}
             </div>
