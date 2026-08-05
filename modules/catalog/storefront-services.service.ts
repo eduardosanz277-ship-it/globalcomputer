@@ -101,6 +101,55 @@ export async function getServiceById(
   return mapService(data);
 }
 
+export type StorefrontServiceHeroSlide = {
+  id: string;
+  name: string;
+  name_en: string | null;
+  slug: string;
+  banner_mobile_url: string;
+  banner_tablet_url: string;
+  banner_desktop_url: string;
+};
+
+/** Servicios con al menos un banner configurado, para el slider del hero. */
+export async function listStorefrontServiceHeroSlides(): Promise<
+  StorefrontServiceHeroSlide[]
+> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("services")
+    .select(
+      "id, name, name_en, slug, banner_mobile_url, banner_tablet_url, banner_desktop_url",
+    )
+    .or(
+      "banner_mobile_url.not.is.null,banner_tablet_url.not.is.null,banner_desktop_url.not.is.null",
+    )
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.warn("[storefront] listStorefrontServiceHeroSlides", error.message);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((row) => {
+      const mobile = row.banner_mobile_url?.trim() || "";
+      const tablet = row.banner_tablet_url?.trim() || "";
+      const desktop = row.banner_desktop_url?.trim() || "";
+      if (!mobile && !tablet && !desktop) return null;
+      return {
+        id: row.id,
+        name: row.name,
+        name_en: row.name_en ?? null,
+        slug: row.slug ?? slugify(row.name),
+        banner_mobile_url: mobile || tablet || desktop,
+        banner_tablet_url: tablet || desktop || mobile,
+        banner_desktop_url: desktop || tablet || mobile,
+      } satisfies StorefrontServiceHeroSlide;
+    })
+    .filter((slide): slide is StorefrontServiceHeroSlide => slide !== null);
+}
+
 export async function getServiceBySlugOrId(
   param: string,
 ): Promise<{ service: StorefrontService; source: "slug" | "id" } | null> {
