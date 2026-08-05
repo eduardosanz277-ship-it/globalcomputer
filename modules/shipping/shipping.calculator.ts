@@ -216,11 +216,16 @@ export type CalculateShippingInput = {
     | "overLimitAction"
     | "whatsappPhone"
     | "whatsappMessage"
+    | "whatsappMessageEn"
     | "freeShippingEnabled"
     | "freeShippingMinSubtotal"
     | "freeShippingSurchargeBehavior"
   >;
   rates: ShippingRate[];
+  /** Oferta del sitio para el desglose del mensaje WhatsApp. */
+  offer?: ShippingQuoteOfferInput | null;
+  /** Locale del cliente para el mensaje WhatsApp. */
+  locale?: string | null;
 };
 
 /**
@@ -238,6 +243,7 @@ export function calculateShipping(input: CalculateShippingInput): ShippingQuote 
     overLimitAction,
     whatsappPhone,
     whatsappMessage,
+    whatsappMessageEn,
     freeShippingEnabled,
     freeShippingMinSubtotal,
     freeShippingSurchargeBehavior,
@@ -245,10 +251,20 @@ export function calculateShipping(input: CalculateShippingInput): ShippingQuote 
 
   if (shouldRedirectToWhatsApp(subtotal, autoCalcMaxSubtotal)) {
     const action: ShippingOverLimitAction = overLimitAction;
+    const lang = resolveQuoteLocale(input.locale);
+    const intro =
+      lang === "en"
+        ? whatsappMessageEn.trim() || whatsappMessage
+        : whatsappMessage;
+    const message = buildWhatsAppQuoteMessage(
+      intro,
+      input.lines,
+      subtotal,
+      input.offer,
+      lang,
+    );
     const whatsappUrl =
-      action === "whatsapp"
-        ? buildWhatsAppUrl(whatsappPhone, whatsappMessage)
-        : null;
+      action === "whatsapp" ? buildWhatsAppUrl(whatsappPhone, message) : null;
     return {
       status: "requires_quote",
       subtotal: roundMoney(subtotal),
