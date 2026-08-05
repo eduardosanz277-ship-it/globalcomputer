@@ -155,7 +155,7 @@ export function StoreHero({
                   {t("simple y clara", "simple and clear")}
                 </span>
               </h1>
-              <p className="mx-auto mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white/85 sm:mx-0 sm:text-[18px]">
+              <p className="mx-auto mt-5 max-w-lg text-pretty text-[16px] font-normal leading-relaxed text-white sm:mx-0 sm:text-[18px]">
                 {t(
                   "Cámaras, grabadoras y kits con precios visibles y equipo que te orienta. Así debería ser comprar tecnología.",
                   "Cameras, recorders, and kits with transparent pricing and a team that guides you. This is how buying technology should feel.",
@@ -166,7 +166,7 @@ export function StoreHero({
                 {TRUST_PILLS.map(({ Icon, label, labelEn }) => (
                   <li
                     key={label}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-white/92 backdrop-blur-md sm:px-3.5 sm:py-2 sm:text-base"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md sm:px-3.5 sm:py-2 sm:text-base"
                   >
                     <Icon
                       className="h-3.5 w-3.5 shrink-0 text-secondary sm:h-4 sm:w-4"
@@ -224,7 +224,7 @@ export function StoreHero({
               </div>
 
               <div className="mt-6 text-center sm:text-left">
-                <p className="text-sm font-semibold uppercase tracking-wider text-white/75 sm:text-base">
+                <p className="text-sm font-semibold uppercase tracking-wider text-white sm:text-base">
                   {t("Explora por categoría", "Explore by category")}
                 </p>
                 <ul className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
