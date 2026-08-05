@@ -16,6 +16,7 @@ import {
 import type {
   ShippingQuote,
   ShippingQuoteLineInput,
+  ShippingQuoteOfferInput,
   ShippingRate,
   ShippingRateInput,
   ShippingSettings,
@@ -105,6 +106,8 @@ export async function setShippingRateActiveAdminService(
 export async function quoteShippingService(input: {
   subtotal: number;
   lines: ShippingQuoteLineInput[];
+  offer?: ShippingQuoteOfferInput | null;
+  locale?: string | null;
 }): Promise<ShippingQuote> {
   const [settings, rates] = await Promise.all([
     repoGetShippingSettings(),
@@ -115,5 +118,7 @@ export async function quoteShippingService(input: {
     lines: input.lines,
     settings,
     rates,
+    offer: input.offer,
+    locale: input.locale,
   });
 }
