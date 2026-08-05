@@ -211,8 +211,8 @@ export function StoreHero({
             </div>
 
             {/* Escaparate visual */}
-            <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
-              <div className="relative invisible aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem]">
+            <div className="relative mx-auto w-full max-w-lg sm:mx-0 sm:max-w-none lg:max-w-none">
+              <div className="relative hidden aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem] lg:invisible lg:block">
                 <Image
                   src="/images/camaras_de_seguridad.webp"
                   alt="Cámaras de seguridad"
