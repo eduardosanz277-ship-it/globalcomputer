@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { HeroServiceSlider } from "@/components/marketing/HeroServiceSlider";
+import type { StorefrontServiceHeroSlide } from "@/modules/catalog/storefront-services.service";
 import type { StoreRatingSummary } from "@/modules/site/leave-review-data.service";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
@@ -61,10 +63,12 @@ export function StoreHero({
   categories,
   contact,
   ratingSummary,
+  heroSlides,
 }: {
   categories: HeroCategory[];
   contact: HeroContact;
   ratingSummary: StoreRatingSummary;
+  heroSlides: StorefrontServiceHeroSlide[];
 }) {
   const { locale } = useI18n();
   const t = (es: string, en?: string | null) =>
@@ -110,6 +114,15 @@ export function StoreHero({
           "bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to",
         )}
       >
+        {/* Slider de banners de servicios: fondo a todo el ancho de la sección */}
+        <HeroServiceSlider slides={heroSlides} />
+
+        {/* Velo oscuro para mantener legibilidad del texto blanco sobre las fotos */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-hero-from/55 via-[#1a2540]/45 to-brand-hero-to/55"
+          aria-hidden
+        />
+
         {/* Malla luminosa tipo e-commerce actual */}
         <div
           className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-primary/35 blur-[100px] animate-blob"
@@ -199,7 +212,7 @@ export function StoreHero({
 
             {/* Escaparate visual */}
             <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem]">
+              <div className="relative invisible aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem]">
                 <Image
                   src="/images/camaras_de_seguridad.webp"
                   alt="Cámaras de seguridad"
