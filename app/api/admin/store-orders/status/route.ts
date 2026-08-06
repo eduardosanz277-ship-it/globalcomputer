@@ -4,10 +4,12 @@ import { ensureAdminUserService } from "@/modules/auth/auth.service";
 import { repoUpdateStoreOrderStatus } from "@/modules/commerce/store-orders.admin.service";
 
 const statusSchema = z.union([
-  z.literal("confirmada"),
-  z.literal("procesando"),
-  z.literal("enviando"),
-  z.literal("completada"),
+  z.literal("pending"),
+  z.literal("confirmed"),
+  z.literal("processing"),
+  z.literal("shipping"),
+  z.literal("completed"),
+  z.literal("cancelled"),
 ]);
 
 const bodySchema = z.object({

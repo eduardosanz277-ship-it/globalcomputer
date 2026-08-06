@@ -1,17 +1,25 @@
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
+import { getPublicSiteOffer } from "@/lib/site-offer.server";
 import {
   resolveStorefrontPriceTier,
   resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
+import { quoteShippingService } from "@/modules/shipping/shipping.service";
+import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 
 export type SiteOrderStatus =
-  | "confirmada"
-  | "procesando"
-  | "enviando"
-  | "completada";
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "shipping"
+  | "completed"
+  | "cancelled";
+
+export type StoreOrderShippingMethod = "automatic" | "manual";
 
 export type SiteOrderItemInput = {
   productId: string;
@@ -411,7 +419,7 @@ export async function syncOrderWithStripeSession(
         : session.payment_intent && typeof session.payment_intent === "object"
           ? session.payment_intent.id
           : null,
-    status: session.payment_status === "paid" ? "procesando" : "confirmada",
+    status: session.payment_status === "paid" ? "processing" : "confirmed",
   };
 
   const { error: upErr } = await supabase
