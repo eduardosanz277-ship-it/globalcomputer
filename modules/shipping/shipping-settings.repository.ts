@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   ShippingFreeSurchargeBehavior,
   ShippingOverLimitAction,
+  ShippingPendingPaymentWaitUnit,
   ShippingSettings,
   ShippingSettingsInput,
 } from "./shipping.types";
@@ -16,8 +17,15 @@ type ShippingSettingsRow = {
   free_shipping_enabled: boolean;
   free_shipping_min_subtotal: number | string;
   free_shipping_surcharge_behavior: ShippingFreeSurchargeBehavior;
+  pending_payment_max_wait_value: number | string | null;
+  pending_payment_max_wait_unit: string | null;
   updated_at: string;
 };
+
+function mapWaitUnit(raw: string | null): ShippingPendingPaymentWaitUnit {
+  if (raw === "minutes" || raw === "hours") return raw;
+  return "days";
+}
 
 function mapSettings(row: ShippingSettingsRow): ShippingSettings {
   return {
@@ -30,12 +38,17 @@ function mapSettings(row: ShippingSettingsRow): ShippingSettings {
     freeShippingEnabled: Boolean(row.free_shipping_enabled),
     freeShippingMinSubtotal: Number(row.free_shipping_min_subtotal),
     freeShippingSurchargeBehavior: row.free_shipping_surcharge_behavior,
+    pendingPaymentMaxWaitValue: Math.max(
+      1,
+      Number(row.pending_payment_max_wait_value) || 7,
+    ),
+    pendingPaymentMaxWaitUnit: mapWaitUnit(row.pending_payment_max_wait_unit),
     updatedAt: row.updated_at,
   };
 }
 
 const SELECT =
-  "id, auto_calc_max_subtotal, over_limit_action, whatsapp_phone, whatsapp_message, whatsapp_message_en, free_shipping_enabled, free_shipping_min_subtotal, free_shipping_surcharge_behavior, updated_at";
+  "id, auto_calc_max_subtotal, over_limit_action, whatsapp_phone, whatsapp_message, whatsapp_message_en, free_shipping_enabled, free_shipping_min_subtotal, free_shipping_surcharge_behavior, pending_payment_max_wait_value, pending_payment_max_wait_unit, updated_at";
 
 export async function repoGetShippingSettings(): Promise<ShippingSettings> {
   const supabase = createSupabaseAdminClient();
@@ -68,6 +81,8 @@ export async function repoUpdateShippingSettings(
       free_shipping_enabled: input.freeShippingEnabled,
       free_shipping_min_subtotal: input.freeShippingMinSubtotal,
       free_shipping_surcharge_behavior: input.freeShippingSurchargeBehavior,
+      pending_payment_max_wait_value: input.pendingPaymentMaxWaitValue,
+      pending_payment_max_wait_unit: input.pendingPaymentMaxWaitUnit,
       updated_at: new Date().toISOString(),
     })
     .eq("id", current.id)

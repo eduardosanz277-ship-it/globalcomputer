@@ -2,6 +2,7 @@ export type {
   ProductShippingType,
   ShippingFreeSurchargeBehavior,
   ShippingOverLimitAction,
+  ShippingPendingPaymentWaitUnit,
   ShippingQuote,
   ShippingQuoteLineInput,
   ShippingQuoteLocale,

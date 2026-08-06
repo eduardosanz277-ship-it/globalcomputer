@@ -6,6 +6,8 @@ export type ShippingFreeSurchargeBehavior =
   | "keep_surcharges"
   | "waive_surcharges";
 
+export type ShippingPendingPaymentWaitUnit = "minutes" | "hours" | "days";
+
 export type ProductShippingType = "standard" | "non_standard";
 
 export type ShippingSettings = {
@@ -18,6 +20,8 @@ export type ShippingSettings = {
   freeShippingEnabled: boolean;
   freeShippingMinSubtotal: number;
   freeShippingSurchargeBehavior: ShippingFreeSurchargeBehavior;
+  pendingPaymentMaxWaitValue: number;
+  pendingPaymentMaxWaitUnit: ShippingPendingPaymentWaitUnit;
   updatedAt: string;
 };
 
@@ -49,6 +53,8 @@ export type ShippingSettingsInput = {
   freeShippingEnabled: boolean;
   freeShippingMinSubtotal: number;
   freeShippingSurchargeBehavior: ShippingFreeSurchargeBehavior;
+  pendingPaymentMaxWaitValue: number;
+  pendingPaymentMaxWaitUnit: ShippingPendingPaymentWaitUnit;
 };
 
 /** Línea de carrito mínima para cotizar envío. */
