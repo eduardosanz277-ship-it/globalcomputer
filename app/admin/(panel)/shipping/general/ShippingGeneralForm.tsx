@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import Select from "react-select";
 import { ButtonPending } from "@/components/ui/button-pending";
 import {
   Card,
@@ -15,18 +16,27 @@ import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
+import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { useServerAction } from "@/hooks/use-server-action";
 import { updateShippingSettingsAdminAction } from "@/modules/shipping/shipping.actions";
 import {
   shippingSettingsFormSchema,
   type ShippingSettingsFormValues,
 } from "@/modules/shipping/shipping.schema";
-import type { ShippingSettings } from "@/modules/shipping/shipping.types";
+import type {
+  ShippingPendingPaymentWaitUnit,
+  ShippingSettings,
+} from "@/modules/shipping/shipping.types";
 import { cn } from "@/utils/cn";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   initial: ShippingSettings;
+};
+
+type WaitUnitOption = {
+  value: ShippingPendingPaymentWaitUnit;
+  label: string;
 };
 
 export function ShippingGeneralForm({ initial }: Props) {
@@ -42,11 +52,31 @@ export function ShippingGeneralForm({ initial }: Props) {
       freeShippingEnabled: initial.freeShippingEnabled,
       freeShippingMinSubtotal: initial.freeShippingMinSubtotal,
       freeShippingSurchargeBehavior: initial.freeShippingSurchargeBehavior,
+      pendingPaymentMaxWaitValue: initial.pendingPaymentMaxWaitValue,
+      pendingPaymentMaxWaitUnit: initial.pendingPaymentMaxWaitUnit,
     },
   });
 
   const freeOn = form.watch("freeShippingEnabled");
   const errors = form.formState.errors;
+
+  const waitUnitOptions = useMemo<WaitUnitOption[]>(
+    () => [
+      {
+        value: "minutes",
+        label: t("admin.shipping.general.fields.pendingPaymentWaitUnitMinutes"),
+      },
+      {
+        value: "hours",
+        label: t("admin.shipping.general.fields.pendingPaymentWaitUnitHours"),
+      },
+      {
+        value: "days",
+        label: t("admin.shipping.general.fields.pendingPaymentWaitUnitDays"),
+      },
+    ],
+    [t],
+  );
 
   const { execute, isPending } = useServerAction(
     updateShippingSettingsAdminAction,
@@ -65,6 +95,8 @@ export function ShippingGeneralForm({ initial }: Props) {
       freeShippingEnabled: initial.freeShippingEnabled,
       freeShippingMinSubtotal: initial.freeShippingMinSubtotal,
       freeShippingSurchargeBehavior: initial.freeShippingSurchargeBehavior,
+      pendingPaymentMaxWaitValue: initial.pendingPaymentMaxWaitValue,
+      pendingPaymentMaxWaitUnit: initial.pendingPaymentMaxWaitUnit,
     });
   }, [initial, form]);
 
@@ -183,6 +215,85 @@ export function ShippingGeneralForm({ initial }: Props) {
                   {errors.whatsappMessageEn.message}
                 </p>
               ) : null}
+            </div>
+
+            <div className="space-y-2 border-t border-border/60 pt-4">
+              <p className="text-sm font-medium text-foreground">
+                {t("admin.shipping.general.pendingWait.title")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.shipping.general.pendingWait.description")}
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_10rem]">
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPaymentMaxWaitValue">
+                    {t(
+                      "admin.shipping.general.fields.pendingPaymentMaxWaitValue",
+                    )}
+                    <RequiredMark />
+                  </Label>
+                  <Input
+                    id="pendingPaymentMaxWaitValue"
+                    type="number"
+                    min={1}
+                    step={1}
+                    className={adminServiceLikeInputClassName}
+                    {...form.register("pendingPaymentMaxWaitValue", {
+                      valueAsNumber: true,
+                    })}
+                  />
+                  {errors.pendingPaymentMaxWaitValue ? (
+                    <p className="text-sm text-destructive">
+                      {errors.pendingPaymentMaxWaitValue.message}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPaymentMaxWaitUnit">
+                    {t(
+                      "admin.shipping.general.fields.pendingPaymentMaxWaitUnit",
+                    )}
+                    <RequiredMark />
+                  </Label>
+                  <Controller
+                    control={form.control}
+                    name="pendingPaymentMaxWaitUnit"
+                    render={({ field }) => {
+                      const value =
+                        waitUnitOptions.find(
+                          (option) => option.value === field.value,
+                        ) ?? waitUnitOptions[2];
+                      return (
+                        <Select<WaitUnitOption, false>
+                          instanceId="shipping-pending-wait-unit"
+                          inputId="pendingPaymentMaxWaitUnit"
+                          aria-label={t(
+                            "admin.shipping.general.fields.pendingPaymentMaxWaitUnit",
+                          )}
+                          isSearchable={false}
+                          isClearable={false}
+                          options={waitUnitOptions}
+                          value={value}
+                          onChange={(option) => {
+                            if (option) field.onChange(option.value);
+                          }}
+                          onBlur={field.onBlur}
+                          styles={appToolbarSelectStyles}
+                          className="w-full min-w-0"
+                        />
+                      );
+                    }}
+                  />
+                  {errors.pendingPaymentMaxWaitUnit ? (
+                    <p className="text-sm text-destructive">
+                      {errors.pendingPaymentMaxWaitUnit.message}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.shipping.general.fields.pendingPaymentMaxWaitHint")}
+              </p>
             </div>
           </CardContent>
         </Card>
