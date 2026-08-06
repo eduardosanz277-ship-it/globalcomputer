@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
-import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
+import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { useServerAction } from "@/hooks/use-server-action";
 import { updateShippingSettingsAdminAction } from "@/modules/shipping/shipping.actions";
 import {
@@ -278,7 +278,7 @@ export function ShippingGeneralForm({ initial }: Props) {
                             if (option) field.onChange(option.value);
                           }}
                           onBlur={field.onBlur}
-                          styles={appToolbarSelectStyles}
+                          styles={appSelectStyles}
                           className="w-full min-w-0"
                         />
                       );
