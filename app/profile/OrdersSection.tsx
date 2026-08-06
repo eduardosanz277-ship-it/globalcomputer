@@ -43,10 +43,12 @@ type Props = {
 };
 
 const STATUS_OPTIONS: SiteOrderStatus[] = [
-  "confirmada",
-  "procesando",
-  "enviando",
-  "completada",
+  "pending",
+  "confirmed",
+  "processing",
+  "shipping",
+  "completed",
+  "cancelled",
 ];
 
 type StatusFilterValue = SiteOrderStatus | "all";
@@ -62,14 +64,20 @@ function orderStatusLabel(status: string, tf: (key: string) => string): string {
 function profileOrderRowClassName(order: CuentaOrder): string {
   const base = "hover:bg-muted/50 transition-colors duration-150";
   const s = order.status;
-  if (s === "confirmada") {
+  if (s === "pending") {
+    return cn(base, "shadow-[inset_2px_0_0_rgba(100,116,139,0.35)]");
+  }
+  if (s === "confirmed") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(14,165,233,0.35)]");
   }
-  if (s === "procesando") {
+  if (s === "processing") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(245,158,11,0.35)]");
   }
-  if (s === "enviando") {
+  if (s === "shipping") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(139,92,246,0.35)]");
+  }
+  if (s === "cancelled") {
+    return cn(base, "shadow-[inset_2px_0_0_rgba(239,68,68,0.35)]");
   }
   return cn(base, "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]");
 }
@@ -97,10 +105,12 @@ export function OrdersSection({ orders }: Props) {
 
   const statusLabels = useMemo<Record<SiteOrderStatus, string>>(
     () => ({
-      confirmada: t("admin.orders.status.confirmada"),
-      procesando: t("admin.orders.status.procesando"),
-      enviando: t("admin.orders.status.enviando"),
-      completada: t("admin.orders.status.completada"),
+      pending: t("admin.orders.status.pending"),
+      confirmed: t("admin.orders.status.confirmed"),
+      processing: t("admin.orders.status.processing"),
+      shipping: t("admin.orders.status.shipping"),
+      completed: t("admin.orders.status.completed"),
+      cancelled: t("admin.orders.status.cancelled"),
     }),
     [t],
   );
