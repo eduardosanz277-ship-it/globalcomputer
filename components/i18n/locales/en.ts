@@ -2027,6 +2027,11 @@ export const en = {
           description:
             "If the subtotal exceeds the maximum amount, checkout will request a quote.",
         },
+        pendingWait: {
+          title: "Pending payments (quote)",
+          description:
+            "Maximum wait before cancelling manual orders still pending payment.",
+        },
         freeShipping: {
           title: "Free shipping",
           description:
@@ -2041,6 +2046,13 @@ export const en = {
           whatsappPhonePlaceholder: "555 123 4567",
           whatsappMessage: "Default message (ES)",
           whatsappMessageEn: "Default message (EN)",
+          pendingPaymentMaxWaitValue: "Maximum wait time",
+          pendingPaymentMaxWaitUnit: "Unit",
+          pendingPaymentMaxWaitHint:
+            "Applies to manual orders in pending status without confirmed payment.",
+          pendingPaymentWaitUnitMinutes: "Minutes",
+          pendingPaymentWaitUnitHours: "Hours",
+          pendingPaymentWaitUnitDays: "Days",
           freeShippingEnabled: "Enable free shipping",
           freeShippingEnabledHint:
             "If enabled and the subtotal reaches the minimum, the base rate is $0.",
