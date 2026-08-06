@@ -260,8 +260,11 @@ export async function createHostedCheckoutSession(
   }
 
   const siteOffer = await getPublicSiteOffer();
-  const { applies: siteOfferApplied, unitPriceFactor } =
-    computeSiteOfferOnSubtotal(subtotalUsd, siteOffer);
+  const {
+    applies: siteOfferApplied,
+    discountUsd,
+    unitPriceFactor,
+  } = computeSiteOfferOnSubtotal(subtotalUsd, siteOffer);
 
   for (const { product, qty, unitUsd } of prepared) {
     const chargedUnitUsd = unitUsd * unitPriceFactor;
@@ -367,9 +370,11 @@ export async function createHostedCheckoutSession(
     metadata: {
       source: "storefront",
       site_offer_applied: siteOfferApplied ? "true" : "false",
+      amount_discount: String(discountUsd),
       shipping_base: String(shippingQuote.baseRate),
       shipping_surcharges: String(shippingQuote.surchargesTotal),
       shipping_total: String(shippingQuote.shippingTotal),
+      shipping_method: shippingQuote.requiresQuote ? "manual" : "automatic",
     },
   });
 
