@@ -1172,10 +1172,12 @@ export const es = {
       description:
         "Revisa montos, impuestos y aplica los estados de procesamiento.",
       status: {
-        confirmada: "Confirmado",
-        procesando: "Procesando",
-        enviando: "Enviando",
-        completada: "Completado",
+        pending: "Pendiente",
+        confirmed: "Confirmado",
+        processing: "Procesando",
+        shipping: "Enviando",
+        completed: "Completado",
+        cancelled: "Cancelado",
         updating: "Actualizando",
       },
       filters: {

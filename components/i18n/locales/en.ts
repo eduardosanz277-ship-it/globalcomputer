@@ -1166,10 +1166,12 @@ export const en = {
       description:
         "Review amounts, taxes, and apply processing statuses.",
       status: {
-        confirmada: "Confirmed",
-        procesando: "Processing",
-        enviando: "Shipping",
-        completada: "Completed",
+        pending: "Pending",
+        confirmed: "Confirmed",
+        processing: "Processing",
+        shipping: "Shipping",
+        completed: "Completed",
+        cancelled: "Cancelled",
         updating: "Updating",
       },
       filters: {
