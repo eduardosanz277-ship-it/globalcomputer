@@ -10,6 +10,8 @@ function requiredMoneyField(options?: {
   minMessage?: string;
   gt?: number;
   gtMessage?: string;
+  requiredMessage?: string;
+  invalidMessage?: string;
 }) {
   const min = options?.min ?? 0;
   const minMessage = options?.minMessage ?? "Debe ser mayor o igual a 0";
@@ -20,8 +22,8 @@ function requiredMoneyField(options?: {
     return Number.isFinite(n) ? n : Number.NaN;
   }, z
     .number({
-      required_error: "Este campo es obligatorio",
-      invalid_type_error: "Ingresa un monto válido",
+      required_error: options?.requiredMessage ?? "Este campo es obligatorio",
+      invalid_type_error: options?.invalidMessage ?? "Ingresa un monto válido",
     })
     .superRefine((n, ctx) => {
       if (options?.gt != null && !(n > options.gt)) {
@@ -40,8 +42,27 @@ function requiredMoneyField(options?: {
     }));
 }
 
+/** Entero obligatorio (> 0): vacío → error requerido. */
+function requiredPositiveIntField(requiredMessage: string) {
+  return z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    if (typeof val === "number" && Number.isNaN(val)) return undefined;
+    const n = typeof val === "number" ? val : Number(val);
+    return Number.isFinite(n) ? n : Number.NaN;
+  }, z
+    .number({
+      required_error: requiredMessage,
+      invalid_type_error: requiredMessage,
+    })
+    .int("Debe ser un número entero")
+    .min(1, "Debe ser al menos 1"));
+}
+
 export const shippingSettingsFormSchema = z.object({
-  autoCalcMaxSubtotal: money,
+  autoCalcMaxSubtotal: requiredMoneyField({
+    requiredMessage:
+      "El monto máximo para cálculo automático es obligatorio",
+  }),
   overLimitAction: z.enum(["whatsapp"]),
   whatsappPhone: z
     .string()
@@ -64,6 +85,10 @@ export const shippingSettingsFormSchema = z.object({
     "keep_surcharges",
     "waive_surcharges",
   ]),
+  pendingPaymentMaxWaitValue: requiredPositiveIntField(
+    "El tiempo máximo de espera es obligatorio",
+  ),
+  pendingPaymentMaxWaitUnit: z.enum(["minutes", "hours", "days"]),
 });
 
 export type ShippingSettingsFormValues = z.infer<
