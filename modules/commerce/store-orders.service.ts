@@ -43,6 +43,10 @@ export type SiteOrderRow = {
   amount_subtotal: string;
   amount_tax: string;
   amount_shipping: string;
+  amount_discount: string;
+  amount_shipping_base: string;
+  amount_shipping_surcharge: string;
+  shipping_method: StoreOrderShippingMethod;
   stripe_amount_total: string;
   stripe_payment_status: string | null;
   stripe_payment_intent: string | null;
@@ -56,6 +60,16 @@ export class SiteOrderError extends Error {
 }
 
 const MINIMUM_ITEM_COUNT = 1;
+
+const SITE_ORDER_SELECT =
+  "id, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_payment_intent";
+
+type OrderPricingBreakdown = {
+  amount_discount: number;
+  amount_shipping_base: number;
+  amount_shipping_surcharge: number;
+  shipping_method: StoreOrderShippingMethod;
+};
 
 function getStripeServer(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
@@ -71,6 +85,107 @@ function isUuid(value: string): boolean {
   );
 }
 
+function parseMoneyMeta(raw: string | undefined | null): number {
+  if (raw == null || raw === "") return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Number(n.toFixed(2));
+}
+
+function breakdownFromStripeMetadata(
+  meta: Stripe.Metadata | null | undefined,
+): OrderPricingBreakdown {
+  return {
+    amount_discount: parseMoneyMeta(meta?.amount_discount),
+    amount_shipping_base: parseMoneyMeta(meta?.shipping_base),
+    amount_shipping_surcharge: parseMoneyMeta(meta?.shipping_surcharges),
+    shipping_method:
+      meta?.shipping_method === "manual" ? "manual" : "automatic",
+  };
+}
+
+function mapSiteOrderRow(row: {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  status: string;
+  total_amount: string | number;
+  created_at: string;
+  amount_subtotal: string | number;
+  amount_tax: string | number;
+  amount_shipping: string | number;
+  amount_discount?: string | number | null;
+  amount_shipping_base?: string | number | null;
+  amount_shipping_surcharge?: string | number | null;
+  shipping_method?: string | null;
+  stripe_amount_total: string | number;
+  stripe_payment_status: string | null;
+  stripe_payment_intent: string | null;
+}): SiteOrderRow {
+  return {
+    id: row.id,
+    customer_name: row.customer_name,
+    customer_email: row.customer_email,
+    status: row.status as SiteOrderStatus,
+    total_amount: String(row.total_amount),
+    created_at: row.created_at,
+    amount_subtotal: String(row.amount_subtotal),
+    amount_tax: String(row.amount_tax),
+    amount_shipping: String(row.amount_shipping),
+    amount_discount: String(row.amount_discount ?? 0),
+    amount_shipping_base: String(row.amount_shipping_base ?? 0),
+    amount_shipping_surcharge: String(row.amount_shipping_surcharge ?? 0),
+    shipping_method:
+      row.shipping_method === "manual" ? "manual" : "automatic",
+    stripe_amount_total: String(row.stripe_amount_total),
+    stripe_payment_status: row.stripe_payment_status,
+    stripe_payment_intent: row.stripe_payment_intent,
+  };
+}
+
+async function resolveOrderPricingBreakdown(input: {
+  subtotal: number;
+  lines: ShippingQuoteLineInput[];
+  stripeSessionId?: string;
+}): Promise<OrderPricingBreakdown> {
+  if (input.stripeSessionId?.trim()) {
+    try {
+      const stripe = getStripeServer();
+      const session = await stripe.checkout.sessions.retrieve(
+        input.stripeSessionId.trim(),
+      );
+      if (session.metadata) {
+        return breakdownFromStripeMetadata(session.metadata);
+      }
+    } catch {
+      /* fallback local */
+    }
+  }
+
+  const offer = await getPublicSiteOffer();
+  const { discountUsd } = computeSiteOfferOnSubtotal(input.subtotal, offer);
+  const quote = await quoteShippingService({
+    subtotal: input.subtotal,
+    lines: input.lines,
+  });
+
+  if (quote.requiresQuote) {
+    return {
+      amount_discount: discountUsd,
+      amount_shipping_base: 0,
+      amount_shipping_surcharge: 0,
+      shipping_method: "manual",
+    };
+  }
+
+  return {
+    amount_discount: discountUsd,
+    amount_shipping_base: quote.baseRate,
+    amount_shipping_surcharge: quote.surchargesTotal,
+    shipping_method: "automatic",
+  };
+}
+
 export async function createSiteOrder(
   payload: CreateSiteOrderInput,
 ): Promise<SiteOrderRow> {
@@ -84,26 +199,11 @@ export async function createSiteOrder(
   if (payload.stripeSessionId?.trim()) {
     const { data: existing } = await supabase
       .from("store_orders")
-      .select(
-        "id, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, stripe_payment_status, stripe_payment_intent",
-      )
+      .select(SITE_ORDER_SELECT)
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (existing) {
-      return {
-        id: existing.id,
-        customer_name: existing.customer_name,
-        customer_email: existing.customer_email,
-        status: existing.status as SiteOrderStatus,
-        total_amount: existing.total_amount,
-        created_at: existing.created_at,
-        amount_subtotal: existing.amount_subtotal,
-        amount_tax: existing.amount_tax,
-        amount_shipping: existing.amount_shipping,
-        stripe_amount_total: existing.stripe_amount_total,
-        stripe_payment_status: existing.stripe_payment_status,
-        stripe_payment_intent: existing.stripe_payment_intent,
-      };
+      return mapSiteOrderRow(existing);
     }
   }
   const tier = resolveStorefrontPriceTier(user?.role);
@@ -113,6 +213,7 @@ export async function createSiteOrder(
   const productsById = Object.fromEntries(products.map((p) => [p.id, p]));
 
   let totalAmount = 0;
+  const shippingLines: ShippingQuoteLineInput[] = [];
   const normalizedItems = payload.items.map((item) => {
     const product = productsById[item.productId];
     if (!product) {
@@ -125,14 +226,34 @@ export async function createSiteOrder(
     const unitPrice = resolveStorefrontUnitPrice(product, tier);
     const linePrice = unitPrice * item.qty;
     totalAmount += linePrice;
+    shippingLines.push({
+      productId: product.id,
+      quantity: item.qty,
+      shippingType: product.shipping_type ?? "standard",
+      shippingSurchargePerUnit: product.shipping_surcharge_per_unit ?? 0,
+    });
 
     return {
       product,
       qty: item.qty,
       unitPrice,
-      totalPrice: Number((linePrice).toFixed(2)),
+      totalPrice: Number(linePrice.toFixed(2)),
     };
   });
+
+  const pricing = await resolveOrderPricingBreakdown({
+    subtotal: totalAmount,
+    lines: shippingLines,
+    stripeSessionId: payload.stripeSessionId,
+  });
+  const shippingTotal =
+    pricing.shipping_method === "manual"
+      ? 0
+      : Number(
+          (
+            pricing.amount_shipping_base + pricing.amount_shipping_surcharge
+          ).toFixed(2),
+        );
 
   const customerName =
     payload.name?.trim() || user?.fullName?.trim() || "Cliente";
@@ -146,43 +267,30 @@ export async function createSiteOrder(
       customer_name: customerName,
       customer_email: customerEmail,
       stripe_session_id: payload.stripeSessionId ?? null,
-      status: "confirmada",
+      status: "confirmed",
       total_amount: Number(totalAmount.toFixed(2)),
       amount_subtotal: Number(totalAmount.toFixed(2)),
       amount_tax: 0,
-      amount_shipping: 0,
+      amount_shipping: shippingTotal,
+      amount_discount: pricing.amount_discount,
+      amount_shipping_base: pricing.amount_shipping_base,
+      amount_shipping_surcharge: pricing.amount_shipping_surcharge,
+      shipping_method: pricing.shipping_method,
       stripe_amount_total: Number(totalAmount.toFixed(2)),
       stripe_payment_status: null,
       stripe_payment_intent: null,
     })
-    .select(
-      "id, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, stripe_payment_status, stripe_payment_intent",
-    )
+    .select(SITE_ORDER_SELECT)
     .maybeSingle();
 
   if (orderError?.code === "23505" && payload.stripeSessionId?.trim()) {
     const { data: dup } = await supabase
       .from("store_orders")
-      .select(
-        "id, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, stripe_payment_status, stripe_payment_intent",
-      )
+      .select(SITE_ORDER_SELECT)
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (dup) {
-      return {
-        id: dup.id,
-        customer_name: dup.customer_name,
-        customer_email: dup.customer_email,
-        status: dup.status as SiteOrderStatus,
-        total_amount: dup.total_amount,
-        created_at: dup.created_at,
-        amount_subtotal: dup.amount_subtotal,
-        amount_tax: dup.amount_tax,
-        amount_shipping: dup.amount_shipping,
-        stripe_amount_total: dup.stripe_amount_total,
-        stripe_payment_status: dup.stripe_payment_status,
-        stripe_payment_intent: dup.stripe_payment_intent,
-      };
+      return mapSiteOrderRow(dup);
     }
   }
 
@@ -206,20 +314,7 @@ export async function createSiteOrder(
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
   }
 
-  return {
-    id: order.id,
-    customer_name: order.customer_name,
-    customer_email: order.customer_email,
-    status: order.status as SiteOrderStatus,
-    total_amount: order.total_amount,
-    created_at: order.created_at,
-    amount_subtotal: order.amount_subtotal,
-    amount_tax: order.amount_tax,
-    amount_shipping: order.amount_shipping,
-    stripe_amount_total: order.stripe_amount_total,
-    stripe_payment_status: order.stripe_payment_status,
-    stripe_payment_intent: order.stripe_payment_intent,
-  };
+  return mapSiteOrderRow(order);
 }
 
 function centsToMoney(cents?: number | null): number {
@@ -336,16 +431,22 @@ async function ensureStoreOrderForCheckoutSession(
         ? full.payment_intent.id
         : null;
 
+  const pricing = breakdownFromStripeMetadata(full.metadata);
+
   const insertOrder = {
     user_id: userId,
     customer_name: customerName,
     customer_email: customerEmail,
     stripe_session_id: full.id,
-    status: "confirmada" as SiteOrderStatus,
+    status: "confirmed" as SiteOrderStatus,
     total_amount: centsToMoney(full.amount_total),
     amount_subtotal: centsToMoney(full.amount_subtotal),
     amount_tax: centsToMoney(full.total_details?.amount_tax),
     amount_shipping: centsToMoney(full.total_details?.amount_shipping),
+    amount_discount: pricing.amount_discount,
+    amount_shipping_base: pricing.amount_shipping_base,
+    amount_shipping_surcharge: pricing.amount_shipping_surcharge,
+    shipping_method: pricing.shipping_method,
     stripe_amount_total: centsToMoney(full.amount_total),
     stripe_payment_status: full.payment_status ?? null,
     stripe_payment_intent: paymentIntentId,
@@ -407,10 +508,16 @@ export async function syncOrderWithStripeSession(
     order = { id };
   }
 
+  const pricing = breakdownFromStripeMetadata(session.metadata);
+
   const updates = {
     amount_subtotal: centsToMoney(session.amount_subtotal),
     amount_tax: centsToMoney(session.total_details?.amount_tax),
     amount_shipping: centsToMoney(session.total_details?.amount_shipping),
+    amount_discount: pricing.amount_discount,
+    amount_shipping_base: pricing.amount_shipping_base,
+    amount_shipping_surcharge: pricing.amount_shipping_surcharge,
+    shipping_method: pricing.shipping_method,
     stripe_amount_total: centsToMoney(session.amount_total),
     stripe_payment_status: session.payment_status ?? null,
     stripe_payment_intent:
