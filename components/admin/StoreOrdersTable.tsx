@@ -42,14 +42,16 @@ import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
 import { STORE_ORDERS_STATUS_FILTER_WIDE_CH } from "@/lib/store-orders-status-filter-width";
 
 const STATUS_OPTIONS: SiteOrderStatus[] = [
-  "confirmada",
-  "procesando",
-  "enviando",
-  "completada",
+  "pending",
+  "confirmed",
+  "processing",
+  "shipping",
+  "completed",
+  "cancelled",
 ];
 type StatusFilterValue = SiteOrderStatus | "all";
 const STATUS_MENU_MIN_WIDTH_PX = 208;
-const STATUS_MENU_ESTIMATED_HEIGHT_PX = 168;
+const STATUS_MENU_ESTIMATED_HEIGHT_PX = 248;
 const VIEWPORT_GUTTER_PX = 8;
 const TRIGGER_GAP_PX = 2;
 const ADMIN_HEADER_SAFE_TOP_PX = 68;
@@ -61,24 +63,30 @@ const ITEMS_COLUMN_CLASS = "w-[10rem] min-w-[10rem] max-w-[10rem]";
 const CREATED_AT_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
 
 const STATUS_BADGE_CLASSES: Record<SiteOrderStatus, string> = {
-  confirmada: "bg-sky-50 text-sky-600 border border-sky-100",
-  procesando: "bg-amber-50 text-amber-600 border border-amber-100",
-  enviando: "bg-violet-50 text-violet-600 border border-violet-100",
-  completada: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+  pending: "bg-slate-50 text-slate-600 border border-slate-100",
+  confirmed: "bg-sky-50 text-sky-600 border border-sky-100",
+  processing: "bg-amber-50 text-amber-600 border border-amber-100",
+  shipping: "bg-violet-50 text-violet-600 border border-violet-100",
+  completed: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+  cancelled: "bg-red-50 text-red-600 border border-red-100",
 };
 
 const STATUS_MENU_ROW_CLASSES: Record<SiteOrderStatus, string> = {
-  confirmada: "text-sky-700 hover:bg-sky-50/80",
-  procesando: "text-amber-700 hover:bg-amber-50/80",
-  enviando: "text-violet-700 hover:bg-violet-50/80",
-  completada: "text-emerald-700 hover:bg-emerald-50/80",
+  pending: "text-slate-700 hover:bg-slate-50/80",
+  confirmed: "text-sky-700 hover:bg-sky-50/80",
+  processing: "text-amber-700 hover:bg-amber-50/80",
+  shipping: "text-violet-700 hover:bg-violet-50/80",
+  completed: "text-emerald-700 hover:bg-emerald-50/80",
+  cancelled: "text-red-700 hover:bg-red-50/80",
 };
 
 const STATUS_MENU_ROW_ACTIVE_CLASSES: Record<SiteOrderStatus, string> = {
-  confirmada: "bg-sky-50/90",
-  procesando: "bg-amber-50/90",
-  enviando: "bg-violet-50/90",
-  completada: "bg-emerald-50/90",
+  pending: "bg-slate-50/90",
+  confirmed: "bg-sky-50/90",
+  processing: "bg-amber-50/90",
+  shipping: "bg-violet-50/90",
+  completed: "bg-emerald-50/90",
+  cancelled: "bg-red-50/90",
 };
 
 function orderStatusBadgeClass(status: SiteOrderStatus) {
@@ -99,14 +107,20 @@ function createdAtSortMs(row: AdminStoreOrderRow): number {
 function orderRowClassName(row: AdminStoreOrderRow): string {
   const base = "hover:bg-muted/50 transition-colors duration-150";
 
-  if (row.status === "confirmada") {
+  if (row.status === "pending") {
+    return cn(base, "shadow-[inset_2px_0_0_rgba(100,116,139,0.35)]");
+  }
+  if (row.status === "confirmed") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(14,165,233,0.35)]");
   }
-  if (row.status === "procesando") {
+  if (row.status === "processing") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(245,158,11,0.35)]");
   }
-  if (row.status === "enviando") {
+  if (row.status === "shipping") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(139,92,246,0.35)]");
+  }
+  if (row.status === "cancelled") {
+    return cn(base, "shadow-[inset_2px_0_0_rgba(239,68,68,0.35)]");
   }
   return cn(base, "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]");
 }
@@ -115,10 +129,12 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   const { t, locale } = useI18n();
   const statusLabels = useMemo<Record<SiteOrderStatus, string>>(
     () => ({
-      confirmada: t("admin.orders.status.confirmada"),
-      procesando: t("admin.orders.status.procesando"),
-      enviando: t("admin.orders.status.enviando"),
-      completada: t("admin.orders.status.completada"),
+      pending: t("admin.orders.status.pending"),
+      confirmed: t("admin.orders.status.confirmed"),
+      processing: t("admin.orders.status.processing"),
+      shipping: t("admin.orders.status.shipping"),
+      completed: t("admin.orders.status.completed"),
+      cancelled: t("admin.orders.status.cancelled"),
     }),
     [t],
   );

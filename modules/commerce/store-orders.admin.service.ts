@@ -10,6 +10,10 @@ export type AdminStoreOrderRow = {
   amount_subtotal: string;
   amount_tax: string;
   amount_shipping: string;
+  amount_discount: string;
+  amount_shipping_base: string;
+  amount_shipping_surcharge: string;
+  shipping_method: "automatic" | "manual";
   stripe_amount_total: string;
   stripe_payment_status: string | null;
   stripe_session_id: string | null;
@@ -36,7 +40,7 @@ export async function repoListAdminStoreOrders({
   let query = supabase
     .from("store_orders")
     .select(
-      "id, customer_name, customer_email, status, total_amount, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, stripe_payment_status, stripe_session_id, created_at",
+      "id, customer_name, customer_email, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -61,6 +65,11 @@ export async function repoListAdminStoreOrders({
       amount_subtotal: String(row.amount_subtotal),
       amount_tax: String(row.amount_tax),
       amount_shipping: String(row.amount_shipping),
+      amount_discount: String(row.amount_discount ?? 0),
+      amount_shipping_base: String(row.amount_shipping_base ?? 0),
+      amount_shipping_surcharge: String(row.amount_shipping_surcharge ?? 0),
+      shipping_method:
+        row.shipping_method === "manual" ? "manual" : "automatic",
       stripe_amount_total: String(row.stripe_amount_total),
       stripe_payment_status: row.stripe_payment_status ?? null,
       stripe_session_id: row.stripe_session_id ?? null,
