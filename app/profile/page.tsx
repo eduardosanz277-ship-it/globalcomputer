@@ -61,7 +61,7 @@ export default async function CuentaPage() {
   const { data: orders } = await supabase
     .from("store_orders")
     .select(
-      "id, status, total_amount, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price )",
+      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price )",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -69,6 +69,8 @@ export default async function CuentaPage() {
 
   const mappedOrders: CuentaOrder[] = (orders ?? []).map((order) => ({
     id: order.id,
+    orderNumber:
+      String(order.order_number ?? "").trim() || String(order.id).slice(0, 8),
     status: order.status,
     total: Number(order.total_amount) || 0,
     createdAt: order.created_at,

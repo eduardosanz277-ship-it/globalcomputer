@@ -323,6 +323,12 @@ export const en = {
       requestShippingQuote: "Request a quote",
       requestShippingQuoteUnavailable:
         "Configure shipping WhatsApp in the admin panel",
+      requestShippingQuotePending: "Preparing quote…",
+      toastQuoteOrderError: "Could not create the quote order.",
+      toastQuoteOrderSuccess: "Order created. Opening WhatsApp…",
+      toastQuoteOpenWhatsApp: "Open WhatsApp",
+      toastQuotePopupBlocked:
+        "The browser blocked the window. Open it from this link:",
       shippingQuoteTitle: "Shipping requires a personalized quote.",
       shippingQuoteDescription:
         "Your order exceeds the limit for automatic shipping calculation. Request a quote and an advisor will reply on WhatsApp with the shipping cost for this order.",
@@ -1175,22 +1181,33 @@ export const en = {
         updating: "Updating",
       },
       filters: {
-        searchPlaceholder: "Search by customer, email, or status…",
-        clear: "Clear filter",
-        clearAria: "Clear status filter",
+        searchPlaceholder: "Search by order no., customer, email, or status…",
+        clear: "Clear filters",
+        clearAria: "Clear status and shipping method filters",
         status: {
           all: "All statuses",
         },
+        shippingMethod: {
+          all: "All shipping methods",
+        },
       },
       table: {
+        orderNumber: "Order no.",
+        orderNumberSortIdle: "Sort by order number",
+        orderNumberSortAsc: "Oldest first. Click to reverse",
+        orderNumberSortDesc: "Newest first. Click to clear sort",
         customer: "Customer",
         customerSortIdle: "Sort by customer",
         customerSortAsc: "Sorted A to Z. Click to reverse",
         customerSortDesc: "Sorted Z to A. Click to clear sort",
-        total: "Stripe total",
+        total: "Total",
         totalSortIdle: "Sort by total",
         totalSortAsc: "Lowest total first. Click to reverse",
         totalSortDesc: "Highest total first. Click to clear sort",
+        shippingMethod: "Shipping",
+        shippingMethodSortIdle: "Sort by shipping method",
+        shippingMethodSortAsc: "Automatic first. Click to reverse",
+        shippingMethodSortDesc: "Manual first. Click to clear sort",
         status: "Status",
         statusSortIdle: "Sort by status",
         statusSortAsc: "Confirmed first. Click to reverse",
@@ -1205,7 +1222,12 @@ export const en = {
       },
       mobile: {
         totalLabel: "Total",
+        shippingMethodLabel: "Shipping",
         orderDate: "Order date",
+      },
+      shippingMethod: {
+        automatic: "Automatic",
+        manual: "Manual",
       },
       items: {
         title: "Order items",
@@ -1221,10 +1243,29 @@ export const en = {
           total: "Total",
         },
       },
+      confirmShipping: {
+        title: "Confirm manual order",
+        description:
+          "Enter the quoted shipping amount. The order total will be updated when you confirm.",
+        orderPrefix: "Order:",
+        currentTotal: "Total without shipping",
+        shippingAmount: "Shipping amount",
+        shippingAmountPlaceholder: "0.00",
+        shippingRequired: "Shipping amount must be greater than 0.",
+        shippingInvalid: "Enter a valid shipping amount.",
+        newTotal: "Total with shipping",
+        cancel: "Cancel",
+        confirm: "Confirm order",
+        confirming: "Confirming…",
+      },
       toast: {
         statusUpdated: "Status updated.",
         statusUpdateError: "Status could not be updated.",
         statusChangeError: "Status could not be changed.",
+        shippingRequired:
+          "To confirm a pending manual order you must enter the shipping amount.",
+        statusNotAllowed:
+          "Stripe-paid orders cannot use pending or cancelled statuses.",
       },
       error: {
         default: "There was a problem fetching orders.",

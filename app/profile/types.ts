@@ -15,6 +15,7 @@ export type CuentaAddress = {
 
 export type CuentaOrder = {
   id: string;
+  orderNumber: string;
   status: string;
   total: number;
   createdAt: string | null;

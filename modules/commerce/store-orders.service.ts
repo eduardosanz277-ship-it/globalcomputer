@@ -7,8 +7,17 @@ import {
   resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { storefrontProductDisplayName } from "@/modules/catalog/storefront-product.shared";
 import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
-import { quoteShippingService } from "@/modules/shipping/shipping.service";
+import {
+  buildWhatsAppQuoteMessage,
+  buildWhatsAppUrl,
+  shouldRedirectToWhatsApp,
+} from "@/modules/shipping/shipping.calculator";
+import {
+  getShippingSettingsService,
+  quoteShippingService,
+} from "@/modules/shipping/shipping.service";
 import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 
 export type SiteOrderStatus =
@@ -35,6 +44,7 @@ export type CreateSiteOrderInput = {
 
 export type SiteOrderRow = {
   id: string;
+  order_number: string;
   customer_name: string;
   customer_email: string;
   status: SiteOrderStatus;
@@ -62,7 +72,7 @@ export class SiteOrderError extends Error {
 const MINIMUM_ITEM_COUNT = 1;
 
 const SITE_ORDER_SELECT =
-  "id, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_payment_intent";
+  "id, order_number, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_payment_intent";
 
 type OrderPricingBreakdown = {
   amount_discount: number;
@@ -106,6 +116,7 @@ function breakdownFromStripeMetadata(
 
 function mapSiteOrderRow(row: {
   id: string;
+  order_number?: string | null;
   customer_name: string;
   customer_email: string;
   status: string;
@@ -124,6 +135,7 @@ function mapSiteOrderRow(row: {
 }): SiteOrderRow {
   return {
     id: row.id,
+    order_number: String(row.order_number ?? "").trim() || row.id,
     customer_name: row.customer_name,
     customer_email: row.customer_email,
     status: row.status as SiteOrderStatus,
@@ -315,6 +327,166 @@ export async function createSiteOrder(
   }
 
   return mapSiteOrderRow(order);
+}
+
+export type CreateManualQuoteOrderInput = {
+  items: SiteOrderItemInput[];
+  locale?: string | null;
+  name?: string;
+  email?: string;
+};
+
+export type CreateManualQuoteOrderResult = {
+  order: SiteOrderRow;
+  whatsappUrl: string;
+};
+
+/**
+ * Pedido manual por cotización WhatsApp: status pending, sin envío en el total.
+ */
+export async function createManualQuoteOrder(
+  payload: CreateManualQuoteOrderInput,
+): Promise<CreateManualQuoteOrderResult> {
+  if (payload.items.length < MINIMUM_ITEM_COUNT) {
+    throw new SiteOrderError("El carrito debe tener al menos un producto.");
+  }
+
+  const user = await getCurrentUserService();
+  const tier = resolveStorefrontPriceTier(user?.role);
+  const locale = payload.locale === "en" ? "en" : "es";
+
+  const productIds = [...new Set(payload.items.map((item) => item.productId))];
+  const [products, offer, settings] = await Promise.all([
+    getStorefrontProductsByIds(productIds),
+    getPublicSiteOffer(),
+    getShippingSettingsService(),
+  ]);
+  const productsById = Object.fromEntries(products.map((p) => [p.id, p]));
+
+  let subtotal = 0;
+  const shippingLines: ShippingQuoteLineInput[] = [];
+  const normalizedItems: {
+    product: (typeof products)[number];
+    qty: number;
+    unitPrice: number;
+    totalPrice: number;
+  }[] = [];
+
+  for (const item of payload.items) {
+    const product = productsById[item.productId];
+    if (!product) {
+      throw new SiteOrderError(`El producto ${item.productId} ya no existe.`, 400);
+    }
+    const qty = Math.max(0, Math.floor(item.qty));
+    if (qty < 1) {
+      throw new SiteOrderError("La cantidad debe ser al menos 1.", 400);
+    }
+    const unitPrice = resolveStorefrontUnitPrice(product, tier);
+    const linePrice = unitPrice * qty;
+    subtotal += linePrice;
+    shippingLines.push({
+      productId: product.id,
+      quantity: qty,
+      shippingType: product.shipping_type ?? "standard",
+      shippingSurchargePerUnit: product.shipping_surcharge_per_unit ?? 0,
+      productName: storefrontProductDisplayName(product, locale),
+      unitPrice,
+    });
+    normalizedItems.push({
+      product,
+      qty,
+      unitPrice,
+      totalPrice: Number(linePrice.toFixed(2)),
+    });
+  }
+
+  subtotal = Number(subtotal.toFixed(2));
+  if (!shouldRedirectToWhatsApp(subtotal, settings.autoCalcMaxSubtotal)) {
+    throw new SiteOrderError(
+      "Este pedido no requiere cotización manual de envío.",
+      400,
+    );
+  }
+
+  const { discountUsd, totalAfterDiscountUsd } = computeSiteOfferOnSubtotal(
+    subtotal,
+    offer,
+  );
+  const merchandiseTotal = Number(totalAfterDiscountUsd.toFixed(2));
+
+  const customerName =
+    payload.name?.trim() || user?.fullName?.trim() || "Cliente";
+  const customerEmail =
+    payload.email?.trim() || user?.email?.trim() || "cliente@globalcomputer.com";
+
+  const supabase = createSupabaseAdminClient();
+  const { data: order, error: orderError } = await supabase
+    .from("store_orders")
+    .insert({
+      user_id: user?.id ?? null,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      stripe_session_id: null,
+      status: "pending",
+      total_amount: merchandiseTotal,
+      amount_subtotal: subtotal,
+      amount_tax: 0,
+      amount_shipping: 0,
+      amount_discount: discountUsd,
+      amount_shipping_base: 0,
+      amount_shipping_surcharge: 0,
+      shipping_method: "manual",
+      stripe_amount_total: 0,
+      stripe_payment_status: null,
+      stripe_payment_intent: null,
+    })
+    .select(SITE_ORDER_SELECT)
+    .maybeSingle();
+
+  if (orderError || !order) {
+    console.error("[store-orders] create manual quote", orderError);
+    throw new SiteOrderError("No se pudo registrar el pedido.", 500);
+  }
+
+  const { error: itemsError } = await supabase.from("store_order_items").insert(
+    normalizedItems.map((line) => ({
+      store_order_id: order.id,
+      product_id: line.product.id,
+      product_name: storefrontProductDisplayName(line.product, locale),
+      quantity: line.qty,
+      unit_price: Number(line.unitPrice.toFixed(2)),
+      total_price: Number(line.totalPrice.toFixed(2)),
+    })),
+  );
+  if (itemsError) {
+    console.error("[store-orders] create manual quote items", itemsError);
+    throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
+  }
+
+  const intro =
+    locale === "en"
+      ? settings.whatsappMessageEn.trim() || settings.whatsappMessage
+      : settings.whatsappMessage;
+  const message = buildWhatsAppQuoteMessage(
+    intro,
+    shippingLines,
+    subtotal,
+    offer,
+    locale,
+    order.order_number,
+  );
+  const whatsappUrl = buildWhatsAppUrl(settings.whatsappPhone, message);
+  if (!whatsappUrl) {
+    throw new SiteOrderError(
+      "Configura el WhatsApp de envíos en el panel admin.",
+      400,
+    );
+  }
+
+  return {
+    order: mapSiteOrderRow(order),
+    whatsappUrl,
+  };
 }
 
 function centsToMoney(cents?: number | null): number {

@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import type { PublicSiteOffer } from "@/lib/site-offer.types";
-import { gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
+import { gcCartClear, gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import type { ShippingQuote } from "@/modules/shipping/shipping.types";
@@ -99,6 +99,7 @@ export function StoreCartOrderSummary({
   );
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [liveOffer, setLiveOffer] = useState<PublicSiteOffer | null>(null);
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(
     null,
@@ -203,12 +204,80 @@ export function StoreCartOrderSummary({
     }
   }
 
+  async function requestManualQuote() {
+    if (
+      quoteLoading ||
+      items.length === 0 ||
+      hasUnresolvedProducts ||
+      !shippingQuote?.requiresQuote ||
+      !shippingQuote.whatsappUrl
+    ) {
+      return;
+    }
+    setQuoteLoading(true);
+    try {
+      const res = await fetch("/api/site-orders/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productId: item.productId,
+            qty: item.qty,
+          })),
+          locale,
+        }),
+      });
+      const data = (await res.json()) as {
+        whatsappUrl?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.whatsappUrl) {
+        throw new Error(
+          data.error ?? t("storefront.cart.toastQuoteOrderError"),
+        );
+      }
+
+      const whatsappUrl = data.whatsappUrl;
+      await gcCartClear();
+      onContinueShopping?.();
+
+      const opened = window.open(whatsappUrl, "_blank");
+      if (opened) {
+        toast.success(t("storefront.cart.toastQuoteOrderSuccess"));
+      } else {
+        toast.info(
+          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <span>{t("storefront.cart.toastQuotePopupBlocked")}</span>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline underline-offset-2"
+            >
+              {t("storefront.cart.toastQuoteOpenWhatsApp")}
+            </a>
+          </span>,
+          { autoClose: 12000 },
+        );
+      }
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : t("storefront.cart.toastQuoteOrderError");
+      toast.error(msg);
+    } finally {
+      setQuoteLoading(false);
+    }
+  }
+
   const requiresQuote = Boolean(shippingQuote?.requiresQuote);
   const checkoutDisabled =
     loading ||
     items.length === 0 ||
     hasUnresolvedProducts ||
     checkoutLoading ||
+    quoteLoading ||
     shippingLoading ||
     requiresQuote ||
     shippingQuote?.status === "no_rate" ||
@@ -260,6 +329,14 @@ export function StoreCartOrderSummary({
 
   const updatingLabel = t("storefront.cart.amountsUpdating");
 
+  const quoteDisabled =
+    loading ||
+    items.length === 0 ||
+    hasUnresolvedProducts ||
+    quoteLoading ||
+    pricesPending ||
+    !shippingQuote?.whatsappUrl;
+
   const payButton = (
     <Button
       type="button"
@@ -282,26 +359,36 @@ export function StoreCartOrderSummary({
     </Button>
   );
 
-  const quoteButton =
-    requiresQuote && shippingQuote?.whatsappUrl ? (
-      <a
-        href={shippingQuote.whatsappUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+  const quoteButton = requiresQuote ? (
+    shippingQuote?.whatsappUrl ? (
+      <Button
+        type="button"
+        size={variant === "page" ? "lg" : "default"}
         className={cn(
-          buttonVariants({ size: variant === "page" ? "lg" : "default" }),
-          "inline-flex w-full items-center justify-center gap-2 rounded-xl",
+          "w-full gap-2 rounded-xl",
           variant === "drawer" && "sm:flex-1",
         )}
+        disabled={quoteDisabled}
+        onClick={requestManualQuote}
       >
-        <MessageCircle className="h-4 w-4" aria-hidden />
-        {t("storefront.cart.requestShippingQuote")}
-      </a>
-    ) : requiresQuote ? (
+        {quoteLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            {t("storefront.cart.requestShippingQuotePending")}
+          </>
+        ) : (
+          <>
+            <MessageCircle className="h-4 w-4" aria-hidden />
+            {t("storefront.cart.requestShippingQuote")}
+          </>
+        )}
+      </Button>
+    ) : (
       <Button type="button" className="w-full rounded-xl" disabled>
         {t("storefront.cart.requestShippingQuoteUnavailable")}
       </Button>
-    ) : null;
+    )
+  ) : null;
 
   return (
     <div

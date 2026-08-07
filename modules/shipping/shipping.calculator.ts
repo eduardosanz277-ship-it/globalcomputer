@@ -42,6 +42,7 @@ const WHATSAPP_QUOTE_COPY: Record<
     discount: (pct: string) => string;
     orderTotal: string;
     shippingPending: string;
+    orderRef: (id: string) => string;
     closing: string;
   }
 > = {
@@ -52,6 +53,7 @@ const WHATSAPP_QUOTE_COPY: Record<
     discount: (pct) => `Descuento (${pct}%)`,
     orderTotal: "Total del pedido",
     shippingPending: "Envío: Pendiente de cotización",
+    orderRef: (id) => `Pedido: ${id}`,
     closing: "Gracias. Quedo atento(a) a la cotización del envío.",
   },
   en: {
@@ -61,6 +63,7 @@ const WHATSAPP_QUOTE_COPY: Record<
     discount: (pct) => `Discount (${pct}%)`,
     orderTotal: "Order total",
     shippingPending: "Shipping: Pending quote",
+    orderRef: (id) => `Order: ${id}`,
     closing: "Thank you. I look forward to receiving the shipping quote.",
   },
 };
@@ -78,6 +81,7 @@ export function buildWhatsAppQuoteMessage(
   subtotal: number,
   offer?: ShippingQuoteOfferInput | null,
   locale?: string | null,
+  orderId?: string | null,
 ): string {
   const lang = resolveQuoteLocale(locale);
   const copy = WHATSAPP_QUOTE_COPY[lang];
@@ -90,7 +94,13 @@ export function buildWhatsAppQuoteMessage(
   );
 
   if (detailLines.length === 0) {
-    return intro;
+    const withRef =
+      orderId?.trim() && intro
+        ? `${intro}\n\n${copy.orderRef(orderId.trim())}`
+        : orderId?.trim()
+          ? copy.orderRef(orderId.trim())
+          : intro;
+    return withRef;
   }
 
   const offerResult = computeSiteOfferOnSubtotal(subtotal, {
@@ -108,9 +118,13 @@ export function buildWhatsAppQuoteMessage(
     })
     .join("\n\n");
 
-  const summaryLines: string[] = [
+  const summaryLines: string[] = [];
+  if (orderId?.trim()) {
+    summaryLines.push(copy.orderRef(orderId.trim()), "");
+  }
+  summaryLines.push(
     `${copy.subtotal}: ${formatUsdPlain(roundMoney(subtotal))}`,
-  ];
+  );
   if (offerResult.applies) {
     summaryLines.push(
       `${copy.discount(formatOfferPercentage(offer?.offerPercentage ?? 0))}: −${formatUsdPlain(offerResult.discountUsd)}`,

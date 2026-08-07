@@ -3,6 +3,7 @@ import { SiteOrderStatus } from "./store-orders.service";
 
 export type AdminStoreOrderRow = {
   id: string;
+  order_number: string;
   customer_name: string;
   customer_email: string;
   status: SiteOrderStatus;
@@ -40,7 +41,7 @@ export async function repoListAdminStoreOrders({
   let query = supabase
     .from("store_orders")
     .select(
-      "id, customer_name, customer_email, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, created_at",
+      "id, order_number, customer_name, customer_email, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -58,6 +59,7 @@ export async function repoListAdminStoreOrders({
   return (
     data?.map((row) => ({
       id: String(row.id),
+      order_number: String(row.order_number ?? "").trim() || String(row.id),
       customer_name: String(row.customer_name),
       customer_email: String(row.customer_email),
       status: row.status as SiteOrderStatus,
@@ -78,11 +80,82 @@ export async function repoListAdminStoreOrders({
   );
 }
 
+export type UpdateStoreOrderStatusResult = {
+  status: SiteOrderStatus;
+  amount_shipping: string;
+  total_amount: string;
+};
+
 export async function repoUpdateStoreOrderStatus(
   orderId: string,
   status: SiteOrderStatus,
-): Promise<void> {
+  amountShipping?: number,
+): Promise<UpdateStoreOrderStatusResult> {
   const supabase = await createSupabaseServerClient();
+  const { data: current, error: fetchError } = await supabase
+    .from("store_orders")
+    .select(
+      "status, shipping_method, amount_subtotal, amount_discount, amount_shipping, total_amount",
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  if (fetchError) {
+    throw new Error(
+      [fetchError.message, fetchError.code ? `(${fetchError.code})` : ""]
+        .filter(Boolean)
+        .join(" "),
+    );
+  }
+  if (!current) {
+    throw new Error("ORDER_NOT_FOUND");
+  }
+
+  if (
+    current.shipping_method === "automatic" &&
+    (status === "pending" || status === "cancelled")
+  ) {
+    throw new Error("STATUS_NOT_ALLOWED");
+  }
+
+  const isManualPendingConfirm =
+    current.status === "pending" &&
+    current.shipping_method === "manual" &&
+    status === "confirmed";
+
+  if (isManualPendingConfirm) {
+    if (
+      typeof amountShipping !== "number" ||
+      !Number.isFinite(amountShipping) ||
+      amountShipping <= 0
+    ) {
+      throw new Error("SHIPPING_AMOUNT_REQUIRED");
+    }
+    const shipping = Number(amountShipping.toFixed(2));
+    const subtotal = Number(current.amount_subtotal ?? 0);
+    const discount = Number(current.amount_discount ?? 0);
+    const totalAmount = Number((subtotal - discount + shipping).toFixed(2));
+    const { error } = await supabase
+      .from("store_orders")
+      .update({
+        status,
+        amount_shipping: shipping,
+        total_amount: totalAmount,
+      })
+      .eq("id", orderId);
+    if (error) {
+      throw new Error(
+        [error.message, error.code ? `(${error.code})` : ""]
+          .filter(Boolean)
+          .join(" "),
+      );
+    }
+    return {
+      status,
+      amount_shipping: String(shipping),
+      total_amount: String(totalAmount),
+    };
+  }
+
   const { error } = await supabase
     .from("store_orders")
     .update({ status })
@@ -92,6 +165,11 @@ export async function repoUpdateStoreOrderStatus(
       [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
     );
   }
+  return {
+    status,
+    amount_shipping: String(current.amount_shipping ?? 0),
+    total_amount: String(current.total_amount ?? 0),
+  };
 }
 
 export async function repoListAdminStoreOrderItems(

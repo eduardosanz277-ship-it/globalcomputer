@@ -328,6 +328,12 @@ export const es = {
       requestShippingQuote: "Solicitar cotización",
       requestShippingQuoteUnavailable:
         "Configura el WhatsApp de envíos en el panel admin",
+      requestShippingQuotePending: "Preparando cotización…",
+      toastQuoteOrderError: "No se pudo crear el pedido de cotización.",
+      toastQuoteOrderSuccess: "Pedido creado. Abriendo WhatsApp…",
+      toastQuoteOpenWhatsApp: "Abrir WhatsApp",
+      toastQuotePopupBlocked:
+        "El navegador bloqueó la ventana. Ábrela desde el enlace:",
       shippingQuoteTitle: "El envío requiere una cotización personalizada.",
       shippingQuoteDescription:
         "Tu pedido supera el límite para el cálculo automático de envío. Solicita una cotización y un asesor te responderá por WhatsApp con el costo de envío para este pedido.",
@@ -1181,22 +1187,33 @@ export const es = {
         updating: "Actualizando",
       },
       filters: {
-        searchPlaceholder: "Buscar por cliente, email o estado…",
-        clear: "Limpiar filtro",
-        clearAria: "Limpiar filtro de estado",
+        searchPlaceholder: "Buscar por nº de orden, cliente, email o estado…",
+        clear: "Limpiar filtros",
+        clearAria: "Limpiar filtros de estado y método de envío",
         status: {
           all: "Todos los estados",
         },
+        shippingMethod: {
+          all: "Todos los envíos",
+        },
       },
       table: {
+        orderNumber: "Nº de orden",
+        orderNumberSortIdle: "Ordenar por número de orden",
+        orderNumberSortAsc: "Más antiguo primero. Clic para invertir",
+        orderNumberSortDesc: "Más reciente primero. Clic para quitar orden",
         customer: "Cliente",
         customerSortIdle: "Ordenar por cliente",
         customerSortAsc: "Ordenado de la A a la Z. Clic para invertir",
         customerSortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
-        total: "Total Stripe",
+        total: "Total",
         totalSortIdle: "Ordenar por total",
         totalSortAsc: "Menor total primero. Clic para invertir",
         totalSortDesc: "Mayor total primero. Clic para quitar orden",
+        shippingMethod: "Envío",
+        shippingMethodSortIdle: "Ordenar por método de envío",
+        shippingMethodSortAsc: "Automático primero. Clic para invertir",
+        shippingMethodSortDesc: "Manual primero. Clic para quitar orden",
         status: "Estado",
         statusSortIdle: "Ordenar por estado",
         statusSortAsc: "Confirmado primero. Clic para invertir",
@@ -1211,7 +1228,12 @@ export const es = {
       },
       mobile: {
         totalLabel: "Total",
+        shippingMethodLabel: "Envío",
         orderDate: "Fecha de pedido",
+      },
+      shippingMethod: {
+        automatic: "Automático",
+        manual: "Manual",
       },
       items: {
         title: "Artículos del pedido",
@@ -1227,10 +1249,29 @@ export const es = {
           total: "Total",
         },
       },
+      confirmShipping: {
+        title: "Confirmar pedido manual",
+        description:
+          "Indica el monto de envío cotizado. El total del pedido se actualizará al confirmar.",
+        orderPrefix: "Pedido:",
+        currentTotal: "Total sin envío",
+        shippingAmount: "Monto de envío",
+        shippingAmountPlaceholder: "0.00",
+        shippingRequired: "El monto de envío debe ser mayor que 0.",
+        shippingInvalid: "Introduce un monto de envío válido.",
+        newTotal: "Total con envío",
+        cancel: "Cancelar",
+        confirm: "Confirmar pedido",
+        confirming: "Confirmando…",
+      },
       toast: {
         statusUpdated: "Estado actualizado.",
         statusUpdateError: "No se pudo actualizar el estado.",
         statusChangeError: "No se pudo cambiar el estado.",
+        shippingRequired:
+          "Para confirmar un pedido manual pendiente debes indicar el monto de envío.",
+        statusNotAllowed:
+          "Los pedidos con pago Stripe no admiten los estados pendiente ni cancelado.",
       },
       error: {
         default: "Hubo un problema al consultar los pedidos.",

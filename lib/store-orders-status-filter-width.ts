@@ -1,6 +1,6 @@
 /**
- * Ancho en `ch` del select de filtro por estado (toolbar). Igual en todos los
- * idiomas y alineado con `/admin/orders` (`STATUS_FILTER_WIDE_CH`).
+ * Ancho en `ch` de los selects de filtro (toolbar) en `/admin/orders`.
+ * Misma medida para estado y método de envío.
  */
 export const STORE_ORDERS_STATUS_FILTER_WIDE_CH =
-  "Todos los estados".length + 7;
+  Math.max("Todos los estados".length, "All statuses".length) + 7;

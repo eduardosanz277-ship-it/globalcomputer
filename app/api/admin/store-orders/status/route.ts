@@ -15,6 +15,7 @@ const statusSchema = z.union([
 const bodySchema = z.object({
   orderId: z.string().uuid(),
   status: statusSchema,
+  amountShipping: z.number().positive().optional(),
 });
 
 export async function POST(req: Request) {
@@ -32,13 +33,40 @@ export async function POST(req: Request) {
 
   try {
     await ensureAdminUserService();
-    await repoUpdateStoreOrderStatus(parsed.data.orderId, parsed.data.status);
-    return NextResponse.json({ ok: true });
+    const updated = await repoUpdateStoreOrderStatus(
+      parsed.data.orderId,
+      parsed.data.status,
+      parsed.data.amountShipping,
+    );
+    return NextResponse.json({ ok: true, order: updated });
   } catch (error) {
     console.error("admin/store-orders status", error);
     const msg = error instanceof Error ? error.message : "";
     if (msg === "Unauthorized") {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+    }
+    if (msg === "ORDER_NOT_FOUND") {
+      return NextResponse.json({ error: "Pedido no encontrado." }, { status: 404 });
+    }
+    if (msg === "SHIPPING_AMOUNT_REQUIRED") {
+      return NextResponse.json(
+        {
+          error:
+            "Para confirmar un pedido manual pendiente debes indicar el monto de envío.",
+          code: "SHIPPING_AMOUNT_REQUIRED",
+        },
+        { status: 400 },
+      );
+    }
+    if (msg === "STATUS_NOT_ALLOWED") {
+      return NextResponse.json(
+        {
+          error:
+            "Los pedidos con pago Stripe no admiten los estados pendiente ni cancelado.",
+          code: "STATUS_NOT_ALLOWED",
+        },
+        { status: 400 },
+      );
     }
     return NextResponse.json(
       { error: "No se pudo actualizar el estado." },

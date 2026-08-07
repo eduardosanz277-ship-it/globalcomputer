@@ -90,7 +90,7 @@ function statusPillClass(status: string): string {
 }
 
 const COL_ORDER =
-  "w-[10.5rem] min-w-[10.5rem] max-w-[min(11rem,30vw)]";
+  "w-[12.5rem] min-w-[12.5rem] max-w-[12.5rem]";
 const COL_TOTAL = "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem]";
 const COL_STATUS = "w-[13rem] min-w-[13rem] max-w-[13rem]";
 const COL_DATE =
@@ -191,15 +191,15 @@ export function OrdersSection({ orders }: Props) {
     () => [
       {
         id: "pedido",
-        accessorKey: "id",
+        accessorKey: "orderNumber",
         enableSorting: true,
         header: t("profile.orderColOrder"),
         meta: {
           cellClassName: COL_ORDER,
         },
         cell: ({ row }) => (
-          <div className="min-w-0 truncate text-base font-semibold text-foreground">
-            {row.original.id.slice(0, 8)}
+          <div className="min-w-0 truncate font-mono text-sm font-semibold tabular-nums text-foreground">
+            {row.original.orderNumber}
           </div>
         ),
       },
@@ -290,8 +290,8 @@ export function OrdersSection({ orders }: Props) {
           )}
         >
           <div className="space-y-3">
-            <p className="truncate text-base font-semibold text-foreground">
-              {t("profile.dialogOrderPrefix")} {order.id.slice(0, 8)}
+            <p className="truncate font-mono text-sm font-semibold tabular-nums text-foreground">
+              {t("profile.dialogOrderPrefix")} {order.orderNumber}
             </p>
             <p className="text-sm font-semibold text-foreground">
               {t("profile.summaryTotal")}:{" "}
@@ -386,8 +386,8 @@ export function OrdersSection({ orders }: Props) {
                     <div className="space-y-1.5 text-sm leading-relaxed text-muted-foreground">
                       <p>
                         {t("admin.orders.items.orderPrefix")}{" "}
-                        <span className="font-medium text-foreground">
-                          {detailOrder.id}
+                        <span className="font-mono font-medium text-foreground">
+                          {detailOrder.orderNumber}
                         </span>
                       </p>
                       <p>
