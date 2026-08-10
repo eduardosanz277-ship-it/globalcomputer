@@ -12,6 +12,7 @@ export type StorefrontProductDetail = {
   id: string;
   sku: string;
   name: string;
+  name_en: string | null;
   slug: string;
   description: string | null;
   /** HTML enriquecido (mismo tratamiento que `description`). */
@@ -27,7 +28,9 @@ export type StorefrontProductDetail = {
   brand_id: string;
   brand_type_id: string | null;
   brand_name: string;
+  brand_name_en: string | null;
   brand_type_name: string;
+  brand_type_name_en: string | null;
   brand_slug: string;
   brand_type_slug: string | null;
   /** Clasificación catálogo (para productos similares, SEO, etc.) */
@@ -46,6 +49,7 @@ export type StorefrontProductDetail = {
 
 type DetailRelation = {
   name?: unknown;
+  name_en?: unknown;
   slug?: unknown;
 };
 
@@ -71,6 +75,7 @@ const DETAIL_SELECT = `
   id,
   sku,
   name,
+  name_en,
   slug,
   description,
   specifications,
@@ -88,8 +93,8 @@ const DETAIL_SELECT = `
   subcategory_id,
   created_at,
   updated_at,
-  brands ( name, slug ),
-  brand_types ( name, slug ),
+  brands ( name, name_en, slug ),
+  brand_types ( name, name_en, slug ),
   product_images ( id, url, is_primary, sort_order ),
   product_characteristic_values (
     id,
@@ -108,6 +113,27 @@ function relationName(
   if (!rel) return "—";
   if (Array.isArray(rel)) return rel[0]?.name ?? "—";
   return rel.name ?? "—";
+}
+
+function relationNameEn(
+  rel:
+    | { name_en?: string | null }
+    | { name_en?: string | null }[]
+    | null
+    | undefined,
+): string | null {
+  if (!rel) return null;
+  const row = Array.isArray(rel) ? rel[0] : rel;
+  const value = row?.name_en;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed !== "" ? trimmed : null;
+}
+
+function optionalText(value: unknown): string | null {
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  return trimmed !== "" ? trimmed : null;
 }
 
 function specificRelation(
@@ -196,8 +222,14 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     });
 
   const brandName = relationName(row.brands as Parameters<typeof relationName>[0]);
+  const brandNameEn = relationNameEn(
+    row.brands as Parameters<typeof relationNameEn>[0],
+  );
   const brandTypeName = relationName(
     row.brand_types as Parameters<typeof relationName>[0],
+  );
+  const brandTypeNameEn = relationNameEn(
+    row.brand_types as Parameters<typeof relationNameEn>[0],
   );
   const brandSlug = relationSlug(
     row.brands as DetailRelation | DetailRelation[] | null | undefined,
@@ -216,6 +248,7 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     id: String(row.id),
     sku: String(row.sku),
     name: String(row.name),
+    name_en: optionalText(row.name_en),
     slug: productSlug,
     description:
       row.description != null && String(row.description).trim() !== ""
@@ -241,7 +274,9 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
     brand_type_id:
       row.brand_type_id != null ? String(row.brand_type_id) : null,
     brand_name: brandName,
+    brand_name_en: brandNameEn,
     brand_type_name: brandTypeName,
+    brand_type_name_en: brandTypeNameEn,
     brand_slug: brandSlug,
     brand_type_slug:
       row.brand_type_id != null ? brandTypeSlug : null,
