@@ -334,6 +334,19 @@ export type CreateManualQuoteOrderInput = {
   locale?: string | null;
   name?: string;
   email?: string;
+  shippingAddress: ManualQuoteShippingAddressInput;
+};
+
+export type ManualQuoteShippingAddressInput = {
+  recipientName: string;
+  recipientPhone: string;
+  recipientEmail?: string | null;
+  addressLine: string;
+  addressLine2?: string | null;
+  city: string;
+  state?: string | null;
+  postalCode: string;
+  country: string;
 };
 
 export type CreateManualQuoteOrderResult = {
@@ -486,6 +499,52 @@ export async function createManualQuoteOrder(
   return {
     order: mapSiteOrderRow(order),
     whatsappUrl,
+  };
+}
+
+function normalizeManualShippingAddress(
+  raw: ManualQuoteShippingAddressInput | null | undefined,
+): {
+  recipientName: string;
+  recipientPhone: string;
+  recipientEmail: string | null;
+  addressLine: string;
+  addressLine2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string;
+  country: string;
+} | null {
+  if (!raw) return null;
+  const recipientName = raw.recipientName?.trim() ?? "";
+  const recipientPhone = raw.recipientPhone?.trim() ?? "";
+  const addressLine = raw.addressLine?.trim() ?? "";
+  const city = raw.city?.trim() ?? "";
+  const postalCode = raw.postalCode?.trim() ?? "";
+  const country = (raw.country?.trim() || "US").toUpperCase();
+  if (
+    !recipientName ||
+    !recipientPhone ||
+    !addressLine ||
+    !city ||
+    !postalCode ||
+    !country
+  ) {
+    return null;
+  }
+  const recipientEmail = raw.recipientEmail?.trim() || null;
+  const addressLine2 = raw.addressLine2?.trim() || null;
+  const state = raw.state?.trim() || null;
+  return {
+    recipientName,
+    recipientPhone,
+    recipientEmail,
+    addressLine,
+    addressLine2,
+    city,
+    state,
+    postalCode,
+    country,
   };
 }
 

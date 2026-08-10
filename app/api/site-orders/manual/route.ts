@@ -7,6 +7,24 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const shippingAddressSchema = z.object({
+  recipientName: z.string().trim().min(1).max(160),
+  recipientPhone: z.string().trim().min(7).max(40),
+  recipientEmail: z
+    .string()
+    .trim()
+    .email()
+    .max(160)
+    .optional()
+    .or(z.literal("")),
+  addressLine: z.string().trim().min(1).max(200),
+  addressLine2: z.string().trim().max(200).optional().or(z.literal("")),
+  city: z.string().trim().min(1).max(120),
+  state: z.string().trim().max(120).optional().or(z.literal("")),
+  postalCode: z.string().trim().min(1).max(32),
+  country: z.string().trim().min(2).max(80),
+});
+
 const bodySchema = z.object({
   items: z
     .array(
@@ -19,6 +37,7 @@ const bodySchema = z.object({
   locale: z.enum(["es", "en"]).optional(),
   name: z.string().min(1).max(160).optional(),
   email: z.string().email().optional(),
+  shippingAddress: shippingAddressSchema,
 });
 
 export async function POST(req: Request) {
@@ -38,11 +57,25 @@ export async function POST(req: Request) {
   }
 
   try {
+    const addr = parsed.data.shippingAddress;
     const result = await createManualQuoteOrder({
       items: parsed.data.items,
       locale: parsed.data.locale,
-      name: parsed.data.name,
-      email: parsed.data.email,
+      name: parsed.data.name ?? addr.recipientName,
+      email:
+        parsed.data.email ??
+        (addr.recipientEmail ? addr.recipientEmail : undefined),
+      shippingAddress: {
+        recipientName: addr.recipientName,
+        recipientPhone: addr.recipientPhone,
+        recipientEmail: addr.recipientEmail || null,
+        addressLine: addr.addressLine,
+        addressLine2: addr.addressLine2 || null,
+        city: addr.city,
+        state: addr.state || null,
+        postalCode: addr.postalCode,
+        country: addr.country,
+      },
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
