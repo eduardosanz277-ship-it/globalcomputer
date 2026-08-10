@@ -348,8 +348,22 @@ export const es = {
       metaDescription: "Gracias por tu compra.",
       heading: "¡Gracias por tu compra!",
       description:
-        "Stripe ha procesado el pago. Si hace falta, recibirás el recibo por correo. En este dispositivo el carrito se ha vaciado.",
+        "El pago ha sido procesado correctamente. En este dispositivo el carrito se ha vaciado.",
       homeLink: "Inicio",
+    },
+    quoteSuccess: {
+      metaTitle: "Pedido de cotización creado",
+      metaDescription: "Tu solicitud de cotización fue registrada.",
+      heading: "¡Pedido de cotización creado!",
+      orderNumberLabel: "Nº de pedido:",
+      description:
+        "Registramos tu pedido. Un asesor te contactará por WhatsApp con el costo de envío.",
+      loggedInHint:
+        "Puedes consultar el estado y los detalles de este pedido en el panel de tu cuenta.",
+      guestHint:
+        "Te iremos enviando toda la información relacionada con este pedido al correo electrónico que indicaste.",
+      ordersLink: "Ver mis pedidos",
+      openWhatsApp: "Abrir WhatsApp",
     },
   },
   profile: {

@@ -343,8 +343,22 @@ export const en = {
       metaDescription: "Thank you for your purchase.",
       heading: "Thank you for your purchase!",
       description:
-        "Stripe has processed your payment. If applicable, you'll receive your receipt by email. On this device your cart has been cleared.",
+        "The payment has been successfully processed. On this device your cart has been cleared.",
       homeLink: "Home",
+    },
+    quoteSuccess: {
+      metaTitle: "Quote order created",
+      metaDescription: "Your shipping quote request was registered.",
+      heading: "Quote order created!",
+      orderNumberLabel: "Order no.:",
+      description:
+        "We registered your order. An advisor will contact you on WhatsApp with the shipping cost.",
+      loggedInHint:
+        "You can check the status and details of this order in your account panel.",
+      guestHint:
+        "We will send you all information about this order to the email address you provided.",
+      ordersLink: "View my orders",
+      openWhatsApp: "Open WhatsApp",
     },
   },
   profile: {
