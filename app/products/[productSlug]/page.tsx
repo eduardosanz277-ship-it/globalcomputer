@@ -1,14 +1,21 @@
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
+import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
 import { StorefrontProductDetailView } from "@/components/store/StorefrontProductDetailView";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { normalizeStorefrontFromPath } from "@/lib/storefront-product-nav";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { resolveProductDetailBreadcrumbPrefix } from "@/modules/catalog/storefront-product-breadcrumb.service";
 import {
   getStorefrontProductDetailById,
   getStorefrontProductDetailBySlug,
   type StorefrontProductDetail,
 } from "@/modules/catalog/storefront-product-detail.service";
+import {
+  storefrontLocalizedText,
+  storefrontProductDisplayName,
+} from "@/modules/catalog/storefront-product.shared";
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 import type { Metadata } from "next";
@@ -28,7 +35,18 @@ const inter = Inter({
 
 type Props = {
   params: Promise<{ productSlug: string }> | { productSlug: string };
+  searchParams?:
+    | Promise<{ from?: string | string[] }>
+    | { from?: string | string[] };
 };
+
+function firstSearchParam(
+  value: string | string[] | undefined,
+): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return null;
+}
 
 async function resolveProductBySlugParam(
   productSlug: string,
@@ -47,54 +65,81 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productSlug } = await Promise.resolve(params);
   const { product } = await resolveProductBySlugParam(productSlug);
   if (!product) {
-    return { title: locale === "en" ? "Product not found" : "Producto no encontrado" };
+    return {
+      title: locale === "en" ? "Product not found" : "Producto no encontrado",
+    };
   }
+  const displayName = storefrontProductDisplayName(product, locale);
+  const brandName = storefrontLocalizedText(
+    locale,
+    product.brand_name,
+    product.brand_name_en,
+  );
   return {
-    title: product.name,
+    title: displayName,
     description:
       product.description?.slice(0, 155).trim() ||
       (locale === "en"
-        ? `${product.name} · ${product.brand_name}. Buy at Global Computer USA.`
-        : `${product.name} · ${product.brand_name}. Compra en Global Computer USA.`),
+        ? `${displayName} · ${brandName}. Buy at Global Computer USA.`
+        : `${displayName} · ${brandName}. Compra en Global Computer USA.`),
   };
 }
 
-export default async function ProductoDetallePage({ params }: Props) {
+export default async function ProductoDetallePage({
+  params,
+  searchParams,
+}: Props) {
   const { productSlug } = await Promise.resolve(params);
+  const resolvedSearch = searchParams
+    ? await Promise.resolve(searchParams)
+    : {};
+  const fromParam = normalizeStorefrontFromPath(
+    firstSearchParam(resolvedSearch.from),
+  );
+
   const { product, fromId } = await resolveProductBySlugParam(productSlug);
   if (!product) notFound();
   if (fromId || product.slug !== productSlug) {
-    redirect(`/products/${product.slug}`);
+    const qs = fromParam
+      ? `?from=${encodeURIComponent(fromParam)}`
+      : "";
+    redirect(`/products/${product.slug}${qs}`);
   }
 
-  const [user, productReviews, similarProducts] = await Promise.all([
-    getCurrentUserService(),
-    listProductReviewsByProductId(product.id),
-    listSimilarStorefrontProducts({
-      productId: product.id,
-      categoriaId: product.category_id,
-      subcategoryId: product.subcategory_id,
-      marcaId: product.brand_id,
-      tipoProductoId: product.brand_type_id,
-      precio: product.price_client,
-    }),
-  ]);
+  const [user, productReviews, similarProducts, breadcrumbPrefix] =
+    await Promise.all([
+      getCurrentUserService(),
+      listProductReviewsByProductId(product.id),
+      listSimilarStorefrontProducts({
+        productId: product.id,
+        categoriaId: product.category_id,
+        subcategoryId: product.subcategory_id,
+        marcaId: product.brand_id,
+        tipoProductoId: product.brand_type_id,
+        precio: product.price_client,
+      }),
+      resolveProductDetailBreadcrumbPrefix(product, fromParam),
+    ]);
 
   const priceTier = resolveStorefrontPriceTier(user?.role);
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
       <div className="border-b border-border/60 bg-card/40">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:pt-6 md:pb-4 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <MarketingBreadcrumb
             className={inter.className}
             items={[
               { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+              ...breadcrumbPrefix,
               {
-                label: <LocalizedText es="Productos" en="Products" />,
-                href: "/products",
+                label: (
+                  <StorefrontLocalizedName
+                    name={product.name}
+                    nameEn={product.name_en}
+                  />
+                ),
               },
-              { label: product.name },
             ]}
           />
         </div>
