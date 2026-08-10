@@ -366,6 +366,10 @@ export const es = {
       specialShippingTitle: "Envío especial",
       specialShippingDescription:
         "Este producto requiere una cotización de envío independiente.",
+      priceByProfile: "Precio según tu perfil ({tier}). Incluye descuento aplicable si corresponde.",
+      priceTierBusiness: "empresa",
+      priceTierClient: "cliente / invitado",
+      back: "Volver",
     },
     cartSuccess: {
       metaTitle: "Pago recibido",

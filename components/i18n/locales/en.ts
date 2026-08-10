@@ -361,6 +361,11 @@ export const en = {
       specialShippingTitle: "Special shipping",
       specialShippingDescription:
         "This product requires an independent shipping quote.",
+      priceByProfile:
+        "Price based on your profile ({tier}). Includes any applicable discount.",
+      priceTierBusiness: "business",
+      priceTierClient: "customer / guest",
+      back: "Back",
     },
     cartSuccess: {
       metaTitle: "Payment received",
