@@ -495,19 +495,19 @@ export function StoreCartOrderSummary({
         {requiresQuote ? (
           <div
             role="status"
-            className="rounded-xl border border-blue-200/70 border-l-[3px] border-l-blue-400/80 bg-blue-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
+            className="rounded-xl border border-primary/25 border-l-[3px] border-l-primary bg-[color-mix(in_srgb,#357fd2_9%,white)] px-3.5 py-3 text-xs leading-relaxed shadow-sm"
           >
             <div className="flex items-start gap-1.5">
               <Info
-                className="mt-px h-3.5 w-3.5 shrink-0 text-blue-600/80"
+                className="mt-px h-3.5 w-3.5 shrink-0 text-primary"
                 strokeWidth={2.25}
                 aria-hidden
               />
               <div className="min-w-0 space-y-1.5">
-                <p className="font-semibold leading-snug break-words text-blue-950/90">
+                <p className="font-semibold leading-snug break-words text-primary">
                   {t("storefront.cart.shippingQuoteTitle")}
                 </p>
-                <p className="leading-relaxed text-blue-900/70">
+                <p className="leading-relaxed text-primary/85">
                   {t("storefront.cart.shippingQuoteDescription")}
                 </p>
               </div>
