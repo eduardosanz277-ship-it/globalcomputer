@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ensureAdminUserService } from "@/modules/auth/auth.service";
-import { repoListAdminStoreOrderItems } from "@/modules/commerce/store-orders.admin.service";
+import {
+  repoGetAdminStoreOrderShippingAddress,
+  repoListAdminStoreOrderItems,
+} from "@/modules/commerce/store-orders.admin.service";
 
 const bodySchema = z.object({
   orderId: z.string().uuid(),
@@ -22,8 +25,11 @@ export async function POST(req: Request) {
 
   try {
     await ensureAdminUserService();
-    const items = await repoListAdminStoreOrderItems(parsed.data.orderId);
-    return NextResponse.json({ items });
+    const [items, shippingAddress] = await Promise.all([
+      repoListAdminStoreOrderItems(parsed.data.orderId),
+      repoGetAdminStoreOrderShippingAddress(parsed.data.orderId),
+    ]);
+    return NextResponse.json({ items, shippingAddress });
   } catch (error) {
     console.error("admin/store-orders items", error);
     if (error instanceof Error) {

@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import { toast } from "react-toastify";
 import { ColumnDef, Row } from "@tanstack/react-table";
@@ -34,6 +35,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
+import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME } from "@/lib/order-details-dialog";
+import {
+  mapStoreOrderShippingAddressRow,
+  type OrderShippingRecipient,
+} from "@/lib/order-shipping-recipient";
 import {
   AdminStoreOrderItemRow,
   AdminStoreOrderRow,
@@ -231,11 +238,13 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     left: number;
   } | null>(null);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
-  const [itemsModalOrderNumber, setItemsModalOrderNumber] = useState<
-    string | null
-  >(null);
+  const [detailOrder, setDetailOrder] = useState<AdminStoreOrderRow | null>(
+    null,
+  );
   const [itemsLoading, setItemsLoading] = useState(false);
   const [orderItems, setOrderItems] = useState<AdminStoreOrderItemRow[]>([]);
+  const [orderShippingAddress, setOrderShippingAddress] =
+    useState<OrderShippingRecipient | null>(null);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [shippingMethodFilter, setShippingMethodFilter] =
@@ -464,8 +473,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   }, [calculateStatusMenuPosition, openStatusMenuOrderId]);
 
   const handleShowItems = useCallback(async (order: AdminStoreOrderRow) => {
-    setItemsModalOrderNumber(order.order_number);
+    setDetailOrder(order);
     setItemsError(null);
+    setOrderShippingAddress(null);
     setItemsLoading(true);
     setItemsDialogOpen(true);
     try {
@@ -483,8 +493,12 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       } else {
         setOrderItems([]);
       }
+      setOrderShippingAddress(
+        mapStoreOrderShippingAddressRow(payload?.shippingAddress ?? null),
+      );
     } catch (error) {
       setOrderItems([]);
+      setOrderShippingAddress(null);
       setItemsError(
         error instanceof Error
           ? error.message
@@ -497,8 +511,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
 
   const closeItemsModal = useCallback(() => {
     setItemsDialogOpen(false);
-    setItemsModalOrderNumber(null);
+    setDetailOrder(null);
     setOrderItems([]);
+    setOrderShippingAddress(null);
     setItemsError(null);
     setItemsLoading(false);
   }, []);
@@ -555,6 +570,30 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         cell: ({ row }) => (
           <span className="font-mono text-sm font-medium tabular-nums text-foreground">
             {row.original.order_number}
+          </span>
+        ),
+      },
+      {
+        id: "created_at",
+        accessorKey: "created_at",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          createdAtSortMs(rowA.original) - createdAtSortMs(rowB.original),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label={t("admin.orders.table.createdAt")}
+            ariaLabelIdle={t("admin.orders.table.createdAtSortIdle")}
+            ariaLabelAsc={t("admin.orders.table.createdAtSortAsc")}
+            ariaLabelDesc={t("admin.orders.table.createdAtSortDesc")}
+          />
+        ),
+        meta: {
+          cellClassName: CREATED_AT_COLUMN_CLASS,
+        },
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
+            {formatOrderDate(row.original.created_at, locale)}
           </span>
         ),
       },
@@ -725,10 +764,8 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         },
       },
       {
-        id: "items",
-        header: () => (
-          <span className="text-xs font-medium">{t("admin.orders.table.items")}</span>
-        ),
+        id: "details",
+        header: t("admin.orders.table.items"),
         meta: {
           cellClassName: ITEMS_COLUMN_CLASS,
         },
@@ -736,36 +773,13 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           <Button
             size="sm"
             variant="outline"
+            type="button"
             className="h-8 rounded-full border-border/80 bg-background px-3 text-xs font-medium text-foreground shadow-sm transition hover:border-primary/40 hover:bg-primary/[0.06] hover:text-primary"
             onClick={() => void handleShowItems(row.original)}
           >
             <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden />
             {t("admin.orders.table.viewItems")}
           </Button>
-        ),
-      },
-      {
-        id: "created_at",
-        accessorKey: "created_at",
-        enableSorting: true,
-        sortingFn: (rowA, rowB) =>
-          createdAtSortMs(rowA.original) - createdAtSortMs(rowB.original),
-        header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            label={t("admin.orders.table.createdAt")}
-            ariaLabelIdle={t("admin.orders.table.createdAtSortIdle")}
-            ariaLabelAsc={t("admin.orders.table.createdAtSortAsc")}
-            ariaLabelDesc={t("admin.orders.table.createdAtSortDesc")}
-          />
-        ),
-        meta: {
-          cellClassName: CREATED_AT_COLUMN_CLASS,
-        },
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
-            {formatOrderDate(row.original.created_at, locale)}
-          </span>
         ),
       },
     ],
@@ -785,9 +799,14 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           )}
         >
           <div className="space-y-3">
-            <p className="font-mono text-sm font-medium tabular-nums text-foreground">
-              {order.order_number}
-            </p>
+            <div className="space-y-0.5">
+              <p className="font-mono text-sm font-medium tabular-nums text-foreground">
+                {order.order_number}
+              </p>
+              <p className="text-sm text-muted-foreground tabular-nums">
+                {formatOrderDate(order.created_at, locale)}
+              </p>
+            </div>
             <p className="truncate text-sm font-semibold text-foreground">
               {order.customer_name?.trim() || "—"}
             </p>
@@ -862,14 +881,6 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                 <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                 {t("admin.orders.table.viewItems")}
               </Button>
-            </div>
-            <div className="space-y-1 border-t border-border/60 pt-3">
-              <p className="text-sm text-muted-foreground">
-                {t("admin.orders.mobile.orderDate")}
-              </p>
-              <p className="text-sm leading-snug text-foreground">
-                {formatOrderDate(order.created_at, locale)}
-              </p>
             </div>
           </div>
         </li>
@@ -1021,7 +1032,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           if (!open) closeItemsModal();
         }}
       >
-        <DialogContent className="max-w-2xl gap-0 overflow-hidden border-border/60 p-0 shadow-xl ring-1 ring-black/[0.04]">
+        <DialogContent className={ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME}>
           <DialogHeader className="space-y-0 border-b border-border/60 bg-muted/25 px-6 pb-5 pt-6 text-left">
             <div className="flex gap-4 pr-10">
               <div
@@ -1032,24 +1043,45 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
               </div>
               <div className="min-w-0 space-y-1.5 pt-0.5">
                 <DialogTitle className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                  {t("admin.orders.items.title")}
+                  {t("profile.dialogOrderDetailsTitle")}
                 </DialogTitle>
-                <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                  {itemsModalOrderNumber
-                    ? (
-                        <>
-                          {t("admin.orders.items.orderPrefix")}{" "}
-                          <span className="font-mono font-medium text-foreground">
-                            {itemsModalOrderNumber}
-                          </span>
-                        </>
-                      )
-                    : t("admin.orders.items.description")}
-                </DialogDescription>
+                {detailOrder ? (
+                  <DialogDescription asChild>
+                    <div className="space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+                      <p>
+                        {t("admin.orders.items.orderPrefix")}{" "}
+                        <span className="font-mono font-medium text-foreground">
+                          {detailOrder.order_number}
+                        </span>
+                      </p>
+                      <p>
+                        {t("profile.dialogDateLabel")}{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {formatOrderDate(detailOrder.created_at, locale)}
+                        </span>
+                      </p>
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span>{t("profile.dialogStatusLabel")}:</span>
+                        <span
+                          className={cn(
+                            "inline-flex",
+                            orderStatusBadgeClass(detailOrder.status),
+                          )}
+                        >
+                          {statusLabels[detailOrder.status]}
+                        </span>
+                      </p>
+                    </div>
+                  </DialogDescription>
+                ) : (
+                  <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                    {t("admin.orders.items.description")}
+                  </DialogDescription>
+                )}
               </div>
             </div>
           </DialogHeader>
-          <div className="max-h-[min(56vh,24rem)] space-y-3 overflow-y-auto px-6 py-5">
+          <div className="max-h-[min(70vh,32rem)] space-y-5 overflow-y-auto px-6 py-5">
             {itemsLoading ? (
               <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1059,54 +1091,88 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
               <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {itemsError}
               </p>
-            ) : orderItems.length === 0 ? (
-              <p className="rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-sm text-muted-foreground">
-                {t("admin.orders.items.empty")}
-              </p>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-primary/[0.1] text-xs uppercase tracking-wide text-foreground/80">
-                      <tr>
-                        <th className="px-4 py-2.5 text-left">
-                          {t("admin.orders.items.table.product")}
-                        </th>
-                        <th className="px-4 py-2.5 text-left">
-                          {t("admin.orders.items.table.quantity")}
-                        </th>
-                        <th className="px-4 py-2.5 text-left">
-                          {t("admin.orders.items.table.unitPrice")}
-                        </th>
-                        <th className="px-4 py-2.5 text-left">
-                          {t("admin.orders.items.table.total")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orderItems.map((item, index) => (
-                        <tr
-                          key={`${item.product_name}-${index}`}
-                          className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
-                        >
-                          <td className="px-4 py-2.5 font-medium">
-                            {item.product_name}
-                          </td>
-                          <td className="px-4 py-2.5 text-left">
-                            {item.quantity}
-                          </td>
-                          <td className="px-4 py-2.5 text-left">
-                            {formatUsd(Number(item.unit_price ?? "0"))}
-                          </td>
-                          <td className="px-4 py-2.5 text-left font-semibold text-foreground">
-                            {formatUsd(Number(item.total_price ?? "0"))}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            ) : detailOrder ? (
+              <>
+                {orderItems.length === 0 ? (
+                  <p className="rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-sm text-muted-foreground">
+                    {t("admin.orders.items.empty")}
+                  </p>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-primary/[0.1] text-xs uppercase tracking-wide text-foreground/80">
+                          <tr>
+                            <th className="px-4 py-2.5 text-left">
+                              {t("admin.orders.items.table.product")}
+                            </th>
+                            <th className="px-4 py-2.5 text-left">
+                              {t("admin.orders.items.table.quantity")}
+                            </th>
+                            <th className="px-4 py-2.5 text-left">
+                              {t("admin.orders.items.table.unitPrice")}
+                            </th>
+                            <th className="px-4 py-2.5 text-left">
+                              {t("admin.orders.items.table.total")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {orderItems.map((item, index) => (
+                            <tr
+                              key={`${item.product_name}-${index}`}
+                              className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
+                            >
+                              <td className="px-4 py-2.5 font-medium">
+                                {item.product_name}
+                              </td>
+                              <td className="px-4 py-2.5 tabular-nums">
+                                {item.quantity}
+                              </td>
+                              <td className="px-4 py-2.5 tabular-nums">
+                                {formatUsd(Number(item.unit_price ?? "0"))}
+                              </td>
+                              <td className="px-4 py-2.5 font-semibold tabular-nums text-foreground">
+                                {formatUsd(Number(item.total_price ?? "0"))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <OrderDetailSummaryTile title={t("profile.summarySubtotal")}>
+                    {formatUsd(Number(detailOrder.amount_subtotal ?? 0))}
+                  </OrderDetailSummaryTile>
+                  <OrderDetailSummaryTile title={t("profile.summaryDiscount")}>
+                    {Number(detailOrder.amount_discount ?? 0) > 0
+                      ? `−${formatUsd(Number(detailOrder.amount_discount ?? 0))}`
+                      : formatUsd(0)}
+                  </OrderDetailSummaryTile>
+                  <OrderDetailSummaryTile title={t("profile.summaryTax")}>
+                    {formatUsd(Number(detailOrder.amount_tax ?? 0))}
+                  </OrderDetailSummaryTile>
+                  <OrderDetailSummaryTile title={t("profile.summaryShipping")}>
+                    {formatUsd(Number(detailOrder.amount_shipping ?? 0))}
+                  </OrderDetailSummaryTile>
+                  <OrderDetailSummaryTile title={t("profile.summaryTotal")}>
+                    {formatUsd(orderDisplayTotal(detailOrder))}
+                  </OrderDetailSummaryTile>
                 </div>
-              </div>
+
+                {orderShippingAddress ? (
+                  <OrderDetailsRecipientSection
+                    recipient={orderShippingAddress}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("profile.dialogLoadingDetails")}
+              </p>
             )}
           </div>
         </DialogContent>
@@ -1194,7 +1260,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           <DialogFooter className="border-t border-border/60 bg-muted/15 px-4 py-3 sm:px-5 sm:py-3.5">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="w-full sm:w-auto"
               disabled={confirmingShipping}
@@ -1222,5 +1288,24 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function OrderDetailSummaryTile({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-white p-4 shadow-sm dark:bg-card">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
+      <p className="mt-1.5 text-lg font-semibold tabular-nums leading-none text-foreground">
+        {children}
+      </p>
+    </div>
   );
 }

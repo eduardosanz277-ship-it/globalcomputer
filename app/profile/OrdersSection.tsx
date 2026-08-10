@@ -17,8 +17,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/ui/data-table";
+import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { STORE_ORDERS_STATUS_FILTER_WIDE_CH } from "@/lib/store-orders-status-filter-width";
+import { ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME } from "@/lib/order-details-dialog";
 import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import {
@@ -37,6 +39,7 @@ import {
   formatOrderDate,
   orderStatusStyles,
 } from "./order-utils";
+import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
 
 type Props = {
   orders: CuentaOrder[];
@@ -198,16 +201,55 @@ export function OrdersSection({ orders }: Props) {
           cellClassName: COL_ORDER,
         },
         cell: ({ row }) => (
-          <div className="min-w-0 truncate font-mono text-sm font-semibold tabular-nums text-foreground">
+          <span className="font-mono text-sm font-medium tabular-nums text-foreground">
             {row.original.orderNumber}
-          </div>
+          </span>
+        ),
+      },
+      {
+        id: "fecha",
+        accessorKey: "createdAt",
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.createdAt
+            ? new Date(rowA.original.createdAt).getTime()
+            : 0;
+          const b = rowB.original.createdAt
+            ? new Date(rowB.original.createdAt).getTime()
+            : 0;
+          return a - b;
+        },
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label={t("profile.orderColDate")}
+            ariaLabelIdle={t("admin.orders.table.createdAtSortIdle")}
+            ariaLabelAsc={t("admin.orders.table.createdAtSortAsc")}
+            ariaLabelDesc={t("admin.orders.table.createdAtSortDesc")}
+          />
+        ),
+        meta: {
+          cellClassName: COL_DATE,
+        },
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
+            {formatOrderDate(row.original.createdAt, localeTag)}
+          </span>
         ),
       },
       {
         id: "total",
         accessorKey: "total",
         enableSorting: true,
-        header: t("profile.orderColTotal"),
+        header: ({ column }) => (
+          <SortableHeader
+            column={column}
+            label={t("profile.orderColTotal")}
+            ariaLabelIdle={t("admin.orders.table.totalSortIdle")}
+            ariaLabelAsc={t("admin.orders.table.totalSortAsc")}
+            ariaLabelDesc={t("admin.orders.table.totalSortDesc")}
+          />
+        ),
         meta: {
           cellClassName: COL_TOTAL,
         },
@@ -251,29 +293,6 @@ export function OrdersSection({ orders }: Props) {
           </Button>
         ),
       },
-      {
-        id: "fecha",
-        accessorKey: "createdAt",
-        enableSorting: true,
-        sortingFn: (rowA, rowB) => {
-          const a = rowA.original.createdAt
-            ? new Date(rowA.original.createdAt).getTime()
-            : 0;
-          const b = rowB.original.createdAt
-            ? new Date(rowB.original.createdAt).getTime()
-            : 0;
-          return a - b;
-        },
-        header: t("profile.orderColDate"),
-        meta: {
-          cellClassName: COL_DATE,
-        },
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground whitespace-nowrap tabular-nums">
-            {formatOrderDate(row.original.createdAt, localeTag)}
-          </span>
-        ),
-      },
     ],
     [t, localeTag],
   );
@@ -290,8 +309,11 @@ export function OrdersSection({ orders }: Props) {
           )}
         >
           <div className="space-y-3">
-            <p className="truncate font-mono text-sm font-semibold tabular-nums text-foreground">
+            <p className="font-mono text-sm font-medium tabular-nums text-foreground">
               {t("profile.dialogOrderPrefix")} {order.orderNumber}
+            </p>
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {formatOrderDate(order.createdAt, localeTag)}
             </p>
             <p className="text-sm font-semibold text-foreground">
               {t("profile.summaryTotal")}:{" "}
@@ -313,14 +335,6 @@ export function OrdersSection({ orders }: Props) {
                 <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                 {t("profile.viewDetails")}
               </Button>
-            </div>
-            <div className="space-y-1 border-t border-border/60 pt-3">
-              <p className="text-sm text-muted-foreground">
-                {t("profile.orderColDate")}
-              </p>
-              <p className="text-sm leading-snug text-foreground">
-                {formatOrderDate(order.createdAt, localeTag)}
-              </p>
             </div>
           </div>
         </li>
@@ -368,7 +382,7 @@ export function OrdersSection({ orders }: Props) {
           if (!open) setDetailOrder(null);
         }}
       >
-        <DialogContent className="max-w-2xl gap-0 overflow-hidden border-border/60 p-0 shadow-xl ring-1 ring-black/[0.04]">
+        <DialogContent className={ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME}>
           <DialogHeader className="space-y-0 border-b border-border/60 bg-muted/25 px-6 pb-5 pt-6 text-left">
             <div className="flex gap-4 pr-10">
               <div
@@ -424,30 +438,6 @@ export function OrdersSection({ orders }: Props) {
           <div className="max-h-[min(70vh,32rem)] space-y-5 overflow-y-auto px-6 py-5">
             {detailOrder ? (
               <>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <SummaryTile title={t("profile.summarySubtotal")}>
-                    {formatOrderCurrency(
-                      detailOrder.amountSubtotal,
-                      localeTag,
-                    )}
-                  </SummaryTile>
-                  <SummaryTile title={t("profile.summaryTax")}>
-                    {formatOrderCurrency(detailOrder.amountTax, localeTag)}
-                  </SummaryTile>
-                  <SummaryTile title={t("profile.summaryShipping")}>
-                    {formatOrderCurrency(
-                      detailOrder.amountShipping,
-                      localeTag,
-                    )}
-                  </SummaryTile>
-                  <SummaryTile title={t("profile.summaryTotal")}>
-                    {formatOrderCurrency(
-                      detailOrder.stripeAmountTotal,
-                      localeTag,
-                    )}
-                  </SummaryTile>
-                </div>
-
                 <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
@@ -491,6 +481,38 @@ export function OrdersSection({ orders }: Props) {
                     </table>
                   </div>
                 </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <SummaryTile title={t("profile.summarySubtotal")}>
+                    {formatOrderCurrency(
+                      detailOrder.amountSubtotal,
+                      localeTag,
+                    )}
+                  </SummaryTile>
+                  <SummaryTile title={t("profile.summaryDiscount")}>
+                    {detailOrder.amountDiscount > 0
+                      ? `−${formatOrderCurrency(detailOrder.amountDiscount, localeTag)}`
+                      : formatOrderCurrency(0, localeTag)}
+                  </SummaryTile>
+                  <SummaryTile title={t("profile.summaryTax")}>
+                    {formatOrderCurrency(detailOrder.amountTax, localeTag)}
+                  </SummaryTile>
+                  <SummaryTile title={t("profile.summaryShipping")}>
+                    {formatOrderCurrency(
+                      detailOrder.amountShipping,
+                      localeTag,
+                    )}
+                  </SummaryTile>
+                  <SummaryTile title={t("profile.summaryTotal")}>
+                    {formatOrderCurrency(detailOrder.total, localeTag)}
+                  </SummaryTile>
+                </div>
+
+                {detailOrder.shippingAddress ? (
+                  <OrderDetailsRecipientSection
+                    recipient={detailOrder.shippingAddress}
+                  />
+                ) : null}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">

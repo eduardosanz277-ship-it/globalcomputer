@@ -207,3 +207,35 @@ export async function repoListAdminStoreOrderItems(
     })) ?? []
   );
 }
+
+export async function repoGetAdminStoreOrderShippingAddress(
+  orderId: string,
+): Promise<AdminStoreOrderShippingAddressRow | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("store_order_shipping_addresses")
+    .select(
+      "recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country",
+    )
+    .eq("store_order_id", orderId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(
+      [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
+    );
+  }
+  if (!data) return null;
+  return {
+    recipient_name: String(data.recipient_name),
+    recipient_phone: String(data.recipient_phone),
+    recipient_email: data.recipient_email
+      ? String(data.recipient_email)
+      : null,
+    address_line: String(data.address_line),
+    address_line_2: data.address_line_2 ? String(data.address_line_2) : null,
+    city: String(data.city),
+    state: data.state ? String(data.state) : null,
+    postal_code: String(data.postal_code),
+    country: String(data.country ?? "US"),
+  };
+}

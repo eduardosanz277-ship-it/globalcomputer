@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import { CuentaTabs } from "./CuentaTabs";
 import { ProfilePageHeading } from "./ProfilePageHeading";
 import { CuentaAddress, CuentaOrder } from "./types";
+import { mapStoreOrderShippingAddressRow } from "@/lib/order-shipping-recipient";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
@@ -61,32 +62,41 @@ export default async function CuentaPage() {
   const { data: orders } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price )",
+      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(6);
 
-  const mappedOrders: CuentaOrder[] = (orders ?? []).map((order) => ({
-    id: order.id,
-    orderNumber:
-      String(order.order_number ?? "").trim() || String(order.id).slice(0, 8),
-    status: order.status,
-    total: Number(order.total_amount) || 0,
-    createdAt: order.created_at,
-    itemsCount: order.store_order_items?.length ?? 0,
-    amountSubtotal: Number(order.amount_subtotal) || 0,
-    amountTax: Number(order.amount_tax) || 0,
-    amountShipping: Number(order.amount_shipping) || 0,
-    stripeAmountTotal: Number(order.stripe_amount_total) || 0,
-    items:
-      order.store_order_items?.map((item) => ({
-        productName: item.product_name,
-        quantity: item.quantity,
-        unitPrice: Number(item.unit_price) || 0,
-        totalPrice: Number(item.total_price) || 0,
-      })) ?? [],
-  }));
+  const mappedOrders: CuentaOrder[] = (orders ?? []).map((order) => {
+    const shippingRaw = order.store_order_shipping_addresses;
+    const shippingRow = Array.isArray(shippingRaw)
+      ? shippingRaw[0]
+      : shippingRaw;
+
+    return {
+      id: order.id,
+      orderNumber:
+        String(order.order_number ?? "").trim() || String(order.id).slice(0, 8),
+      status: order.status,
+      total: Number(order.total_amount) || 0,
+      createdAt: order.created_at,
+      itemsCount: order.store_order_items?.length ?? 0,
+      amountSubtotal: Number(order.amount_subtotal) || 0,
+      amountTax: Number(order.amount_tax) || 0,
+      amountShipping: Number(order.amount_shipping) || 0,
+      amountDiscount: Number(order.amount_discount) || 0,
+      stripeAmountTotal: Number(order.stripe_amount_total) || 0,
+      shippingAddress: mapStoreOrderShippingAddressRow(shippingRow),
+      items:
+        order.store_order_items?.map((item) => ({
+          productName: item.product_name,
+          quantity: item.quantity,
+          unitPrice: Number(item.unit_price) || 0,
+          totalPrice: Number(item.total_price) || 0,
+        })) ?? [],
+    };
+  });
 
   const headerUser = {
     fullName: profile?.full_name ?? user.fullName ?? "",
@@ -103,9 +113,9 @@ export default async function CuentaPage() {
         hideBell
       />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 py-4">
           <Card className="overflow-hidden border border-border/70 bg-card/80 shadow-2xl shadow-primary/10">
-            <CardContent className="space-y-6 text-foreground">
+            <CardContent className="space-y-4 text-foreground">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <ProfilePageHeading />
               </div>
