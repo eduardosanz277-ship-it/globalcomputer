@@ -147,6 +147,8 @@ export function FormSelectField<TFieldValues extends FieldValues>({
               isClearable={false}
               isSearchable={isSearchable}
               menuPosition={useMenuPortal ? "fixed" : undefined}
+              menuPlacement={useMenuPortal ? "auto" : undefined}
+              maxMenuHeight={useMenuPortal ? 220 : undefined}
               noOptionsMessage={() => "Sin coincidencias"}
               styles={useMenuPortal ? fixedMenuStyles : appSelectStyles}
               className={cn("w-full", isDisabled && "opacity-60")}

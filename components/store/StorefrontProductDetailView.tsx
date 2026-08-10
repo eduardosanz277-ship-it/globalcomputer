@@ -1074,22 +1074,22 @@ export function StorefrontProductDetailView({
           {product.shipping_type === "non_standard" ? (
             <div
               role="status"
-              className="rounded-xl border border-amber-200/70 border-l-[3px] border-l-amber-400/80 bg-amber-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
+              className="rounded-xl border border-blue-200/70 border-l-[3px] border-l-blue-400/80 bg-blue-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
             >
-              <div className="min-w-0 space-y-1.5">
-                <p className="flex items-start gap-1.5 font-semibold leading-snug text-amber-950/90">
-                  <Info
-                    className="mt-px h-3.5 w-3.5 shrink-0 text-amber-600/80"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 break-words">
+              <div className="flex items-start gap-1.5">
+                <Info
+                  className="mt-px h-3.5 w-3.5 shrink-0 text-blue-600/80"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <div className="min-w-0 space-y-1.5">
+                  <p className="font-semibold leading-snug break-words text-blue-950/90">
                     {t("storefront.productDetail.specialShippingTitle")}
-                  </span>
-                </p>
-                <p className="leading-relaxed text-amber-900/70">
-                  {t("storefront.productDetail.specialShippingDescription")}
-                </p>
+                  </p>
+                  <p className="leading-relaxed text-blue-900/70">
+                    {t("storefront.productDetail.specialShippingDescription")}
+                  </p>
+                </div>
               </div>
             </div>
           ) : null}

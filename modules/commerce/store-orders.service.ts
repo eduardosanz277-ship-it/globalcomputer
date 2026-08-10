@@ -364,6 +364,14 @@ export async function createManualQuoteOrder(
     throw new SiteOrderError("El carrito debe tener al menos un producto.");
   }
 
+  const shippingAddress = normalizeManualShippingAddress(payload.shippingAddress);
+  if (!shippingAddress) {
+    throw new SiteOrderError(
+      "Completa la dirección de envío para solicitar la cotización.",
+      400,
+    );
+  }
+
   const user = await getCurrentUserService();
   const tier = resolveStorefrontPriceTier(user?.role);
   const locale = payload.locale === "en" ? "en" : "es";
@@ -428,9 +436,15 @@ export async function createManualQuoteOrder(
   const merchandiseTotal = Number(totalAfterDiscountUsd.toFixed(2));
 
   const customerName =
-    payload.name?.trim() || user?.fullName?.trim() || "Cliente";
+    payload.name?.trim() ||
+    shippingAddress.recipientName ||
+    user?.fullName?.trim() ||
+    "Cliente";
   const customerEmail =
-    payload.email?.trim() || user?.email?.trim() || "cliente@globalcomputer.com";
+    payload.email?.trim() ||
+    shippingAddress.recipientEmail?.trim() ||
+    user?.email?.trim() ||
+    "cliente@globalcomputer.com";
 
   const supabase = createSupabaseAdminClient();
   const { data: order, error: orderError } = await supabase
@@ -476,11 +490,33 @@ export async function createManualQuoteOrder(
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
   }
 
+  const { error: addressError } = await supabase
+    .from("store_order_shipping_addresses")
+    .insert({
+      store_order_id: order.id,
+      recipient_name: shippingAddress.recipientName,
+      recipient_phone: shippingAddress.recipientPhone,
+      recipient_email: shippingAddress.recipientEmail,
+      address_line: shippingAddress.addressLine,
+      address_line_2: shippingAddress.addressLine2,
+      city: shippingAddress.city,
+      state: shippingAddress.state,
+      postal_code: shippingAddress.postalCode,
+      country: shippingAddress.country,
+    });
+  if (addressError) {
+    console.error("[store-orders] create manual quote address", addressError);
+    throw new SiteOrderError(
+      "No se pudo guardar la dirección de envío del pedido.",
+      500,
+    );
+  }
+
   const intro =
     locale === "en"
       ? settings.whatsappMessageEn.trim() || settings.whatsappMessage
       : settings.whatsappMessage;
-  const message = buildWhatsAppQuoteMessage(
+  const baseMessage = buildWhatsAppQuoteMessage(
     intro,
     shippingLines,
     subtotal,
@@ -488,6 +524,20 @@ export async function createManualQuoteOrder(
     locale,
     order.order_number,
   );
+  const addressLabel =
+    locale === "en" ? "Shipping address" : "Dirección de envío";
+  const addressLines = [
+    shippingAddress.recipientName,
+    shippingAddress.recipientPhone,
+    shippingAddress.recipientEmail,
+    shippingAddress.addressLine,
+    shippingAddress.addressLine2,
+    [shippingAddress.city, shippingAddress.state, shippingAddress.postalCode]
+      .filter(Boolean)
+      .join(", "),
+    shippingAddress.country,
+  ].filter((line) => Boolean(line?.trim()));
+  const message = `${baseMessage}\n\n${addressLabel}:\n${addressLines.join("\n")}`;
   const whatsappUrl = buildWhatsAppUrl(settings.whatsappPhone, message);
   if (!whatsappUrl) {
     throw new SiteOrderError(

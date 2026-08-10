@@ -1,13 +1,22 @@
 "use client";
 
 import { computeCartSubtotal } from "@/components/store/cart-line-price";
+import {
+  ManualQuoteShippingAddressDialog,
+  type ManualQuoteShippingAddressValues,
+} from "@/components/store/ManualQuoteShippingAddressDialog";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import type { PublicSiteOffer } from "@/lib/site-offer.types";
-import { gcCartClear, gcCartTotalUnits, type GcCartItem } from "@/lib/store-cart";
+import {
+  gcCartClear,
+  gcCartTotalUnits,
+  type GcCartItem,
+} from "@/lib/store-cart";
+import { redirectAfterManualQuoteSuccess, openWhatsAppWindowForUserGesture, closePreOpenedWhatsAppWindow } from "@/lib/manual-quote-success";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import type { ShippingQuote } from "@/modules/shipping/shipping.types";
@@ -18,11 +27,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "react-toastify";
 
 /** Skeleton de importe: mantiene layout estable mientras se actualizan precios (patrón ecommerce). */
-function CartAmountSkeleton({
-  size = "md",
-}: {
-  size?: "sm" | "md" | "lg";
-}) {
+function CartAmountSkeleton({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <span
       className={cn(
@@ -80,6 +85,7 @@ export function StoreCartOrderSummary({
   panelOpen,
   onContinueShopping,
   onUiPendingChange,
+  onQuoteAddressRequest,
 }: {
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
@@ -90,6 +96,11 @@ export function StoreCartOrderSummary({
   onContinueShopping?: () => void;
   /** Notifica al padre para sincronizar skeleton del listado con los importes. */
   onUiPendingChange?: (pending: boolean) => void;
+  /**
+   * Si se define (p. ej. drawer), el padre abre el modal de dirección fuera del
+   * panel del carrito para que quede por encima y pueda ocultar el carrito.
+   */
+  onQuoteAddressRequest?: () => void;
 }) {
   const { t, locale } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
@@ -100,6 +111,7 @@ export function StoreCartOrderSummary({
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteAddressOpen, setQuoteAddressOpen] = useState(false);
   const [liveOffer, setLiveOffer] = useState<PublicSiteOffer | null>(null);
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(
     null,
@@ -204,7 +216,7 @@ export function StoreCartOrderSummary({
     }
   }
 
-  async function requestManualQuote() {
+  function openManualQuoteAddress() {
     if (
       quoteLoading ||
       items.length === 0 ||
@@ -214,6 +226,28 @@ export function StoreCartOrderSummary({
     ) {
       return;
     }
+    if (onQuoteAddressRequest) {
+      onQuoteAddressRequest();
+      return;
+    }
+    setQuoteAddressOpen(true);
+  }
+
+  async function requestManualQuote(
+    shippingAddress: ManualQuoteShippingAddressValues,
+  ) {
+    if (
+      quoteLoading ||
+      items.length === 0 ||
+      hasUnresolvedProducts ||
+      !shippingQuote?.requiresQuote ||
+      !shippingQuote.whatsappUrl
+    ) {
+      return;
+    }
+    const whatsappWindow = openWhatsAppWindowForUserGesture(
+      t("storefront.cart.openingWhatsApp"),
+    );
     setQuoteLoading(true);
     try {
       const res = await fetch("/api/site-orders/manual", {
@@ -225,10 +259,12 @@ export function StoreCartOrderSummary({
             qty: item.qty,
           })),
           locale,
+          shippingAddress,
         }),
       });
       const data = (await res.json()) as {
         whatsappUrl?: string;
+        order?: { order_number?: string };
         error?: string;
       };
       if (!res.ok || !data.whatsappUrl) {
@@ -237,36 +273,18 @@ export function StoreCartOrderSummary({
         );
       }
 
-      const whatsappUrl = data.whatsappUrl;
       await gcCartClear();
-      onContinueShopping?.();
-
-      const opened = window.open(whatsappUrl, "_blank");
-      if (opened) {
-        toast.success(t("storefront.cart.toastQuoteOrderSuccess"));
-      } else {
-        toast.info(
-          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            <span>{t("storefront.cart.toastQuotePopupBlocked")}</span>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline underline-offset-2"
-            >
-              {t("storefront.cart.toastQuoteOpenWhatsApp")}
-            </a>
-          </span>,
-          { autoClose: 12000 },
-        );
-      }
+      redirectAfterManualQuoteSuccess(data.whatsappUrl, {
+        preOpenedWindow: whatsappWindow,
+        orderNumber: data.order?.order_number,
+      });
     } catch (e) {
+      closePreOpenedWhatsAppWindow(whatsappWindow);
       const msg =
         e instanceof Error
           ? e.message
           : t("storefront.cart.toastQuoteOrderError");
       toast.error(msg);
-    } finally {
       setQuoteLoading(false);
     }
   }
@@ -314,8 +332,7 @@ export function StoreCartOrderSummary({
 
   /** Productos, mutación o envío: un solo pending para importes (y listado vía callback). */
   const pricesPending =
-    items.length > 0 &&
-    (loading || shippingLoading || hasUnresolvedProducts);
+    items.length > 0 && (loading || shippingLoading || hasUnresolvedProducts);
 
   useEffect(() => {
     onUiPendingChange?.(pricesPending);
@@ -341,10 +358,7 @@ export function StoreCartOrderSummary({
     <Button
       type="button"
       size={variant === "page" ? "lg" : "default"}
-      className={cn(
-        "w-full rounded-xl",
-        variant === "drawer" && "sm:flex-1",
-      )}
+      className={cn("w-full rounded-xl", variant === "drawer" && "sm:flex-1")}
       disabled={checkoutDisabled}
       onClick={goToStripeCheckout}
     >
@@ -369,7 +383,7 @@ export function StoreCartOrderSummary({
           variant === "drawer" && "sm:flex-1",
         )}
         disabled={quoteDisabled}
-        onClick={requestManualQuote}
+        onClick={openManualQuoteAddress}
       >
         {quoteLoading ? (
           <>
@@ -399,6 +413,14 @@ export function StoreCartOrderSummary({
         variant === "drawer" && "px-0",
       )}
     >
+      {!onQuoteAddressRequest ? (
+        <ManualQuoteShippingAddressDialog
+          open={quoteAddressOpen}
+          onOpenChange={setQuoteAddressOpen}
+          submitting={quoteLoading}
+          onSubmit={requestManualQuote}
+        />
+      ) : null}
       {hasOffer && !offerApplies ? (
         <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-sm font-medium text-emerald-800">
           <Gift
@@ -473,22 +495,22 @@ export function StoreCartOrderSummary({
         {requiresQuote ? (
           <div
             role="status"
-            className="rounded-xl border border-amber-200/70 border-l-[3px] border-l-amber-400/80 bg-amber-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
+            className="rounded-xl border border-blue-200/70 border-l-[3px] border-l-blue-400/80 bg-blue-50/70 px-3.5 py-3 text-xs leading-relaxed shadow-sm"
           >
-            <div className="min-w-0 space-y-1.5">
-              <p className="flex items-start gap-1.5 font-semibold leading-snug text-amber-950/90">
-                <Info
-                  className="mt-px h-3.5 w-3.5 shrink-0 text-amber-600/80"
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-                <span className="min-w-0 break-words">
+            <div className="flex items-start gap-1.5">
+              <Info
+                className="mt-px h-3.5 w-3.5 shrink-0 text-blue-600/80"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              <div className="min-w-0 space-y-1.5">
+                <p className="font-semibold leading-snug break-words text-blue-950/90">
                   {t("storefront.cart.shippingQuoteTitle")}
-                </span>
-              </p>
-              <p className="leading-relaxed text-amber-900/70">
-                {t("storefront.cart.shippingQuoteDescription")}
-              </p>
+                </p>
+                <p className="leading-relaxed text-blue-900/70">
+                  {t("storefront.cart.shippingQuoteDescription")}
+                </p>
+              </div>
             </div>
           </div>
         ) : (
