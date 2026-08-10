@@ -94,6 +94,39 @@ export const getStorefrontCategoryById = cache(
   },
 );
 
+/** Subcategoría activa por id (incluye `category_id` padre). */
+export const getStorefrontSubcategoryById = cache(
+  async (
+    id: string,
+  ): Promise<{
+    id: string;
+    name: string;
+    nameEn: string | null;
+    slug: string;
+    categoryId: string;
+  } | null> => {
+    const supabase = await getCatalogSupabase();
+    const { data, error } = await supabase
+      .from("subcategories")
+      .select("id, name, name_en, slug, category_id")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return {
+      id: data.id as string,
+      name: data.name as string,
+      nameEn:
+        data.name_en != null && String(data.name_en).trim() !== ""
+          ? String(data.name_en)
+          : null,
+      slug: normalizeSlug(data.name as string, data.slug as string | null),
+      categoryId: data.category_id as string,
+    };
+  },
+);
+
 /**
  * Subcategoría activa que pertenece a la categoría indicada (vitrina).
  * Útil para URLs `/catalogo/[categoryId]/[subcategoryId]`.
