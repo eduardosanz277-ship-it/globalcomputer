@@ -86,7 +86,7 @@ export function isStorefrontProductNew(
 }
 
 export function storefrontProductDisplayName(
-  product: StorefrontProduct,
+  product: Pick<StorefrontProduct, "name" | "name_en">,
   locale: string,
 ): string {
   if (locale === "en") return product.name_en?.trim() || product.name;
