@@ -1,3 +1,5 @@
+import type { OrderShippingRecipient } from "@/lib/order-shipping-recipient";
+
 export type CuentaAddress = {
   id: string;
   firstName: string | null;
@@ -23,7 +25,9 @@ export type CuentaOrder = {
   amountSubtotal: number;
   amountTax: number;
   amountShipping: number;
+  amountDiscount: number;
   stripeAmountTotal: number;
+  shippingAddress: OrderShippingRecipient | null;
   items: Array<{
     productName: string;
     quantity: number;

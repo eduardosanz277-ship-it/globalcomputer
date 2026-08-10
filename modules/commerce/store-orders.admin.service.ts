@@ -28,6 +28,18 @@ export type AdminStoreOrderItemRow = {
   total_price: string;
 };
 
+export type AdminStoreOrderShippingAddressRow = {
+  recipient_name: string;
+  recipient_phone: string;
+  recipient_email: string | null;
+  address_line: string;
+  address_line_2: string | null;
+  city: string;
+  state: string | null;
+  postal_code: string;
+  country: string;
+};
+
 export type StoreOrdersQueryOptions = {
   limit?: number;
   status?: SiteOrderStatus;
