@@ -47,7 +47,7 @@ import {
 import { plainTextFromHtml } from "@/lib/plainTextFromHtml";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { isNewFromCreatedAt } from "@/modules/catalog/storefront-product.shared";
+import { isNewFromCreatedAt, storefrontLocalizedText, storefrontProductDisplayName } from "@/modules/catalog/storefront-product.shared";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -658,6 +658,17 @@ export function StorefrontProductDetailView({
   const maxCartQty = Math.max(1, product.stock);
   const isNew = isNewFromCreatedAt(product.created_at);
   const hasDescription = Boolean(plainTextFromHtml(product.description));
+  const displayName = storefrontProductDisplayName(product, locale);
+  const displayBrandName = storefrontLocalizedText(
+    locale,
+    product.brand_name,
+    product.brand_name_en,
+  );
+  const displayBrandTypeName = storefrontLocalizedText(
+    locale,
+    product.brand_type_name,
+    product.brand_type_name_en,
+  );
 
   useEffect(() => {
     setCartQty(1);
@@ -744,7 +755,7 @@ export function StorefrontProductDetailView({
                       <div className="relative aspect-square w-full overflow-hidden rounded-xl">
                         <Image
                           src={images[activeIdx].url}
-                          alt={product.name}
+                          alt={displayName}
                           fill
                           className="object-cover object-center transition duration-300 ease-out group-hover:scale-[1.02]"
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 65vw, 50vw"
@@ -772,12 +783,12 @@ export function StorefrontProductDetailView({
                       )}
                     >
                       <DialogTitle className="sr-only">
-                        {product.name} — vista ampliada
+                        {displayName} — vista ampliada
                       </DialogTitle>
                       <div className="relative h-[min(85vh,90vw)] w-full min-h-[12rem]">
                         <Image
                           src={images[activeIdx].url}
-                          alt={product.name}
+                          alt={displayName}
                           fill
                           className="object-contain"
                           sizes="90vw"
@@ -939,7 +950,7 @@ export function StorefrontProductDetailView({
                       "rounded-full bg-emerald-600 px-2 py-[2px] text-[11px] font-semibold text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
                     )}
                   >
-                    Nuevo
+                    {t("storefront.card.newBadge")}
                   </span>
                 ) : null}
               </div>
@@ -950,13 +961,13 @@ export function StorefrontProductDetailView({
                 "text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl",
               )}
             >
-              {product.name}
+              {displayName}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-2 text-left text-[13px] font-medium leading-tight text-muted-foreground sm:text-sm">
               <Link href={brandHref} className="transition hover:text-primary">
-                {product.brand_name}
+                {displayBrandName}
               </Link>
-              {product.brand_type_name && product.brand_type_name !== "—" ? (
+              {displayBrandTypeName && displayBrandTypeName !== "—" ? (
                 <>
                   <span
                     className="inline-block h-3 w-px shrink-0 bg-muted-foreground/55"
@@ -967,10 +978,10 @@ export function StorefrontProductDetailView({
                         href={brandTypeHref}
                         className="transition hover:text-primary"
                       >
-                      {product.brand_type_name}
+                      {displayBrandTypeName}
                     </Link>
                   ) : (
-                    <span>{product.brand_type_name}</span>
+                    <span>{displayBrandTypeName}</span>
                   )}
                 </>
               ) : null}
@@ -1016,9 +1027,12 @@ export function StorefrontProductDetailView({
               </div>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
-              Precio según tu perfil (
-              {priceTier === "business" ? "empresa" : "cliente / invitado"}).
-              Incluye descuento aplicable si corresponde.
+              {t("storefront.productDetail.priceByProfile").replace(
+                "{tier}",
+                priceTier === "business"
+                  ? t("storefront.productDetail.priceTierBusiness")
+                  : t("storefront.productDetail.priceTierClient"),
+              )}
             </p>
 
             <div
@@ -1040,12 +1054,12 @@ export function StorefrontProductDetailView({
                 size="lg"
                 disabled={!canBuy}
                 pending={isAddingToCart}
-                pendingLabel="Añadiendo"
+                pendingLabel={t("storefront.card.addingPending")}
                 skipMinWidth
                 className="h-12 w-full rounded-xl text-base font-semibold shadow-sm sm:min-w-0 sm:flex-1"
                 onClick={async () => {
                   if (!canBuy) {
-                    toast.info("Este producto no tiene stock disponible.");
+                    toast.info(t("storefront.card.toastNoStock"));
                     return;
                   }
                   setIsAddingToCart(true);
@@ -1059,14 +1073,16 @@ export function StorefrontProductDetailView({
                     const message =
                       error instanceof Error
                         ? error.message
-                        : "No se pudo añadir al carrito.";
+                        : t("storefront.card.toastAddError");
                     toast.error(message);
                   } finally {
                     setIsAddingToCart(false);
                   }
                 }}
               >
-                {canBuy ? "Añadir al carrito" : "Agotado"}
+                {canBuy
+                  ? t("storefront.card.addToCart")
+                  : t("storefront.card.outOfStock")}
               </ButtonPending>
             </div>
           </div>
@@ -1180,7 +1196,7 @@ export function StorefrontProductDetailView({
       />
 
       <ProductReviewsSection
-        productName={product.name}
+        productName={displayName}
         rows={initialProductReviews}
         onOpenForm={() => setReviewPanelOpen(true)}
       />
@@ -1191,7 +1207,7 @@ export function StorefrontProductDetailView({
         description={
           <>
             Comparte tu experiencia con{" "}
-            <span className="font-medium text-foreground">{product.name}</span>.
+            <span className="font-medium text-foreground">{displayName}</span>.
             Tu reseña ayudará a otras personas a comprar con más confianza.
           </>
         }
@@ -1221,7 +1237,7 @@ export function StorefrontProductDetailView({
         <ProductReviewForm
           key={reviewPanelOpen ? "open" : "closed"}
           productId={product.id}
-          productName={product.name}
+          productName={displayName}
           onSuccess={handleReviewSuccess}
           onPendingChange={setReviewFormPending}
         />
