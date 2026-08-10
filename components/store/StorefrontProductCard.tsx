@@ -17,11 +17,13 @@ import {
   type StorefrontProduct,
 } from "@/modules/catalog/storefront-product.shared";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { buildStorefrontProductHref } from "@/lib/storefront-product-nav";
 import { cn } from "@/utils/cn";
 import { ImageOff, Plus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 function formatUsd(price: number): string {
@@ -81,6 +83,11 @@ export function StorefrontProductCard({
   embedPlain = false,
 }: StorefrontProductCardProps) {
   const { locale, t } = useI18n();
+  const pathname = usePathname();
+  const productHref = useMemo(
+    () => buildStorefrontProductHref(p.slug, pathname),
+    [p.slug, pathname],
+  );
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
   const displayName = storefrontProductDisplayName(p, locale);
   const displayBrand = storefrontLocalizedText(
@@ -144,7 +151,7 @@ export function StorefrontProductCard({
         )}
       >
         <Link
-          href={`/products/${p.slug}`}
+          href={productHref}
           className="absolute inset-0 z-0 block outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary"
         >
           {img ? (
@@ -296,7 +303,7 @@ export function StorefrontProductCard({
 
       <div className="flex flex-1 flex-col p-4">
         <Link
-          href={`/products/${p.slug}`}
+          href={productHref}
           className="min-w-0 outline-none ring-offset-2 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary"
         >
           <h3
