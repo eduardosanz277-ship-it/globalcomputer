@@ -1294,6 +1294,12 @@ export const es = {
           total: "Total",
         },
       },
+      history: {
+        title: "Historial del pedido",
+        empty: "Aún no hay cambios de estado registrados.",
+        changedBy: "Por {name}",
+        systemActor: "Sistema",
+      },
       confirmShipping: {
         title: "Confirmar pedido manual",
         description:

@@ -1289,6 +1289,12 @@ export const en = {
           total: "Total",
         },
       },
+      history: {
+        title: "Order history",
+        empty: "No status changes have been recorded yet.",
+        changedBy: "By {name}",
+        systemActor: "System",
+      },
       confirmShipping: {
         title: "Confirm manual order",
         description:
