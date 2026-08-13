@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 import { ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME } from "@/lib/order-details-dialog";
 import {
   mapStoreOrderShippingAddressRow,
@@ -44,6 +45,7 @@ import {
 import {
   AdminStoreOrderItemRow,
   AdminStoreOrderRow,
+  type StoreOrderStatusHistoryRow,
 } from "@/modules/commerce/store-orders.admin.service";
 import { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import { Check, Edit3, Eye, FilterX, Loader2, Package } from "lucide-react";
@@ -245,6 +247,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   const [orderItems, setOrderItems] = useState<AdminStoreOrderItemRow[]>([]);
   const [orderShippingAddress, setOrderShippingAddress] =
     useState<OrderShippingRecipient | null>(null);
+  const [orderStatusHistory, setOrderStatusHistory] = useState<
+    StoreOrderStatusHistoryRow[]
+  >([]);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [shippingMethodFilter, setShippingMethodFilter] =
@@ -476,6 +481,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     setDetailOrder(order);
     setItemsError(null);
     setOrderShippingAddress(null);
+    setOrderStatusHistory([]);
     setItemsLoading(true);
     setItemsDialogOpen(true);
     try {
@@ -496,9 +502,13 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       setOrderShippingAddress(
         mapStoreOrderShippingAddressRow(payload?.shippingAddress ?? null),
       );
+      setOrderStatusHistory(
+        Array.isArray(payload?.statusHistory) ? payload.statusHistory : [],
+      );
     } catch (error) {
       setOrderItems([]);
       setOrderShippingAddress(null);
+      setOrderStatusHistory([]);
       setItemsError(
         error instanceof Error
           ? error.message
@@ -514,6 +524,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     setDetailOrder(null);
     setOrderItems([]);
     setOrderShippingAddress(null);
+    setOrderStatusHistory([]);
     setItemsError(null);
     setItemsLoading(false);
   }, []);
@@ -1168,6 +1179,12 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                     recipient={orderShippingAddress}
                   />
                 ) : null}
+
+                <OrderStatusHistoryTimeline
+                  entries={orderStatusHistory}
+                  statusLabels={statusLabels}
+                  statusBadgeClass={orderStatusBadgeClass}
+                />
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
