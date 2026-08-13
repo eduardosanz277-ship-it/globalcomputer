@@ -19,6 +19,7 @@ import {
   quoteShippingService,
 } from "@/modules/shipping/shipping.service";
 import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
+import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
 
 export type SiteOrderStatus =
   | "pending"
@@ -332,6 +333,14 @@ export async function createSiteOrder(
     throw new SiteOrderError("No se pudo registrar el pedido.", 500);
   }
 
+  await recordStoreOrderStatusChange({
+    orderId: order.id,
+    status: "confirmed",
+    previousStatus: null,
+    note: "checkout",
+    supabase,
+  });
+
   const orderItems = normalizedItems.map((line) => ({
     store_order_id: order.id,
     product_id: line.product.id,
@@ -496,6 +505,14 @@ export async function createManualQuoteOrder(
     console.error("[store-orders] create manual quote", orderError);
     throw new SiteOrderError("No se pudo registrar el pedido.", 500);
   }
+
+  await recordStoreOrderStatusChange({
+    orderId: order.id,
+    status: "pending",
+    previousStatus: null,
+    note: "manual_quote",
+    supabase,
+  });
 
   const { error: itemsError } = await supabase.from("store_order_items").insert(
     normalizedItems.map((line) => ({
@@ -776,6 +793,14 @@ async function ensureStoreOrderForCheckoutSession(
   }
 
   const orderId = inserted.id;
+  await recordStoreOrderStatusChange({
+    orderId,
+    status: "confirmed",
+    previousStatus: null,
+    note: "stripe_checkout",
+    supabase,
+  });
+
   const { error: itemsErr } = await supabase.from("store_order_items").insert(
     itemRows.map((r) => ({
       store_order_id: orderId,
@@ -802,16 +827,19 @@ export async function syncOrderWithStripeSession(
   const supabase = createSupabaseAdminClient();
   let { data: order } = await supabase
     .from("store_orders")
-    .select("id")
+    .select("id, status")
     .eq("stripe_session_id", session.id)
     .maybeSingle();
 
   if (!order?.id) {
     const id = await ensureStoreOrderForCheckoutSession(session.id, supabase);
-    order = { id };
+    order = { id, status: "confirmed" };
   }
 
   const pricing = breakdownFromStripeMetadata(session.metadata);
+  const nextStatus: SiteOrderStatus =
+    session.payment_status === "paid" ? "processing" : "confirmed";
+  const previousStatus = (order.status as SiteOrderStatus | undefined) ?? null;
 
   const updates = {
     amount_subtotal: centsToMoney(session.amount_subtotal),
@@ -829,7 +857,7 @@ export async function syncOrderWithStripeSession(
         : session.payment_intent && typeof session.payment_intent === "object"
           ? session.payment_intent.id
           : null,
-    status: session.payment_status === "paid" ? "processing" : "confirmed",
+    status: nextStatus,
   };
 
   const { error: upErr } = await supabase
@@ -839,6 +867,16 @@ export async function syncOrderWithStripeSession(
   if (upErr) {
     console.error("[store-orders] actualizar tras webhook", upErr);
     throw upErr;
+  }
+
+  if (previousStatus !== nextStatus) {
+    await recordStoreOrderStatusChange({
+      orderId: order.id,
+      status: nextStatus,
+      previousStatus,
+      note: "stripe_webhook",
+      supabase,
+    });
   }
 
   const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(

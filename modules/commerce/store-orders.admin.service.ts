@@ -106,6 +106,7 @@ export async function repoUpdateStoreOrderStatus(
   orderId: string,
   status: SiteOrderStatus,
   amountShipping?: number,
+  changedBy?: string | null,
 ): Promise<UpdateStoreOrderStatusResult> {
   const supabase = await createSupabaseServerClient();
   const { data: current, error: fetchError } = await supabase
@@ -125,6 +126,8 @@ export async function repoUpdateStoreOrderStatus(
   if (!current) {
     throw new Error("ORDER_NOT_FOUND");
   }
+
+  const previousStatus = current.status as SiteOrderStatus;
 
   if (
     current.shipping_method === "automatic" &&
@@ -165,6 +168,14 @@ export async function repoUpdateStoreOrderStatus(
           .join(" "),
       );
     }
+    if (previousStatus !== status) {
+      await recordStoreOrderStatusChange({
+        orderId,
+        status,
+        previousStatus,
+        changedBy: changedBy ?? null,
+      });
+    }
     return {
       status,
       amount_shipping: String(shipping),
@@ -180,6 +191,14 @@ export async function repoUpdateStoreOrderStatus(
     throw new Error(
       [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
     );
+  }
+  if (previousStatus !== status) {
+    await recordStoreOrderStatusChange({
+      orderId,
+      status,
+      previousStatus,
+      changedBy: changedBy ?? null,
+    });
   }
   return {
     status,
