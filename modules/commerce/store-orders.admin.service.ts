@@ -136,6 +136,17 @@ export async function repoUpdateStoreOrderStatus(
     throw new Error("STATUS_NOT_ALLOWED");
   }
 
+  // Pedidos manuales pendientes: primero confirmar (con envío) antes de avanzar.
+  if (
+    current.shipping_method === "manual" &&
+    current.status === "pending" &&
+    status !== "pending" &&
+    status !== "confirmed" &&
+    status !== "cancelled"
+  ) {
+    throw new Error("MANUAL_CONFIRM_REQUIRED");
+  }
+
   const isManualPendingConfirm =
     current.status === "pending" &&
     current.shipping_method === "manual" &&

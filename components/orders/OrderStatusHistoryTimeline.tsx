@@ -7,7 +7,7 @@ import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import { cn } from "@/utils/cn";
 
 const STATUS_DOT_CLASSES: Record<SiteOrderStatus, string> = {
-  pending: "bg-slate-400 ring-slate-200",
+  pending: "bg-slate-500 ring-slate-200",
   confirmed: "bg-sky-500 ring-sky-200",
   processing: "bg-amber-500 ring-amber-200",
   shipping: "bg-violet-500 ring-violet-200",
@@ -21,6 +21,11 @@ type Props = {
   statusBadgeClass: (status: SiteOrderStatus) => string;
   /** Si es false, no muestra quién realizó el cambio (p. ej. panel de cliente). */
   showActor?: boolean;
+  /**
+   * En viewports menores a 375px, la fecha va siempre debajo del estado
+   * (útil en consulta pública en pantallas muy estrechas).
+   */
+  stackDateBelowOnNarrow?: boolean;
 };
 
 /** Línea de tiempo de cambios de estado del pedido. */
@@ -29,6 +34,7 @@ export function OrderStatusHistoryTimeline({
   statusLabels,
   statusBadgeClass,
   showActor = true,
+  stackDateBelowOnNarrow = false,
 }: Props) {
   const { t, locale } = useI18n();
 
@@ -61,7 +67,13 @@ export function OrderStatusHistoryTimeline({
                   aria-hidden
                 />
                 <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div
+                    className={cn(
+                      "flex flex-wrap items-center gap-2",
+                      stackDateBelowOnNarrow &&
+                        "max-[374px]:flex-col max-[374px]:items-start max-[374px]:gap-1",
+                    )}
+                  >
                     <span
                       className={cn(
                         "inline-flex",

@@ -69,6 +69,16 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    if (msg === "MANUAL_CONFIRM_REQUIRED") {
+      return NextResponse.json(
+        {
+          error:
+            "Los pedidos manuales pendientes deben confirmarse antes de pasar a otro estado.",
+          code: "MANUAL_CONFIRM_REQUIRED",
+        },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(
       { error: "No se pudo actualizar el estado." },
       { status: 500 },

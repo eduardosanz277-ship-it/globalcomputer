@@ -150,6 +150,7 @@ export const es = {
     reviews: "Reseñas",
     help: "Ayuda",
     accountOrders: "Tu cuenta / pedidos",
+    trackOrder: "Consultar pedido",
     shippingReturns: "Envíos y devoluciones",
     warranty: "Garantía",
     contact: "Contacto",
@@ -164,6 +165,32 @@ export const es = {
     createdBy: "Creado por Veltrix Digital.",
     privacy: "Privacidad",
     terms: "Términos",
+  },
+  orderLookup: {
+    metaTitle: "Consultar pedido",
+    metaDescription:
+      "Consulta el estado y el historial de tu pedido con el número y el correo.",
+    formTitle: "Datos del pedido",
+    formDescription:
+      "Usa el número que aparece en la confirmación y el correo asociado a la compra o cotización.",
+    orderNumberLabel: "Número de pedido",
+    orderNumberPlaceholder: "ORD-20260813-0001",
+    emailLabel: "Correo electrónico",
+    emailPlaceholder: "correo@ejemplo.com",
+    submit: "Consultar",
+    submitting: "Consultando…",
+    errorGeneric: "No se pudo consultar el pedido. Inténtalo de nuevo.",
+    errorNotFound:
+      "No encontramos un pedido con esos datos. Verifica el número y el correo.",
+    errorInvalidBody:
+      "Datos no válidos. Revisa el número de pedido y el correo.",
+    orderNumberRequired: "El número de pedido es obligatorio",
+    emailRequired: "El correo electrónico es obligatorio",
+    emailInvalid: "Introduce un correo electrónico válido",
+    resultTitle: "Detalle del pedido",
+    orderPrefix: "Pedido:",
+    emptyItems: "No hay artículos en este pedido.",
+    trackLink: "Consultar este pedido",
   },
   contactPage: {
     toastSent: "Mensaje enviado correctamente",
@@ -352,7 +379,7 @@ export const es = {
       quoteAddressCancel: "Cancelar",
       quoteAddressBack: "Volver al carrito",
       openingWhatsApp: "Abriendo WhatsApp…",
-    quoteAddressContinue: "Continuar a WhatsApp",
+      quoteAddressContinue: "Continuar a WhatsApp",
       toastQuoteOrderError: "No se pudo crear el pedido de cotización.",
       toastQuoteOrderSuccess: "Pedido creado. Abriendo WhatsApp…",
       toastQuoteOpenWhatsApp: "Abrir WhatsApp",
@@ -1219,7 +1246,7 @@ export const es = {
       },
     },
     orders: {
-      title: "Pedidos Stripe",
+      title: "Pedidos",
       description:
         "Revisa montos, impuestos y aplica los estados de procesamiento.",
       status: {
@@ -1323,6 +1350,8 @@ export const es = {
           "Para confirmar un pedido manual pendiente debes indicar el monto de envío.",
         statusNotAllowed:
           "Los pedidos con pago Stripe no admiten los estados pendiente ni cancelado.",
+        manualConfirmRequired:
+          "Los pedidos manuales pendientes deben confirmarse antes de pasar a otro estado.",
       },
       error: {
         default: "Hubo un problema al consultar los pedidos.",

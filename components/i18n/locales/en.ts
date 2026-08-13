@@ -148,6 +148,7 @@ export const en = {
     reviews: "Reviews",
     help: "Help",
     accountOrders: "Your account / orders",
+    trackOrder: "Track order",
     shippingReturns: "Shipping and returns",
     warranty: "Warranty",
     contact: "Contact",
@@ -162,6 +163,32 @@ export const en = {
     createdBy: "Created by Veltrix Digital.",
     privacy: "Privacy",
     terms: "Terms",
+  },
+  orderLookup: {
+    metaTitle: "Track order",
+    metaDescription:
+      "Check your order status and history with the order number and email.",
+    formTitle: "Order details",
+    formDescription:
+      "Use the number from your confirmation and the email linked to the purchase or quote.",
+    orderNumberLabel: "Order number",
+    orderNumberPlaceholder: "ORD-20260813-0001",
+    emailLabel: "Email",
+    emailPlaceholder: "email@example.com",
+    submit: "Look up",
+    submitting: "Looking up…",
+    errorGeneric: "The order could not be looked up. Please try again.",
+    errorNotFound:
+      "We couldn't find an order with those details. Check the number and email.",
+    errorInvalidBody:
+      "Invalid details. Please check the order number and email.",
+    orderNumberRequired: "Order number is required",
+    emailRequired: "Email is required",
+    emailInvalid: "Enter a valid email address",
+    resultTitle: "Order details",
+    orderPrefix: "Order:",
+    emptyItems: "This order has no items.",
+    trackLink: "Track this order",
   },
   contactPage: {
     toastSent: "Message sent successfully",
@@ -347,7 +374,7 @@ export const en = {
       quoteAddressCancel: "Cancel",
       quoteAddressBack: "Back to cart",
       openingWhatsApp: "Opening WhatsApp…",
-    quoteAddressContinue: "Continue to WhatsApp",
+      quoteAddressContinue: "Continue to WhatsApp",
       toastQuoteOrderError: "Could not create the quote order.",
       toastQuoteOrderSuccess: "Order created. Opening WhatsApp…",
       toastQuoteOpenWhatsApp: "Open WhatsApp",
@@ -1214,7 +1241,7 @@ export const en = {
       },
     },
     orders: {
-      title: "Stripe orders",
+      title: "Orders",
       description:
         "Review amounts, taxes, and apply processing statuses.",
       status: {
@@ -1318,6 +1345,8 @@ export const en = {
           "To confirm a pending manual order you must enter the shipping amount.",
         statusNotAllowed:
           "Stripe-paid orders cannot use pending or cancelled statuses.",
+        manualConfirmRequired:
+          "Pending manual orders must be confirmed before moving to another status.",
       },
       error: {
         default: "There was a problem fetching orders.",

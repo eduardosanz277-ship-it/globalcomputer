@@ -87,12 +87,12 @@ const CREATED_AT_COLUMN_CLASS =
 const ORDERS_TABLE_MIN_WIDTH_CLASS = "min-w-[72rem]";
 
 const STATUS_BADGE_CLASSES: Record<SiteOrderStatus, string> = {
-  pending: "bg-slate-50 text-slate-600 border border-slate-100",
-  confirmed: "bg-sky-50 text-sky-600 border border-sky-100",
-  processing: "bg-amber-50 text-amber-600 border border-amber-100",
-  shipping: "bg-violet-50 text-violet-600 border border-violet-100",
-  completed: "bg-emerald-50 text-emerald-600 border border-emerald-100",
-  cancelled: "bg-red-50 text-red-600 border border-red-100",
+  pending: "bg-slate-50 text-slate-700 border border-slate-200",
+  confirmed: "bg-sky-50 text-sky-700 border border-sky-200",
+  processing: "bg-amber-50 text-amber-700 border border-amber-200",
+  shipping: "bg-violet-50 text-violet-700 border border-violet-200",
+  completed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  cancelled: "bg-red-50 text-red-700 border border-red-200",
 };
 
 const STATUS_MENU_ROW_CLASSES: Record<SiteOrderStatus, string> = {
@@ -145,11 +145,16 @@ function orderDisplayTotal(order: AdminStoreOrderRow): number {
 }
 
 function statusOptionsForOrder(
-  order: Pick<AdminStoreOrderRow, "shipping_method">,
+  order: Pick<AdminStoreOrderRow, "shipping_method" | "status">,
 ): SiteOrderStatus[] {
-  return order.shipping_method === "automatic"
-    ? AUTOMATIC_STATUS_OPTIONS
-    : STATUS_OPTIONS;
+  if (order.shipping_method === "automatic") {
+    return AUTOMATIC_STATUS_OPTIONS;
+  }
+  // Manual pendiente: solo confirmar (o cancelar). El resto exige haber confirmado.
+  if (order.status === "pending") {
+    return ["pending", "confirmed", "cancelled"];
+  }
+  return STATUS_OPTIONS;
 }
 
 function orderRowClassName(row: AdminStoreOrderRow): string {
@@ -299,6 +304,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           }
           if (payload?.code === "STATUS_NOT_ALLOWED") {
             throw new Error(t("admin.orders.toast.statusNotAllowed"));
+          }
+          if (payload?.code === "MANUAL_CONFIRM_REQUIRED") {
+            throw new Error(t("admin.orders.toast.manualConfirmRequired"));
           }
           throw new Error(
             payload?.error ?? t("admin.orders.toast.statusUpdateError"),

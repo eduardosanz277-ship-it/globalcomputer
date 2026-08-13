@@ -148,6 +148,16 @@ export function CartCheckoutSuccessClient({
           {t("storefront.cartSuccess.homeLink")}
         </Link>
       </div>
+      {orderNumber ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          <Link
+            href={`/order-lookup?order=${encodeURIComponent(orderNumber)}`}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {t("orderLookup.trackLink")}
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }

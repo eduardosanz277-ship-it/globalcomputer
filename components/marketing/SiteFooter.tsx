@@ -88,6 +88,14 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 </Link>
               </li>
               <li>
+                <Link
+                  href="/order-lookup"
+                  className="text-zinc-400 transition hover:text-white"
+                >
+                  {t("footer.trackOrder")}
+                </Link>
+              </li>
+              <li>
                 <span className="text-zinc-500">
                   {t("footer.shippingReturns")}
                 </span>
