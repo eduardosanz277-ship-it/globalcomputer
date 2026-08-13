@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
@@ -14,13 +15,19 @@ import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBel
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
+import { StoreCartDrawer } from "@/components/store/StoreCartDrawer";
+import { useGcCart } from "@/components/store/useGcCart";
+import { Button } from "@/components/ui/button";
 import { SITE_BRAND_NAME } from "@/lib/site";
+import { GC_CART_OPEN_EVENT, gcCartTotalUnits } from "@/lib/store-cart";
+import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
+import type { UserRole } from "@/modules/auth/auth.types";
 import { cn } from "@/utils/cn";
 
 export type AdminHeaderUser = {
   fullName: string;
   email: string;
-  role: string;
+  role: UserRole;
 };
 
 type Props = {
@@ -36,6 +43,8 @@ type Props = {
   brandHref?: string;
   /** Oculta el botón de campana (p. ej. cuenta `/profile`). */
   hideBell?: boolean;
+  /** Icono + drawer de carrito (pago / cotización), p. ej. en `/profile`. */
+  showCart?: boolean;
 };
 
 export function AdminHeader({
@@ -44,12 +53,18 @@ export function AdminHeader({
   variant = "admin",
   brandHref: brandHrefProp,
   hideBell = false,
+  showCart = false,
 }: Props) {
   const brandHref =
     brandHrefProp ?? (variant === "standalone" ? "/" : "/admin/home");
   const [open, setOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const userMenuPresence = useDropdownPresence(open);
   const ref = useRef<HTMLDivElement>(null);
+  const cartItems = useGcCart();
+  const cartCount = gcCartTotalUnits(cartItems);
+  const cartBadgeText = cartCount > 99 ? "99+" : String(cartCount);
+  const storefrontPriceTier = resolveStorefrontPriceTier(user.role);
 
   const userMenuMotionClass = cn(
     "transition duration-200 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none",
@@ -67,6 +82,13 @@ export function AdminHeader({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!showCart) return;
+    const openCartFromAdd = () => setCartOpen(true);
+    window.addEventListener(GC_CART_OPEN_EVENT, openCartFromAdd);
+    return () => window.removeEventListener(GC_CART_OPEN_EVENT, openCartFromAdd);
+  }, [showCart]);
 
   const { t } = useI18n();
 
@@ -133,6 +155,30 @@ export function AdminHeader({
         )}
       >
         {!hideBell ? <AdminNotificationsBell /> : null}
+
+        {showCart ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="shrink-0 gap-2 rounded-xl px-2.5 hover:bg-transparent hover:text-foreground md:px-3"
+            aria-label={`${t("header.nav.cart")} (${cartCount} ${cartCount === 1 ? t("header.itemOne") : t("header.itemMany")})`}
+            onClick={() => setCartOpen(true)}
+          >
+            <span className="relative inline-flex">
+              <ShoppingCart
+                className="h-6 w-6"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <span className="absolute -right-2 -top-2 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                {cartBadgeText}
+              </span>
+            </span>
+            <span className="hidden text-sm font-medium md:inline">
+              {t("header.nav.cart")}
+            </span>
+          </Button>
+        ) : null}
 
         <LanguageSelector
           className={cn(
@@ -233,6 +279,14 @@ export function AdminHeader({
           )}
         </div>
       </div>
+
+      {showCart ? (
+        <StoreCartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          tier={storefrontPriceTier}
+        />
+      ) : null}
     </header>
   );
 }

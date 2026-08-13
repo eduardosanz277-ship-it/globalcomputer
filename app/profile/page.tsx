@@ -111,6 +111,7 @@ export default async function CuentaPage() {
         variant="standalone"
         brandHref="/"
         hideBell
+        showCart
       />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-7xl px-4 py-4">
