@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
+import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
 import { SiteOrderStatus } from "./store-orders.service";
+
+export type { StoreOrderStatusHistoryRow };
 
 export type AdminStoreOrderRow = {
   id: string;
@@ -238,4 +242,70 @@ export async function repoGetAdminStoreOrderShippingAddress(
     postal_code: String(data.postal_code),
     country: String(data.country ?? "US"),
   };
+}
+
+export async function repoListAdminStoreOrderStatusHistory(
+  orderId: string,
+): Promise<StoreOrderStatusHistoryRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("store_order_status_history")
+    .select("id, status, previous_status, note, created_at, changed_by")
+    .eq("store_order_id", orderId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    throw new Error(
+      [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
+    );
+  }
+
+  const rows = data ?? [];
+  const changerIds = [
+    ...new Set(
+      rows
+        .map((row) =>
+          row.changed_by != null && String(row.changed_by).trim() !== ""
+            ? String(row.changed_by)
+            : null,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const nameById = new Map<string, string>();
+  if (changerIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", changerIds);
+    if (profilesError) {
+      console.error(
+        "[store-order-status-history] profiles",
+        profilesError.message,
+      );
+    } else {
+      for (const profile of profiles ?? []) {
+        const name =
+          profile.full_name != null && String(profile.full_name).trim() !== ""
+            ? String(profile.full_name).trim()
+            : null;
+        if (name) nameById.set(String(profile.id), name);
+      }
+    }
+  }
+
+  return rows.map((row) => {
+    const changedBy =
+      row.changed_by != null ? String(row.changed_by) : null;
+    return {
+      id: String(row.id),
+      status: row.status as SiteOrderStatus,
+      previousStatus: row.previous_status
+        ? (row.previous_status as SiteOrderStatus)
+        : null,
+      changedByName: changedBy ? (nameById.get(changedBy) ?? null) : null,
+      note: row.note != null ? String(row.note) : null,
+      createdAt: String(row.created_at),
+    };
+  });
 }
