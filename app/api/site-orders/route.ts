@@ -20,6 +20,31 @@ const siteOrderSchema = z.object({
   sessionId: z.string().optional(),
 });
 
+/** Consulta el nº de pedido asociado a una sesión de Stripe Checkout. */
+export async function GET(req: Request) {
+  const sessionId = new URL(req.url).searchParams.get("session_id")?.trim();
+  if (!sessionId) {
+    return NextResponse.json(
+      { error: "Falta session_id." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const orderNumber = await getStoreOrderNumberByStripeSessionId(sessionId);
+    if (!orderNumber) {
+      return NextResponse.json({ orderNumber: null }, { status: 404 });
+    }
+    return NextResponse.json({ orderNumber });
+  } catch (error) {
+    console.error("site-orders GET:", error);
+    return NextResponse.json(
+      { error: "No se pudo consultar el pedido." },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(req: Request) {
   let payload: unknown;
   try {
