@@ -375,6 +375,7 @@ export const es = {
       metaTitle: "Pago recibido",
       metaDescription: "Gracias por tu compra.",
       heading: "¡Gracias por tu compra!",
+      orderNumberLabel: "Nº de pedido:",
       description:
         "El pago ha sido procesado correctamente. En este dispositivo el carrito se ha vaciado.",
       homeLink: "Inicio",

@@ -371,6 +371,7 @@ export const en = {
       metaTitle: "Payment received",
       metaDescription: "Thank you for your purchase.",
       heading: "Thank you for your purchase!",
+      orderNumberLabel: "Order no.:",
       description:
         "The payment has been successfully processed. On this device your cart has been cleared.",
       homeLink: "Home",

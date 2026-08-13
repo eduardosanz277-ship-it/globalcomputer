@@ -1,11 +1,8 @@
 import { CartCheckoutSuccessClient } from "@/components/store/CartCheckoutSuccessClient";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { translate } from "@/lib/i18n/get-translation";
 import { getServerLocale } from "@/lib/i18n/server-locale";
-import { cn } from "@/utils/cn";
-import { CheckCircle2 } from "lucide-react";
+import { getStoreOrderNumberByStripeSessionId } from "@/modules/commerce/store-orders.service";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
@@ -15,38 +12,33 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function CarritoExitoPage() {
-  const locale = await getServerLocale();
-  const t = (key: string) => translate(locale, key);
+type Props = {
+  searchParams?:
+    | Promise<{ session_id?: string | string[] }>
+    | { session_id?: string | string[] };
+};
+
+function firstParam(value: string | string[] | undefined): string | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (Array.isArray(value) && typeof value[0] === "string") {
+    return value[0].trim() || null;
+  }
+  return null;
+}
+
+export default async function CarritoExitoPage({ searchParams }: Props) {
+  const resolved = searchParams ? await Promise.resolve(searchParams) : {};
+  const sessionId = firstParam(resolved.session_id);
+  const initialOrderNumber = sessionId
+    ? await getStoreOrderNumberByStripeSessionId(sessionId)
+    : null;
 
   return (
     <div className="min-h-[50vh] bg-gradient-to-b from-muted/25 to-background px-4 py-16 sm:px-6">
-      <CartCheckoutSuccessClient />
-      <div className="mx-auto max-w-lg text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <CheckCircle2 className="h-9 w-9" strokeWidth={1.75} aria-hidden />
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {t("storefront.cartSuccess.heading")}
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          {t("storefront.cartSuccess.description")}
-        </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href="/products"
-            className={cn(buttonVariants({ variant: "default" }), "rounded-xl")}
-          >
-            {t("storefront.cart.continueShopping")}
-          </Link>
-          <Link
-            href="/"
-            className={cn(buttonVariants({ variant: "outline" }), "rounded-xl")}
-          >
-            {t("storefront.cartSuccess.homeLink")}
-          </Link>
-        </div>
-      </div>
+      <CartCheckoutSuccessClient
+        initialOrderNumber={initialOrderNumber}
+        sessionId={sessionId}
+      />
     </div>
   );
 }
