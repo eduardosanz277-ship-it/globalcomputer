@@ -198,6 +198,28 @@ async function resolveOrderPricingBreakdown(input: {
   };
 }
 
+export async function getStoreOrderNumberByStripeSessionId(
+  sessionId: string,
+): Promise<string | null> {
+  const id = sessionId.trim();
+  if (!id) return null;
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("store_orders")
+    .select("id, order_number")
+    .eq("stripe_session_id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[store-orders] get by stripe session", error.message);
+    return null;
+  }
+  if (!data) return null;
+  const orderNumber = String(data.order_number ?? "").trim();
+  return orderNumber || String(data.id);
+}
+
 export async function createSiteOrder(
   payload: CreateSiteOrderInput,
 ): Promise<SiteOrderRow> {
