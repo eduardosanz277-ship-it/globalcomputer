@@ -15,6 +15,14 @@ const STATUS_DOT_CLASSES: Record<SiteOrderStatus, string> = {
   cancelled: "bg-red-500 ring-red-200",
 };
 
+/**
+ * Centro vertical de la bolita: top-1.5 (0.375rem) + mitad de h-2.5 (0.3125rem).
+ * La línea empieza/termina aquí para no sobresalir del primer/último estado.
+ */
+const DOT_CENTER = "0.6875rem";
+/** Centro horizontal de la bolita (left-0 + mitad de w-2.5). */
+const DOT_CENTER_X = "0.3125rem";
+
 type Props = {
   entries: StoreOrderStatusHistoryRow[];
   statusLabels: Record<SiteOrderStatus, string>;
@@ -37,6 +45,7 @@ export function OrderStatusHistoryTimeline({
   stackDateBelowOnNarrow = false,
 }: Props) {
   const { t, locale } = useI18n();
+  const showConnectors = entries.length > 1;
 
   return (
     <section className="space-y-3">
@@ -48,8 +57,9 @@ export function OrderStatusHistoryTimeline({
           {t("admin.orders.history.empty")}
         </p>
       ) : (
-        <ol className="relative ms-2 space-y-0 border-s border-border/70 ps-5">
+        <ol className="space-y-0">
           {entries.map((entry, index) => {
+            const isFirst = index === 0;
             const isLast = index === entries.length - 1;
             const when =
               formatStoreOrderDateTime(entry.createdAt, locale) ?? "—";
@@ -57,10 +67,25 @@ export function OrderStatusHistoryTimeline({
               ? entry.changedByName.trim()
               : t("admin.orders.history.systemActor");
             return (
-              <li key={entry.id} className="relative pb-5 last:pb-0">
+              <li key={entry.id} className="relative pb-5 pl-6 last:pb-0">
+                {/* Une con el estado siguiente (desde el centro de la bolita). */}
+                {showConnectors && !isLast ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute bottom-0 w-0.5 -translate-x-1/2 bg-border/80"
+                    style={{ left: DOT_CENTER_X, top: DOT_CENTER }}
+                  />
+                ) : null}
+                {showConnectors && !isFirst ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-0 w-0.5 -translate-x-1/2 bg-border/80"
+                    style={{ left: DOT_CENTER_X, height: DOT_CENTER }}
+                  />
+                ) : null}
                 <span
                   className={cn(
-                    "absolute -start-[1.4rem] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-background",
+                    "absolute left-0 top-1.5 z-10 h-2.5 w-2.5 rounded-full ring-4 ring-background",
                     STATUS_DOT_CLASSES[entry.status],
                     isLast && "ring-primary/15",
                   )}

@@ -82,16 +82,18 @@ export function AdminShell({ user, children }: Props) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <main className="admin-panel relative min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
-          <div
-            className={cn(
-              "transition-[filter,opacity] duration-200 ease-out",
-              panelLoading &&
-                "pointer-events-none select-none blur-[2px] opacity-75",
-            )}
-            aria-hidden={panelLoading}
-          >
-            {children}
+        <main className="admin-panel relative min-h-0 w-full min-w-0 flex-1 overflow-hidden">
+          <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4">
+            <div
+              className={cn(
+                "transition-[filter,opacity] duration-200 ease-out",
+                panelLoading &&
+                  "pointer-events-none select-none blur-[2px] opacity-75",
+              )}
+              aria-hidden={panelLoading}
+            >
+              {children}
+            </div>
           </div>
 
           <div
@@ -100,6 +102,7 @@ export function AdminShell({ user, children }: Props) {
               panelLoading ? "opacity-100" : "opacity-0",
             )}
             aria-hidden={!panelLoading}
+            aria-busy={panelLoading}
           >
             <div className="rounded-2xl border border-white/60 bg-white/70 px-5 py-4 shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-3">

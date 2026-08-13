@@ -1268,6 +1268,7 @@ export function SiteHeader({ user }: Props) {
                                     activeGeneral,
                                     specific,
                                   )}
+                                  onClick={armDesktopNavStripSuppress}
                                   className={cn(
                                     navMegaRowClass,
                                     "hover:bg-white/10",
@@ -1341,6 +1342,7 @@ export function SiteHeader({ user }: Props) {
                               <li key={type.id}>
                                 <Link
                                   href={catalogBrandTypeUrl(activeBrand, type)}
+                                  onClick={armDesktopNavStripSuppress}
                                   className={cn(
                                     navMegaRowClass,
                                     "hover:bg-white/10",
@@ -1366,6 +1368,7 @@ export function SiteHeader({ user }: Props) {
                               ref={(el) => setRowRef(brand.id, el)}
                               href={catalogBrandUrl(brand)}
                               onMouseEnter={() => setHoveredBrandId(brand.id)}
+                              onClick={armDesktopNavStripSuppress}
                               className={cn(
                                 navMegaRowClass,
                                 "justify-between",
@@ -1412,6 +1415,7 @@ export function SiteHeader({ user }: Props) {
                             <li key={service.id}>
                               <Link
                                 href={catalogServiceUrl(service)}
+                                onClick={armDesktopNavStripSuppress}
                                 className={cn(
                                   navMegaRowClass,
                                   "hover:bg-white/10",

@@ -4,6 +4,7 @@ import "./globals.css";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { Inter, Outfit, Roboto } from "next/font/google";
 import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
+import { AppLoadingListener } from "@/components/AppLoadingListener";
 import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHeader";
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
@@ -65,6 +66,7 @@ export default async function RootLayout({
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <I18nProvider initialLocale={locale}>
+          <AppLoadingListener />
           <ScrollToTopOnPathname />
           <ConditionalSiteHeader user={user} />
           <main className="relative isolate z-0 flex-1">{children}</main>
