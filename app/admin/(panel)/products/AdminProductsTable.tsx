@@ -51,6 +51,7 @@ type FilterOption = { value: string; label: string };
 
 /** Ancho del select «Todas las marcas» en barra escritorio (xl+): texto de referencia + margen (`ch`). */
 const BRAND_FILTER_TOOLBAR_WIDE_CH = "Todas las marcas".length + 7;
+const TYPE_FILTER_TOOLBAR_WIDE_CH = "Todos los tipos".length + 7;
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -660,7 +661,14 @@ export function AdminProductsTable({
               className="w-full min-w-0"
             />
           </div>
-          <div className="flex min-w-0 flex-1 items-center">
+          <div
+            className="flex min-w-0 flex-1 items-center xl:box-border xl:w-[var(--toolbar-type-filter-all-w)] xl:min-w-[var(--toolbar-type-filter-all-w)] xl:max-w-[var(--toolbar-type-filter-all-w)] xl:flex-none xl:shrink-0"
+            style={
+              {
+                ["--toolbar-type-filter-all-w" as string]: `${TYPE_FILTER_TOOLBAR_WIDE_CH}ch`,
+              } as CSSProperties
+            }
+          >
             <Select<FilterOption, false>
               instanceId="products-brand-type-filter"
               inputId="products-brand-type-filter-input"
@@ -673,10 +681,10 @@ export function AdminProductsTable({
                 if (opt) setBrandTypeFilter(opt.value);
               }}
               styles={appToolbarSelectStyles}
-              className="w-full"
+              className="w-full min-w-0"
             />
           </div>
-          <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem]">
+          <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem] xl:flex-none">
             <Select<FilterOption, false>
               instanceId="products-active-filter"
               inputId="products-active-filter-input"

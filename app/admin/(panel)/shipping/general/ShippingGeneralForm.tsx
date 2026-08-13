@@ -182,7 +182,7 @@ export function ShippingGeneralForm({ initial }: Props) {
                 rows={4}
                 className={cn(
                   /* Misma base que `Input`: borde + anillo de foco del sistema */
-                  "w-full rounded-lg border border-input/90 bg-background px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
+                  "w-full rounded-lg border border-input/90 bg-white px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
                   adminServiceLikeInputClassName,
                   "h-auto min-h-[6rem] resize-y leading-relaxed",
                 )}
@@ -204,7 +204,7 @@ export function ShippingGeneralForm({ initial }: Props) {
                 id="whatsappMessageEn"
                 rows={4}
                 className={cn(
-                  "w-full rounded-lg border border-input/90 bg-background px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
+                  "w-full rounded-lg border border-input/90 bg-white px-3 py-2.5 text-sm shadow-sm transition-[box-shadow,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
                   adminServiceLikeInputClassName,
                   "h-auto min-h-[6rem] resize-y leading-relaxed",
                 )}

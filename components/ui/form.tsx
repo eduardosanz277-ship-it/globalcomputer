@@ -65,6 +65,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       type = "text",
       required: fieldRequired,
       layout = "stack",
+      className,
       ...props
     },
     ref
@@ -72,6 +73,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const { register } = useFormContext();
     const registration = register(name);
     const { ref: registrationRef, ...rest } = registration;
+    const hasError = Boolean(error);
 
     const inputEl = (
       <Input
@@ -79,7 +81,13 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
         type={type}
         {...props}
         {...rest}
+        aria-invalid={hasError ? true : undefined}
         aria-required={fieldRequired ? true : undefined}
+        className={cn(
+          className,
+          hasError &&
+            "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30",
+        )}
         ref={(node) => {
           registrationRef(node);
           if (typeof ref === "function") ref(node);

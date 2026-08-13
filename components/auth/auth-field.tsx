@@ -20,12 +20,21 @@ export interface AuthFieldProps
  */
 export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
   (
-    { name, label, error, type = "text", required: fieldRequired, ...props },
+    {
+      name,
+      label,
+      error,
+      type = "text",
+      required: fieldRequired,
+      className,
+      ...props
+    },
     ref,
   ) => {
     const { register } = useFormContext();
     const registration = register(name);
     const { ref: registrationRef, ...rest } = registration;
+    const hasError = Boolean(error);
 
     return (
       <div className="space-y-2">
@@ -38,7 +47,13 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           type={type}
           {...props}
           {...rest}
+          aria-invalid={hasError ? true : undefined}
           aria-required={fieldRequired ? true : undefined}
+          className={cn(
+            className,
+            hasError &&
+              "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30",
+          )}
           ref={(node) => {
             registrationRef(node);
             if (typeof ref === "function") ref(node);

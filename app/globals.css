@@ -70,6 +70,30 @@ body {
   @apply bg-primary/20 text-foreground;
 }
 
+/**
+ * Autocompletado del navegador: evita el fondo gris/amarillo y mantiene blanco
+ * en inputs y textareas (también al completar/enfocar).
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-text-fill-color: #2a2c30;
+  caret-color: #2a2c30;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 99999s ease-out;
+  background-color: #ffffff !important;
+}
+
 /** Carruseles horizontales sin barra visible (accesible por gesto/teclado) */
 .scrollbar-none {
   -ms-overflow-style: none;

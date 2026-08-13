@@ -29,12 +29,12 @@ import { SITE_BRAND_NAME } from "@/lib/site";
 
 const INPUT_CLASS = cn(
   "h-11 w-full rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm transition",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0 dark:bg-card",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0",
   "placeholder:text-muted-foreground/70",
 );
 const TEXTAREA_CLASS = cn(
   "min-h-[148px] w-full resize-y rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm transition",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:bg-card",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
   "placeholder:text-muted-foreground/70",
 );
 const CONTACT_MAP_CENTER: [number, number] = [
@@ -249,7 +249,11 @@ export function ContactPageClient({ contact }: Props) {
                 aria-describedby={
                   errors.message ? "contact-message-error" : undefined
                 }
-                className={TEXTAREA_CLASS}
+                className={cn(
+                  TEXTAREA_CLASS,
+                  errors.message &&
+                    "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30",
+                )}
                 {...register("message")}
               />
               {errors.message?.message ? (
