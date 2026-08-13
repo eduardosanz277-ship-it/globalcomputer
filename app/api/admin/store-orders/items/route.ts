@@ -4,6 +4,7 @@ import { ensureAdminUserService } from "@/modules/auth/auth.service";
 import {
   repoGetAdminStoreOrderShippingAddress,
   repoListAdminStoreOrderItems,
+  repoListAdminStoreOrderStatusHistory,
 } from "@/modules/commerce/store-orders.admin.service";
 
 const bodySchema = z.object({
@@ -25,16 +26,20 @@ export async function POST(req: Request) {
 
   try {
     await ensureAdminUserService();
-    const [items, shippingAddress] = await Promise.all([
+    const [items, shippingAddress, statusHistory] = await Promise.all([
       repoListAdminStoreOrderItems(parsed.data.orderId),
       repoGetAdminStoreOrderShippingAddress(parsed.data.orderId),
+      repoListAdminStoreOrderStatusHistory(parsed.data.orderId),
     ]);
-    return NextResponse.json({ items, shippingAddress });
+    return NextResponse.json({ items, shippingAddress, statusHistory });
   } catch (error) {
     console.error("admin/store-orders items", error);
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ error: "No se pudieron cargar los artículos." }, { status: 500 });
+    return NextResponse.json(
+      { error: "No se pudieron cargar los artículos." },
+      { status: 500 },
+    );
   }
 }

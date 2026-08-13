@@ -32,11 +32,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    await ensureAdminUserService();
+    const admin = await ensureAdminUserService();
     const updated = await repoUpdateStoreOrderStatus(
       parsed.data.orderId,
       parsed.data.status,
       parsed.data.amountShipping,
+      admin.id,
     );
     return NextResponse.json({ ok: true, order: updated });
   } catch (error) {
