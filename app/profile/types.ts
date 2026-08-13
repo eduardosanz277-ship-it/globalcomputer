@@ -1,4 +1,5 @@
 import type { OrderShippingRecipient } from "@/lib/order-shipping-recipient";
+import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
 
 export type CuentaAddress = {
   id: string;
@@ -28,6 +29,7 @@ export type CuentaOrder = {
   amountDiscount: number;
   stripeAmountTotal: number;
   shippingAddress: OrderShippingRecipient | null;
+  statusHistory: StoreOrderStatusHistoryRow[];
   items: Array<{
     productName: string;
     quantity: number;

@@ -40,6 +40,7 @@ import {
   orderStatusStyles,
 } from "./order-utils";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 
 type Props = {
   orders: CuentaOrder[];
@@ -513,6 +514,13 @@ export function OrdersSection({ orders }: Props) {
                     recipient={detailOrder.shippingAddress}
                   />
                 ) : null}
+
+                <OrderStatusHistoryTimeline
+                  entries={detailOrder.statusHistory}
+                  statusLabels={statusLabels}
+                  statusBadgeClass={statusPillClass}
+                  showActor={false}
+                />
               </>
             ) : (
               <p className="text-sm text-muted-foreground">

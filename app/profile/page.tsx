@@ -2,15 +2,17 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { translate } from "@/lib/i18n/get-translation";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { mapStoreOrderShippingAddressRow } from "@/lib/order-shipping-recipient";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
+import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CuentaTabs } from "./CuentaTabs";
 import { ProfilePageHeading } from "./ProfilePageHeading";
 import { CuentaAddress, CuentaOrder } from "./types";
-import { mapStoreOrderShippingAddressRow } from "@/lib/order-shipping-recipient";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
@@ -68,6 +70,37 @@ export default async function CuentaPage() {
     .order("created_at", { ascending: false })
     .limit(6);
 
+  const orderIds = (orders ?? []).map((order) => String(order.id));
+  const historyByOrderId = new Map<string, StoreOrderStatusHistoryRow[]>();
+
+  if (orderIds.length > 0) {
+    const { data: historyRows, error: historyError } = await supabase
+      .from("store_order_status_history")
+      .select("id, store_order_id, status, previous_status, note, created_at")
+      .in("store_order_id", orderIds)
+      .order("created_at", { ascending: true });
+
+    if (historyError) {
+      console.error("[profile] order status history", historyError.message);
+    } else {
+      for (const row of historyRows ?? []) {
+        const orderId = String(row.store_order_id);
+        const list = historyByOrderId.get(orderId) ?? [];
+        list.push({
+          id: String(row.id),
+          status: row.status as SiteOrderStatus,
+          previousStatus: row.previous_status
+            ? (row.previous_status as SiteOrderStatus)
+            : null,
+          changedByName: null,
+          note: row.note != null ? String(row.note) : null,
+          createdAt: String(row.created_at),
+        });
+        historyByOrderId.set(orderId, list);
+      }
+    }
+  }
+
   const mappedOrders: CuentaOrder[] = (orders ?? []).map((order) => {
     const shippingRaw = order.store_order_shipping_addresses;
     const shippingRow = Array.isArray(shippingRaw)
@@ -88,6 +121,7 @@ export default async function CuentaPage() {
       amountDiscount: Number(order.amount_discount) || 0,
       stripeAmountTotal: Number(order.stripe_amount_total) || 0,
       shippingAddress: mapStoreOrderShippingAddressRow(shippingRow),
+      statusHistory: historyByOrderId.get(String(order.id)) ?? [],
       items:
         order.store_order_items?.map((item) => ({
           productName: item.product_name,
