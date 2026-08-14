@@ -2,27 +2,13 @@
 
 import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { HeroServiceSlider } from "@/components/marketing/HeroServiceSlider";
+// Slider de banners de servicios: comentado a favor del nuevo StoreHeroBanner.
+// import { HeroServiceSlider } from "@/components/marketing/HeroServiceSlider";
+import { StoreHeroBanner } from "@/components/marketing/StoreHeroBanner";
 import type { StorefrontServiceHeroSlide } from "@/modules/catalog/storefront-services.service";
 import type { StoreRatingSummary } from "@/modules/site/leave-review-data.service";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
-import { Headphones, Phone, ShieldCheck, Star, Truck } from "lucide-react";
-import { Poppins } from "next/font/google";
-import Image from "next/image";
-import Link from "next/link";
-
-const TRUST_PILLS = [
-  { Icon: Truck, label: "Envío a EE. UU.", labelEn: "Shipping in the U.S." },
-  { Icon: ShieldCheck, label: "Garantía real", labelEn: "Real warranty" },
-  { Icon: Headphones, label: "Te ayudamos", labelEn: "We help you" },
-] as const;
-
-const HERO_STATS = [
-  { label: "Envío", value: "Seguimiento" },
-  { label: "Soporte", value: "Lun–Vie" },
-  { label: "Garantía", value: "Equipos" },
-];
+import { ShieldCheck, Star, Truck } from "lucide-react";
 
 const TRUST_BAR_TAIL = [
   {
@@ -41,20 +27,14 @@ const TRUST_BAR_TAIL = [
   },
 ] as const;
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["600"],
-  display: "swap",
-});
-
-type HeroCategory = {
+export type HeroCategory = {
   id: string;
   name: string;
   nameEn?: string | null;
   slug: string;
 };
 
-type HeroContact = {
+export type HeroContact = {
   phoneTel: string;
   phoneDisplay: string;
 };
@@ -108,22 +88,26 @@ export function StoreHero({
 
   return (
     <div className="relative">
+      <StoreHeroBanner categories={categories} contact={contact} />
+
+      {/*
+      Hero oscuro anterior con slider de banners de servicios de fondo — deshabilitado
+      a favor de StoreHeroBanner (nuevo diseño en fondo blanco). Se conserva por si se
+      retoma más adelante.
+
       <section
         className={cn(
           "store-grain relative overflow-hidden rounded-b-[2rem] border-b border-white/10 pb-12 text-white sm:rounded-b-[2.75rem] sm:pb-16 lg:pb-20",
           "bg-gradient-to-br from-brand-hero-from via-[#1a2540] to-brand-hero-to",
         )}
       >
-        {/* Slider de banners de servicios: fondo a todo el ancho de la sección */}
         <HeroServiceSlider slides={heroSlides} />
 
-        {/* Velo oscuro para mantener legibilidad del texto blanco sobre las fotos */}
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-hero-from/55 via-[#1a2540]/45 to-brand-hero-to/55"
           aria-hidden
         />
 
-        {/* Malla luminosa tipo e-commerce actual */}
         <div
           className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-primary/35 blur-[100px] animate-blob"
           aria-hidden
@@ -141,9 +125,6 @@ export function StoreHero({
         <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8 lg:pt-16">
           <div className="grid items-center gap-8 md:gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 xl:gap-16">
             <div className="animate-fade-up text-center sm:text-left">
-              {/* <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-secondary/95 backdrop-blur-md sm:text-xs">
-                Tienda de confianza
-              </p> */}
               <h1
                 className={cn(
                   poppins.className,
@@ -210,7 +191,6 @@ export function StoreHero({
               </div>
             </div>
 
-            {/* Escaparate visual */}
             <div className="relative mx-auto w-full max-w-lg sm:mx-0 sm:max-w-none lg:max-w-none">
               <div className="relative hidden aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/20 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-[2rem] lg:invisible lg:block">
                 <Image
@@ -248,10 +228,6 @@ export function StoreHero({
                         <span className="relative z-[1] break-words">
                           {t(c.name, c.nameEn)}
                         </span>
-                        {/* <ChevronRight
-                          className="relative z-[1] mt-0.5 hidden h-4 w-4 shrink-0 text-secondary/90 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100 -translate-x-1 lg:block"
-                          aria-hidden
-                        /> */}
                       </Link>
                     </li>
                   ))}
@@ -261,9 +237,10 @@ export function StoreHero({
           </div>
         </div>
       </section>
+      */}
 
-      {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual */}
-      <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
+      {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual. Oculta temporalmente, no eliminar. */}
+      <div className="relative z-10 mx-auto -mt-8 hidden max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft-lg sm:flex sm:items-stretch sm:justify-between sm:gap-0 sm:p-0 sm:py-1">
           {trustBarRows.map((row, i) => {
             const { Icon } = row;
