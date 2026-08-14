@@ -44,12 +44,19 @@ type Props = {
 type ReadFilter = "all" | "unread" | "read";
 
 const CONTACT_COLUMN_CLASS =
-  "min-w-[16rem] max-w-[min(26rem,42vw)] md:max-w-[min(22rem,36vw)]";
-const PHONE_COLUMN_CLASS = "w-[9rem] min-w-[9rem] max-w-[9rem]";
-const SUBJECT_COLUMN_CLASS = "w-[12rem] min-w-[12rem] max-w-[12rem]";
-const MESSAGE_COLUMN_CLASS = "w-[18rem] min-w-[18rem] max-w-[18rem]";
-const STATUS_COLUMN_CLASS = "w-[8.75rem] min-w-[8.75rem] max-w-[8.75rem]";
-const CREATED_AT_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
+  "w-[14rem] min-w-[14rem] max-w-[14rem] overflow-hidden xl:w-[16rem] xl:min-w-[16rem] xl:max-w-[16rem]";
+const PHONE_COLUMN_CLASS =
+  "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem] overflow-hidden";
+const SUBJECT_COLUMN_CLASS =
+  "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden lg:w-[12rem] lg:min-w-[12rem] lg:max-w-[12rem]";
+const MESSAGE_COLUMN_CLASS =
+  "w-[13rem] min-w-[13rem] max-w-[13rem] overflow-hidden lg:w-[15rem] lg:min-w-[15rem] lg:max-w-[15rem]";
+const STATUS_COLUMN_CLASS =
+  "w-[8.75rem] min-w-[8.75rem] max-w-[8.75rem] overflow-hidden";
+const CREATED_AT_COLUMN_CLASS =
+  "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden xl:w-[12.75rem] xl:min-w-[12.75rem] xl:max-w-[12.75rem]";
+/** Suma mínima de columnas fijas para evitar solapamiento con `table-fixed`. */
+const CONTACTS_TABLE_MIN_WIDTH_CLASS = "min-w-[68rem] xl:min-w-[74rem]";
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
 const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
 
@@ -333,7 +340,7 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
           const phone = row.original.phone?.trim();
           if (!phone) return <AdminTableEmptyEmDash />;
           return (
-            <span className="whitespace-nowrap text-sm text-foreground">
+            <span className="block truncate text-sm text-foreground tabular-nums">
               {phone}
             </span>
           );
@@ -522,7 +529,7 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
         enableSorting
         searchPlaceholder={t("admin.contacts.filters.searchPlaceholder")}
         toolbarFilters={toolbarFilters}
-        tableClassName="table-fixed"
+        tableClassName={cn("table-fixed", CONTACTS_TABLE_MIN_WIDTH_CLASS)}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"

@@ -1,3 +1,4 @@
+import { resolveEmailFrom } from "@/lib/email/email-brand";
 import { renderLowStockAlertEmailTemplate } from "./templates/lowStockAlertTemplate";
 
 type LowStockAlertInput = {
@@ -10,17 +11,17 @@ type LowStockAlertInput = {
 
 /**
  * Envía alerta de stock bajo al correo de soporte configurado en app_config.
- * Requiere `RESEND_API_KEY` y `EMAIL_FROM`.
+ * Requiere `RESEND_API_KEY`. From: `EMAIL_FROM` o el mismo del OTP.
  */
 export async function sendLowStockAlertEmail(
   input: LowStockAlertInput,
 ): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const from = resolveEmailFrom();
 
-  if (!apiKey?.trim() || !from?.trim()) {
+  if (!apiKey?.trim()) {
     console.warn(
-      "[email] RESEND_API_KEY o EMAIL_FROM no configurados; no se envió alerta de stock bajo.",
+      "[email] RESEND_API_KEY no configurado; no se envió alerta de stock bajo.",
     );
     return { sent: false };
   }
@@ -32,7 +33,7 @@ export async function sendLowStockAlertEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: from.trim(),
+      from,
       to: [input.to.trim().toLowerCase()],
       subject: `Alerta de stock bajo: ${input.productName}`,
       html: renderLowStockAlertEmailTemplate(input),

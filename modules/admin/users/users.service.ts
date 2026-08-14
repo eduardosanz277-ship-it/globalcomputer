@@ -59,7 +59,7 @@ export async function approveBusinessRegistrationService(userId: string) {
       );
       if (!sent) {
         throw new Error(
-          "Falta RESEND_API_KEY o EMAIL_FROM; no se envió el correo de aviso."
+          "Falta RESEND_API_KEY; no se envió el correo de aviso."
         );
       }
     } catch (e) {

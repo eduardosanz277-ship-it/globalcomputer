@@ -19,6 +19,8 @@ import {
   quoteShippingService,
 } from "@/modules/shipping/shipping.service";
 import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
+import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-order-confirmation-email.service";
+import { maybeSendManualQuoteRequestEmail } from "@/modules/commerce/store-manual-quote-email.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
 
 export type SiteOrderStatus =
@@ -357,6 +359,13 @@ export async function createSiteOrder(
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
   }
 
+  if (payload.stripeSessionId?.trim()) {
+    await maybeSendStoreOrderConfirmationEmail({
+      orderId: order.id,
+      supabase,
+    });
+  }
+
   return mapSiteOrderRow(order);
 }
 
@@ -550,6 +559,12 @@ export async function createManualQuoteOrder(
       500,
     );
   }
+
+  await maybeSendManualQuoteRequestEmail({
+    orderId: order.id,
+    locale,
+    supabase,
+  });
 
   const intro =
     locale === "en"
@@ -814,6 +829,14 @@ async function ensureStoreOrderForCheckoutSession(
   if (itemsErr) {
     console.error("[store-orders] insert líneas desde webhook", itemsErr);
     throw itemsErr;
+  }
+
+  if (full.payment_status === "paid") {
+    await maybeSendStoreOrderConfirmationEmail({
+      orderId,
+      session: full,
+      supabase,
+    });
   }
 
   return orderId;

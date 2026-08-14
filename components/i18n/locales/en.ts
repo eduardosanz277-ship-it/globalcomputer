@@ -10,7 +10,7 @@ export const en = {
     buttons: {
       continue: "Continue",
       verifyOtp: "Verify OTP",
-      submitCode: "Enter",
+      submitCode: "Verify",
       sending: "Sending",
       verifying: "Verifying",
     },
