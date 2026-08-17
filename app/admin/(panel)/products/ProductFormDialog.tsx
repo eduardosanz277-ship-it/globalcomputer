@@ -51,12 +51,28 @@ import {
   useServiceImagesManager,
   type ExistingServiceImageInput,
 } from "@/components/admin/service-form";
-import { Trash2, RefreshCcw, X } from "lucide-react";
+import { ExternalLink, FileText, RefreshCcw, Trash2, X } from "lucide-react";
 import { ProductDescriptionEditor } from "@/components/ProductDescriptionEditor";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { ProductPricingTab } from "./ProductPricingTab";
 
 const PRODUCT_FORM_ID = "product-form-slide-over";
+
+function getManualPdfDisplayName(file: File | null, url: string): string {
+  if (file?.name) return file.name;
+  try {
+    const pathname = new URL(url).pathname;
+    const last = pathname.split("/").filter(Boolean).at(-1) ?? "manual.pdf";
+    const decoded = decodeURIComponent(last);
+    return decoded.replace(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/i,
+      "",
+    );
+  } catch {
+    const fallback = url.split("/").filter(Boolean).at(-1);
+    return fallback || "manual.pdf";
+  }
+}
 
 /** Alto mínimo de las demás pestañas = alto natural de Información general. */
 const productFormSectionClassName = adminSlideOverSectionClassName;
@@ -527,6 +543,31 @@ function ProductFormBody({
   type GeneralFilterOption = { value: string; label: string };
   const errors = form.formState.errors;
   const watchedPlacementCategoryId = form.watch("placementCategoryId");
+  const watchedManualPdfUrl = form.watch("manualPdfUrl")?.trim() ?? "";
+  const hasManualPdf = Boolean(manualPdfFile) || Boolean(watchedManualPdfUrl);
+  const manualPdfInputRef = useRef<HTMLInputElement | null>(null);
+  const [manualPdfError, setManualPdfError] = useState("");
+  const MANUAL_PDF_MAX_BYTES = 5 * 1024 * 1024;
+
+  const applyManualPdfFile = (file: File | null) => {
+    if (!file) return;
+    const typeOk =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    const sizeOk = file.size > 0 && file.size <= MANUAL_PDF_MAX_BYTES;
+    if (!typeOk || !sizeOk) {
+      setManualPdfError(t("admin.products.form.media.manualInvalidFile"));
+      return;
+    }
+    setManualPdfError("");
+    setManualPdfFile(file);
+  };
+
+  const openManualPdfPicker = () => {
+    if (isPending) return;
+    manualPdfInputRef.current?.click();
+  };
+
   const images = useServiceImagesManager(existingImages);
   const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
   const generalSectionRef = useRef<HTMLElement>(null);
@@ -1262,125 +1303,180 @@ function ProductFormBody({
                 </p>
               </header>
 
-              <div className="rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <svg
-                    className="mt-0.5 h-9 w-9 shrink-0 text-red-500/90 sm:h-10 sm:w-10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    viewBox="0 0 24 24"
-                    aria-hidden
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
-                    />
-                  </svg>
+              <div>
+                <div
+                  className={cn(
+                    "rounded-lg border border-dashed bg-muted/30 p-4 sm:p-5",
+                    manualPdfError ? "border-destructive" : "border-border/70",
+                  )}
+                  onDragOver={(e) => {
+                    if (isPending) return;
+                    e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    if (isPending) return;
+                    e.preventDefault();
+                    applyManualPdfFile(e.dataTransfer.files?.[0] ?? null);
+                  }}
+                >
+                <input
+                  ref={manualPdfInputRef}
+                  id="product-manual-pdf"
+                  type="file"
+                  accept="application/pdf"
+                  disabled={isPending}
+                  aria-invalid={manualPdfError ? true : undefined}
+                  aria-describedby={
+                    manualPdfError ? "product-manual-pdf-error" : undefined
+                  }
+                  className="hidden"
+                  onChange={(e) => {
+                    applyManualPdfFile(e.target.files?.[0] ?? null);
+                    e.currentTarget.value = "";
+                  }}
+                />
 
-                  <div className="min-w-0 flex-1">
-                    {!manualPdfFile ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="product-manual-pdf" className="sr-only">
-                          {t("admin.products.form.media.manualUploadAria")}
-                        </Label>
-                        <label
-                          htmlFor="product-manual-pdf"
-                          className="inline-flex cursor-pointer items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
-                        >
-                          {t("admin.products.form.media.manualUpload")}
-                        </label>
-                        <Input
-                          id="product-manual-pdf"
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isPending}
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0] ?? null;
-                            setManualPdfFile(f);
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {t("admin.products.form.media.manualHint")}
+                {hasManualPdf ? (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background p-3 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-inset ring-red-100">
+                        <FileText className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {getManualPdfDisplayName(
+                            manualPdfFile,
+                            watchedManualPdfUrl,
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {manualPdfFile
+                            ? t("admin.products.form.media.manualPending")
+                            : t("admin.products.detail.manualPdf")}
                         </p>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Input
-                          id="product-manual-pdf"
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isPending}
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0] ?? null;
-                            setManualPdfFile(f);
-                          }}
-                        />
-                        <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3">
-                          <span className="truncate text-sm text-foreground">
-                            {manualPdfFile.name}
-                          </span>
-                          <TooltipProvider delayDuration={120}>
-                            <div className="flex items-center gap-2">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <label
-                                    htmlFor="product-manual-pdf"
-                                    className="cursor-pointer inline-flex items-center justify-center rounded-md p-1 text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-                                  >
-                                    <RefreshCcw
-                                      className="h-4 w-4"
-                                      aria-hidden
-                                    />
-                                    <span className="sr-only">
-                                      {t(
-                                        "admin.products.form.media.manualReplace",
-                                      )}
-                                    </span>
-                                  </label>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="top"
-                                  align="center"
-                                  className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
-                                >
-                                  {t("admin.products.form.media.manualReplace")}
-                                </TooltipContent>
-                              </Tooltip>
+                    </div>
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    type="button"
-                                    onClick={() => setManualPdfFile(null)}
-                                    className="inline-flex items-center justify-center rounded-md p-1 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" aria-hidden />
-                                    <span className="sr-only">
-                                      {t(
-                                        "admin.products.form.media.manualDelete",
-                                      )}
-                                    </span>
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="top"
-                                  align="center"
-                                  className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
-                                >
-                                  {t("admin.products.form.media.manualDelete")}
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TooltipProvider>
-                        </div>
+                    <TooltipProvider delayDuration={120}>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {watchedManualPdfUrl && !manualPdfFile ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <a
+                                href={watchedManualPdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                              >
+                                <ExternalLink className="h-4 w-4" aria-hidden />
+                                <span className="sr-only">
+                                  {t("admin.products.form.media.manualView")}
+                                </span>
+                              </a>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              align="center"
+                              className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
+                            >
+                              {t("admin.products.form.media.manualView")}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : null}
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={openManualPdfPicker}
+                              className="inline-flex cursor-pointer items-center justify-center rounded-md p-1 text-primary transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                            >
+                              <RefreshCcw className="h-4 w-4" aria-hidden />
+                              <span className="sr-only">
+                                {t("admin.products.form.media.manualReplace")}
+                              </span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            align="center"
+                            className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
+                          >
+                            {t("admin.products.form.media.manualReplace")}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => {
+                                setManualPdfError("");
+                                setManualPdfFile(null);
+                                form.setValue("manualPdfUrl", "", {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+                              }}
+                              className="inline-flex items-center justify-center rounded-md p-1 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden />
+                              <span className="sr-only">
+                                {t("admin.products.form.media.manualDelete")}
+                              </span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            align="center"
+                            className="rounded-lg border-border/60 bg-popover px-3 py-1.5 text-[11px] text-popover-foreground shadow-lg"
+                          >
+                            {t("admin.products.form.media.manualDelete")}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
-                    )}
+                    </TooltipProvider>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-inset ring-red-100">
+                        <FileText className="h-5 w-5" aria-hidden />
+                      </span>
+                      <Label htmlFor="product-manual-pdf" className="sr-only">
+                        {t("admin.products.form.media.manualUploadAria")}
+                      </Label>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={openManualPdfPicker}
+                        className={cn(
+                          "inline-flex h-10 cursor-pointer items-center rounded-md border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50",
+                          manualPdfError
+                            ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30"
+                            : "border-border",
+                        )}
+                      >
+                        {t("admin.products.form.media.manualUpload")}
+                      </button>
+                    </div>
+                    <p className="pl-[3.25rem] text-xs text-muted-foreground">
+                      {t("admin.products.form.media.manualHint")}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {manualPdfError ? (
+                <p
+                  id="product-manual-pdf-error"
+                  className="mt-1 text-sm text-destructive"
+                  role="alert"
+                >
+                  {manualPdfError}
+                </p>
+              ) : null}
               </div>
             </section>
           </>

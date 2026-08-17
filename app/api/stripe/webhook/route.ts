@@ -35,7 +35,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook signature inválida." }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
+  if (
+    event.type === "checkout.session.completed" ||
+    event.type === "checkout.session.async_payment_succeeded"
+  ) {
     const session = event.data.object as Stripe.Checkout.Session;
     await syncOrderWithStripeSession(session, event.id, event.type);
   }

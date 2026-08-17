@@ -1,26 +1,21 @@
 "use client";
 
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
-import {
-  ManualQuoteShippingAddressForm,
-  type ManualQuoteShippingAddressValues,
-} from "@/components/store/ManualQuoteShippingAddressForm";
+import { ManualQuoteShippingAddressForm } from "@/components/store/ManualQuoteShippingAddressForm";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
+import { useManualQuoteSubmit } from "@/components/store/useManualQuoteSubmit";
 import { useRunCartMutation } from "@/components/store/useRunCartMutation";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
-import { gcCartClear } from "@/lib/store-cart";
-import { redirectAfterManualQuoteSuccess, openWhatsAppWindowForUserGesture, closePreOpenedWhatsAppWindow } from "@/lib/manual-quote-success";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import { cn } from "@/utils/cn";
 import { Loader2, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 
 const ADDRESS_FORM_ID = "cart-drawer-quote-address-form";
 
@@ -35,7 +30,7 @@ export function StoreCartDrawer({
   onClose: () => void;
   tier: StorefrontPriceTier;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
   const { productsById, loading } = useCartProductsMap(ids);
@@ -44,7 +39,7 @@ export function StoreCartDrawer({
   /** Empieza en true para no pintar el listado un frame antes que los importes. */
   const [summaryPending, setSummaryPending] = useState(true);
   const [step, setStep] = useState<DrawerStep>("cart");
-  const [quoteLoading, setQuoteLoading] = useState(false);
+  const { quoteLoading, submitManualQuote } = useManualQuoteSubmit(items);
 
   /** Solo el carrito vacío real; no mezclar con `loading` (evita skeleton + pie inconsistente al borrar). */
   const isCartEmpty = items.length === 0;
@@ -62,54 +57,6 @@ export function StoreCartDrawer({
     if (quoteLoading) return;
     setStep("cart");
     onClose();
-  }
-
-  async function submitManualQuote(
-    shippingAddress: ManualQuoteShippingAddressValues,
-  ) {
-    if (quoteLoading || items.length === 0) return;
-    const whatsappWindow = openWhatsAppWindowForUserGesture(
-      t("storefront.cart.openingWhatsApp"),
-    );
-    setQuoteLoading(true);
-    try {
-      const res = await fetch("/api/site-orders/manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            qty: item.qty,
-          })),
-          locale,
-          shippingAddress,
-        }),
-      });
-      const data = (await res.json()) as {
-        whatsappUrl?: string;
-        order?: { order_number?: string };
-        error?: string;
-      };
-      if (!res.ok || !data.whatsappUrl) {
-        throw new Error(
-          data.error ?? t("storefront.cart.toastQuoteOrderError"),
-        );
-      }
-
-      await gcCartClear();
-      redirectAfterManualQuoteSuccess(data.whatsappUrl, {
-        preOpenedWindow: whatsappWindow,
-        orderNumber: data.order?.order_number,
-      });
-    } catch (e) {
-      closePreOpenedWhatsAppWindow(whatsappWindow);
-      const msg =
-        e instanceof Error
-          ? e.message
-          : t("storefront.cart.toastQuoteOrderError");
-      toast.error(msg);
-      setQuoteLoading(false);
-    }
   }
 
   return (

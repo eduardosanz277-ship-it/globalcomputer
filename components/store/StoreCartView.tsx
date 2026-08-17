@@ -3,15 +3,17 @@
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
+import { ManualQuoteShippingAddressSlideOver } from "@/components/store/ManualQuoteShippingAddressSlideOver";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
 import { useGcCart } from "@/components/store/useGcCart";
+import { useManualQuoteSubmit } from "@/components/store/useManualQuoteSubmit";
 import { useRunCartMutation } from "@/components/store/useRunCartMutation";
 import { buttonVariants } from "@/components/ui/button-variants";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import { cn } from "@/utils/cn";
 import { ShoppingBasket } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const { t } = useI18n();
@@ -22,6 +24,12 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const listBusy = loading || mutationPending;
   /** Empieza en true para no pintar el listado un frame antes que los importes. */
   const [summaryPending, setSummaryPending] = useState(true);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const { quoteLoading, submitManualQuote } = useManualQuoteSubmit(items);
+
+  useEffect(() => {
+    if (items.length === 0) setAddressOpen(false);
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
@@ -52,7 +60,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   }
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-5 px-4 py-8 md:gap-6 sm:px-6 lg:grid-cols-12 lg:gap-8 lg:px-8 lg:py-10">
+    <div className="mx-auto grid max-w-7xl gap-5 px-4 py-4 sm:px-6 sm:py-6 md:gap-6 lg:grid-cols-12 lg:gap-8 lg:px-8 lg:py-10">
       <div className={cn("space-y-3 lg:col-span-8")}>
         <StoreCartLineItems
           items={items}
@@ -78,8 +86,16 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           tier={tier}
           variant="page"
           onUiPendingChange={setSummaryPending}
+          onQuoteAddressRequest={() => setAddressOpen(true)}
         />
       </aside>
+
+      <ManualQuoteShippingAddressSlideOver
+        open={addressOpen}
+        onClose={() => setAddressOpen(false)}
+        submitting={quoteLoading}
+        onSubmit={submitManualQuote}
+      />
     </div>
   );
 }

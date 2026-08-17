@@ -315,7 +315,6 @@ export function ManualQuoteShippingAddressForm({
             instanceId={`${formId}-country`}
             isDisabled
             isSearchable={false}
-            useMenuPortal
           />
           {showRegionSelect ? (
             <FormSelectField<ManualQuoteShippingAddressValues>
@@ -326,7 +325,6 @@ export function ManualQuoteShippingAddressForm({
               instanceId={`${formId}-region-${countryCode}`}
               isDisabled={busy}
               isSearchable
-              useMenuPortal
               placeholder={regionPlaceholder}
             />
           ) : (

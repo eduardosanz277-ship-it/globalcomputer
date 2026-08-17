@@ -1,6 +1,7 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 type StoreQuantityStepperProps = {
@@ -24,6 +25,7 @@ export function StoreQuantityStepper({
   allowDecrementAtMin = false,
   onDecrementAtMin,
 }: StoreQuantityStepperProps) {
+  const { t } = useI18n();
   const canDec = !disabled && (value > min || allowDecrementAtMin);
   const canInc = !disabled && value < max;
 
@@ -35,12 +37,16 @@ export function StoreQuantityStepper({
         className,
       )}
       role="group"
-      aria-label="Cantidad"
+      aria-label={t("storefront.productDetail.quantityAria")}
     >
       <button
         type="button"
         className="flex w-11 items-center justify-center text-muted-foreground transition hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset disabled:opacity-30"
-        aria-label={value <= min && allowDecrementAtMin ? "Eliminar del carrito" : "Reducir cantidad"}
+        aria-label={
+          value <= min && allowDecrementAtMin
+            ? t("storefront.cart.removeFromCartAria")
+            : t("storefront.productDetail.quantityDecreaseAria")
+        }
         disabled={!canDec}
         onClick={() => {
           if (value <= min) {
@@ -58,7 +64,7 @@ export function StoreQuantityStepper({
       <button
         type="button"
         className="flex w-11 items-center justify-center text-muted-foreground transition hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset disabled:opacity-30"
-        aria-label="Aumentar cantidad"
+        aria-label={t("storefront.productDetail.quantityIncreaseAria")}
         disabled={!canInc}
         onClick={() => onChange(Math.min(max, value + 1))}
       >

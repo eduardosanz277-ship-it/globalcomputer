@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import {
   createManualQuoteOrder,
   SiteOrderError,
@@ -58,9 +59,10 @@ export async function POST(req: Request) {
 
   try {
     const addr = parsed.data.shippingAddress;
+    const locale = parsed.data.locale ?? (await getServerLocale());
     const result = await createManualQuoteOrder({
       items: parsed.data.items,
-      locale: parsed.data.locale,
+      locale,
       name: parsed.data.name ?? addr.recipientName,
       email:
         parsed.data.email ??

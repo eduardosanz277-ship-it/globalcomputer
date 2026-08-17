@@ -12,7 +12,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

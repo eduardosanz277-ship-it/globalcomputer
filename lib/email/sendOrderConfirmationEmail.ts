@@ -12,6 +12,7 @@ import {
 export async function sendOrderConfirmationEmail(
   to: string,
   input: OrderConfirmationTemplateInput,
+  options?: { idempotencyKey?: string },
 ): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = resolveEmailFrom();
@@ -23,12 +24,18 @@ export async function sendOrderConfirmationEmail(
     return { sent: false };
   }
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+  const idempotencyKey = options?.idempotencyKey?.trim();
+  if (idempotencyKey) {
+    headers["Idempotency-Key"] = idempotencyKey.slice(0, 256);
+  }
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({
       from,
       to: [to.trim().toLowerCase()],

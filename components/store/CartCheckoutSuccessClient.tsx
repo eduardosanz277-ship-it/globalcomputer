@@ -1,9 +1,11 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { StoreOrderNumberCard } from "@/components/store/StoreOrderNumberCard";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getCartMeta } from "@/lib/cart-meta";
 import { releaseCartReservations } from "@/lib/cart-reservation";
+import { resolveClientLocale } from "@/lib/i18n/client-locale";
 import { gcCartClear, gcCartRead } from "@/lib/store-cart";
 import { cn } from "@/utils/cn";
 import { CheckCircle2 } from "lucide-react";
@@ -14,6 +16,7 @@ type Props = {
   /** Nº de pedido ya resuelto en servidor (webhook / pedido previo). */
   initialOrderNumber?: string | null;
   sessionId?: string | null;
+  isLoggedIn?: boolean;
 };
 
 async function fetchOrderNumberBySession(
@@ -40,6 +43,7 @@ async function fetchOrderNumberBySession(
 export function CartCheckoutSuccessClient({
   initialOrderNumber = null,
   sessionId = null,
+  isLoggedIn = false,
 }: Props) {
   const { t, locale } = useI18n();
   const done = useRef(false);
@@ -67,10 +71,13 @@ export function CartCheckoutSuccessClient({
       const params = new URLSearchParams(window.location.search);
       const sid =
         sessionId?.trim() || params.get("session_id")?.trim() || undefined;
+      const checkoutLocale = resolveClientLocale(
+        params.get("locale") ?? locale,
+      );
 
-      // Registra en BD solo si aún hay carrito y Stripe devolvió session_id.
-      // Si el carrito ya está vacío, el webhook crea el pedido en servidor.
-      if (items.length > 0 && sid) {
+      // Siempre registra/alinea el pedido si hay session_id (aunque el carrito
+      // ya esté vacío: el webhook pudo crear la fila antes).
+      if (sid) {
         try {
           const res = await fetch("/api/site-orders", {
             method: "POST",
@@ -81,6 +88,7 @@ export function CartCheckoutSuccessClient({
                 qty: item.qty,
               })),
               sessionId: sid,
+              locale: checkoutLocale,
             }),
           });
           if (res.ok) {
@@ -113,7 +121,13 @@ export function CartCheckoutSuccessClient({
     };
 
     void cleanup();
-  }, [initialOrderNumber, sessionId]);
+  }, [initialOrderNumber, sessionId, locale]);
+
+  const viewOrderHref = isLoggedIn
+    ? "/profile?tab=orders"
+    : orderNumber
+      ? `/order-lookup?order=${encodeURIComponent(orderNumber)}`
+      : "/order-lookup";
 
   return (
     <div className="mx-auto max-w-lg text-center">
@@ -123,41 +137,35 @@ export function CartCheckoutSuccessClient({
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         {t("storefront.cartSuccess.heading")}
       </h1>
-      {orderNumber ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          {t("storefront.cartSuccess.orderNumberLabel")}{" "}
-          <span className="font-mono text-sm font-medium tabular-nums text-foreground">
-            {orderNumber}
-          </span>
-        </p>
-      ) : null}
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {t("storefront.cartSuccess.description")}
+      <p className="mt-3 text-base font-medium leading-relaxed text-foreground">
+        {t("storefront.cartSuccess.confirmation")}
       </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        {t("storefront.cartSuccess.emailHint")}
+      </p>
+
+      {orderNumber ? <StoreOrderNumberCard orderNumber={orderNumber} /> : null}
+
+      <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+        <Link
+          href={viewOrderHref}
+          className={cn(
+            buttonVariants({ variant: "default" }),
+            "w-full rounded-xl sm:w-auto sm:min-w-[12rem]",
+          )}
+        >
+          {t("storefront.cartSuccess.viewOrder")}
+        </Link>
         <Link
           href="/products"
-          className={cn(buttonVariants({ variant: "default" }), "rounded-xl")}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "w-full rounded-xl sm:w-auto sm:min-w-[12rem]",
+          )}
         >
           {t("storefront.cart.continueShopping")}
         </Link>
-        <Link
-          href="/"
-          className={cn(buttonVariants({ variant: "outline" }), "rounded-xl")}
-        >
-          {t("storefront.cartSuccess.homeLink")}
-        </Link>
       </div>
-      {orderNumber ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          <Link
-            href={`/order-lookup?order=${encodeURIComponent(orderNumber)}`}
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            {t("orderLookup.trackLink")}
-          </Link>
-        </p>
-      ) : null}
     </div>
   );
 }

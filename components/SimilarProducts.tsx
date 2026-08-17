@@ -1,6 +1,7 @@
 "use client";
 
 import { StorefrontProductCard } from "@/components/store/StorefrontProductCard";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
@@ -55,6 +56,7 @@ export function SimilarProducts({
   className,
   hideHeading = false,
 }: SimilarProductsProps) {
+  const { t } = useI18n();
   /** Fila del título: mismo borde izquierdo que el contenido principal (referencia de alineación). */
   const alignRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLUListElement>(null);
@@ -213,7 +215,9 @@ export function SimilarProducts({
     <section
       className={cn("group/similar w-full", className)}
       aria-labelledby={hideHeading ? undefined : "similar-products-heading"}
-      aria-label={hideHeading ? "Productos destacados" : undefined}
+      aria-label={
+        hideHeading ? t("storefront.productDetail.featuredAria") : undefined
+      }
     >
       {!hideHeading ? (
         <div
@@ -227,7 +231,7 @@ export function SimilarProducts({
               "text-lg font-semibold tracking-tight text-foreground sm:text-xl",
             )}
           >
-            Productos similares
+            {t("storefront.productDetail.similarTitle")}
           </h2>
         </div>
       ) : (
@@ -273,7 +277,7 @@ export function SimilarProducts({
                   : "cursor-not-allowed group-hover/similar:opacity-35 group-focus-within/similar:opacity-35 hover:!bg-background/95",
               )}
               style={measured ? { left: `${contentOffset + 8}px` } : undefined}
-              aria-label="Productos anteriores"
+              aria-label={t("storefront.productDetail.similarPrevAria")}
               aria-disabled={!canPrev}
               tabIndex={canPrev ? 0 : -1}
               onPointerDownCapture={(e) => {
@@ -303,7 +307,7 @@ export function SimilarProducts({
                   : "cursor-not-allowed group-hover/similar:opacity-35 group-focus-within/similar:opacity-35 hover:!bg-background/95",
               )}
               style={measured ? { right: `${contentOffset + 8}px` } : undefined}
-              aria-label="Productos siguientes"
+              aria-label={t("storefront.productDetail.similarNextAria")}
               aria-disabled={!canNext}
               tabIndex={canNext ? 0 : -1}
               onPointerDownCapture={(e) => {

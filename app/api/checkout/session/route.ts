@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { GcCartItem } from "@/lib/store-cart";
 import {
   CheckoutSessionError,
   createHostedCheckoutSession,
 } from "@/modules/commerce/stripe-checkout.service";
-import type { GcCartItem } from "@/lib/store-cart";
 
 const bodySchema = z.object({
   items: z
@@ -16,6 +16,7 @@ const bodySchema = z.object({
     )
     .min(1)
     .max(100),
+  locale: z.enum(["es", "en"]),
 });
 
 export async function POST(req: Request) {
@@ -40,7 +41,9 @@ export async function POST(req: Request) {
   }));
 
   try {
-    const { url } = await createHostedCheckoutSession(items);
+    const locale = parsed.data.locale;
+    console.info("[checkout/session] locale recibido del cliente", { locale });
+    const { url } = await createHostedCheckoutSession(items, locale);
     return NextResponse.json({ url });
   } catch (e) {
     if (e instanceof CheckoutSessionError) {

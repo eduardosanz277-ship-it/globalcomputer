@@ -15,6 +15,7 @@ import type {
   SearchSuggestionProduct,
   SearchSuggestions,
 } from "@/modules/catalog/catalog-search.service";
+import { appNavigationStart } from "@/lib/app-loading";
 import { cn } from "@/utils/cn";
 import { Grid2X2, ImageOff, Loader2, Search, Tag } from "lucide-react";
 import Image from "next/image";
@@ -220,11 +221,24 @@ export function SearchAutocompleteDropdown({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
+  const navigateTo = (href: string) => {
+    try {
+      const next = new URL(href, window.location.href);
+      const samePage =
+        next.pathname === window.location.pathname &&
+        next.search === window.location.search;
+      if (!samePage) appNavigationStart();
+    } catch {
+      appNavigationStart();
+    }
+    router.push(href);
+  };
+
   const goToSearch = (value = trimmedQuery) => {
     const q = value.trim();
     if (!q) return;
     setIsOpen(false);
-    router.push(`/products?q=${encodeURIComponent(q)}`);
+    navigateTo(`/products?q=${encodeURIComponent(q)}`);
   };
 
   const goToItem = (item: FlatItem) => {
@@ -241,11 +255,11 @@ export function SearchAutocompleteDropdown({
     ) {
       const slug = url.slice("/products/".length).split("?")[0] ?? "";
       if (slug) {
-        router.push(buildStorefrontProductHref(slug, pathname));
+        navigateTo(buildStorefrontProductHref(slug, pathname));
         return;
       }
     }
-    router.push(url);
+    navigateTo(url);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -44,7 +44,7 @@ import {
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import { plainTextFromHtml } from "@/lib/plainTextFromHtml";
+import { hasPublishedRichHtml, resolveLocalizedRichHtml } from "@/lib/plainTextFromHtml";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { isNewFromCreatedAt, storefrontLocalizedText, storefrontProductDisplayName } from "@/modules/catalog/storefront-product.shared";
@@ -82,7 +82,7 @@ type ProductDescriptionCollapsibleProps = {
   /** Encabezado del acordeón (p. ej. Descripción o Especificaciones). */
   title?: string;
 };
-type ProductInfoTabId = "technical_specs" | "downloads" | "faq";
+type ProductInfoTabId = "technical_specs" | "downloads";
 
 const PRODUCT_REVIEWS_PAGE_SIZE_DESKTOP = 12;
 const PRODUCT_REVIEWS_PAGE_SIZE_MOBILE_TABLET = 6;
@@ -93,45 +93,41 @@ type ReviewRatingFilter = "all" | "5" | "4" | "3" | "2" | "1";
 type ReviewDateSortOption = { value: ReviewDateSort; label: string };
 type ReviewRatingOption = { value: ReviewRatingFilter; label: string };
 
-const reviewDateSortOptions: ReviewDateSortOption[] = [
-  { value: "newest", label: "Más reciente" },
-  { value: "oldest", label: "Más antigua" },
-  { value: "best_rating", label: "Mejor valoración" },
-  { value: "worst_rating", label: "Peor valoración" },
-];
-
-const reviewRatingOptions: ReviewRatingOption[] = [
-  { value: "all", label: "Todas" },
-  { value: "5", label: "5 estrellas" },
-  { value: "4", label: "4 estrellas" },
-  { value: "3", label: "3 estrellas" },
-  { value: "2", label: "2 estrellas" },
-  { value: "1", label: "1 estrella" },
-];
-
 const TABLE_LIKE_TOOLTIP_CLASS =
   "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
 
-function formatSortSelectedLabel(option: ReviewDateSortOption): string {
-  return `Ordenar por: ${option.label}`;
+function formatSortSelectedLabel(prefix: string, option: ReviewDateSortOption): string {
+  return `${prefix} ${option.label}`;
 }
 
-function formatRatingSelectedLabel(option: ReviewRatingOption): string {
-  return `Valoración: ${option.label}`;
+function formatRatingSelectedLabel(
+  prefix: string,
+  option: ReviewRatingOption,
+): string {
+  return `${prefix} ${option.label}`;
 }
 
-function formatReviewDate(value: string | Date | null | undefined): string {
-  const relative = formatRelativeLastAccess(value);
+function formatReviewDate(
+  value: string | Date | null | undefined,
+  locale: "es" | "en",
+): string {
+  const relative = formatRelativeLastAccess(value, locale);
   if (relative != null) return relative;
-  return formatDateDdMmYyyyHhMm(value);
+  return formatDateDdMmYyyyHhMm(value, locale);
 }
 
-function StarRatingIcons({ rating }: { rating: number }) {
+function StarRatingIcons({
+  rating,
+  ariaLabel,
+}: {
+  rating: number;
+  ariaLabel: string;
+}) {
   const r = Math.min(5, Math.max(0, Math.round(rating)));
   return (
     <div
       className="flex items-center gap-0.5 text-amber-500"
-      aria-label={`${r} de 5 estrellas`}
+      aria-label={ariaLabel}
     >
       {Array.from({ length: r }).map((_, i) => (
         <Star key={i} className="h-4 w-4 fill-current" aria-hidden />
@@ -181,11 +177,40 @@ function ProductReviewsSection({
   rows: ProductReviewDetailListItem[];
   onOpenForm: () => void;
 }) {
+  const { t, locale } = useI18n();
   const pageSize = useResponsiveProductReviewsPageSize();
   const [page, setPage] = useState(1);
   const listTopRef = useRef<HTMLElement | null>(null);
   const [dateSort, setDateSort] = useState<ReviewDateSort>("newest");
   const [ratingFilter, setRatingFilter] = useState<ReviewRatingFilter>("all");
+
+  const reviewDateSortOptions: ReviewDateSortOption[] = [
+    { value: "newest", label: t("storefront.productDetail.sortNewest") },
+    { value: "oldest", label: t("storefront.productDetail.sortOldest") },
+    { value: "best_rating", label: t("storefront.productDetail.sortBest") },
+    { value: "worst_rating", label: t("storefront.productDetail.sortWorst") },
+  ];
+
+  const reviewRatingOptions: ReviewRatingOption[] = [
+    { value: "all", label: t("storefront.productDetail.ratingAll") },
+    {
+      value: "5",
+      label: t("storefront.productDetail.ratingStars").replace("{n}", "5"),
+    },
+    {
+      value: "4",
+      label: t("storefront.productDetail.ratingStars").replace("{n}", "4"),
+    },
+    {
+      value: "3",
+      label: t("storefront.productDetail.ratingStars").replace("{n}", "3"),
+    },
+    {
+      value: "2",
+      label: t("storefront.productDetail.ratingStars").replace("{n}", "2"),
+    },
+    { value: "1", label: t("storefront.productDetail.ratingStarOne") },
+  ];
 
   const filteredAndSortedRows = [...rows]
     .filter((row) => {
@@ -244,11 +269,13 @@ function ProductReviewsSection({
       <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            Reseñas del producto
+            {t("storefront.productDetail.reviewsTitle")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Opiniones sobre{" "}
-            <span className="font-medium text-foreground">{productName}</span>.
+            {t("storefront.productDetail.reviewsAbout").replace(
+              "{name}",
+              productName,
+            )}
           </p>
         </div>
         {rows.length > 0 ? (
@@ -257,7 +284,7 @@ function ProductReviewsSection({
             className="h-11 w-full rounded-xl px-6 sm:w-auto"
             onClick={onOpenForm}
           >
-            Escribe una reseña
+            {t("storefront.productDetail.writeReview")}
           </Button>
         ) : null}
       </div>
@@ -276,7 +303,7 @@ function ProductReviewsSection({
                 <Select<ReviewDateSortOption, false>
                   instanceId="product-detail-reviews-sort"
                   inputId="product-detail-reviews-sort"
-                  aria-label="Ordenar reseñas por fecha"
+                  aria-label={t("storefront.productDetail.reviewsSortAria")}
                   styles={appSelectStyles}
                   options={reviewDateSortOptions}
                   value={
@@ -289,7 +316,10 @@ function ProductReviewsSection({
                   }}
                   formatOptionLabel={(option, meta) =>
                     meta.context === "value"
-                      ? formatSortSelectedLabel(option)
+                      ? formatSortSelectedLabel(
+                          t("storefront.productDetail.reviewsSortPrefix"),
+                          option,
+                        )
                       : option.label
                   }
                   isClearable={false}
@@ -308,7 +338,7 @@ function ProductReviewsSection({
                 <Select<ReviewRatingOption, false>
                   instanceId="product-detail-reviews-rating"
                   inputId="product-detail-reviews-rating"
-                  aria-label="Filtrar reseñas por valoración"
+                  aria-label={t("storefront.productDetail.reviewsRatingAria")}
                   styles={appSelectStyles}
                   options={reviewRatingOptions}
                   value={
@@ -321,7 +351,10 @@ function ProductReviewsSection({
                   }}
                   formatOptionLabel={(option, meta) =>
                     meta.context === "value"
-                      ? formatRatingSelectedLabel(option)
+                      ? formatRatingSelectedLabel(
+                          t("storefront.productDetail.reviewsRatingPrefix"),
+                          option,
+                        )
                       : option.label
                   }
                   isClearable={false}
@@ -338,10 +371,12 @@ function ProductReviewsSection({
                       variant="outline"
                       className="h-10 w-auto justify-start gap-2 rounded-lg border-border/80 bg-card px-3 text-sm shadow-sm transition hover:bg-muted/50 sm:w-10 sm:px-0 sm:justify-center sm:gap-0"
                       onClick={clearFilters}
-                      aria-label="Limpiar filtros"
+                      aria-label={t("storefront.productDetail.reviewsClearFilters")}
                     >
                       <FilterX className="h-4 w-4" aria-hidden />
-                      <span className="sm:hidden">Limpiar filtros</span>
+                      <span className="sm:hidden">
+                        {t("storefront.productDetail.reviewsClearFilters")}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -349,7 +384,9 @@ function ProductReviewsSection({
                     align="center"
                     className={TABLE_LIKE_TOOLTIP_CLASS}
                   >
-                    <span className="font-medium">Limpiar filtros</span>
+                    <span className="font-medium">
+                      {t("storefront.productDetail.reviewsClearFilters")}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -361,8 +398,7 @@ function ProductReviewsSection({
       {rows.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Este producto todavía no tiene reseñas. Sé la primera persona en
-            compartir su experiencia.
+            {t("storefront.productDetail.reviewsEmpty")}
           </p>
           <Button
             type="button"
@@ -370,19 +406,18 @@ function ProductReviewsSection({
             onClick={onOpenForm}
             className="mt-4 inline-flex h-11 shrink-0 rounded-2xl border-primary/30 bg-card px-5 font-semibold text-primary hover:bg-primary/5"
           >
-            Escribe la primera reseña
+            {t("storefront.productDetail.writeFirstReview")}
           </Button>
         </div>
       ) : filteredAndSortedRows.length === 0 ? (
         <p className="mt-6 rounded-xl border border-dashed border-border/60 bg-muted/70 px-6 py-10 text-center text-sm text-muted-foreground">
-          Ninguna reseña coincide con los filtros. Ajusta los criterios para ver
-          más resultados o{" "}
+          {t("storefront.productDetail.reviewsNoMatch")}{" "}
           <button
             type="button"
             onClick={clearFilters}
             className="font-semibold text-black underline underline-offset-2 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
-            Limpiar todo
+            {t("storefront.productDetail.reviewsClearAll")}
           </button>
         </p>
       ) : (
@@ -392,7 +427,13 @@ function ProductReviewsSection({
               <li key={row.id}>
                 <article className="flex h-full flex-col rounded-3xl border border-border/50 bg-card p-5 shadow-soft sm:p-6">
                   <div className="flex items-center justify-between gap-3">
-                    <StarRatingIcons rating={row.rating} />
+                    <StarRatingIcons
+                      rating={row.rating}
+                      ariaLabel={t("storefront.productDetail.starsAria").replace(
+                        "{n}",
+                        String(Math.min(5, Math.max(0, Math.round(row.rating)))),
+                      )}
+                    />
                     <CheckCircle2
                       className="h-5 w-5 shrink-0 text-primary"
                       aria-hidden
@@ -404,7 +445,7 @@ function ProductReviewsSection({
                     </blockquote>
                   ) : (
                     <p className="mt-4 flex-1 text-sm italic text-muted-foreground">
-                      Sin comentario escrito.
+                      {t("storefront.productDetail.reviewsNoComment")}
                     </p>
                   )}
                   <p className="mt-5 text-sm font-semibold text-foreground">
@@ -417,7 +458,7 @@ function ProductReviewsSection({
                     </span>
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {formatReviewDate(row.createdAt)}
+                    {formatReviewDate(row.createdAt, locale)}
                   </p>
                 </article>
               </li>
@@ -427,14 +468,14 @@ function ProductReviewsSection({
           {totalItems > pageSize ? (
             <nav
               className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row"
-              aria-label="Paginación de reseñas del producto"
+              aria-label={t("storefront.productDetail.reviewsPaginationAria")}
             >
               <p className="text-sm text-muted-foreground">
-                Mostrando{" "}
+                {t("storefront.productDetail.reviewsShowing")}{" "}
                 <span className="tabular-nums text-foreground">
                   {offset + 1}–{Math.min(offset + pageSize, totalItems)}
                 </span>{" "}
-                de{" "}
+                {t("storefront.productDetail.reviewsOf")}{" "}
                 <span className="tabular-nums text-foreground">
                   {totalItems}
                 </span>
@@ -449,7 +490,7 @@ function ProductReviewsSection({
                   onClick={() => handlePageChange(Math.max(1, safePage - 1))}
                 >
                   <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
-                  Anterior
+                  {t("storefront.productDetail.reviewsPrev")}
                 </Button>
                 <span className="min-w-[4.5rem] text-center text-sm tabular-nums text-muted-foreground">
                   {safePage} / {totalPages}
@@ -464,7 +505,7 @@ function ProductReviewsSection({
                     handlePageChange(Math.min(totalPages, safePage + 1))
                   }
                 >
-                  Siguiente
+                  {t("storefront.productDetail.reviewsNext")}
                   <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
                 </Button>
               </div>
@@ -478,10 +519,11 @@ function ProductReviewsSection({
 
 function ProductDescriptionCollapsible({
   description,
-  title = "Descripción",
+  title,
 }: ProductDescriptionCollapsibleProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const titleLower = title.toLowerCase();
+  const heading = title ?? t("storefront.productDetail.descriptionTitle");
 
   return (
     <section className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
@@ -489,11 +531,21 @@ function ProductDescriptionCollapsible({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-label={open ? `Contraer ${titleLower}` : `Expandir ${titleLower}`}
+        aria-label={
+          open
+            ? t("storefront.productDetail.collapseSection").replace(
+                "{title}",
+                heading,
+              )
+            : t("storefront.productDetail.expandSection").replace(
+                "{title}",
+                heading,
+              )
+        }
         className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:py-4 text-left transition hover:bg-card/80"
       >
         <span className="text-base font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
+          {heading}
         </span>
         {open ? (
           <Minus className="h-5 w-5 text-muted-foreground" aria-hidden />
@@ -509,12 +561,39 @@ function ProductDescriptionCollapsible({
         )}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-border/70 px-6 pb-2">
-            <ProductDescriptionViewer descripcion={description} />
+          <div className="border-t border-border/70 px-6 py-2">
+            <ProductDescriptionViewer
+              descripcion={description}
+              className="[&>:last-child]:mb-0"
+            />
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function ProductSpecsContent({ specifications }: { specifications: string }) {
+  return (
+    <ProductDescriptionViewer
+      descripcion={specifications}
+      className="storefront-product-specs"
+    />
+  );
+}
+
+function ProductManualDownloadLink({ href }: { href: string }) {
+  const { t } = useI18n();
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
+    >
+      <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+      <span>{t("storefront.productDetail.downloadManual")}</span>
+    </a>
   );
 }
 
@@ -525,108 +604,78 @@ function ProductInformationTabsSection({
   specifications: string | null;
   manualPdfUrl: string | null;
 }) {
-  const [activeTab, setActiveTab] =
-    useState<ProductInfoTabId>("technical_specs");
+  const { t } = useI18n();
+  const specsHtml = specifications?.trim() || "";
+  const manualHref = manualPdfUrl?.trim() || "";
+  const hasSpecs = hasPublishedRichHtml(specsHtml);
+  const hasDownloads = Boolean(manualHref);
 
-  const productInfoTabs = useMemo(() => {
-    const tabs: { id: ProductInfoTabId; label: string }[] = [
-      { id: "technical_specs", label: "Especificaciones Técnicas" },
-    ];
-    if (manualPdfUrl?.trim()) {
-      tabs.push({ id: "downloads", label: "Descargas" });
-    }
-    // Tab FAQ oculta: descomenta la siguiente línea y el panel FAQ más abajo.
-    // tabs.push({ id: "faq", label: "Preguntas Frecuentes" });
-    return tabs;
-  }, [manualPdfUrl]);
+  const [activeTab, setActiveTab] = useState<ProductInfoTabId>(
+    hasSpecs ? "technical_specs" : "downloads",
+  );
+
+  if (!hasSpecs && !hasDownloads) return null;
+
+  const showTabs = hasSpecs && hasDownloads;
+  const heading = hasSpecs
+    ? t("storefront.productDetail.specsTab")
+    : t("storefront.productDetail.downloadsTab");
 
   return (
     <section className="mt-10 rounded-xl border border-border/70 bg-card/80 p-4 shadow-sm sm:mt-14 sm:p-6">
-      <div
-        className="-mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-transparent px-4 pb-3 pt-1 shadow-[0_1px_0_0_rgba(0,0,0,0.08)] [scrollbar-width:thin] sm:mx-0 sm:px-0 sm:pt-0"
-        role="tablist"
-        aria-label="Información del producto"
-      >
-        {productInfoTabs.map((t) => (
+      {showTabs ? (
+        <div
+          className="-mx-4 flex min-w-0 gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-border/60 bg-transparent px-4 pb-3 pt-1 shadow-[0_1px_0_0_rgba(0,0,0,0.08)] [scrollbar-width:thin] sm:mx-0 sm:px-0 sm:pt-0"
+          role="tablist"
+          aria-label={t("storefront.productDetail.infoTabsAria")}
+        >
           <button
-            key={t.id}
             type="button"
             role="tab"
-            aria-selected={activeTab === t.id}
+            aria-selected={activeTab === "technical_specs"}
             className={cn(
               "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition",
-              activeTab === t.id
+              activeTab === "technical_specs"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border/80 bg-white/60 text-muted-foreground shadow-sm hover:bg-muted/30 hover:text-foreground dark:bg-card",
             )}
-            onClick={() => setActiveTab(t.id)}
+            onClick={() => setActiveTab("technical_specs")}
           >
-            {t.label}
+            {t("storefront.productDetail.specsTab")}
           </button>
-        ))}
-      </div>
-
-      <div className="mt-6 min-h-[10rem]" role="tabpanel">
-        {activeTab === "technical_specs" ? (
-          specifications?.trim() ? (
-            <ProductDescriptionViewer
-              descripcion={specifications}
-              className="storefront-product-specs"
-            />
-          ) : (
-            <p className="rounded-xl border border-dashed border-border/70 bg-muted/25 px-5 py-8 text-sm text-muted-foreground">
-              Este producto no tiene especificaciones técnicas publicadas aún.
-            </p>
-          )
-        ) : null}
-
-        {activeTab === "downloads" && manualPdfUrl?.trim() ? (
-          <a
-            href={manualPdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "downloads"}
+            className={cn(
+              "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition",
+              activeTab === "downloads"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "border border-border/80 bg-white/60 text-muted-foreground shadow-sm hover:bg-muted/30 hover:text-foreground dark:bg-card",
+            )}
+            onClick={() => setActiveTab("downloads")}
           >
-            <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-            <span>Descargar o ver manual (PDF)</span>
-          </a>
-        ) : null}
+            {t("storefront.productDetail.downloadsTab")}
+          </button>
+        </div>
+      ) : (
+        <h2 className="border-b border-border/60 pb-3 text-base font-semibold text-foreground">
+          {heading}
+        </h2>
+      )}
 
-        {/*
-        {activeTab === "faq" ? (
-          <div className="space-y-3">
-            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                ¿Qué incluye la compra de este producto?
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Incluye el equipo principal y sus accesorios básicos. Revisa la
-                sección de descargas para consultar el manual cuando esté
-                disponible.
-              </p>
-            </article>
-            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                ¿Cómo verifico compatibilidad e instalación?
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Te recomendamos revisar las especificaciones técnicas publicadas
-                y validar requisitos eléctricos, de red y espacio de
-                instalación.
-              </p>
-            </article>
-            <article className="rounded-xl border border-border/70 bg-background/70 p-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                ¿Puedo solicitar soporte para este producto?
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Sí. Si tienes dudas previas o posteriores a la compra, nuestro
-                equipo puede orientarte en configuración y uso.
-              </p>
-            </article>
-          </div>
-        ) : null}
-        */}
+      <div className="mt-6" role={showTabs ? "tabpanel" : undefined}>
+        {showTabs ? (
+          activeTab === "technical_specs" ? (
+            <ProductSpecsContent specifications={specsHtml} />
+          ) : (
+            <ProductManualDownloadLink href={manualHref} />
+          )
+        ) : hasSpecs ? (
+          <ProductSpecsContent specifications={specsHtml} />
+        ) : (
+          <ProductManualDownloadLink href={manualHref} />
+        )}
       </div>
     </section>
   );
@@ -657,7 +706,17 @@ export function StorefrontProductDetailView({
   const canBuy = product.stock > 0;
   const maxCartQty = Math.max(1, product.stock);
   const isNew = isNewFromCreatedAt(product.created_at);
-  const hasDescription = Boolean(plainTextFromHtml(product.description));
+  const descriptionForLocale = resolveLocalizedRichHtml(
+    locale,
+    product.description,
+    product.description_en,
+  );
+  const hasDescription = Boolean(descriptionForLocale);
+  const specificationsForLocale = resolveLocalizedRichHtml(
+    locale,
+    product.specifications,
+    product.specifications_en,
+  );
   const displayName = storefrontProductDisplayName(product, locale);
   const displayBrandName = storefrontLocalizedText(
     locale,
@@ -749,7 +808,7 @@ export function StorefrontProductDetailView({
                       className="group relative w-full cursor-pointer overflow-hidden rounded-xl text-left ring-offset-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       aria-haspopup="dialog"
                       aria-expanded={lightboxOpen}
-                      aria-label="Ver imagen ampliada"
+                      aria-label={t("storefront.productDetail.zoomImageAria")}
                       onClick={() => setLightboxOpen(true)}
                     >
                       <div className="relative aspect-square w-full overflow-hidden rounded-xl">
@@ -783,7 +842,10 @@ export function StorefrontProductDetailView({
                       )}
                     >
                       <DialogTitle className="sr-only">
-                        {displayName} — vista ampliada
+                        {t("storefront.productDetail.zoomImageTitle").replace(
+                          "{name}",
+                          displayName,
+                        )}
                       </DialogTitle>
                       <div className="relative h-[min(85vh,90vw)] w-full min-h-[12rem]">
                         <Image
@@ -803,7 +865,7 @@ export function StorefrontProductDetailView({
                                 goToPrevImage();
                               }}
                               className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:left-4"
-                              aria-label="Imagen anterior"
+                              aria-label={t("storefront.productDetail.prevImageAria")}
                             >
                               <ChevronLeft
                                 className="h-6 w-6"
@@ -818,7 +880,7 @@ export function StorefrontProductDetailView({
                                 goToNextImage();
                               }}
                               className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:right-4"
-                              aria-label="Imagen siguiente"
+                              aria-label={t("storefront.productDetail.nextImageAria")}
                             >
                               <ChevronRight
                                 className="h-6 w-6"
@@ -840,7 +902,7 @@ export function StorefrontProductDetailView({
                           goToPrevImage();
                         }}
                         className="absolute left-2 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:left-3"
-                        aria-label="Imagen anterior"
+                        aria-label={t("storefront.productDetail.prevImageAria")}
                       >
                         <ChevronLeft
                           className="h-5 w-5"
@@ -855,7 +917,7 @@ export function StorefrontProductDetailView({
                           goToNextImage();
                         }}
                         className="absolute right-2 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:right-3"
-                        aria-label="Imagen siguiente"
+                        aria-label={t("storefront.productDetail.nextImageAria")}
                       >
                         <ChevronRight
                           className="h-5 w-5"
@@ -871,14 +933,16 @@ export function StorefrontProductDetailView({
                   <div
                     className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/90 p-6 text-center text-muted-foreground shadow-sm"
                     role="img"
-                    aria-label="Sin imagen del producto"
+                    aria-label={t("storefront.card.imageMissingAria")}
                   >
                     <ImageOff
                       className="h-16 w-16 shrink-0 opacity-50"
                       strokeWidth={1.25}
                       aria-hidden
                     />
-                    <span className="text-sm font-medium">Sin imagen</span>
+                    <span className="text-sm font-medium">
+                      {t("storefront.card.imageMissingSr")}
+                    </span>
                   </div>
                 </div>
               )}
@@ -903,7 +967,10 @@ export function StorefrontProductDetailView({
                         ? "border-primary opacity-100"
                         : "border-transparent opacity-70 hover:opacity-100",
                     )}
-                    aria-label={`Ver imagen ${i + 1}`}
+                    aria-label={t("storefront.productDetail.viewImageAria").replace(
+                      "{n}",
+                      String(i + 1),
+                    )}
                     aria-pressed={i === activeIdx}
                   >
                     <Image
@@ -922,7 +989,7 @@ export function StorefrontProductDetailView({
           {hasDescription ? (
             <div className="hidden lg:block">
               <ProductDescriptionCollapsible
-                description={product.description ?? ""}
+                description={descriptionForLocale ?? ""}
               />
             </div>
           ) : null}
@@ -938,7 +1005,10 @@ export function StorefrontProductDetailView({
                       inter.className,
                       "rounded-full bg-gradient-to-br from-rose-600 to-red-600 px-2 py-[2px] text-[11px] font-semibold tabular-nums text-white shadow-md ring-2 ring-white/25 sm:text-[12px]",
                     )}
-                    aria-label={`Descuento ${Math.round(pct)} por ciento`}
+                    aria-label={t("storefront.card.discountAria").replace(
+                      "{pct}",
+                      String(Math.round(pct)),
+                    )}
                   >
                     −{Math.round(pct)}%
                   </span>
@@ -987,7 +1057,8 @@ export function StorefrontProductDetailView({
               ) : null}
             </p>
             <p className="mt-3 text-sm tabular-nums text-muted-foreground font-medium">
-              SKU: <span className="text-foreground">{product.sku}</span>
+              {t("storefront.productDetail.skuLabel")}:{" "}
+              <span className="text-foreground">{product.sku}</span>
             </p>
           </div>
 
@@ -1118,14 +1189,14 @@ export function StorefrontProductDetailView({
               className="flex items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] px-5 py-4 text-sm font-medium text-primary transition hover:bg-primary/[0.08]"
             >
               <FileText className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-              <span>Descargar o ver manual (PDF)</span>
+              <span>{t("storefront.productDetail.downloadManual")}</span>
             </a>
           ) : null}
 
           {hasDescription ? (
             <div className="lg:hidden">
               <ProductDescriptionCollapsible
-                description={product.description ?? ""}
+                description={descriptionForLocale ?? ""}
               />
             </div>
           ) : null}
@@ -1190,10 +1261,12 @@ export function StorefrontProductDetailView({
         </div>
       ) : null}
 
-      <ProductInformationTabsSection
-        specifications={product.specifications}
-        manualPdfUrl={product.manual_pdf_url}
-      />
+      {specificationsForLocale || product.manual_pdf_url?.trim() ? (
+        <ProductInformationTabsSection
+          specifications={specificationsForLocale}
+          manualPdfUrl={product.manual_pdf_url}
+        />
+      ) : null}
 
       <ProductReviewsSection
         productName={displayName}
@@ -1203,16 +1276,27 @@ export function StorefrontProductDetailView({
       <SlideOver
         open={reviewPanelOpen}
         onClose={() => setReviewPanelOpen(false)}
-        title="Escribe una reseña"
+        title={t("storefront.productDetail.reviewPanelTitle")}
         description={
           <>
-            Comparte tu experiencia con{" "}
-            <span className="font-medium text-foreground">{displayName}</span>.
-            Tu reseña ayudará a otras personas a comprar con más confianza.
+            {t("storefront.productDetail.reviewPanelDescription")
+              .split("{name}")
+              .map((part, index, parts) =>
+                index < parts.length - 1 ? (
+                  <span key={index}>
+                    {part}
+                    <span className="font-medium text-foreground">
+                      {displayName}
+                    </span>
+                  </span>
+                ) : (
+                  <span key={index}>{part}</span>
+                ),
+              )}
           </>
         }
         panelClassName="lg:max-w-[min(32rem,92vw)]"
-        contentAriaLabel="Formulario de reseña del producto"
+        contentAriaLabel={t("storefront.productDetail.reviewPanelAria")}
         footer={
           <SlideOverFooter>
             <Button
@@ -1221,15 +1305,15 @@ export function StorefrontProductDetailView({
               disabled={reviewFormPending}
               onClick={() => setReviewPanelOpen(false)}
             >
-              Cancelar
+              {t("storefront.productDetail.reviewCancel")}
             </Button>
             <ButtonPending
               type="submit"
               form={PRODUCT_REVIEW_FORM_ID}
               pending={reviewFormPending}
-              pendingLabel="Enviando"
+              pendingLabel={t("storefront.productDetail.reviewSending")}
             >
-              Enviar reseña
+              {t("storefront.productDetail.reviewSubmit")}
             </ButtonPending>
           </SlideOverFooter>
         }

@@ -232,6 +232,21 @@ function extractStoragePathFromPublicUrl(url: string): string | null {
   }
 }
 
+async function removeStoredObjectsByPublicUrls(urls: Array<string | null | undefined>) {
+  const toRemove = urls
+    .map((url) => (url ? extractStoragePathFromPublicUrl(url) : null))
+    .filter((v): v is string => Boolean(v));
+  if (toRemove.length === 0) return;
+
+  const { error } = await createSupabaseAdminClient().storage
+    .from(PRODUCT_IMAGES_BUCKET)
+    .remove(toRemove);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.warn("No se pudieron eliminar archivos del storage:", error.message);
+  }
+}
+
 async function uploadProductImages(
   productId: string,
   imageFiles: File[],
@@ -427,20 +442,7 @@ export async function updateProductService(
     if ((removedImageIds ?? []).length > 0) {
       const removedUrls = await repoListProductImageUrlsByIds(id, removedImageIds ?? []);
       await repoDeleteProductImagesByIds(id, removedImageIds ?? []);
-
-      const toRemove = removedUrls
-        .map((url) => extractStoragePathFromPublicUrl(url))
-        .filter((v): v is string => Boolean(v));
-
-      if (toRemove.length > 0) {
-        const { error } = await createSupabaseAdminClient().storage
-          .from(PRODUCT_IMAGES_BUCKET)
-          .remove(toRemove);
-        if (error) {
-          // eslint-disable-next-line no-console
-          console.warn("No se pudieron eliminar imágenes del storage:", error.message);
-        }
-      }
+      await removeStoredObjectsByPublicUrls(removedUrls);
     }
 
     if ((updatedExistingImages ?? []).length > 0) {
@@ -456,9 +458,15 @@ export async function updateProductService(
       await uploadProductImages(id, validFiles, primaryIndex);
     }
 
+    const previousManualPdfUrl = before?.manualPdfUrl ?? null;
     if (manualPdfFile && manualPdfFile.size > 0) {
       const manualUrl = await uploadProductManualPdf(id, manualPdfFile);
       await repoUpdateProductManualPdfUrl(id, manualUrl);
+      if (previousManualPdfUrl && previousManualPdfUrl !== manualUrl) {
+        await removeStoredObjectsByPublicUrls([previousManualPdfUrl]);
+      }
+    } else if (!mergedPayload.manualPdfUrl && previousManualPdfUrl) {
+      await removeStoredObjectsByPublicUrls([previousManualPdfUrl]);
     }
 
     await repoReplaceProductCharacteristicValues(id, parsedCharacteristics);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -12,10 +12,11 @@ import {
   adminSlideOverSectionClassName,
 } from "@/components/admin/admin-form-classes";
 import {
-  productReviewFormSchema,
+  createProductReviewFormSchema,
   type ProductReviewFormValues,
 } from "@/modules/site/product-reviews.schema";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 export const PRODUCT_REVIEW_FORM_ID = "product-review-form";
@@ -40,12 +41,17 @@ export function ProductReviewForm({
   onSuccess,
   onPendingChange,
 }: ProductReviewFormProps) {
+  const { t, locale } = useI18n();
   const uid = useId();
   const ratingFieldId = `${uid}-rating`;
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const schema = useMemo(
+    () => createProductReviewFormSchema(locale),
+    [locale],
+  );
 
   const form = useForm<ProductReviewFormValues>({
-    resolver: zodResolver(productReviewFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: { productId, name: "", email: "", rating: 5, comment: "" },
     mode: "onSubmit",
   });
@@ -117,7 +123,9 @@ export function ProductReviewForm({
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error ?? "No se pudo enviar la reseña.");
+        throw new Error(
+          payload?.error ?? t("storefront.productDetail.reviewFormError"),
+        );
       }
 
       reset({
@@ -130,15 +138,17 @@ export function ProductReviewForm({
       if (onSuccess) {
         onSuccess();
         window.setTimeout(() => {
-          toast.success("Reseña enviada. Gracias por valorar este producto.");
+          toast.success(t("storefront.productDetail.reviewFormSuccess"));
         }, 150);
       } else {
-        toast.success("Reseña enviada. Gracias por valorar este producto.");
+        toast.success(t("storefront.productDetail.reviewFormSuccess"));
       }
     } catch (error) {
       console.error("ProductReviewForm submit", error);
       const message =
-        error instanceof Error ? error.message : "Error inesperado.";
+        error instanceof Error
+          ? error.message
+          : t("storefront.productDetail.reviewFormUnexpected");
       toast.error(message);
     }
   };
@@ -158,14 +168,14 @@ export function ProductReviewForm({
                 className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
                 aria-hidden
               />
-              Cargando datos
+              {t("storefront.productDetail.reviewFormLoading")}
             </div>
           </div>
         ) : null}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">{productName}</p>
           <p className="text-xs text-muted-foreground">
-            Tu opinión ayuda a otros clientes a decidir su compra.
+            {t("storefront.productDetail.reviewFormHint")}
           </p>
         </div>
 
@@ -174,29 +184,31 @@ export function ProductReviewForm({
 
           <FormField
             name="name"
-            label="Nombre"
+            label={t("storefront.productDetail.reviewFormName")}
             required
             disabled={isSubmitting}
             error={errors.name?.message}
             autoComplete="name"
             className={cn(adminServiceLikeInputClassName, "w-full")}
-            placeholder="Tu nombre o alias"
+            placeholder={t("storefront.productDetail.reviewFormNamePlaceholder")}
           />
 
           <FormField
             name="email"
-            label="Correo electrónico (opcional)"
+            label={t("storefront.productDetail.reviewFormEmail")}
             type="email"
             disabled={isSubmitting}
             error={errors.email?.message}
             autoComplete="email"
             className={cn(adminServiceLikeInputClassName, "w-full")}
-            placeholder="correo@ejemplo.com"
+            placeholder={t(
+              "storefront.productDetail.reviewFormEmailPlaceholder",
+            )}
           />
 
           <div className="space-y-2">
             <Label id={`${ratingFieldId}-label`}>
-              ¿Qué te pareció este producto?
+              {t("storefront.productDetail.reviewFormRating")}
               <RequiredMark />
             </Label>
             <Controller
@@ -221,13 +233,15 @@ export function ProductReviewForm({
 
           <div className="space-y-2">
             <Label htmlFor={`${uid}-comment`}>
-              Comentario
+              {t("storefront.productDetail.reviewFormComment")}
               <RequiredMark />
             </Label>
             <textarea
               id={`${uid}-comment`}
               className={textareaPanelClassName}
-              placeholder="Cuéntanos tu experiencia con este producto."
+              placeholder={t(
+                "storefront.productDetail.reviewFormCommentPlaceholder",
+              )}
               disabled={isSubmitting}
               aria-invalid={errors.comment ? true : undefined}
               aria-describedby={

@@ -1,8 +1,10 @@
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
+import { StorefrontProductBackLink } from "@/components/store/StorefrontProductBackLink";
 import { StorefrontProductDetailView } from "@/components/store/StorefrontProductDetailView";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { plainTextFromHtml, resolveLocalizedRichHtml } from "@/lib/plainTextFromHtml";
 import { normalizeStorefrontFromPath } from "@/lib/storefront-product-nav";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
@@ -75,10 +77,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     product.brand_name,
     product.brand_name_en,
   );
+  const descriptionText = plainTextFromHtml(
+    resolveLocalizedRichHtml(
+      locale,
+      product.description,
+      product.description_en,
+    ),
+  );
   return {
     title: displayName,
     description:
-      product.description?.slice(0, 155).trim() ||
+      descriptionText.slice(0, 155).trim() ||
       (locale === "en"
         ? `${displayName} · ${brandName}. Buy at Global Computer USA.`
         : `${displayName} · ${brandName}. Compra en Global Computer USA.`),
@@ -127,21 +136,24 @@ export default async function ProductoDetallePage({
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <MarketingBreadcrumb
-            className={inter.className}
-            items={[
-              { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
-              ...breadcrumbPrefix,
-              {
-                label: (
-                  <StorefrontLocalizedName
-                    name={product.name}
-                    nameEn={product.name_en}
-                  />
-                ),
-              },
-            ]}
-          />
+          <div className="flex flex-col gap-3">
+            <StorefrontProductBackLink className={inter.className} />
+            <MarketingBreadcrumb
+              className={inter.className}
+              items={[
+                { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
+                ...breadcrumbPrefix,
+                {
+                  label: (
+                    <StorefrontLocalizedName
+                      name={product.name}
+                      nameEn={product.name_en}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </div>
         </div>
       </div>
 

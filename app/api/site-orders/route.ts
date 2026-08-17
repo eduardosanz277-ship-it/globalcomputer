@@ -16,8 +16,10 @@ const siteOrderSchema = z.object({
         qty: z.number().int().min(1).max(999),
       }),
     )
-    .min(1),
+    .optional()
+    .default([]),
   sessionId: z.string().optional(),
+  locale: z.enum(["es", "en"]),
 });
 
 /** Consulta el nº de pedido asociado a una sesión de Stripe Checkout. */
@@ -59,11 +61,13 @@ export async function POST(req: Request) {
   }
 
   try {
+    const locale = parsed.data.locale;
     const order = await createSiteOrder({
       name: parsed.data.name,
       email: parsed.data.email,
       items: parsed.data.items,
       stripeSessionId: parsed.data.sessionId,
+      locale,
     });
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {

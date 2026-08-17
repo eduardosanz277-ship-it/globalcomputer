@@ -53,6 +53,22 @@ type FilterOption = { value: string; label: string };
 const BRAND_FILTER_TOOLBAR_WIDE_CH = "Todas las marcas".length + 7;
 const TYPE_FILTER_TOOLBAR_WIDE_CH = "Todos los tipos".length + 7;
 
+/** Anchos para `table-fixed`: la columna flexible recorta; las fijas no se pisan. */
+const PRODUCT_COLUMN_CLASS = "min-w-[14rem] overflow-hidden";
+const BRAND_COLUMN_CLASS =
+  "w-[10.5rem] min-w-[10.5rem] max-w-[10.5rem] overflow-hidden";
+const PRICE_COLUMN_CLASS =
+  "w-[7.5rem] min-w-[7.5rem] max-w-[7.5rem] overflow-hidden";
+const STOCK_COLUMN_CLASS =
+  "w-[11.5rem] min-w-[11.5rem] max-w-[11.5rem] overflow-hidden";
+const STATUS_COLUMN_CLASS =
+  "w-[7.5rem] min-w-[7.5rem] max-w-[7.5rem] overflow-hidden";
+const DISCOUNTS_COLUMN_CLASS =
+  "w-[10rem] min-w-[10rem] max-w-[10rem] overflow-hidden";
+const ACTIONS_COLUMN_CLASS =
+  "min-w-[4.25rem] w-[4.25rem] max-w-[4.25rem] shrink-0 overflow-hidden pl-2.5 md:pl-3";
+const PRODUCTS_TABLE_MIN_WIDTH_CLASS = "min-w-[64rem]";
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -361,8 +377,7 @@ export function AdminProductsTable({
           />
         ),
         meta: {
-          cellClassName:
-            "min-w-0 max-w-[min(32.25rem,65vw)] md:max-w-[min(24.25rem,38vw)]",
+          cellClassName: PRODUCT_COLUMN_CLASS,
         },
         cell: ({ row }) => {
           const p = row.original;
@@ -370,7 +385,7 @@ export function AdminProductsTable({
             localizedCatalogLabel(p, locale),
           );
           return (
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 max-w-full items-center gap-3 overflow-hidden">
               {p.imageUrl ? (
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/80 bg-muted">
                   <Image
@@ -418,7 +433,7 @@ export function AdminProductsTable({
               sensitivity: "base",
             },
           ),
-        meta: { cellClassName: "w-[10rem] min-w-[10rem]" },
+        meta: { cellClassName: BRAND_COLUMN_CLASS },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -433,7 +448,7 @@ export function AdminProductsTable({
           const brandName = localizedBrandName(p, locale);
           const brandTypeName = localizedBrandTypeName(p, locale);
           return (
-            <div className="min-w-0">
+            <div className="min-w-0 max-w-full overflow-hidden">
               <p className="truncate text-sm font-medium text-foreground">
                 {brandName}
               </p>
@@ -451,7 +466,7 @@ export function AdminProductsTable({
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           rowA.original.priceClient - rowB.original.priceClient,
-        meta: { cellClassName: "w-[7.5rem]" },
+        meta: { cellClassName: PRICE_COLUMN_CLASS },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -471,7 +486,7 @@ export function AdminProductsTable({
         accessorKey: "stock",
         enableSorting: true,
         sortingFn: (rowA, rowB) => rowA.original.stock - rowB.original.stock,
-        meta: { cellClassName: "w-[11.5rem] min-w-[11.5rem]" },
+        meta: { cellClassName: STOCK_COLUMN_CLASS },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -497,7 +512,7 @@ export function AdminProductsTable({
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           Number(rowA.original.active) - Number(rowB.original.active),
-        meta: { cellClassName: "w-[7.5rem]" },
+        meta: { cellClassName: STATUS_COLUMN_CLASS },
         header: ({ column }) => (
           <SortableHeader
             column={column}
@@ -519,7 +534,7 @@ export function AdminProductsTable({
         id: "discounts",
         accessorFn: (row) =>
           `${row.discountBusinessPct} ${row.discountClientPct}`,
-        meta: { cellClassName: "w-[10rem]" },
+        meta: { cellClassName: DISCOUNTS_COLUMN_CLASS },
         header: t("admin.products.table.discounts"),
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
@@ -538,8 +553,7 @@ export function AdminProductsTable({
         id: "actions",
         meta: {
           align: "right",
-          cellClassName:
-            "min-w-[4.25rem] w-[4.25rem] max-w-[4.25rem] shrink-0 pl-2.5 md:pl-3",
+          cellClassName: ACTIONS_COLUMN_CLASS,
         },
         header: () => <span className="sr-only">{t("admin.products.table.actions")}</span>,
         cell: ({ row }) => (
@@ -614,9 +628,9 @@ export function AdminProductsTable({
         </div>
       </div>
 
-      {/* Escritorio (xl+): buscar + selects en línea + Nuevo */}
-      <div className="hidden flex-col gap-3 min-[1521px]:flex-nowrap min-[1521px]:gap-3 xl:flex xl:flex-row xl:flex-wrap xl:items-center">
-        <div className="relative flex w-full items-center xl:flex-1 min-[1521px]:flex-none min-[1521px]:max-w-sm">
+      {/* Escritorio (xl+): una fila si cabe; si no, buscar+add / filtros */}
+      <div className="hidden gap-3 xl:flex xl:flex-row xl:flex-wrap xl:items-center min-[1700px]:flex-nowrap">
+        <div className="relative flex w-full items-center xl:flex-1 min-[1700px]:max-w-sm min-[1700px]:flex-none">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
@@ -634,7 +648,7 @@ export function AdminProductsTable({
           />
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center xl:items-center xl:max-[1520px]:order-3 xl:max-[1520px]:basis-full min-[1521px]:flex-1 min-[1521px]:min-w-0">
+        <div className="flex w-full flex-row items-center gap-2 xl:max-[1699px]:order-3 xl:max-[1699px]:basis-full min-[1700px]:min-w-0 min-[1700px]:flex-1">
           <div
             className="flex min-w-0 flex-1 items-center xl:box-border xl:w-[var(--toolbar-brand-filter-all-w)] xl:min-w-[var(--toolbar-brand-filter-all-w)] xl:max-w-[var(--toolbar-brand-filter-all-w)] xl:flex-none xl:shrink-0"
             style={
@@ -714,10 +728,10 @@ export function AdminProductsTable({
           </Button>
         </div>
 
-        <div className="flex w-full items-center xl:max-[1520px]:order-2 xl:max-[1520px]:w-auto xl:max-[1520px]:shrink-0 min-[1521px]:ml-auto min-[1521px]:w-auto min-[1521px]:shrink-0">
+        <div className="relative z-10 flex w-auto shrink-0 items-center xl:max-[1699px]:order-2 min-[1700px]:ml-auto">
           <Button
             type="button"
-            className="h-9 w-full shrink-0 md:w-24"
+            className="h-9 w-24 shrink-0"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -861,7 +875,7 @@ export function AdminProductsTable({
         hideToolbar
         externalGlobalFilter={globalFilter}
         onExternalGlobalFilterChange={setGlobalFilter}
-        tableClassName="table-fixed"
+        tableClassName={`table-fixed ${PRODUCTS_TABLE_MIN_WIDTH_CLASS}`}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-2.5"
         paginationButtonVariant="ghost"

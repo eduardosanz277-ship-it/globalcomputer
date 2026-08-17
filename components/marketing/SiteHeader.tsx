@@ -326,7 +326,7 @@ const catalogSpecificUrl = (
 const catalogServiceUrl = (service: NavigationService) =>
   `/services/${ensureSlug(service.name, service.slug)}`;
 
-/** Paneles del menú móvil (deslizamiento horizontal). Subopciones van en `<details>` dentro del nivel 2. */
+/** Paneles del menú móvil (deslizamiento horizontal). */
 type MobileNavPanel =
   | { kind: "root" }
   | { kind: "security" }
@@ -347,6 +347,64 @@ function mobileNavPanelKey(panel: MobileNavPanel): string {
     case "services":
       return "services";
   }
+}
+
+/**
+ * Fila móvil: el nombre navega (como en desktop); el chevron abre hijos.
+ */
+function MobileNavSplitRow({
+  href,
+  label,
+  headingClassName,
+  expandLabel,
+  collapseLabel,
+  onNavigate,
+  children,
+}: {
+  href: string;
+  label: string;
+  headingClassName: string;
+  expandLabel: string;
+  collapseLabel: string;
+  onNavigate: () => void;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded-lg">
+      <div className="flex items-stretch">
+        <Link
+          href={href}
+          onClick={onNavigate}
+          className={cn(
+            "min-w-0 flex-1 rounded-lg px-3 py-2 transition hover:bg-muted",
+            headingClassName,
+          )}
+        >
+          <span className="block truncate">{label}</span>
+        </Link>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? collapseLabel : expandLabel}
+          onClick={() => setOpen((v) => !v)}
+          className="flex shrink-0 items-center justify-center rounded-lg px-3 py-2 text-foreground/80 transition hover:bg-muted"
+        >
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 opacity-80 transition-transform duration-200",
+              open && "-rotate-180",
+            )}
+            aria-hidden
+          />
+        </button>
+      </div>
+      {open ? (
+        <div className="grid gap-0.5 pl-4 pt-0.5">{children}</div>
+      ) : null}
+    </div>
+  );
 }
 
 export function SiteHeader({ user }: Props) {
@@ -2007,46 +2065,44 @@ export function SiteHeader({ user }: Props) {
                               ) : (
                                 (navData?.brands ?? []).map((brand) => {
                                   const hasTypes = brand.brandTypes.length > 0;
+                                  const brandLabel = localizeName(brand);
                                   return hasTypes ? (
-                                    <details
+                                    <MobileNavSplitRow
                                       key={brand.id}
-                                      className="group rounded-lg"
+                                      href={catalogBrandUrl(brand)}
+                                      label={brandLabel}
+                                      headingClassName={
+                                        mobileNavCatalogHeadingClass
+                                      }
+                                      expandLabel={t(
+                                        "header.expandSubitems",
+                                      ).replace("{name}", brandLabel)}
+                                      collapseLabel={t(
+                                        "header.collapseSubitems",
+                                      ).replace("{name}", brandLabel)}
+                                      onNavigate={() =>
+                                        setMobileNavOpen(false)
+                                      }
                                     >
-                                      <summary
-                                        className={cn(
-                                          "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
-                                          mobileNavCatalogHeadingClass,
-                                        )}
-                                      >
-                                        <span className="truncate">
-                                          {localizeName(brand)}
-                                        </span>
-                                        <ChevronDown
-                                          className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
-                                          aria-hidden
-                                        />
-                                      </summary>
-                                      <div className="grid gap-0.5 pl-4 pt-0.5">
-                                        {brand.brandTypes.map((type) => (
-                                          <Link
-                                            key={type.id}
-                                            href={catalogBrandTypeUrl(
-                                              brand,
-                                              type,
-                                            )}
-                                            onClick={() =>
-                                              setMobileNavOpen(false)
-                                            }
-                                            className={cn(
-                                              "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                              mobileNavCatalogRowClass,
-                                            )}
-                                          >
-                                            {localizeName(type)}
-                                          </Link>
-                                        ))}
-                                      </div>
-                                    </details>
+                                      {brand.brandTypes.map((type) => (
+                                        <Link
+                                          key={type.id}
+                                          href={catalogBrandTypeUrl(
+                                            brand,
+                                            type,
+                                          )}
+                                          onClick={() =>
+                                            setMobileNavOpen(false)
+                                          }
+                                          className={cn(
+                                            "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                            mobileNavCatalogRowClass,
+                                          )}
+                                        >
+                                          {localizeName(type)}
+                                        </Link>
+                                      ))}
+                                    </MobileNavSplitRow>
                                   ) : (
                                     <Link
                                       key={brand.id}
@@ -2057,7 +2113,7 @@ export function SiteHeader({ user }: Props) {
                                         mobileNavCatalogHeadingClass,
                                       )}
                                     >
-                                      {localizeName(brand)}
+                                      {brandLabel}
                                     </Link>
                                   );
                                 })
@@ -2111,46 +2167,44 @@ export function SiteHeader({ user }: Props) {
                                   (cat) => {
                                     const hasSubs =
                                       cat.subcategories.length > 0;
+                                    const catLabel = localizeName(cat);
                                     return hasSubs ? (
-                                      <details
+                                      <MobileNavSplitRow
                                         key={cat.id}
-                                        className="group rounded-lg"
+                                        href={catalogCategoryUrl(cat)}
+                                        label={catLabel}
+                                        headingClassName={
+                                          mobileNavCatalogHeadingClass
+                                        }
+                                        expandLabel={t(
+                                          "header.expandSubitems",
+                                        ).replace("{name}", catLabel)}
+                                        collapseLabel={t(
+                                          "header.collapseSubitems",
+                                        ).replace("{name}", catLabel)}
+                                        onNavigate={() =>
+                                          setMobileNavOpen(false)
+                                        }
                                       >
-                                        <summary
-                                          className={cn(
-                                            "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 transition hover:bg-muted [&::-webkit-details-marker]:hidden",
-                                            mobileNavCatalogHeadingClass,
-                                          )}
-                                        >
-                                          <span className="truncate">
-                                            {localizeName(cat)}
-                                          </span>
-                                          <ChevronDown
-                                            className="h-4 w-4 shrink-0 opacity-80 transition-transform duration-200 group-open:-rotate-180"
-                                            aria-hidden
-                                          />
-                                        </summary>
-                                        <div className="grid gap-0.5 pl-4 pt-0.5">
-                                          {cat.subcategories.map((sub) => (
-                                            <Link
-                                              key={sub.id}
-                                              href={catalogSubcategoryUrl(
-                                                cat,
-                                                sub,
-                                              )}
-                                              onClick={() =>
-                                                setMobileNavOpen(false)
-                                              }
-                                              className={cn(
-                                                "block rounded-lg px-3 py-2 transition hover:bg-muted",
-                                                mobileNavCatalogRowClass,
-                                              )}
-                                            >
-                                              {localizeName(sub)}
-                                            </Link>
-                                          ))}
-                                        </div>
-                                      </details>
+                                        {cat.subcategories.map((sub) => (
+                                          <Link
+                                            key={sub.id}
+                                            href={catalogSubcategoryUrl(
+                                              cat,
+                                              sub,
+                                            )}
+                                            onClick={() =>
+                                              setMobileNavOpen(false)
+                                            }
+                                            className={cn(
+                                              "block rounded-lg px-3 py-2 transition hover:bg-muted",
+                                              mobileNavCatalogRowClass,
+                                            )}
+                                          >
+                                            {localizeName(sub)}
+                                          </Link>
+                                        ))}
+                                      </MobileNavSplitRow>
                                     ) : (
                                       <Link
                                         key={cat.id}
@@ -2161,7 +2215,7 @@ export function SiteHeader({ user }: Props) {
                                           mobileNavCatalogHeadingClass,
                                         )}
                                       >
-                                        {localizeName(cat)}
+                                        {catLabel}
                                       </Link>
                                     );
                                   },

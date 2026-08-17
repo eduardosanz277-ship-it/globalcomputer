@@ -229,11 +229,10 @@ export function StoreCartLineItems({
   const showSkeleton = loading || mutationPending || Boolean(summaryPending);
 
   if (showSkeleton) {
-    const skeletonCount = Math.max(items.length, 2);
     return (
       <>
-        {Array.from({ length: skeletonCount }, (_, i) => (
-          <CartLineSkeleton key={i} dense={dense} />
+        {items.map((item) => (
+          <CartLineSkeleton key={item.productId} dense={dense} />
         ))}
       </>
     );

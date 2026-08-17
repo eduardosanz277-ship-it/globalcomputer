@@ -1,4 +1,10 @@
 import Stripe from "stripe";
+import {
+  parseAppLocale,
+  recognizedAppLocale,
+  resolveAppLocale,
+} from "@/lib/i18n/parse-locale";
+import type { Locale } from "@/components/i18n/translations";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import { getPublicSiteOffer } from "@/lib/site-offer.server";
@@ -22,6 +28,10 @@ import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-order-confirmation-email.service";
 import { maybeSendManualQuoteRequestEmail } from "@/modules/commerce/store-manual-quote-email.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
+import {
+  canStripePromoteToConfirmed,
+  resolveStatusAfterStripePayment,
+} from "@/modules/commerce/store-order-status-rules";
 
 export type SiteOrderStatus =
   | "pending"
@@ -43,6 +53,7 @@ export type CreateSiteOrderInput = {
   email?: string;
   items: SiteOrderItemInput[];
   stripeSessionId?: string;
+  locale?: string | null;
 };
 
 export type SiteOrderRow = {
@@ -75,7 +86,7 @@ export class SiteOrderError extends Error {
 const MINIMUM_ITEM_COUNT = 1;
 
 const SITE_ORDER_SELECT =
-  "id, order_number, customer_name, customer_email, status, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_payment_intent";
+  "id, order_number, customer_name, customer_email, status, locale, total_amount, created_at, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_payment_intent";
 
 type OrderPricingBreakdown = {
   amount_discount: number;
@@ -90,6 +101,99 @@ function getStripeServer(): Stripe {
     throw new SiteOrderError("Pago no configurado (falta STRIPE_SECRET_KEY).", 503);
   }
   return new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
+}
+
+async function promotePendingOrderToConfirmed(input: {
+  supabase: ReturnType<typeof createSupabaseAdminClient>;
+  orderId: string;
+  previousStatus: SiteOrderStatus | null;
+  note: string;
+}): Promise<boolean> {
+  if (!canStripePromoteToConfirmed(input.previousStatus)) {
+    return false;
+  }
+
+  const { data: promoted, error } = await input.supabase
+    .from("store_orders")
+    .update({ status: "confirmed" })
+    .eq("id", input.orderId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    console.warn("[store-orders] no se pudo confirmar pedido Stripe", error);
+    return false;
+  }
+  if (!promoted?.id) return false;
+
+  await recordStoreOrderStatusChange({
+    orderId: input.orderId,
+    status: "confirmed",
+    previousStatus: input.previousStatus,
+    note: input.note,
+    supabase: input.supabase,
+  });
+  return true;
+}
+
+async function persistStripeCheckoutConfirmedStatus(input: {
+  supabase: ReturnType<typeof createSupabaseAdminClient>;
+  orderId: string;
+  currentStatus: string | null | undefined;
+  extra?: Record<string, unknown>;
+}): Promise<SiteOrderStatus> {
+  const previousStatus =
+    (input.currentStatus as SiteOrderStatus | undefined) ?? null;
+  const resolved = resolveStatusAfterStripePayment(
+    previousStatus,
+  ) as SiteOrderStatus;
+
+  const extra = input.extra ?? {};
+  if (Object.keys(extra).length > 0) {
+    const { error } = await input.supabase
+      .from("store_orders")
+      .update(extra)
+      .eq("id", input.orderId);
+    if (error) {
+      console.warn("[store-orders] no se pudo alinear locale Stripe", error);
+    }
+  }
+
+  if (!canStripePromoteToConfirmed(previousStatus)) {
+    return resolved;
+  }
+
+  const promoted = await promotePendingOrderToConfirmed({
+    supabase: input.supabase,
+    orderId: input.orderId,
+    previousStatus,
+    note: "stripe_checkout",
+  });
+  return promoted ? "confirmed" : resolved;
+}
+
+/** Locale de la compra: metadata de Stripe Checkout > body > fallback. */
+async function resolveLocaleForStripeCheckout(
+  stripeSessionId: string | null | undefined,
+  fallbackLocale?: string | null,
+): Promise<{ locale: Locale; session: Stripe.Checkout.Session | null }> {
+  const sid = stripeSessionId?.trim();
+  if (!sid) {
+    return { locale: parseAppLocale(fallbackLocale), session: null };
+  }
+  try {
+    const session = await getStripeServer().checkout.sessions.retrieve(sid);
+    return {
+      locale: resolveAppLocale(
+        session.metadata?.locale,
+        fallbackLocale,
+      ),
+      session,
+    };
+  } catch (err) {
+    console.warn("[store-orders] no se pudo leer locale de Stripe", err);
+    return { locale: parseAppLocale(fallbackLocale), session: null };
+  }
 }
 
 function isUuid(value: string): boolean {
@@ -226,10 +330,6 @@ export async function getStoreOrderNumberByStripeSessionId(
 export async function createSiteOrder(
   payload: CreateSiteOrderInput,
 ): Promise<SiteOrderRow> {
-  if (payload.items.length < MINIMUM_ITEM_COUNT) {
-    throw new SiteOrderError("El carrito debe tener al menos un producto.");
-  }
-
   const user = await getCurrentUserService();
   const supabase = createSupabaseAdminClient();
 
@@ -240,9 +340,27 @@ export async function createSiteOrder(
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (existing) {
-      return mapSiteOrderRow(existing);
+      const { locale } = await resolveLocaleForStripeCheckout(
+        payload.stripeSessionId,
+        payload.locale,
+      );
+      const existingLocale = parseAppLocale(
+        (existing as { locale?: string | null }).locale,
+      );
+      const nextStatus = await persistStripeCheckoutConfirmedStatus({
+        supabase,
+        orderId: existing.id,
+        currentStatus: existing.status,
+        extra: locale !== existingLocale ? { locale } : undefined,
+      });
+      return mapSiteOrderRow({ ...existing, status: nextStatus, locale });
     }
   }
+
+  if (payload.items.length < MINIMUM_ITEM_COUNT) {
+    throw new SiteOrderError("El carrito debe tener al menos un producto.");
+  }
+
   const tier = resolveStorefrontPriceTier(user?.role);
 
   const productIds = [...new Set(payload.items.map((item) => item.productId))];
@@ -296,6 +414,10 @@ export async function createSiteOrder(
     payload.name?.trim() || user?.fullName?.trim() || "Cliente";
   const customerEmail =
     payload.email?.trim() || user?.email?.trim() || "cliente@globalcomputer.com";
+  const { locale } = await resolveLocaleForStripeCheckout(
+    payload.stripeSessionId,
+    payload.locale,
+  );
 
   const { data: order, error: orderError } = await supabase
     .from("store_orders")
@@ -305,6 +427,7 @@ export async function createSiteOrder(
       customer_email: customerEmail,
       stripe_session_id: payload.stripeSessionId ?? null,
       status: "confirmed",
+      locale,
       total_amount: Number(totalAmount.toFixed(2)),
       amount_subtotal: Number(totalAmount.toFixed(2)),
       amount_tax: 0,
@@ -327,7 +450,17 @@ export async function createSiteOrder(
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (dup) {
-      return mapSiteOrderRow(dup);
+      const { locale } = await resolveLocaleForStripeCheckout(
+        payload.stripeSessionId,
+        payload.locale,
+      );
+      const nextStatus = await persistStripeCheckoutConfirmedStatus({
+        supabase,
+        orderId: dup.id,
+        currentStatus: dup.status,
+        extra: { locale },
+      });
+      return mapSiteOrderRow({ ...dup, status: nextStatus, locale });
     }
   }
 
@@ -357,13 +490,6 @@ export async function createSiteOrder(
     .insert(orderItems);
   if (itemsError) {
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
-  }
-
-  if (payload.stripeSessionId?.trim()) {
-    await maybeSendStoreOrderConfirmationEmail({
-      orderId: order.id,
-      supabase,
-    });
   }
 
   return mapSiteOrderRow(order);
@@ -414,7 +540,7 @@ export async function createManualQuoteOrder(
 
   const user = await getCurrentUserService();
   const tier = resolveStorefrontPriceTier(user?.role);
-  const locale = payload.locale === "en" ? "en" : "es";
+  const locale = parseAppLocale(payload.locale);
 
   const productIds = [...new Set(payload.items.map((item) => item.productId))];
   const [products, offer, settings] = await Promise.all([
@@ -495,6 +621,7 @@ export async function createManualQuoteOrder(
       customer_email: customerEmail,
       stripe_session_id: null,
       status: "pending",
+      locale,
       total_amount: merchandiseTotal,
       amount_subtotal: subtotal,
       amount_tax: 0,
@@ -681,13 +808,18 @@ function productIdFromStripeLineItem(line: Stripe.LineItem): string | null {
 async function ensureStoreOrderForCheckoutSession(
   sessionId: string,
   supabase: ReturnType<typeof createSupabaseAdminClient>,
-): Promise<string> {
+): Promise<{ id: string; status: SiteOrderStatus }> {
   const { data: existing } = await supabase
     .from("store_orders")
-    .select("id")
+    .select("id, status")
     .eq("stripe_session_id", sessionId)
     .maybeSingle();
-  if (existing?.id) return existing.id;
+  if (existing?.id) {
+    return {
+      id: existing.id,
+      status: (existing.status as SiteOrderStatus) ?? "confirmed",
+    };
+  }
 
   const stripe = getStripeServer();
   const full = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -767,6 +899,7 @@ async function ensureStoreOrderForCheckoutSession(
         : null;
 
   const pricing = breakdownFromStripeMetadata(full.metadata);
+  const locale = resolveAppLocale(full.metadata?.locale, full.locale);
 
   const insertOrder = {
     user_id: userId,
@@ -774,6 +907,7 @@ async function ensureStoreOrderForCheckoutSession(
     customer_email: customerEmail,
     stripe_session_id: full.id,
     status: "confirmed" as SiteOrderStatus,
+    locale,
     total_amount: centsToMoney(full.amount_total),
     amount_subtotal: centsToMoney(full.amount_subtotal),
     amount_tax: centsToMoney(full.total_details?.amount_tax),
@@ -790,16 +924,21 @@ async function ensureStoreOrderForCheckoutSession(
   const { data: inserted, error: orderErr } = await supabase
     .from("store_orders")
     .insert(insertOrder)
-    .select("id")
+    .select("id, status")
     .maybeSingle();
 
   if (orderErr?.code === "23505") {
     const { data: dup } = await supabase
       .from("store_orders")
-      .select("id")
+      .select("id, status")
       .eq("stripe_session_id", sessionId)
       .maybeSingle();
-    if (dup?.id) return dup.id;
+    if (dup?.id) {
+      return {
+        id: dup.id,
+        status: (dup.status as SiteOrderStatus) ?? "confirmed",
+      };
+    }
   }
 
   if (orderErr || !inserted?.id) {
@@ -831,15 +970,10 @@ async function ensureStoreOrderForCheckoutSession(
     throw itemsErr;
   }
 
-  if (full.payment_status === "paid") {
-    await maybeSendStoreOrderConfirmationEmail({
-      orderId,
-      session: full,
-      supabase,
-    });
-  }
-
-  return orderId;
+  return {
+    id: orderId,
+    status: "confirmed",
+  };
 }
 
 export async function syncOrderWithStripeSession(
@@ -855,64 +989,90 @@ export async function syncOrderWithStripeSession(
     .maybeSingle();
 
   if (!order?.id) {
-    const id = await ensureStoreOrderForCheckoutSession(session.id, supabase);
-    order = { id, status: "confirmed" };
+    order = await ensureStoreOrderForCheckoutSession(session.id, supabase);
   }
+
+  const { data: seenEvent } = await supabase
+    .from("store_order_webhook_events")
+    .select("id")
+    .eq("store_order_id", order.id)
+    .eq("stripe_event_id", eventId)
+    .maybeSingle();
 
   const pricing = breakdownFromStripeMetadata(session.metadata);
-  const nextStatus: SiteOrderStatus =
-    session.payment_status === "paid" ? "processing" : "confirmed";
   const previousStatus = (order.status as SiteOrderStatus | undefined) ?? null;
 
-  const updates = {
-    amount_subtotal: centsToMoney(session.amount_subtotal),
-    amount_tax: centsToMoney(session.total_details?.amount_tax),
-    amount_shipping: centsToMoney(session.total_details?.amount_shipping),
-    amount_discount: pricing.amount_discount,
-    amount_shipping_base: pricing.amount_shipping_base,
-    amount_shipping_surcharge: pricing.amount_shipping_surcharge,
-    shipping_method: pricing.shipping_method,
-    stripe_amount_total: centsToMoney(session.amount_total),
-    stripe_payment_status: session.payment_status ?? null,
-    stripe_payment_intent:
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent && typeof session.payment_intent === "object"
-          ? session.payment_intent.id
-          : null,
-    status: nextStatus,
-  };
+  const checkoutLocale =
+    recognizedAppLocale(session.metadata?.locale) ??
+    recognizedAppLocale(session.locale);
+  console.info("[store-orders] webhook syncOrderWithStripeSession", {
+    sessionId: session.id,
+    paymentStatus: session.payment_status,
+    metadataLocale: session.metadata?.locale ?? null,
+    sessionLocale: session.locale ?? null,
+    resolvedLocale: checkoutLocale,
+    previousStatus,
+    duplicateEvent: Boolean(seenEvent?.id),
+  });
 
-  const { error: upErr } = await supabase
-    .from("store_orders")
-    .update(updates)
-    .eq("id", order.id);
-  if (upErr) {
-    console.error("[store-orders] actualizar tras webhook", upErr);
-    throw upErr;
+  if (!seenEvent?.id) {
+    const updates: Record<string, unknown> = {
+      amount_subtotal: centsToMoney(session.amount_subtotal),
+      amount_tax: centsToMoney(session.total_details?.amount_tax),
+      amount_shipping: centsToMoney(session.total_details?.amount_shipping),
+      amount_discount: pricing.amount_discount,
+      amount_shipping_base: pricing.amount_shipping_base,
+      amount_shipping_surcharge: pricing.amount_shipping_surcharge,
+      shipping_method: pricing.shipping_method,
+      stripe_amount_total: centsToMoney(session.amount_total),
+      stripe_payment_status: session.payment_status ?? null,
+      stripe_payment_intent:
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent && typeof session.payment_intent === "object"
+            ? session.payment_intent.id
+            : null,
+      ...(checkoutLocale ? { locale: checkoutLocale } : {}),
+    };
+
+    const { error: upErr } = await supabase
+      .from("store_orders")
+      .update(updates)
+      .eq("id", order.id);
+    if (upErr) {
+      console.error("[store-orders] actualizar tras webhook", upErr);
+      throw upErr;
+    }
+
+    if (session.payment_status === "paid") {
+      await promotePendingOrderToConfirmed({
+        supabase,
+        orderId: order.id,
+        previousStatus,
+        note: "stripe_webhook",
+      });
+    }
+
+    const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(
+      {
+        store_order_id: order.id,
+        stripe_event_id: eventId,
+        event_type: eventType,
+        payload: session as unknown as Record<string, unknown>,
+      },
+      { onConflict: "store_order_id,stripe_event_id" },
+    );
+    if (evErr) {
+      console.error("[store-orders] webhook event", evErr);
+      throw evErr;
+    }
   }
 
-  if (previousStatus !== nextStatus) {
-    await recordStoreOrderStatusChange({
+  if (session.payment_status === "paid") {
+    await maybeSendStoreOrderConfirmationEmail({
       orderId: order.id,
-      status: nextStatus,
-      previousStatus,
-      note: "stripe_webhook",
+      session,
       supabase,
     });
-  }
-
-  const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(
-    {
-      store_order_id: order.id,
-      stripe_event_id: eventId,
-      event_type: eventType,
-      payload: session as unknown as Record<string, unknown>,
-    },
-    { onConflict: "store_order_id,stripe_event_id" },
-  );
-  if (evErr) {
-    console.error("[store-orders] webhook event", evErr);
-    throw evErr;
   }
 }

@@ -1,4 +1,5 @@
 import { getAppBaseUrl } from "@/lib/app-url";
+import { resolveAppLocale } from "@/lib/i18n/parse-locale";
 import { sendManualQuoteRequestEmail } from "@/lib/email/sendManualQuoteRequestEmail";
 import type { OrderConfirmationLineItem } from "@/lib/email/templates/orderConfirmationTemplate";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
@@ -64,17 +65,16 @@ function shippingLinesFromDb(row: {
  */
 export async function maybeSendManualQuoteRequestEmail(input: {
   orderId: string;
-  locale?: "es" | "en";
+  locale?: "es" | "en" | string | null;
   supabase?: SupabaseAdmin;
 }): Promise<{ sent: boolean }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
-  const locale = input.locale === "en" ? "en" : "es";
   const appUrl = getAppBaseUrl();
 
   const { data: order, error } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, customer_name, customer_email, status, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
+      "id, order_number, customer_name, customer_email, status, locale, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("id", input.orderId)
     .maybeSingle();
@@ -87,6 +87,9 @@ export async function maybeSendManualQuoteRequestEmail(input: {
   if (order.status !== "pending" || order.shipping_method !== "manual") {
     return { sent: false };
   }
+
+  // Prioridad: locale del request (UI) > fila en BD.
+  const locale = resolveAppLocale(input.locale, order.locale);
 
   const email = String(order.customer_email ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) {

@@ -6,6 +6,9 @@
 const PRODUCT_DETAIL_SLUG_RE =
   /^\/products\/(?!featured$)[^/]+\/?$/;
 
+/** Listado general de catálogo (fallback de “Volver” sin historial interno). */
+export const STOREFRONT_CATALOG_PATH = "/products";
+
 export function normalizeStorefrontFromPath(
   raw: string | null | undefined,
 ): string | null {
@@ -39,6 +42,26 @@ export function isStorefrontListingPath(pathname: string): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Hay una entrada previa en el historial de Next.js (navegación interna).
+ * `idx === 0` incluye aterrizaje desde Google u otra pestaña: `back()` saldría del sitio.
+ */
+export function canGoBackInternally(): boolean {
+  if (typeof window === "undefined") return false;
+  const idx = window.history.state?.idx;
+  if (typeof idx === "number") return idx > 0;
+
+  try {
+    const referrer = document.referrer;
+    if (!referrer) return false;
+    const url = new URL(referrer);
+    if (url.origin !== window.location.origin) return false;
+    return window.history.length > 1;
+  } catch {
+    return false;
+  }
 }
 
 export function buildStorefrontProductHref(

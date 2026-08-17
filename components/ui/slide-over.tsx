@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "./button";
+import { isGcSelectMenuEvent } from "@/components/ui/form-fields";
 
 export type SlideOverProps = {
   open: boolean;
@@ -84,6 +85,15 @@ export function SlideOver({
             "focus:outline-none",
             panelClassName,
           )}
+          onPointerDownOutside={(event) => {
+            if (isGcSelectMenuEvent(event)) event.preventDefault();
+          }}
+          onFocusOutside={(event) => {
+            if (isGcSelectMenuEvent(event)) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (isGcSelectMenuEvent(event)) event.preventDefault();
+          }}
         >
           <header className="relative shrink-0 border-b border-border/70 bg-background px-4 py-4">
             <DialogPrimitive.Close asChild>
@@ -114,7 +124,7 @@ export function SlideOver({
 
           <div
             className={cn(
-              "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4",
+              "relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4",
               "overscroll-y-contain",
               contentClassName,
             )}
@@ -125,7 +135,7 @@ export function SlideOver({
           </div>
 
           {footer ? (
-            <div className="shrink-0 border-t border-border/70 bg-muted/5">
+            <div className="relative z-10 shrink-0 border-t border-border/70 bg-muted/5">
               {footer}
             </div>
           ) : null}

@@ -172,21 +172,31 @@ export function renderManualQuoteRequestEmailTemplate(
     <div style="font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7280;margin-bottom:10px;">${escapeHtml(t.shippingTitle)}</div>
     <div style="margin-bottom:22px;">${renderAddress(input.shippingAddressLines)}</div>
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;margin-bottom:24px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#e8f1fb" style="background:#e8f1fb;background-color:#e8f1fb;border:1px solid #b7d2f0;border-radius:10px;margin-bottom:24px;">
       <tr>
-        <td style="padding:16px 18px;">
-          <div style="font-size:14px;font-weight:700;color:#c2410c;margin-bottom:6px;">${escapeHtml(t.nextStepsTitle)}</div>
+        <td style="padding:16px 18px;background:#e8f1fb;background-color:#e8f1fb;">
+          <div style="font-size:14px;font-weight:700;color:#357fd2;margin-bottom:6px;">${escapeHtml(t.nextStepsTitle)}</div>
           <div style="font-size:14px;line-height:1.6;color:#374151;">${escapeHtml(t.nextStepsBody)}</div>
         </td>
       </tr>
     </table>
 
-    <div style="text-align:center;">
-      <a href="${escapeHtml(input.orderLookupUrl)}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">${escapeHtml(t.ctaPrimary)}</a>
-      <div style="margin-top:14px;">
-        <a href="${escapeHtml(input.profileOrdersUrl)}" style="font-size:14px;color:#2563eb;text-decoration:none;font-weight:600;">${escapeHtml(t.ctaSecondary)}</a>
-      </div>
-    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellspacing="0" cellpadding="0">
+            <tr>
+              <td align="center" bgcolor="#357fd2" style="border-radius:8px;background:#357fd2;background-color:#357fd2;">
+                <a href="${escapeHtml(input.orderLookupUrl)}" style="display:inline-block;background:#357fd2;background-color:#357fd2;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">${escapeHtml(t.ctaPrimary)}</a>
+              </td>
+            </tr>
+          </table>
+          <div style="margin-top:14px;">
+            <a href="${escapeHtml(input.profileOrdersUrl)}" style="font-size:14px;color:#357fd2;text-decoration:none;font-weight:600;"><span style="color:#357fd2;">${escapeHtml(t.ctaSecondary)}</span></a>
+          </div>
+        </td>
+      </tr>
+    </table>
   `;
 
   return wrapBrandedEmail({

@@ -65,6 +65,20 @@ export function FormSwitchField<TFieldValues extends FieldValues>({
 
 export type SelectOption<T extends string = string> = { value: T; label: string };
 
+export const GC_SELECT_CLASS_PREFIX = "gc-select";
+
+/** Clics en el menú de react-select (p. ej. portaleado al body dentro de un Dialog). */
+export function isGcSelectMenuEvent(event: {
+  target: EventTarget | null;
+}): boolean {
+  const el = event.target;
+  if (!(el instanceof Element)) return false;
+  return Boolean(
+    el.closest(`.${GC_SELECT_CLASS_PREFIX}__menu`) ||
+      el.closest(`.${GC_SELECT_CLASS_PREFIX}__menu-portal`),
+  );
+}
+
 type FormSelectFieldProps<TFieldValues extends FieldValues> = {
   name: Path<TFieldValues>;
   label: string;
@@ -78,10 +92,10 @@ type FormSelectFieldProps<TFieldValues extends FieldValues> = {
   /** Búsqueda en el desplegable (filtra opciones al escribir). */
   isSearchable?: boolean;
   /**
-   * Usa `position: fixed` para el menú, permitiendo que salga de contenedores
-   * con overflow (p. ej. el área scrollable de un slide-over o modal).
-   * El menú permanece en el árbol DOM del componente, por lo que Radix Dialog
-   * no bloquea sus eventos de puntero.
+   * Porta el menú a `document.body` con `position: fixed` para que no lo recorte
+   * un contenedor con overflow (slide-over / modal). Hay que ignorar esos clics
+   * en Radix (`isGcSelectMenuEvent`) y forzar `pointer-events: auto` porque el
+   * Dialog modal pone `pointer-events: none` en el body.
    */
   useMenuPortal?: boolean;
   /** Tras cambiar la opción (p. ej. limpiar otro campo dependiente). */
@@ -92,11 +106,18 @@ const fixedMenuStyles: typeof appSelectStyles = {
   ...appSelectStyles,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   menu: (base: any, state: any) => {
-    const base2 = typeof appSelectStyles.menu === "function"
-      ? appSelectStyles.menu(base, state)
-      : base;
-    return { ...base2, zIndex: 9999 };
+    const base2 =
+      typeof appSelectStyles.menu === "function"
+        ? appSelectStyles.menu(base, state)
+        : base;
+    return { ...base2, zIndex: 400 };
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  menuPortal: (base: any) => ({
+    ...base,
+    zIndex: 400,
+    pointerEvents: "auto",
+  }),
 };
 
 export function FormSelectField<TFieldValues extends FieldValues>({
@@ -134,6 +155,7 @@ export function FormSelectField<TFieldValues extends FieldValues>({
             <Select<SelectOption, false>
               instanceId={instanceId}
               inputId={`${instanceId}-input`}
+              classNamePrefix={GC_SELECT_CLASS_PREFIX}
               options={options}
               value={value}
               onChange={(opt) => {
@@ -146,9 +168,15 @@ export function FormSelectField<TFieldValues extends FieldValues>({
               isDisabled={isDisabled}
               isClearable={false}
               isSearchable={isSearchable}
+              menuPortalTarget={
+                useMenuPortal && typeof document !== "undefined"
+                  ? document.body
+                  : undefined
+              }
               menuPosition={useMenuPortal ? "fixed" : undefined}
-              menuPlacement={useMenuPortal ? "auto" : undefined}
-              maxMenuHeight={useMenuPortal ? 220 : undefined}
+              menuPlacement="auto"
+              menuShouldScrollIntoView={false}
+              maxMenuHeight={useMenuPortal ? 220 : 180}
               noOptionsMessage={() => "Sin coincidencias"}
               styles={useMenuPortal ? fixedMenuStyles : appSelectStyles}
               className={cn("w-full", isDisabled && "opacity-60")}

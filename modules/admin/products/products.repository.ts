@@ -347,11 +347,12 @@ export async function repoGetProductStockSnapshot(id: string): Promise<{
   name: string;
   sku: string;
   stock: number;
+  manualPdfUrl: string | null;
 } | null> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, sku, stock")
+    .select("id, name, sku, stock, manual_pdf_url")
     .eq("id", id)
     .maybeSingle();
 
@@ -363,8 +364,15 @@ export async function repoGetProductStockSnapshot(id: string): Promise<{
     name: string;
     sku: string;
     stock: number;
+    manual_pdf_url: string | null;
   };
-  return row;
+  return {
+    id: row.id,
+    name: row.name,
+    sku: row.sku,
+    stock: row.stock,
+    manualPdfUrl: row.manual_pdf_url,
+  };
 }
 
 export async function repoGetLastLowStockAlertAt(

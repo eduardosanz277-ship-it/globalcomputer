@@ -197,6 +197,7 @@ async function checkoutIdentityParams(
  */
 export async function createHostedCheckoutSession(
   items: GcCartItem[],
+  locale: "es" | "en" = "es",
 ): Promise<{ url: string }> {
   if (!items.length) {
     throw new CheckoutSessionError("El carrito está vacío.");
@@ -351,11 +352,14 @@ export async function createHostedCheckoutSession(
   const email = user?.email?.trim();
   const identity = await checkoutIdentityParams(stripe, user, email);
 
+  const checkoutLocale = locale === "en" ? "en" : "es";
+  console.info("[checkout] sesión Stripe", { locale: checkoutLocale });
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    locale: "es",
+    locale: checkoutLocale,
     line_items: lineItems,
-    success_url: `${base}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${base}/cart/success?session_id={CHECKOUT_SESSION_ID}&locale=${checkoutLocale}`,
     cancel_url: `${base}/cart`,
     client_reference_id: user?.id,
     ...identity,
@@ -369,6 +373,7 @@ export async function createHostedCheckoutSession(
     },
     metadata: {
       source: "storefront",
+      locale: checkoutLocale,
       site_offer_applied: siteOfferApplied ? "true" : "false",
       amount_discount: String(discountUsd),
       shipping_base: String(shippingQuote.baseRate),

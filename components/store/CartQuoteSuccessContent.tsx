@@ -26,14 +26,16 @@ export function CartQuoteSuccessContent({ isLoggedIn }: Props) {
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         {t("storefront.quoteSuccess.heading")}
       </h1>
-      <CartQuoteSuccessOrderNumber />
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {t("storefront.quoteSuccess.description")}{" "}
+      <p className="mt-3 text-base font-medium leading-relaxed text-foreground">
+        {t("storefront.quoteSuccess.description")}
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         {isLoggedIn
           ? t("storefront.quoteSuccess.loggedInHint")
           : t("storefront.quoteSuccess.guestHint")}
       </p>
-      <CartQuoteSuccessActions />
+      <CartQuoteSuccessOrderNumber />
+      <CartQuoteSuccessActions isLoggedIn={isLoggedIn} />
     </div>
   );
 }

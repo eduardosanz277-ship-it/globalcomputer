@@ -1,56 +1,34 @@
 "use client";
 
 import { computeCartSubtotal } from "@/components/store/cart-line-price";
-import {
-  ManualQuoteShippingAddressDialog,
-  type ManualQuoteShippingAddressValues,
-} from "@/components/store/ManualQuoteShippingAddressDialog";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { resolveClientLocale } from "@/lib/i18n/client-locale";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import type { PublicSiteOffer } from "@/lib/site-offer.types";
 import {
-  gcCartClear,
   gcCartTotalUnits,
   type GcCartItem,
 } from "@/lib/store-cart";
-import { redirectAfterManualQuoteSuccess, openWhatsAppWindowForUserGesture, closePreOpenedWhatsAppWindow } from "@/lib/manual-quote-success";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import type { ShippingQuote } from "@/modules/shipping/shipping.types";
 import { cn } from "@/utils/cn";
 import { Gift, Info, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "react-toastify";
 
-/** Skeleton de importe: mantiene layout estable mientras se actualizan precios (patrón ecommerce). */
-function CartAmountSkeleton({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  return (
-    <span
-      className={cn(
-        "inline-block animate-pulse rounded-md",
-        "bg-zinc-300/90 dark:bg-zinc-600/80",
-        size === "sm" && "h-3.5 w-14",
-        size === "md" && "h-4 w-16",
-        size === "lg" && "h-5 w-[4.75rem]",
-      )}
-      aria-hidden
-    />
-  );
-}
-
+/** Skeleton de importe: misma caja que el número para no cambiar la altura de la fila. */
 function CartAmountValue({
   pending,
-  size = "md",
   updatingLabel,
   children,
   className,
 }: {
   pending: boolean;
-  size?: "sm" | "md" | "lg";
   updatingLabel: string;
   children: ReactNode;
   className?: string;
@@ -58,20 +36,22 @@ function CartAmountValue({
   return (
     <span
       className={cn(
-        "inline-flex min-h-[1em] items-center justify-end",
+        "relative inline-flex items-center justify-end leading-none",
         className,
       )}
       aria-busy={pending || undefined}
       aria-live="polite"
     >
+      <span className={cn(pending && "invisible")}>{children}</span>
       {pending ? (
         <>
-          <CartAmountSkeleton size={size} />
+          <span
+            className="absolute inset-x-0 inset-y-[0.12em] animate-pulse rounded-sm bg-zinc-300/90 dark:bg-zinc-600/80"
+            aria-hidden
+          />
           <span className="sr-only">{updatingLabel}</span>
         </>
-      ) : (
-        children
-      )}
+      ) : null}
     </span>
   );
 }
@@ -96,11 +76,8 @@ export function StoreCartOrderSummary({
   onContinueShopping?: () => void;
   /** Notifica al padre para sincronizar skeleton del listado con los importes. */
   onUiPendingChange?: (pending: boolean) => void;
-  /**
-   * Si se define (p. ej. drawer), el padre abre el modal de dirección fuera del
-   * panel del carrito para que quede por encima y pueda ocultar el carrito.
-   */
-  onQuoteAddressRequest?: () => void;
+  /** Abre el panel de dirección de envío (página /cart o paso del drawer). */
+  onQuoteAddressRequest: () => void;
 }) {
   const { t, locale } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
@@ -108,10 +85,17 @@ export function StoreCartOrderSummary({
   const hasUnresolvedProducts = items.some(
     (line) => !productsById[line.productId],
   );
+  const hasSurchargeProducts = items.some((line) => {
+    const product = productsById[line.productId];
+    if (!product) return false;
+    return (
+      product.shipping_type === "non_standard" &&
+      Number(product.shipping_surcharge_per_unit) > 0
+    );
+  });
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteAddressOpen, setQuoteAddressOpen] = useState(false);
+  const checkoutLockRef = useRef(false);
   const [liveOffer, setLiveOffer] = useState<PublicSiteOffer | null>(null);
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(
     null,
@@ -142,6 +126,15 @@ export function StoreCartOrderSummary({
     };
   }, [variant, panelOpen]);
 
+  useLayoutEffect(() => {
+    if (variant === "drawer" && !panelOpen) return;
+    if (items.length === 0) {
+      setShippingLoading(false);
+      return;
+    }
+    setShippingLoading(true);
+  }, [items, hasUnresolvedProducts, variant, panelOpen, locale]);
+
   useEffect(() => {
     if (variant === "drawer" && !panelOpen) return;
     if (items.length === 0) {
@@ -152,12 +145,10 @@ export function StoreCartOrderSummary({
     /** Mantener skeleton de envío alineado mientras aún cargan los productos. */
     if (hasUnresolvedProducts) {
       setShippingQuote(null);
-      setShippingLoading(true);
       return;
     }
 
     let cancelled = false;
-    setShippingLoading(true);
     (async () => {
       try {
         const res = await fetch("/api/shop/shipping/quote", {
@@ -185,14 +176,21 @@ export function StoreCartOrderSummary({
   }, [items, hasUnresolvedProducts, variant, panelOpen, locale]);
 
   async function goToStripeCheckout() {
+    if (checkoutLockRef.current) return;
     if (items.length === 0 || hasUnresolvedProducts) return;
     if (shippingQuote?.requiresQuote) return;
+    checkoutLockRef.current = true;
     setCheckoutLoading(true);
+    const checkoutLocale = resolveClientLocale(locale);
+    console.info("[checkout] locale al pagar", {
+      reactLocale: locale,
+      resolvedLocale: checkoutLocale,
+    });
     try {
       const res = await fetch("/api/checkout/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, locale: checkoutLocale }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
@@ -206,19 +204,18 @@ export function StoreCartOrderSummary({
       }
       throw new Error(t("storefront.cart.toastCheckoutInvalidResponse"));
     } catch (e) {
+      checkoutLockRef.current = false;
+      setCheckoutLoading(false);
       const msg =
         e instanceof Error
           ? e.message
           : t("storefront.cart.toastCheckoutStartError");
       toast.error(msg);
-    } finally {
-      setCheckoutLoading(false);
     }
   }
 
   function openManualQuoteAddress() {
     if (
-      quoteLoading ||
       items.length === 0 ||
       hasUnresolvedProducts ||
       !shippingQuote?.requiresQuote ||
@@ -226,67 +223,7 @@ export function StoreCartOrderSummary({
     ) {
       return;
     }
-    if (onQuoteAddressRequest) {
-      onQuoteAddressRequest();
-      return;
-    }
-    setQuoteAddressOpen(true);
-  }
-
-  async function requestManualQuote(
-    shippingAddress: ManualQuoteShippingAddressValues,
-  ) {
-    if (
-      quoteLoading ||
-      items.length === 0 ||
-      hasUnresolvedProducts ||
-      !shippingQuote?.requiresQuote ||
-      !shippingQuote.whatsappUrl
-    ) {
-      return;
-    }
-    const whatsappWindow = openWhatsAppWindowForUserGesture(
-      t("storefront.cart.openingWhatsApp"),
-    );
-    setQuoteLoading(true);
-    try {
-      const res = await fetch("/api/site-orders/manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            qty: item.qty,
-          })),
-          locale,
-          shippingAddress,
-        }),
-      });
-      const data = (await res.json()) as {
-        whatsappUrl?: string;
-        order?: { order_number?: string };
-        error?: string;
-      };
-      if (!res.ok || !data.whatsappUrl) {
-        throw new Error(
-          data.error ?? t("storefront.cart.toastQuoteOrderError"),
-        );
-      }
-
-      await gcCartClear();
-      redirectAfterManualQuoteSuccess(data.whatsappUrl, {
-        preOpenedWindow: whatsappWindow,
-        orderNumber: data.order?.order_number,
-      });
-    } catch (e) {
-      closePreOpenedWhatsAppWindow(whatsappWindow);
-      const msg =
-        e instanceof Error
-          ? e.message
-          : t("storefront.cart.toastQuoteOrderError");
-      toast.error(msg);
-      setQuoteLoading(false);
-    }
+    onQuoteAddressRequest();
   }
 
   const requiresQuote = Boolean(shippingQuote?.requiresQuote);
@@ -295,7 +232,6 @@ export function StoreCartOrderSummary({
     items.length === 0 ||
     hasUnresolvedProducts ||
     checkoutLoading ||
-    quoteLoading ||
     shippingLoading ||
     requiresQuote ||
     shippingQuote?.status === "no_rate" ||
@@ -334,7 +270,7 @@ export function StoreCartOrderSummary({
   const pricesPending =
     items.length > 0 && (loading || shippingLoading || hasUnresolvedProducts);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onUiPendingChange?.(pricesPending);
   }, [pricesPending, onUiPendingChange]);
 
@@ -350,7 +286,6 @@ export function StoreCartOrderSummary({
     loading ||
     items.length === 0 ||
     hasUnresolvedProducts ||
-    quoteLoading ||
     pricesPending ||
     !shippingQuote?.whatsappUrl;
 
@@ -358,7 +293,11 @@ export function StoreCartOrderSummary({
     <Button
       type="button"
       size={variant === "page" ? "lg" : "default"}
-      className={cn("w-full rounded-xl", variant === "drawer" && "sm:flex-1")}
+      className={cn(
+        "w-full rounded-xl",
+        variant === "drawer" && "sm:flex-1",
+        variant === "page" && "md:flex-1 lg:h-10 lg:flex-none lg:w-full",
+      )}
       disabled={checkoutDisabled}
       onClick={goToStripeCheckout}
     >
@@ -381,21 +320,15 @@ export function StoreCartOrderSummary({
         className={cn(
           "w-full gap-2 rounded-xl",
           variant === "drawer" && "sm:flex-1",
+          variant === "page" && "md:flex-1 lg:h-10 lg:flex-none lg:w-full",
         )}
         disabled={quoteDisabled}
         onClick={openManualQuoteAddress}
       >
-        {quoteLoading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            {t("storefront.cart.requestShippingQuotePending")}
-          </>
-        ) : (
-          <>
-            <MessageCircle className="h-4 w-4" aria-hidden />
-            {t("storefront.cart.requestShippingQuote")}
-          </>
-        )}
+        <>
+          <MessageCircle className="h-4 w-4" aria-hidden />
+          {t("storefront.cart.requestShippingQuote")}
+        </>
       </Button>
     ) : (
       <Button type="button" className="w-full rounded-xl" disabled>
@@ -413,14 +346,6 @@ export function StoreCartOrderSummary({
         variant === "drawer" && "px-0",
       )}
     >
-      {!onQuoteAddressRequest ? (
-        <ManualQuoteShippingAddressDialog
-          open={quoteAddressOpen}
-          onOpenChange={setQuoteAddressOpen}
-          submitting={quoteLoading}
-          onSubmit={requestManualQuote}
-        />
-      ) : null}
       {hasOffer && !offerApplies ? (
         <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-sm font-medium text-emerald-800">
           <Gift
@@ -458,7 +383,6 @@ export function StoreCartOrderSummary({
           </span>
           <CartAmountValue
             pending={pricesPending}
-            size="md"
             updatingLabel={updatingLabel}
             className="text-base font-bold tabular-nums text-foreground"
           >
@@ -483,7 +407,6 @@ export function StoreCartOrderSummary({
             </span>
             <CartAmountValue
               pending={pricesPending}
-              size="sm"
               updatingLabel={updatingLabel}
               className="font-semibold tabular-nums"
             >
@@ -527,14 +450,14 @@ export function StoreCartOrderSummary({
               </span>
               <CartAmountValue
                 pending={pricesPending}
-                size="sm"
                 updatingLabel={updatingLabel}
                 className="font-semibold tabular-nums text-foreground"
               >
                 {formatUsd(shippingQuote?.baseRate ?? 0)}
               </CartAmountValue>
             </div>
-            {pricesPending || (shippingQuote?.surchargesTotal ?? 0) > 0 ? (
+            {hasSurchargeProducts &&
+            (pricesPending || (shippingQuote?.surchargesTotal ?? 0) > 0) ? (
               <div
                 className={cn(
                   "flex items-baseline justify-between gap-2",
@@ -547,7 +470,6 @@ export function StoreCartOrderSummary({
                 </span>
                 <CartAmountValue
                   pending={pricesPending}
-                  size="sm"
                   updatingLabel={updatingLabel}
                   className="font-semibold tabular-nums text-foreground"
                 >
@@ -567,7 +489,6 @@ export function StoreCartOrderSummary({
               </span>
               <CartAmountValue
                 pending={pricesPending}
-                size="sm"
                 updatingLabel={updatingLabel}
                 className="font-semibold tabular-nums text-foreground"
               >
@@ -588,7 +509,6 @@ export function StoreCartOrderSummary({
           </span>
           <CartAmountValue
             pending={pricesPending}
-            size="lg"
             updatingLabel={updatingLabel}
             className={cn(
               "font-semibold tabular-nums text-foreground",
@@ -609,23 +529,26 @@ export function StoreCartOrderSummary({
       {variant === "page" || (variant === "drawer" && items.length > 0) ? (
         <div
           className={cn(
-            "h-px w-full bg-border",
             variant === "drawer" && "-mx-4",
-            variant === "page" && "lg:-mx-6",
+            variant === "page" && "-mx-4 sm:-mx-6 lg:-mx-6",
           )}
-          role="separator"
-          aria-label={t("storefront.cart.sectionSeparatorAria")}
-        />
+        >
+          <div
+            className="h-px w-full bg-border"
+            role="separator"
+            aria-label={t("storefront.cart.sectionSeparatorAria")}
+          />
+        </div>
       ) : null}
 
       {variant === "page" ? (
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2 md:flex-row lg:flex-col">
           {requiresQuote ? quoteButton : payButton}
           <Link
             href="/products"
             className={cn(
-              buttonVariants({ variant: "outline" }),
-              "w-full rounded-xl",
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "w-full rounded-xl md:flex-1 lg:h-10 lg:flex-none lg:w-full",
             )}
           >
             {t("storefront.cart.continueShopping")}

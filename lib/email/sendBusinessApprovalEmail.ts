@@ -5,6 +5,38 @@ import {
   resolveEmailFrom,
 } from "@/lib/email/email-brand";
 import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
+import { parseAppLocale } from "@/lib/i18n/parse-locale";
+import type { Locale } from "@/components/i18n/translations";
+
+function copy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      subject: "Your business account has been approved",
+      bannerSubtitle: "Business account approved",
+      preheader: (brand: string) =>
+        `Your business account on ${brand} has been approved.`,
+      hello: "Hi,",
+      approvedHtml: (safeName: string) =>
+        `The registration request for <strong style="color:#0f172a;">${safeName}</strong> has been <strong style="color:#0f172a;">approved</strong>.`,
+      loginHint: (brand: string) =>
+        `You can now sign in to ${brand} with your email (magic link or code).`,
+      cta: "Sign in",
+    };
+  }
+
+  return {
+    subject: "Tu cuenta de empresa ha sido aprobada",
+    bannerSubtitle: "Cuenta de empresa aprobada",
+    preheader: (brand: string) =>
+      `Tu cuenta de empresa en ${brand} fue aprobada.`,
+    hello: "Hola,",
+    approvedHtml: (safeName: string) =>
+      `La solicitud de registro de <strong style="color:#0f172a;">${safeName}</strong> ha sido <strong style="color:#0f172a;">aprobada</strong>.`,
+    loginHint: (brand: string) =>
+      `Ya puedes iniciar sesión en ${brand} con tu correo (enlace mágico o código).`,
+    cta: "Iniciar sesión",
+  };
+}
 
 /**
  * Notifica por correo que la cuenta empresa fue aprobada.
@@ -13,6 +45,7 @@ import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
 export async function sendBusinessApprovalEmail(
   to: string,
   businessDisplayName: string,
+  localeInput?: Locale | string | null,
 ): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = resolveEmailFrom();
@@ -24,22 +57,22 @@ export async function sendBusinessApprovalEmail(
     return { sent: false };
   }
 
+  const locale = parseAppLocale(localeInput);
+  const t = copy(locale);
   const appUrl = getAppBaseUrl();
   const brand = EMAIL_BRAND_NAME;
   const safeName = escapeHtml(businessDisplayName.trim() || "tu negocio");
-  const subject = "Tu cuenta de empresa ha sido aprobada";
-  const bannerSubtitle = "Cuenta de empresa aprobada";
 
   const bodyHtml = `
-    <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#4b5563;">Hola,</p>
+    <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(t.hello)}</p>
     <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#4b5563;">
-      La solicitud de registro de <strong style="color:#0f172a;">${safeName}</strong> ha sido <strong style="color:#0f172a;">aprobada</strong>.
+      ${t.approvedHtml(safeName)}
     </p>
     <p style="margin:0 0 24px 0;font-size:15px;line-height:1.65;color:#4b5563;">
-      Ya puedes iniciar sesión en ${escapeHtml(brand)} con tu correo (enlace mágico o código).
+      ${escapeHtml(t.loginHint(brand))}
     </p>
     <div style="text-align:center;">
-      <a href="${escapeHtml(`${appUrl}/login`)}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">Iniciar sesión</a>
+      <a href="${escapeHtml(`${appUrl}/login`)}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">${escapeHtml(t.cta)}</a>
     </div>
   `;
 
@@ -52,12 +85,12 @@ export async function sendBusinessApprovalEmail(
     body: JSON.stringify({
       from,
       to: [to.trim().toLowerCase()],
-      subject,
+      subject: t.subject,
       html: wrapBrandedEmail({
-        locale: "es",
-        title: subject,
-        bannerSubtitle,
-        preheader: `Tu cuenta de empresa en ${brand} fue aprobada.`,
+        locale,
+        title: t.subject,
+        bannerSubtitle: t.bannerSubtitle,
+        preheader: t.preheader(brand),
         bodyHtml,
       }),
     }),

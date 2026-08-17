@@ -15,8 +15,10 @@ export type StorefrontProductDetail = {
   name_en: string | null;
   slug: string;
   description: string | null;
+  description_en: string | null;
   /** HTML enriquecido (mismo tratamiento que `description`). */
   specifications: string | null;
+  specifications_en: string | null;
   stock: number;
   price_client: number;
   price_business: number;
@@ -78,7 +80,9 @@ const DETAIL_SELECT = `
   name_en,
   slug,
   description,
+  description_en,
   specifications,
+  specifications_en,
   stock,
   price_client,
   price_business,
@@ -254,9 +258,17 @@ function mapDetailRow(row: Record<string, unknown>): StorefrontProductDetail {
       row.description != null && String(row.description).trim() !== ""
         ? String(row.description)
         : null,
+    description_en:
+      row.description_en != null && String(row.description_en).trim() !== ""
+        ? String(row.description_en)
+        : null,
     specifications:
       row.specifications != null && String(row.specifications).trim() !== ""
         ? String(row.specifications)
+        : null,
+    specifications_en:
+      row.specifications_en != null && String(row.specifications_en).trim() !== ""
+        ? String(row.specifications_en)
         : null,
     stock: Number(row.stock ?? 0),
     price_client: Number(row.price_client ?? 0),

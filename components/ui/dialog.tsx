@@ -4,6 +4,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { isGcSelectMenuEvent } from "@/components/ui/form-fields";
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -27,7 +28,7 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     overlayClassName?: string;
   }
->(({ className, children, overlayClassName, ...props }, ref) => (
+>(({ className, children, overlayClassName, onPointerDownOutside, onFocusOutside, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay className={overlayClassName} />
     <DialogPrimitive.Content
@@ -37,6 +38,27 @@ const DialogContent = React.forwardRef<
         "sm:rounded-lg",
         className
       )}
+      onPointerDownOutside={(event) => {
+        if (isGcSelectMenuEvent(event)) {
+          event.preventDefault();
+          return;
+        }
+        onPointerDownOutside?.(event);
+      }}
+      onFocusOutside={(event) => {
+        if (isGcSelectMenuEvent(event)) {
+          event.preventDefault();
+          return;
+        }
+        onFocusOutside?.(event);
+      }}
+      onInteractOutside={(event) => {
+        if (isGcSelectMenuEvent(event)) {
+          event.preventDefault();
+          return;
+        }
+        onInteractOutside?.(event);
+      }}
       {...props}
     >
       {children}

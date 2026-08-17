@@ -37,8 +37,15 @@ function readStoredOrderNumber(): string | null {
   }
 }
 
-/** CTAs de éxito de cotización: Seguir comprando + WhatsApp (si hay URL). */
-export function CartQuoteSuccessActions() {
+type Props = {
+  isLoggedIn: boolean;
+};
+
+const actionButtonClassName =
+  "w-full rounded-xl sm:w-auto sm:min-w-[12rem]";
+
+/** CTAs de éxito de cotización, mismo orden que la confirmación de pedido. */
+export function CartQuoteSuccessActions({ isLoggedIn }: Props) {
   const { t } = useI18n();
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -48,60 +55,49 @@ export function CartQuoteSuccessActions() {
     setOrderNumber(readStoredOrderNumber());
   }, []);
 
-  const hasWhatsApp = Boolean(whatsappUrl);
+  const viewOrderHref = isLoggedIn
+    ? "/profile?tab=orders"
+    : orderNumber
+      ? `/order-lookup?order=${encodeURIComponent(orderNumber)}`
+      : "/order-lookup";
 
   return (
-    <div className="space-y-4">
-      <div
-        className={cn(
-          "mx-auto flex w-full max-w-md flex-col gap-3",
-          hasWhatsApp
-            ? "sm:grid sm:grid-cols-2"
-            : "items-center sm:max-w-none",
-        )}
+    <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+      <Link
+        href={viewOrderHref}
+        className={cn(buttonVariants({ variant: "default" }), actionButtonClassName)}
       >
-        <Link
-          href="/products"
+        {t("storefront.cartSuccess.viewOrder")}
+      </Link>
+      {whatsappUrl ? (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => {
+            clearStoredWhatsAppUrl();
+          }}
           className={cn(
             buttonVariants({ variant: "default" }),
-            "rounded-xl",
-            hasWhatsApp ? "w-full" : "w-full sm:w-auto",
+            actionButtonClassName,
+            "inline-flex items-center justify-center gap-2",
+            "border-transparent bg-[#1ebe57] text-white hover:bg-[#25D366]",
+            "focus-visible:ring-[#25D366]/40",
           )}
         >
-          {t("storefront.cart.continueShopping")}
-        </Link>
-        {whatsappUrl ? (
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              clearStoredWhatsAppUrl();
-            }}
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "inline-flex w-full items-center justify-center gap-2 rounded-xl",
-              "border-transparent bg-[#1ebe57] text-white hover:bg-[#25D366]",
-              "focus-visible:ring-[#25D366]/40",
-            )}
-          >
-            <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
-            {t("storefront.quoteSuccess.openWhatsApp")}
-          </a>
-        ) : null}
-      </div>
-      <p className="text-center text-sm text-muted-foreground">
-        <Link
-          href={
-            orderNumber
-              ? `/order-lookup?order=${encodeURIComponent(orderNumber)}`
-              : "/order-lookup"
-          }
-          className="font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {orderNumber ? t("orderLookup.trackLink") : t("footer.trackOrder")}
-        </Link>
-      </p>
+          <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
+          {t("storefront.quoteSuccess.openWhatsApp")}
+        </a>
+      ) : null}
+      <Link
+        href="/products"
+        className={cn(
+          buttonVariants({ variant: "outline" }),
+          actionButtonClassName,
+        )}
+      >
+        {t("storefront.cart.continueShopping")}
+      </Link>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { recognizedAppLocale, resolveAppLocale } from "@/lib/i18n/parse-locale";
 import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmationEmail";
 import type { OrderConfirmationLineItem } from "@/lib/email/templates/orderConfirmationTemplate";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
@@ -104,33 +105,193 @@ function shippingLinesFromDb(row: {
   return lines;
 }
 
+async function releaseConfirmationEmailClaim(
+  supabase: SupabaseAdmin,
+  orderId: string,
+): Promise<void> {
+  const withLocale = await supabase
+    .from("store_orders")
+    .update({
+      confirmation_email_sent_at: null,
+      confirmation_email_locale: null,
+    })
+    .eq("id", orderId);
+  if (withLocale.error) {
+    const withoutLocale = await supabase
+      .from("store_orders")
+      .update({ confirmation_email_sent_at: null })
+      .eq("id", orderId);
+    if (withoutLocale.error) {
+      console.warn(
+        "[email] confirmación pedido: no se pudo liberar claim",
+        withoutLocale.error,
+      );
+    }
+  }
+}
+
+function isNoRowsReturned(error: { code?: string } | null): boolean {
+  return error?.code === "PGRST116";
+}
+
+async function claimConfirmationEmailSend(
+  supabase: SupabaseAdmin,
+  orderId: string,
+  locale: "es" | "en",
+): Promise<boolean> {
+  const rpc = await supabase.rpc("claim_store_order_confirmation_email", {
+    p_order_id: orderId,
+    p_locale: locale,
+  });
+  if (!rpc.error) {
+    return rpc.data === true;
+  }
+
+  console.warn(
+    "[email] confirmación pedido: RPC claim no disponible, fallback",
+    rpc.error.message,
+  );
+
+  const claimedAt = new Date().toISOString();
+  const claimed = await supabase
+    .from("store_orders")
+    .update({
+      locale,
+      confirmation_email_sent_at: claimedAt,
+      confirmation_email_locale: locale,
+    })
+    .eq("id", orderId)
+    .is("confirmation_email_sent_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (isNoRowsReturned(claimed.error)) {
+    return false;
+  }
+  if (!claimed.error) {
+    return Boolean(claimed.data?.id);
+  }
+
+  const fallback = await supabase
+    .from("store_orders")
+    .update({
+      locale,
+      confirmation_email_sent_at: claimedAt,
+    })
+    .eq("id", orderId)
+    .is("confirmation_email_sent_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (isNoRowsReturned(fallback.error) || fallback.error) {
+    if (fallback.error && !isNoRowsReturned(fallback.error)) {
+      console.warn(
+        "[email] confirmación pedido: no se pudo marcar envío",
+        fallback.error.message,
+      );
+    }
+    return false;
+  }
+
+  return Boolean(fallback.data?.id);
+}
+
 /**
- * Envía confirmación de compra cuando el pedido está en estado `confirmed` (pago confirmado).
- * No lanza error si falla el correo (no debe bloquear checkout ni webhook).
+ * Envía confirmación de compra cuando el pago está confirmado.
+ * Un solo correo por pedido (claim atómico + Idempotency-Key).
+ * Acepta `confirmed` (pago Stripe / confirmación admin) y `processing`.
  */
 export async function maybeSendStoreOrderConfirmationEmail(input: {
   orderId: string;
+  locale?: "es" | "en" | string | null;
   session?: Stripe.Checkout.Session;
   supabase?: SupabaseAdmin;
 }): Promise<{ sent: boolean }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
-  const locale: "es" | "en" = "es";
   const appUrl = getAppBaseUrl();
 
-  const { data: order, error } = await supabase
+  const orderSelectWithEmail =
+    "id, order_number, customer_name, customer_email, status, locale, confirmation_email_sent_at, confirmation_email_locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+  const orderSelectBase =
+    "id, order_number, customer_name, customer_email, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+
+  let { data: order, error } = await supabase
     .from("store_orders")
-    .select(
-      "id, order_number, customer_name, customer_email, status, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )",
-    )
+    .select(orderSelectWithEmail)
     .eq("id", input.orderId)
     .maybeSingle();
+
+  if (error) {
+    const fallback = await supabase
+      .from("store_orders")
+      .select(orderSelectBase)
+      .eq("id", input.orderId)
+      .maybeSingle();
+    order = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !order) {
     console.error("[email] confirmación pedido: no se pudo cargar pedido", error);
     return { sent: false };
   }
 
-  if (order.status !== "confirmed") {
+  if (order.status !== "confirmed" && order.status !== "processing") {
+    return { sent: false };
+  }
+
+  let stripeSession = input.session;
+  const hasCheckoutLocale = Boolean(
+    recognizedAppLocale(stripeSession?.metadata?.locale) ??
+      recognizedAppLocale(stripeSession?.locale),
+  );
+  if ((!stripeSession || !hasCheckoutLocale) && order.stripe_session_id?.trim()) {
+    try {
+      const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+      if (stripeKey) {
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" });
+        stripeSession = await stripe.checkout.sessions.retrieve(
+          order.stripe_session_id.trim(),
+        );
+      }
+    } catch (err) {
+      console.warn("[email] confirmación pedido: no se pudo cargar sesión Stripe", err);
+    }
+  }
+
+  // Stripe: metadata primero (locale que pusimos al crear la sesión),
+  // luego session.locale (campo nativo de Stripe, también lo ponemos nosotros),
+  // finalmente la fila de BD. Nunca session.locale sin más porque puede ser
+  // "auto" → null en recognizedAppLocale (no confundir con DEFAULT_LOCALE).
+  const locale = order.stripe_session_id
+    ? resolveAppLocale(
+        stripeSession?.metadata?.locale,
+        stripeSession?.locale,
+        order.locale,
+      )
+    : resolveAppLocale(input.locale, order.locale);
+
+  console.info("[email] confirmación pedido: locale candidatos", {
+    orderId: input.orderId,
+    isStripeOrder: Boolean(order.stripe_session_id),
+    metadataLocale: stripeSession?.metadata?.locale ?? null,
+    sessionLocale: stripeSession?.locale ?? null,
+    orderLocale: order.locale ?? null,
+    inputLocale: input.locale ?? null,
+    resolved: locale,
+  });
+
+  const alreadySentAt = (order as { confirmation_email_sent_at?: string | null })
+    .confirmation_email_sent_at;
+  if (alreadySentAt) {
+    console.info("[email] confirmación pedido: ya enviada, skip", {
+      orderId: input.orderId,
+      locale,
+      sentAt: alreadySentAt,
+      sentLocale: (order as { confirmation_email_locale?: string | null })
+        .confirmation_email_locale ?? null,
+    });
     return { sent: false };
   }
 
@@ -167,27 +328,28 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
         ? shippingLinesFromStripeSession(input.session)
         : [];
 
-  let stripeSession = input.session;
-  if (!stripeSession && order.stripe_session_id?.trim()) {
-    try {
-      const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
-      if (stripeKey) {
-        const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" });
-        stripeSession = await stripe.checkout.sessions.retrieve(
-          order.stripe_session_id.trim(),
-        );
-      }
-    } catch (err) {
-      console.warn("[email] confirmación pedido: no se pudo cargar sesión Stripe", err);
-    }
-  }
-
   if (shippingAddressLines.length === 0 && stripeSession) {
     shippingAddressLines = shippingLinesFromStripeSession(stripeSession);
   }
 
-  if (stripeSession && stripeSession.payment_status !== "paid") {
+  if (
+    order.stripe_session_id &&
+    stripeSession &&
+    stripeSession.payment_status !== "paid"
+  ) {
+    return { sent: false };
+  }
+
+  const claimedSend = await claimConfirmationEmailSend(
+    supabase,
+    input.orderId,
+    locale,
+  );
+  if (!claimedSend) {
+    console.info("[email] confirmación pedido: claim ocupado, skip", {
+      orderId: input.orderId,
+      locale,
+    });
     return { sent: false };
   }
 
@@ -195,32 +357,48 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
     String(order.order_number ?? "").trim() || String(order.id).slice(0, 8);
 
   try {
-    const result = await sendOrderConfirmationEmail(email, {
-      locale,
-      customerName: String(order.customer_name ?? "Cliente"),
-      orderNumber,
-      orderDate: formatOrderDate(String(order.created_at ?? ""), locale),
-      items,
-      amountSubtotal: parseMoney(order.amount_subtotal),
-      amountDiscount: parseMoney(order.amount_discount),
-      amountTax: parseMoney(order.amount_tax),
-      amountShipping: parseMoney(order.amount_shipping),
-      totalAmount: parseMoney(order.total_amount),
-      shippingAddressLines,
-      orderLookupUrl: `${appUrl}/order-lookup`,
-      profileOrdersUrl: `${appUrl}/profile?tab=orders`,
-    });
-
-    if (result.sent) {
-      console.info("[email] confirmación de pedido enviada", {
-        orderId: input.orderId,
+    const result = await sendOrderConfirmationEmail(
+      email,
+      {
+        locale,
+        customerName: String(order.customer_name ?? "Cliente"),
         orderNumber,
-        to: email,
-      });
+        orderDate: formatOrderDate(String(order.created_at ?? ""), locale),
+        items,
+        amountSubtotal: parseMoney(order.amount_subtotal),
+        amountDiscount: parseMoney(order.amount_discount),
+        amountTax: parseMoney(order.amount_tax),
+        amountShipping: parseMoney(order.amount_shipping),
+        totalAmount: parseMoney(order.total_amount),
+        shippingAddressLines,
+        orderLookupUrl: `${appUrl}/order-lookup`,
+        profileOrdersUrl: `${appUrl}/profile?tab=orders`,
+      },
+      {
+        // Un solo correo por pedido, no uno por idioma.
+        idempotencyKey: `order-confirmation-${input.orderId}`,
+      },
+    );
+
+    if (!result.sent) {
+      if (claimedSend) {
+        await releaseConfirmationEmailClaim(supabase, input.orderId);
+      }
+      return { sent: false };
     }
 
-    return result;
+    console.info("[email] confirmación de pedido enviada", {
+      orderId: input.orderId,
+      orderNumber,
+      locale,
+      to: email,
+    });
+
+    return { sent: true };
   } catch (err) {
+    if (claimedSend) {
+      await releaseConfirmationEmailClaim(supabase, input.orderId);
+    }
     console.error("[email] confirmación pedido: error inesperado", err);
     return { sent: false };
   }

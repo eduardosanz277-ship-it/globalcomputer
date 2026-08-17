@@ -38,7 +38,7 @@ export default async function CarritoPage() {
         id="cart-page-hero"
         className="border-b border-border/60 bg-card/40 transition-all duration-300"
       >
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:pt-6 md:pb-4 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:pt-6 lg:pb-4">
           <MarketingBreadcrumb
             items={[
               { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },

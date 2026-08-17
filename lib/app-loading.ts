@@ -46,3 +46,11 @@ export function appLoadingReset() {
 export function isAppLoadingActive() {
   return pendingCount > 0;
 }
+
+export const APP_NAVIGATION_START_EVENT = "gc:navigation-start";
+
+/** Arranca la barra superior en navegaciones programáticas (`router.push`). */
+export function appNavigationStart() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(APP_NAVIGATION_START_EVENT));
+}

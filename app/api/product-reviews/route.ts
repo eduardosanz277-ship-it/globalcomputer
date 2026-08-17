@@ -1,23 +1,26 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { productReviewFormSchema } from "@/modules/site/product-reviews.schema";
+import { createProductReviewFormSchema } from "@/modules/site/product-reviews.schema";
 import { createProductReview } from "@/modules/site/product-reviews.service";
+import { getServerLocale } from "@/lib/i18n/server-locale";
+import { translate } from "@/lib/i18n/get-translation";
 
 export async function POST(req: Request) {
+  const locale = await getServerLocale();
   let payload: unknown;
   try {
     payload = await req.json();
   } catch {
     return NextResponse.json(
-      { error: "El cuerpo de la solicitud debe ser JSON válido." },
+      { error: translate(locale, "storefront.productDetail.reviewApiInvalidJson") },
       { status: 400 },
     );
   }
 
-  const parseResult = productReviewFormSchema.safeParse(payload);
+  const parseResult = createProductReviewFormSchema(locale).safeParse(payload);
   if (!parseResult.success) {
     return NextResponse.json(
-      { error: "Datos no válidos para la reseña del producto." },
+      { error: translate(locale, "storefront.productDetail.reviewApiInvalidData") },
       { status: 400 },
     );
   }
@@ -26,7 +29,10 @@ export async function POST(req: Request) {
 
   try {
     await createProductReview(parseResult.data, user?.id ?? null);
-    return NextResponse.json({ message: "Reseña enviada." }, { status: 201 });
+    return NextResponse.json(
+      { message: translate(locale, "storefront.productDetail.reviewFormSuccess") },
+      { status: 201 },
+    );
   } catch (error) {
     const code =
       error && typeof error === "object" && "code" in error
@@ -36,8 +42,7 @@ export async function POST(req: Request) {
     if (code === "23505") {
       return NextResponse.json(
         {
-          error:
-            "Ya has publicado una reseña para este producto. Puedes actualizarla más adelante.",
+          error: translate(locale, "storefront.productDetail.reviewApiDuplicate"),
         },
         { status: 409 },
       );
@@ -45,7 +50,7 @@ export async function POST(req: Request) {
 
     console.error("product-reviews POST error:", error);
     return NextResponse.json(
-      { error: "No se pudo guardar la reseña." },
+      { error: translate(locale, "storefront.productDetail.reviewApiSaveError") },
       { status: 500 },
     );
   }

@@ -1,15 +1,8 @@
 "use client";
 
 import { Star } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
-
-const RATING_LABELS: Record<number, string> = {
-  1: "Pobre",
-  2: "Regular",
-  3: "Bueno",
-  4: "Muy bueno",
-  5: "Excelente",
-};
 
 export type RatingStarsInputProps = {
   id: string;
@@ -32,7 +25,15 @@ export function RatingStarsInput({
   disabled,
   className,
 }: RatingStarsInputProps) {
+  const { t } = useI18n();
   const safe = Math.min(5, Math.max(1, value || 1));
+  const ratingLabels: Record<number, string> = {
+    1: t("storefront.productDetail.ratingPoor"),
+    2: t("storefront.productDetail.ratingFair"),
+    3: t("storefront.productDetail.ratingGood"),
+    4: t("storefront.productDetail.ratingVeryGood"),
+    5: t("storefront.productDetail.ratingExcellent"),
+  };
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -68,7 +69,15 @@ export function RatingStarsInput({
                   ? "text-amber-500 dark:text-amber-400"
                   : "text-muted-foreground/35 hover:text-muted-foreground/55",
               )}
-              aria-label={`${n} ${n === 1 ? "estrella" : "estrellas"}: ${RATING_LABELS[n]}`}
+              aria-label={t("storefront.productDetail.ratingStarOptionAria")
+                .replace("{n}", String(n))
+                .replace(
+                  "{stars}",
+                  n === 1
+                    ? t("storefront.productDetail.ratingStarWordOne")
+                    : t("storefront.productDetail.ratingStarWord"),
+                )
+                .replace("{label}", ratingLabels[n])}
             >
               <Star
                 className={cn(
@@ -87,7 +96,7 @@ export function RatingStarsInput({
         className="text-sm text-muted-foreground"
         aria-live="polite"
       >
-        {RATING_LABELS[safe]}
+        {ratingLabels[safe]}
         <span className="tabular-nums text-foreground/80">
           {" "}
           · {safe}/5

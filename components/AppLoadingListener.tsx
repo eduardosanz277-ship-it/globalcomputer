@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  APP_NAVIGATION_START_EVENT,
   appLoadingDone,
   appLoadingStart,
   subscribeAppLoading,
@@ -31,6 +32,10 @@ function resolveSameOriginUrl(href: string): URL | null {
   }
 }
 
+function locationKey() {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
 /**
  * Barra superior solo para navegación entre páginas.
  * Formularios/API con loading en el botón no la disparan (evita feedback duplicado).
@@ -39,6 +44,8 @@ export function AppLoadingListener() {
   const pathname = usePathname();
   const navPendingRef = useRef(false);
   const navTimeoutRef = useRef<number | null>(null);
+  const locationPollRef = useRef<number | null>(null);
+  const startLocationRef = useRef("");
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [exiting, setExiting] = useState(false);
@@ -52,23 +59,37 @@ export function AppLoadingListener() {
     }
   };
 
-  const beginNavigation = () => {
-    if (navPendingRef.current) return;
-    navPendingRef.current = true;
-    appLoadingStart();
-    clearNavTimeout();
-    navTimeoutRef.current = window.setTimeout(() => {
-      if (!navPendingRef.current) return;
-      navPendingRef.current = false;
-      appLoadingDone();
-    }, NAV_TIMEOUT_MS);
+  const stopLocationPoll = () => {
+    if (locationPollRef.current != null) {
+      window.clearInterval(locationPollRef.current);
+      locationPollRef.current = null;
+    }
   };
 
   const endNavigation = () => {
     if (!navPendingRef.current) return;
     navPendingRef.current = false;
+    stopLocationPoll();
     clearNavTimeout();
     appLoadingDone();
+  };
+
+  const beginNavigation = () => {
+    if (navPendingRef.current) return;
+    navPendingRef.current = true;
+    startLocationRef.current = locationKey();
+    appLoadingStart();
+    clearNavTimeout();
+    stopLocationPoll();
+    locationPollRef.current = window.setInterval(() => {
+      if (locationKey() !== startLocationRef.current) {
+        endNavigation();
+      }
+    }, 50);
+    navTimeoutRef.current = window.setTimeout(() => {
+      if (!navPendingRef.current) return;
+      endNavigation();
+    }, NAV_TIMEOUT_MS);
   };
 
   useEffect(() => {
@@ -110,13 +131,17 @@ export function AppLoadingListener() {
     };
 
     const onPopState = () => beginNavigation();
+    const onProgrammaticNav = () => beginNavigation();
 
     document.addEventListener("click", onDocumentClick, true);
     window.addEventListener("popstate", onPopState);
+    window.addEventListener(APP_NAVIGATION_START_EVENT, onProgrammaticNav);
 
     return () => {
       document.removeEventListener("click", onDocumentClick, true);
       window.removeEventListener("popstate", onPopState);
+      window.removeEventListener(APP_NAVIGATION_START_EVENT, onProgrammaticNav);
+      stopLocationPoll();
       clearNavTimeout();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
