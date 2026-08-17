@@ -137,7 +137,10 @@ export default async function ProductoDetallePage({
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3">
-            <StorefrontProductBackLink className={inter.className} />
+            <StorefrontProductBackLink
+              className={inter.className}
+              fromPath={fromParam}
+            />
             <MarketingBreadcrumb
               className={inter.className}
               items={[
