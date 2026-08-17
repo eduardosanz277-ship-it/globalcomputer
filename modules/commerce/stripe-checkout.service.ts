@@ -374,6 +374,7 @@ export async function createHostedCheckoutSession(
     metadata: {
       source: "storefront",
       locale: checkoutLocale,
+      app_locale: checkoutLocale,
       site_offer_applied: siteOfferApplied ? "true" : "false",
       amount_discount: String(discountUsd),
       shipping_base: String(shippingQuote.baseRate),
