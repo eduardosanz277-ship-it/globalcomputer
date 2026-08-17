@@ -1,9 +1,13 @@
 import Stripe from "stripe";
 import {
-  parseAppLocale,
-  recognizedAppLocale,
-  resolveAppLocale,
-} from "@/lib/i18n/parse-locale";
+  localePatchForExistingOrder,
+  PLACEHOLDER_CUSTOMER_EMAIL,
+  recognizedEmailLocale,
+  resolveCheckoutOrderLocale,
+  stripeSessionCustomerEmail,
+  stripeSessionCustomerName,
+} from "@/lib/email/order-confirmation-locale";
+import { parseAppLocale } from "@/lib/i18n/parse-locale";
 import type { Locale } from "@/components/i18n/translations";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
@@ -103,6 +107,33 @@ function getStripeServer(): Stripe {
   return new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
 }
 
+async function maybeSendPaidStripeOrderConfirmation(input: {
+  orderId: string;
+  session: Stripe.Checkout.Session | null;
+  supabase: ReturnType<typeof createSupabaseAdminClient>;
+}): Promise<void> {
+  if (!input.session || input.session.payment_status !== "paid") {
+    console.info("[ORDER_CONFIRMATION_EMAIL]", {
+      orderId: input.orderId,
+      status: "skipped_unpaid_or_no_session",
+      paymentStatus: input.session?.payment_status ?? null,
+    });
+    return;
+  }
+  try {
+    await maybeSendStoreOrderConfirmationEmail({
+      orderId: input.orderId,
+      session: input.session,
+      supabase: input.supabase,
+    });
+  } catch (err) {
+    console.error("[ORDER_CONFIRMATION_EMAIL] envío tras checkout falló", {
+      orderId: input.orderId,
+      error: err instanceof Error ? err.message : "unknown",
+    });
+  }
+}
+
 async function promotePendingOrderToConfirmed(input: {
   supabase: ReturnType<typeof createSupabaseAdminClient>;
   orderId: string;
@@ -172,27 +203,34 @@ async function persistStripeCheckoutConfirmedStatus(input: {
   return promoted ? "confirmed" : resolved;
 }
 
-/** Locale de la compra: metadata de Stripe Checkout > body > fallback. */
+/** Locale de la compra: metadata de Checkout > body. Nunca session.locale ni default `es`. */
 async function resolveLocaleForStripeCheckout(
   stripeSessionId: string | null | undefined,
   fallbackLocale?: string | null,
 ): Promise<{ locale: Locale; session: Stripe.Checkout.Session | null }> {
   const sid = stripeSessionId?.trim();
   if (!sid) {
-    return { locale: parseAppLocale(fallbackLocale), session: null };
+    return { locale: resolveCheckoutOrderLocale(null, fallbackLocale), session: null };
   }
   try {
     const session = await getStripeServer().checkout.sessions.retrieve(sid);
-    return {
-      locale: resolveAppLocale(
-        session.metadata?.locale,
-        fallbackLocale,
-      ),
-      session,
-    };
+    const locale = resolveCheckoutOrderLocale(
+      session.metadata?.locale ?? session.metadata?.app_locale,
+      fallbackLocale,
+    );
+    console.info("[store-orders] locale Checkout", {
+      metadataLocale: session.metadata?.locale ?? null,
+      appLocale: session.metadata?.app_locale ?? null,
+      payloadLocale: fallbackLocale ?? null,
+      resolved: locale,
+    });
+    return { locale, session };
   } catch (err) {
     console.warn("[store-orders] no se pudo leer locale de Stripe", err);
-    return { locale: parseAppLocale(fallbackLocale), session: null };
+    return {
+      locale: resolveCheckoutOrderLocale(null, fallbackLocale),
+      session: null,
+    };
   }
 }
 
@@ -340,20 +378,41 @@ export async function createSiteOrder(
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (existing) {
-      const { locale } = await resolveLocaleForStripeCheckout(
+      const { locale, session } = await resolveLocaleForStripeCheckout(
         payload.stripeSessionId,
         payload.locale,
       );
-      const existingLocale = parseAppLocale(
+      const extra: Record<string, unknown> = {};
+      const localePatch = localePatchForExistingOrder(
         (existing as { locale?: string | null }).locale,
+        locale,
       );
+      if (localePatch) extra.locale = localePatch;
+
+      const stripeEmail = stripeSessionCustomerEmail(session);
+      const existingEmail = String(existing.customer_email ?? "")
+        .trim()
+        .toLowerCase();
+      if (stripeEmail && stripeEmail !== existingEmail) {
+        extra.customer_email = stripeEmail;
+      }
+      const stripeName = stripeSessionCustomerName(session);
+      if (stripeName && (!existing.customer_name || existing.customer_name === "Cliente")) {
+        extra.customer_name = stripeName;
+      }
+
       const nextStatus = await persistStripeCheckoutConfirmedStatus({
         supabase,
         orderId: existing.id,
         currentStatus: existing.status,
-        extra: locale !== existingLocale ? { locale } : undefined,
+        extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
-      return mapSiteOrderRow({ ...existing, status: nextStatus, locale });
+      await maybeSendPaidStripeOrderConfirmation({
+        orderId: existing.id,
+        session,
+        supabase,
+      });
+      return mapSiteOrderRow({ ...existing, status: nextStatus });
     }
   }
 
@@ -410,14 +469,22 @@ export async function createSiteOrder(
           ).toFixed(2),
         );
 
-  const customerName =
-    payload.name?.trim() || user?.fullName?.trim() || "Cliente";
-  const customerEmail =
-    payload.email?.trim() || user?.email?.trim() || "cliente@globalcomputer.com";
-  const { locale } = await resolveLocaleForStripeCheckout(
+  const { locale, session } = await resolveLocaleForStripeCheckout(
     payload.stripeSessionId,
     payload.locale,
   );
+  const stripeEmail = stripeSessionCustomerEmail(session);
+  const stripeName = stripeSessionCustomerName(session);
+  const customerName =
+    stripeName ||
+    payload.name?.trim() ||
+    user?.fullName?.trim() ||
+    "Cliente";
+  const customerEmail =
+    stripeEmail ||
+    payload.email?.trim().toLowerCase() ||
+    user?.email?.trim().toLowerCase() ||
+    PLACEHOLDER_CUSTOMER_EMAIL;
 
   const { data: order, error: orderError } = await supabase
     .from("store_orders")
@@ -437,7 +504,7 @@ export async function createSiteOrder(
       amount_shipping_surcharge: pricing.amount_shipping_surcharge,
       shipping_method: pricing.shipping_method,
       stripe_amount_total: Number(totalAmount.toFixed(2)),
-      stripe_payment_status: null,
+      stripe_payment_status: session?.payment_status ?? null,
       stripe_payment_intent: null,
     })
     .select(SITE_ORDER_SELECT)
@@ -450,17 +517,33 @@ export async function createSiteOrder(
       .eq("stripe_session_id", payload.stripeSessionId.trim())
       .maybeSingle();
     if (dup) {
-      const { locale } = await resolveLocaleForStripeCheckout(
+      const { locale, session } = await resolveLocaleForStripeCheckout(
         payload.stripeSessionId,
         payload.locale,
       );
+      const extra: Record<string, unknown> = {};
+      const localePatch = localePatchForExistingOrder(
+        (dup as { locale?: string | null }).locale,
+        locale,
+      );
+      if (localePatch) extra.locale = localePatch;
+      const stripeEmail = stripeSessionCustomerEmail(session);
+      const existingEmail = String(dup.customer_email ?? "").trim().toLowerCase();
+      if (stripeEmail && stripeEmail !== existingEmail) {
+        extra.customer_email = stripeEmail;
+      }
       const nextStatus = await persistStripeCheckoutConfirmedStatus({
         supabase,
         orderId: dup.id,
         currentStatus: dup.status,
-        extra: { locale },
+        extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
-      return mapSiteOrderRow({ ...dup, status: nextStatus, locale });
+      await maybeSendPaidStripeOrderConfirmation({
+        orderId: dup.id,
+        session,
+        supabase,
+      });
+      return mapSiteOrderRow({ ...dup, status: nextStatus });
     }
   }
 
@@ -491,6 +574,12 @@ export async function createSiteOrder(
   if (itemsError) {
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
   }
+
+  await maybeSendPaidStripeOrderConfirmation({
+    orderId: order.id,
+    session,
+    supabase,
+  });
 
   return mapSiteOrderRow(order);
 }
@@ -808,16 +897,19 @@ function productIdFromStripeLineItem(line: Stripe.LineItem): string | null {
 async function ensureStoreOrderForCheckoutSession(
   sessionId: string,
   supabase: ReturnType<typeof createSupabaseAdminClient>,
-): Promise<{ id: string; status: SiteOrderStatus }> {
+): Promise<StripeWebhookOrderRow> {
   const { data: existing } = await supabase
     .from("store_orders")
-    .select("id, status")
+    .select("id, status, locale, customer_email")
     .eq("stripe_session_id", sessionId)
     .maybeSingle();
   if (existing?.id) {
     return {
       id: existing.id,
       status: (existing.status as SiteOrderStatus) ?? "confirmed",
+      locale: (existing as { locale?: string | null }).locale ?? null,
+      customer_email:
+        (existing as { customer_email?: string | null }).customer_email ?? null,
     };
   }
 
@@ -874,9 +966,7 @@ async function ensureStoreOrderForCheckoutSession(
   }
 
   const customerEmail =
-    full.customer_details?.email?.trim() ||
-    full.customer_email?.trim() ||
-    "cliente@globalcomputer.com";
+    stripeSessionCustomerEmail(full) || PLACEHOLDER_CUSTOMER_EMAIL;
   const shippingName =
     (
       full as Stripe.Response<Stripe.Checkout.Session> & {
@@ -899,7 +989,9 @@ async function ensureStoreOrderForCheckoutSession(
         : null;
 
   const pricing = breakdownFromStripeMetadata(full.metadata);
-  const locale = resolveAppLocale(full.metadata?.locale, full.locale);
+  const locale = resolveCheckoutOrderLocale(
+    full.metadata?.locale ?? full.metadata?.app_locale,
+  );
 
   const insertOrder = {
     user_id: userId,
@@ -924,19 +1016,22 @@ async function ensureStoreOrderForCheckoutSession(
   const { data: inserted, error: orderErr } = await supabase
     .from("store_orders")
     .insert(insertOrder)
-    .select("id, status")
+    .select("id, status, locale, customer_email")
     .maybeSingle();
 
   if (orderErr?.code === "23505") {
     const { data: dup } = await supabase
       .from("store_orders")
-      .select("id, status")
+      .select("id, status, locale, customer_email")
       .eq("stripe_session_id", sessionId)
       .maybeSingle();
     if (dup?.id) {
       return {
         id: dup.id,
         status: (dup.status as SiteOrderStatus) ?? "confirmed",
+        locale: (dup as { locale?: string | null }).locale ?? null,
+        customer_email:
+          (dup as { customer_email?: string | null }).customer_email ?? null,
       };
     }
   }
@@ -973,8 +1068,17 @@ async function ensureStoreOrderForCheckoutSession(
   return {
     id: orderId,
     status: "confirmed",
+    locale,
+    customer_email: customerEmail,
   };
 }
+
+type StripeWebhookOrderRow = {
+  id: string;
+  status: SiteOrderStatus | string;
+  locale?: string | null;
+  customer_email?: string | null;
+};
 
 export async function syncOrderWithStripeSession(
   session: Stripe.Checkout.Session,
@@ -982,15 +1086,20 @@ export async function syncOrderWithStripeSession(
   eventType: string,
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
-  let { data: order } = await supabase
+  const existing = await supabase
     .from("store_orders")
-    .select("id, status")
+    .select("id, status, locale, customer_email")
     .eq("stripe_session_id", session.id)
     .maybeSingle();
 
-  if (!order?.id) {
-    order = await ensureStoreOrderForCheckoutSession(session.id, supabase);
-  }
+  const order: StripeWebhookOrderRow = existing.data?.id
+    ? {
+        id: existing.data.id,
+        status: existing.data.status,
+        locale: existing.data.locale ?? null,
+        customer_email: existing.data.customer_email ?? null,
+      }
+    : await ensureStoreOrderForCheckoutSession(session.id, supabase);
 
   const { data: seenEvent } = await supabase
     .from("store_order_webhook_events")
@@ -1002,15 +1111,24 @@ export async function syncOrderWithStripeSession(
   const pricing = breakdownFromStripeMetadata(session.metadata);
   const previousStatus = (order.status as SiteOrderStatus | undefined) ?? null;
 
-  const checkoutLocale =
-    recognizedAppLocale(session.metadata?.locale) ??
-    recognizedAppLocale(session.locale);
+  const checkoutLocale = recognizedEmailLocale(
+    session.metadata?.locale ?? session.metadata?.app_locale,
+  );
+  const localePatch = localePatchForExistingOrder(
+    order.locale,
+    checkoutLocale,
+  );
+  const stripeEmail = stripeSessionCustomerEmail(session);
+  const existingEmail = String(order.customer_email ?? "")
+    .trim()
+    .toLowerCase();
   console.info("[store-orders] webhook syncOrderWithStripeSession", {
     sessionId: session.id,
     paymentStatus: session.payment_status,
     metadataLocale: session.metadata?.locale ?? null,
     sessionLocale: session.locale ?? null,
-    resolvedLocale: checkoutLocale,
+    orderLocale: order.locale ?? null,
+    localePatch: localePatch ?? null,
     previousStatus,
     duplicateEvent: Boolean(seenEvent?.id),
   });
@@ -1032,7 +1150,10 @@ export async function syncOrderWithStripeSession(
           : session.payment_intent && typeof session.payment_intent === "object"
             ? session.payment_intent.id
             : null,
-      ...(checkoutLocale ? { locale: checkoutLocale } : {}),
+      ...(localePatch ? { locale: localePatch } : {}),
+      ...(stripeEmail && stripeEmail !== existingEmail
+        ? { customer_email: stripeEmail }
+        : {}),
     };
 
     const { error: upErr } = await supabase
