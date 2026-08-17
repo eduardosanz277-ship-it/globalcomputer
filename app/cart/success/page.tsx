@@ -1,5 +1,6 @@
 import { CartCheckoutSuccessClient } from "@/components/store/CartCheckoutSuccessClient";
 import { translate } from "@/lib/i18n/get-translation";
+import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getStoreOrderNumberByStripeSessionId } from "@/modules/commerce/store-orders.service";
@@ -15,8 +16,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Props = {
   searchParams?:
-    | Promise<{ session_id?: string | string[] }>
-    | { session_id?: string | string[] };
+    | Promise<{ session_id?: string | string[]; locale?: string | string[] }>
+    | { session_id?: string | string[]; locale?: string | string[] };
 };
 
 function firstParam(value: string | string[] | undefined): string | null {
@@ -30,6 +31,7 @@ function firstParam(value: string | string[] | undefined): string | null {
 export default async function CarritoExitoPage({ searchParams }: Props) {
   const resolved = searchParams ? await Promise.resolve(searchParams) : {};
   const sessionId = firstParam(resolved.session_id);
+  const checkoutLocale = recognizedAppLocale(firstParam(resolved.locale));
   const [initialOrderNumber, user] = await Promise.all([
     sessionId
       ? getStoreOrderNumberByStripeSessionId(sessionId)
@@ -42,6 +44,7 @@ export default async function CarritoExitoPage({ searchParams }: Props) {
       <CartCheckoutSuccessClient
         initialOrderNumber={initialOrderNumber}
         sessionId={sessionId}
+        checkoutLocale={checkoutLocale}
         isLoggedIn={Boolean(user?.id)}
       />
     </div>

@@ -5,7 +5,7 @@ import { StoreOrderNumberCard } from "@/components/store/StoreOrderNumberCard";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getCartMeta } from "@/lib/cart-meta";
 import { releaseCartReservations } from "@/lib/cart-reservation";
-import { resolveClientLocale } from "@/lib/i18n/client-locale";
+import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { gcCartClear, gcCartRead } from "@/lib/store-cart";
 import { cn } from "@/utils/cn";
 import { CheckCircle2 } from "lucide-react";
@@ -16,6 +16,8 @@ type Props = {
   /** Nº de pedido ya resuelto en servidor (webhook / pedido previo). */
   initialOrderNumber?: string | null;
   sessionId?: string | null;
+  /** Locale del Checkout (`success_url`), no el de localStorage/SSR. */
+  checkoutLocale?: "es" | "en" | null;
   isLoggedIn?: boolean;
 };
 
@@ -43,6 +45,7 @@ async function fetchOrderNumberBySession(
 export function CartCheckoutSuccessClient({
   initialOrderNumber = null,
   sessionId = null,
+  checkoutLocale = null,
   isLoggedIn = false,
 }: Props) {
   const { t, locale } = useI18n();
@@ -71,9 +74,9 @@ export function CartCheckoutSuccessClient({
       const params = new URLSearchParams(window.location.search);
       const sid =
         sessionId?.trim() || params.get("session_id")?.trim() || undefined;
-      const checkoutLocale = resolveClientLocale(
-        params.get("locale") ?? locale,
-      );
+      const orderLocale =
+        recognizedAppLocale(checkoutLocale) ??
+        recognizedAppLocale(params.get("locale"));
 
       // Siempre registra/alinea el pedido si hay session_id (aunque el carrito
       // ya esté vacío: el webhook pudo crear la fila antes).
@@ -88,7 +91,7 @@ export function CartCheckoutSuccessClient({
                 qty: item.qty,
               })),
               sessionId: sid,
-              locale: checkoutLocale,
+              locale: orderLocale ?? "en",
             }),
           });
           if (res.ok) {
@@ -121,7 +124,7 @@ export function CartCheckoutSuccessClient({
     };
 
     void cleanup();
-  }, [initialOrderNumber, sessionId, locale]);
+  }, [initialOrderNumber, sessionId, checkoutLocale]);
 
   const viewOrderHref = isLoggedIn
     ? "/profile?tab=orders"
