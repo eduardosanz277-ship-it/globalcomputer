@@ -1,4 +1,8 @@
 import { escapeHtml } from "@/lib/email/escapeHtml";
+import {
+  orderConfirmationTemplateId,
+  type EmailLocale,
+} from "@/lib/email/order-confirmation-locale";
 import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
 
 export type OrderConfirmationLineItem = {
@@ -9,7 +13,7 @@ export type OrderConfirmationLineItem = {
 };
 
 export type OrderConfirmationTemplateInput = {
-  locale: "es" | "en";
+  locale: EmailLocale;
   customerName: string;
   orderNumber: string;
   orderDate: string;
@@ -31,55 +35,59 @@ function formatUsd(value: number): string {
   }).format(value);
 }
 
-function copy(locale: "es" | "en") {
-  if (locale === "en") {
+function copy(locale: EmailLocale) {
+  if (locale === "es") {
     return {
       preheader: (orderNumber: string) =>
-        `Your order ${orderNumber} is confirmed. We're preparing it for you.`,
-      subject: (orderNumber: string) => `Order confirmed — ${orderNumber}`,
-      bannerSubtitle: "Order confirmed",
+        `Tu pedido ${orderNumber} está confirmado. Ya estamos preparándolo.`,
+      subject: (orderNumber: string) => `Pedido confirmado — ${orderNumber}`,
+      bannerSubtitle: "Pedido confirmado",
+      fallbackName: "Cliente",
+      fallbackProduct: "Producto",
       intro: (name: string) =>
-        `Hi ${name}, we've received your payment and your order is confirmed.`,
-      orderNumberLabel: "Order number",
-      orderDateLabel: "Date",
-      summaryTitle: "Order summary",
-      qtyLabel: "Qty",
+        `Hola ${name}, hemos recibido tu pago y tu pedido ya está confirmado.`,
+      orderNumberLabel: "Nº de pedido",
+      orderDateLabel: "Fecha",
+      summaryTitle: "Resumen del pedido",
+      qtyLabel: "Cant.",
       subtotal: "Subtotal",
-      discount: "Discount",
-      tax: "Tax",
-      shipping: "Shipping",
+      discount: "Descuento",
+      tax: "Impuestos",
+      shipping: "Envío",
       total: "Total",
-      shippingTitle: "Shipping address",
-      nextStepsTitle: "What happens next?",
+      shippingTitle: "Dirección de envío",
+      nextStepsTitle: "¿Qué sigue ahora?",
       nextStepsBody:
-        "We'll email you when your order moves to the next stage. You can track status and history anytime with your order number and email.",
-      ctaPrimary: "Track my order",
-      ctaSecondary: "View in my account",
+        "Te avisaremos por correo cuando tu pedido avance al siguiente estado. Puedes consultar el estado y el historial en cualquier momento con tu número de pedido y correo.",
+      ctaPrimary: "Consultar mi pedido",
+      ctaSecondary: "Ver en mi cuenta",
     };
   }
 
   return {
     preheader: (orderNumber: string) =>
-      `Tu pedido ${orderNumber} está confirmado. Ya estamos preparándolo.`,
-    subject: (orderNumber: string) => `Pedido confirmado — ${orderNumber}`,
-    bannerSubtitle: "Pedido confirmado",
+      `Your order ${orderNumber} is confirmed. We're preparing it for you.`,
+    subject: (orderNumber: string) => `Order confirmed — ${orderNumber}`,
+    bannerSubtitle: "Order confirmed",
+    fallbackName: "Customer",
+    fallbackProduct: "Product",
     intro: (name: string) =>
-      `Hola ${name}, hemos recibido tu pago y tu pedido ya está confirmado.`,
-    orderNumberLabel: "Nº de pedido",
-    orderDateLabel: "Fecha",
-    summaryTitle: "Resumen del pedido",
-    qtyLabel: "Cant.",
+      `Hi ${name}, we've received your payment and your order is confirmed.`,
+    orderNumberLabel: "Order number",
+    orderDateLabel: "Date",
+    summaryTitle: "Order summary",
+    qtyLabel: "Qty",
     subtotal: "Subtotal",
-    discount: "Descuento",
-    tax: "Impuestos",
-    shipping: "Envío",
+    discount: "Discount",
+    tax: "Tax",
+    shipping: "Shipping",
     total: "Total",
-    shippingTitle: "Dirección de envío",
-    nextStepsTitle: "¿Qué sigue ahora?",
+    shippingTitle: "Shipping address",
+    nextStepsTitle: "What happens next?",
     nextStepsBody:
-      "Te avisaremos por correo cuando tu pedido avance al siguiente estado. Puedes consultar el estado y el historial en cualquier momento con tu número de pedido y correo.",
-    ctaPrimary: "Consultar mi pedido",
-    ctaSecondary: "Ver en mi cuenta",
+      "We'll email you when your order moves to the next stage. You can track status and history anytime with your order number and email.",
+    ctaPrimary: "Track my order",
+    ctaSecondary: "View in my account",
   };
 }
 
@@ -100,10 +108,11 @@ function moneyRow(
 function renderItemsTable(
   items: OrderConfirmationLineItem[],
   qtyLabel: string,
+  fallbackProduct: string,
 ): string {
   const rows = items
     .map((item) => {
-      const name = escapeHtml(item.productName.trim() || "Producto");
+      const name = escapeHtml(item.productName.trim() || fallbackProduct);
       const qty = String(item.quantity);
       const unit = formatUsd(item.unitPrice);
       const total = formatUsd(item.totalPrice);
@@ -138,6 +147,12 @@ export function renderOrderConfirmationEmailSubject(
   return copy(input.locale).subject(input.orderNumber);
 }
 
+export function resolveOrderConfirmationTemplateId(
+  locale: EmailLocale,
+): string {
+  return orderConfirmationTemplateId(locale);
+}
+
 export function renderOrderConfirmationEmailTemplate(
   input: OrderConfirmationTemplateInput,
 ): string {
@@ -151,7 +166,7 @@ export function renderOrderConfirmationEmailTemplate(
       : "";
 
   const bodyHtml = `
-    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(t.intro(input.customerName.trim() || "Cliente"))}</p>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(t.intro(input.customerName.trim() || t.fallbackName))}</p>
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e6ebf1;border-radius:10px;margin-bottom:22px;">
       <tr>
@@ -171,7 +186,7 @@ export function renderOrderConfirmationEmailTemplate(
     </table>
 
     <div style="font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7280;margin-bottom:10px;">${escapeHtml(t.summaryTitle)}</div>
-    ${renderItemsTable(input.items, t.qtyLabel)}
+    ${renderItemsTable(input.items, t.qtyLabel, t.fallbackProduct)}
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;margin-bottom:22px;">
       ${moneyRow(t.subtotal, formatUsd(input.amountSubtotal))}
       ${discountRow}
