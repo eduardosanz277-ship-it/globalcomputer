@@ -154,16 +154,32 @@ export function canGoBackInternally(): boolean {
   }
 }
 
+/**
+ * `?from=` solo se conserva al abrir un producto desde un listado o
+ * desde otra ficha. Una búsqueda (`?q=`) no es la ubicación del producto.
+ */
+export function storefrontProductFromPath(
+  pathname?: string | null,
+  searchQuery?: string | null,
+): string | null {
+  if (typeof searchQuery === "string" && searchQuery.trim()) return null;
+  const from = normalizeStorefrontFromPath(pathname);
+  if (!from) return null;
+  if (isStorefrontListingPath(from) || isStorefrontProductDetailPath(from)) {
+    return from;
+  }
+  return null;
+}
+
 export function buildStorefrontProductHref(
   slug: string,
   fromPathname?: string | null,
+  searchQuery?: string | null,
 ): string {
   const base = `/products/${encodeURIComponent(slug)}`;
-  const from = normalizeStorefrontFromPath(fromPathname);
+  const from = storefrontProductFromPath(fromPathname, searchQuery);
   if (!from) return base;
-  if (from === base) return base;
-  if (isStorefrontListingPath(from) || isStorefrontProductDetailPath(from)) {
-    return `${base}?from=${encodeURIComponent(from)}`;
-  }
-  return base;
+  const fromBase = from.split("?")[0] ?? from;
+  if (fromBase === base) return base;
+  return `${base}?from=${encodeURIComponent(from)}`;
 }

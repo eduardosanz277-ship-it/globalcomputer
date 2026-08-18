@@ -2,7 +2,6 @@
 
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
-  canGoBackInternally,
   consumeStorefrontProductBackHref,
   isStorefrontListingPath,
   isStorefrontProductDetailPath,
@@ -21,16 +20,25 @@ type Props = {
   className?: string;
   /** Origen (`?from=`): listado o ficha anterior. */
   fromPath?: string | null;
+  /** Categoría/subcategoría del producto si no hay `from`. */
+  taxonomyPath?: string | null;
 };
 
-export function StorefrontProductBackLink({ className, fromPath }: Props) {
+export function StorefrontProductBackLink({
+  className,
+  fromPath,
+  taxonomyPath = null,
+}: Props) {
   const { t } = useI18n();
   const router = useRouter();
   const fallbackHref =
-    fromPath &&
-    (isStorefrontListingPath(fromPath) || isStorefrontProductDetailPath(fromPath))
+    fromPath && isStorefrontListingPath(fromPath)
       ? fromPath
-      : STOREFRONT_CATALOG_PATH;
+      : fromPath && isStorefrontProductDetailPath(fromPath)
+        ? fromPath
+        : taxonomyPath && isStorefrontListingPath(taxonomyPath)
+          ? taxonomyPath
+          : STOREFRONT_CATALOG_PATH;
 
   useEffect(() => {
     recordStorefrontProductVisit(fromPath);
@@ -63,20 +71,17 @@ export function StorefrontProductBackLink({ className, fromPath }: Props) {
     if (fromPath && isStorefrontProductDetailPath(fromPath)) {
       event.preventDefault();
       const previousHref = consumeStorefrontProductBackHref();
-      goTo(previousHref && isStorefrontProductDetailPath(previousHref)
-        ? previousHref
-        : fromPath);
+      goTo(
+        previousHref && isStorefrontProductDetailPath(previousHref)
+          ? previousHref
+          : fromPath,
+      );
       return;
     }
 
-    if (canGoBackInternally()) {
-      event.preventDefault();
-      router.back();
-      window.setTimeout(() => {
-        scrollStorefrontToPageTop();
-      }, 0);
-      return;
-    }
+    event.preventDefault();
+    resetStorefrontProductNavStack();
+    goTo(fallbackHref);
   };
 
   return (

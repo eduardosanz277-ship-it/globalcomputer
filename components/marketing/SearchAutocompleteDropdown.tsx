@@ -6,10 +6,6 @@ import {
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import {
-  buildStorefrontProductHref,
-  isStorefrontListingPath,
-} from "@/lib/storefront-product-nav";
 import type {
   SearchSuggestionLink,
   SearchSuggestionProduct,
@@ -247,19 +243,7 @@ export function SearchAutocompleteDropdown({
       return;
     }
     setIsOpen(false);
-    const url = item.item.url;
-    if (
-      item.kind === "product" &&
-      url.startsWith("/products/") &&
-      isStorefrontListingPath(pathname)
-    ) {
-      const slug = url.slice("/products/".length).split("?")[0] ?? "";
-      if (slug) {
-        navigateTo(buildStorefrontProductHref(slug, pathname));
-        return;
-      }
-    }
-    navigateTo(url);
+    navigateTo(item.item.url);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

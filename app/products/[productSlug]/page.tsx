@@ -8,7 +8,7 @@ import { plainTextFromHtml, resolveLocalizedRichHtml } from "@/lib/plainTextFrom
 import { normalizeStorefrontFromPath } from "@/lib/storefront-product-nav";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { resolveProductDetailBreadcrumbPrefix } from "@/modules/catalog/storefront-product-breadcrumb.service";
+import { resolveProductDetailBreadcrumbPrefix, resolveProductTaxonomyListingPath } from "@/modules/catalog/storefront-product-breadcrumb.service";
 import {
   getStorefrontProductDetailById,
   getStorefrontProductDetailBySlug,
@@ -115,7 +115,7 @@ export default async function ProductoDetallePage({
     redirect(`/products/${product.slug}${qs}`);
   }
 
-  const [user, productReviews, similarProducts, breadcrumbPrefix] =
+  const [user, productReviews, similarProducts, breadcrumbPrefix, taxonomyBackPath] =
     await Promise.all([
       getCurrentUserService(),
       listProductReviewsByProductId(product.id),
@@ -127,7 +127,8 @@ export default async function ProductoDetallePage({
         tipoProductoId: product.brand_type_id,
         precio: product.price_client,
       }),
-      resolveProductDetailBreadcrumbPrefix(product, fromParam),
+      resolveProductDetailBreadcrumbPrefix(product),
+      resolveProductTaxonomyListingPath(product),
     ]);
 
   const priceTier = resolveStorefrontPriceTier(user?.role);
@@ -140,6 +141,7 @@ export default async function ProductoDetallePage({
             <StorefrontProductBackLink
               className={inter.className}
               fromPath={fromParam}
+              taxonomyPath={taxonomyBackPath}
             />
             <MarketingBreadcrumb
               className={inter.className}

@@ -22,7 +22,7 @@ import { cn } from "@/utils/cn";
 import { ImageOff, Plus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -84,9 +84,10 @@ export function StorefrontProductCard({
 }: StorefrontProductCardProps) {
   const { locale, t } = useI18n();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const productHref = useMemo(
-    () => buildStorefrontProductHref(p.slug, pathname),
-    [p.slug, pathname],
+    () => buildStorefrontProductHref(p.slug, pathname, searchParams.get("q")),
+    [p.slug, pathname, searchParams],
   );
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
   const displayName = storefrontProductDisplayName(p, locale);

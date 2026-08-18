@@ -1,24 +1,11 @@
 import type { MarketingBreadcrumbItem } from "@/components/marketing/MarketingBreadcrumb";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { StorefrontLocalizedName } from "@/components/store/StorefrontLocalizedName";
-import {
-  isStorefrontListingPath,
-  normalizeStorefrontFromPath,
-} from "@/lib/storefront-product-nav";
+import { isStorefrontListingPath } from "@/lib/storefront-product-nav";
 import {
   getStorefrontCategoryById,
-  getStorefrontCategoryBySlug,
   getStorefrontSubcategoryById,
-  getStorefrontSubcategoryInCategoryBySlug,
 } from "@/modules/catalog/storefront-categories.service";
-import {
-  getBrandBySlug,
-  getBrandTypeBySlug,
-} from "@/modules/catalog/storefront-products.service";
-import {
-  getCharacteristicGeneralBySlugOrId,
-  getCharacteristicSpecificBySlugOrId,
-} from "@/modules/catalog/storefront-security.service";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
 import { createElement, type ReactNode } from "react";
 
@@ -99,135 +86,30 @@ async function crumbsFromProductTaxonomy(
   return crumbs;
 }
 
-async function crumbsFromListingPath(
-  fromPath: string,
-): Promise<Array<FixedCrumb | NamedCrumb> | null> {
-  const path = normalizeStorefrontFromPath(fromPath);
-  if (!path || !isStorefrontListingPath(path)) return null;
-
-  if (path === "/products") {
-    return [catalogCrumb()];
-  }
-
-  if (path === "/products/featured") {
-    return [
-      catalogCrumb(),
-      { es: "Destacados", en: "Featured", href: "/products/featured" },
-    ];
-  }
-
-  if (path.startsWith("/catalog/")) {
-    const parts = path.slice("/catalog/".length).split("/").filter(Boolean);
-    if (parts.length === 0 || parts.length > 2) return null;
-    const category = await getStorefrontCategoryBySlug(parts[0]!);
-    if (!category) return null;
-    const crumbs: Array<FixedCrumb | NamedCrumb> = [
-      catalogCrumb(),
-      {
-        name: category.name,
-        nameEn: category.nameEn,
-        href: `/catalog/${category.slug}`,
-      },
-    ];
-    if (parts.length === 2) {
-      const subcategory = await getStorefrontSubcategoryInCategoryBySlug(
-        category.id,
-        parts[1]!,
-      );
-      if (!subcategory) return null;
-      crumbs.push({
-        name: subcategory.name,
-        nameEn: subcategory.nameEn,
-        href: `/catalog/${category.slug}/${subcategory.slug}`,
-      });
+/**
+ * Listado más específico de la taxonomía del producto:
+ * subcategoría si existe, si no categoría, si no catálogo general.
+ */
+export async function resolveProductTaxonomyListingPath(
+  product: StorefrontProductDetail,
+): Promise<string> {
+  const crumbs = await crumbsFromProductTaxonomy(product);
+  for (let i = crumbs.length - 1; i >= 0; i -= 1) {
+    const href = crumbs[i].href;
+    if (href && isStorefrontListingPath(href) && href !== "/products") {
+      return href;
     }
-    return crumbs;
   }
-
-  if (path.startsWith("/brands/")) {
-    const parts = path.slice("/brands/".length).split("/").filter(Boolean);
-    if (parts.length === 0 || parts.length > 2) return null;
-    const brand = await getBrandBySlug(parts[0]!);
-    if (!brand) return null;
-    const crumbs: Array<FixedCrumb | NamedCrumb> = [
-      catalogCrumb(),
-      {
-        name: brand.name,
-        nameEn: brand.nameEn,
-        href: `/brands/${brand.slug}`,
-      },
-    ];
-    if (parts.length === 2) {
-      const brandType = await getBrandTypeBySlug(brand.id, parts[1]!);
-      if (!brandType) return null;
-      crumbs.push({
-        name: brandType.name,
-        nameEn: brandType.nameEn,
-        href: `/brands/${brand.slug}/${brandType.slug}`,
-      });
-    }
-    return crumbs;
-  }
-
-  if (path === "/security-system") {
-    return [
-      {
-        es: "Sistemas de Seguridad",
-        en: "Security Systems",
-        href: "/security-system",
-      },
-    ];
-  }
-
-  if (path.startsWith("/security-system/")) {
-    const parts = path
-      .slice("/security-system/".length)
-      .split("/")
-      .filter(Boolean);
-    if (parts.length === 0 || parts.length > 2) return null;
-    const resolvedGeneral = await getCharacteristicGeneralBySlugOrId(parts[0]!);
-    if (!resolvedGeneral) return null;
-    const { general } = resolvedGeneral;
-    const crumbs: Array<FixedCrumb | NamedCrumb> = [
-      catalogCrumb(),
-      {
-        name: general.name,
-        nameEn: general.nameEn,
-        href: `/security-system/${general.slug}`,
-      },
-    ];
-    if (parts.length === 2) {
-      const resolvedSpecific = await getCharacteristicSpecificBySlugOrId(
-        general.id,
-        parts[1]!,
-      );
-      if (!resolvedSpecific) return null;
-      const { specific } = resolvedSpecific;
-      crumbs.push({
-        name: specific.name,
-        nameEn: specific.nameEn,
-        href: `/security-system/${general.slug}/${specific.slug}`,
-      });
-    }
-    return crumbs;
-  }
-
-  return null;
+  return "/products";
 }
 
 /**
- * Migas del detalle de producto: conserva el listado de origen (`?from=`)
- * o, si no hay / no es válido, la taxonomía del producto.
+ * Migas del detalle: categoría/subcategoría reales del producto,
+ * no el listado desde el que se buscó o se navegó.
  * El último tramo (nombre del producto) lo añade la página.
  */
 export async function resolveProductDetailBreadcrumbPrefix(
   product: StorefrontProductDetail,
-  fromRaw: string | null | undefined,
 ): Promise<MarketingBreadcrumbItem[]> {
-  const fromPath = normalizeStorefrontFromPath(fromRaw);
-  if (fromPath) {
-    const fromCrumbs = await crumbsFromListingPath(fromPath);
-    if (fromCrumbs) return toItems(fromCrumbs);
-  }
   return toItems(await crumbsFromProductTaxonomy(product));
 }

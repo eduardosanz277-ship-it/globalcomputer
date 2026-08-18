@@ -984,13 +984,13 @@ export function SiteHeader({ user }: Props) {
                         onClick={() => setAccountOpen((v) => !v)}
                         className={cn(
                           buttonVariants({ variant: "ghost", size: "sm" }),
-                          "max-w-[220px] gap-2 rounded-xl hover:bg-transparent hover:text-foreground",
+                          "h-9 max-w-[220px] gap-2 rounded-xl hover:bg-transparent hover:text-foreground",
                         )}
                         aria-expanded={accountOpen}
                         aria-haspopup="menu"
                       >
                         <span
-                          className={cn(publicUserAvatarClass, "h-8 w-8")}
+                          className={cn(publicUserAvatarClass, "h-9 w-9")}
                           aria-hidden
                         >
                           {userInitial}
