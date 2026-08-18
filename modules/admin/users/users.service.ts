@@ -1,6 +1,6 @@
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
-import { getServerLocale } from "@/lib/i18n/server-locale";
+import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AdminUserDetail } from "./users.types";
 import { sendBusinessApprovalEmail } from "@/lib/email/sendBusinessApprovalEmail";
@@ -54,10 +54,13 @@ export async function approveBusinessRegistrationService(userId: string) {
   const email = authData?.user?.email;
   if (email) {
     try {
+      const recipientLocale = recognizedAppLocale(
+        authData.user?.user_metadata?.locale,
+      );
       const { sent } = await sendBusinessApprovalEmail(
         email,
-        profile.full_name ?? "Tu negocio",
-        await getServerLocale(),
+        profile.full_name ?? "",
+        recipientLocale,
       );
       if (!sent) {
         throw new Error(

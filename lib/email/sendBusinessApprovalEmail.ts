@@ -4,37 +4,42 @@ import {
   EMAIL_BRAND_NAME,
   resolveEmailFrom,
 } from "@/lib/email/email-brand";
+import {
+  EMAIL_DEFAULT_LOCALE,
+  recognizedEmailLocale,
+  type EmailLocale,
+} from "@/lib/email/order-confirmation-locale";
 import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
-import { parseAppLocale } from "@/lib/i18n/parse-locale";
-import type { Locale } from "@/components/i18n/translations";
 
-function copy(locale: Locale) {
-  if (locale === "en") {
+function copy(locale: EmailLocale) {
+  if (locale === "es") {
     return {
-      subject: "Your business account has been approved",
-      bannerSubtitle: "Business account approved",
+      subject: "Tu cuenta de empresa ha sido aprobada",
+      bannerSubtitle: "Cuenta de empresa aprobada",
       preheader: (brand: string) =>
-        `Your business account on ${brand} has been approved.`,
-      hello: "Hi,",
+        `Tu cuenta de empresa en ${brand} fue aprobada.`,
+      hello: "Hola,",
+      fallbackName: "tu negocio",
       approvedHtml: (safeName: string) =>
-        `The registration request for <strong style="color:#0f172a;">${safeName}</strong> has been <strong style="color:#0f172a;">approved</strong>.`,
+        `La solicitud de registro de <strong style="color:#0f172a;">${safeName}</strong> ha sido <strong style="color:#0f172a;">aprobada</strong>.`,
       loginHint: (brand: string) =>
-        `You can now sign in to ${brand} with your email (magic link or code).`,
-      cta: "Sign in",
+        `Ya puedes iniciar sesión en ${brand} con el código que enviamos a tu correo.`,
+      cta: "Iniciar sesión",
     };
   }
 
   return {
-    subject: "Tu cuenta de empresa ha sido aprobada",
-    bannerSubtitle: "Cuenta de empresa aprobada",
+    subject: "Your business account has been approved",
+    bannerSubtitle: "Business account approved",
     preheader: (brand: string) =>
-      `Tu cuenta de empresa en ${brand} fue aprobada.`,
-    hello: "Hola,",
+      `Your business account on ${brand} has been approved.`,
+    hello: "Hi,",
+    fallbackName: "your business",
     approvedHtml: (safeName: string) =>
-      `La solicitud de registro de <strong style="color:#0f172a;">${safeName}</strong> ha sido <strong style="color:#0f172a;">aprobada</strong>.`,
+      `The registration request for <strong style="color:#0f172a;">${safeName}</strong> has been <strong style="color:#0f172a;">approved</strong>.`,
     loginHint: (brand: string) =>
-      `Ya puedes iniciar sesión en ${brand} con tu correo (enlace mágico o código).`,
-    cta: "Iniciar sesión",
+      `You can now sign in to ${brand} with the code we sent to your email.`,
+    cta: "Sign in",
   };
 }
 
@@ -45,7 +50,7 @@ function copy(locale: Locale) {
 export async function sendBusinessApprovalEmail(
   to: string,
   businessDisplayName: string,
-  localeInput?: Locale | string | null,
+  localeInput?: EmailLocale | string | null,
 ): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = resolveEmailFrom();
@@ -57,11 +62,13 @@ export async function sendBusinessApprovalEmail(
     return { sent: false };
   }
 
-  const locale = parseAppLocale(localeInput);
+  const locale = recognizedEmailLocale(localeInput) ?? EMAIL_DEFAULT_LOCALE;
   const t = copy(locale);
   const appUrl = getAppBaseUrl();
   const brand = EMAIL_BRAND_NAME;
-  const safeName = escapeHtml(businessDisplayName.trim() || "tu negocio");
+  const safeName = escapeHtml(
+    businessDisplayName.trim() || t.fallbackName,
+  );
 
   const bodyHtml = `
     <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(t.hello)}</p>
