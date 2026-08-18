@@ -59,6 +59,16 @@ export function stripeSessionCustomerName(session: {
   return name || null;
 }
 
+/** Pedidos con `user_id`: enlace a «Ver en mi cuenta». Invitado → null. */
+export function storeOrderAccountOrdersUrl(
+  appUrl: string,
+  userId: unknown,
+): string | null {
+  const id = String(userId ?? "").trim();
+  if (!id) return null;
+  return `${appUrl.replace(/\/$/, "")}/profile?tab=orders`;
+}
+
 /**
  * Locale del pedido Stripe: metadata del Checkout (lo que pusimos al pagar),
  * luego el locale del POST/URL. Nunca `session.locale` de Stripe ni el default `es` de la UI.

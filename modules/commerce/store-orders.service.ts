@@ -32,6 +32,7 @@ import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-order-confirmation-email.service";
 import { maybeSendManualQuoteRequestEmail } from "@/modules/commerce/store-manual-quote-email.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
+import { shippingAddressFromStripeSession } from "@/lib/order-shipping-lines";
 import {
   canStripePromoteToConfirmed,
   resolveStatusAfterStripePayment,
@@ -234,6 +235,26 @@ async function resolveLocaleForStripeCheckout(
   }
 }
 
+async function saveStoreOrderShippingFromStripe(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  orderId: string,
+  session: Stripe.Checkout.Session | null | undefined,
+): Promise<void> {
+  if (!session) return;
+  const address = shippingAddressFromStripeSession(session);
+  if (!address) return;
+  const { error } = await supabase.from("store_order_shipping_addresses").insert({
+    store_order_id: orderId,
+    ...address,
+  });
+  if (error && error.code !== "23505") {
+    console.warn(
+      "[store-orders] no se pudo guardar dirección de envío Stripe",
+      error.message,
+    );
+  }
+}
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
@@ -407,6 +428,7 @@ export async function createSiteOrder(
         currentStatus: existing.status,
         extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
+      await saveStoreOrderShippingFromStripe(supabase, existing.id, session);
       await maybeSendPaidStripeOrderConfirmation({
         orderId: existing.id,
         session,
@@ -538,6 +560,7 @@ export async function createSiteOrder(
         currentStatus: dup.status,
         extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
+      await saveStoreOrderShippingFromStripe(supabase, dup.id, session);
       await maybeSendPaidStripeOrderConfirmation({
         orderId: dup.id,
         session,
@@ -575,6 +598,7 @@ export async function createSiteOrder(
     throw new SiteOrderError("No se pudieron guardar las líneas del pedido.", 500);
   }
 
+  await saveStoreOrderShippingFromStripe(supabase, order.id, session);
   await maybeSendPaidStripeOrderConfirmation({
     orderId: order.id,
     session,
@@ -1065,6 +1089,8 @@ async function ensureStoreOrderForCheckoutSession(
     throw itemsErr;
   }
 
+  await saveStoreOrderShippingFromStripe(supabase, orderId, full);
+
   return {
     id: orderId,
     status: "confirmed",
@@ -1173,6 +1199,8 @@ export async function syncOrderWithStripeSession(
         note: "stripe_webhook",
       });
     }
+
+    await saveStoreOrderShippingFromStripe(supabase, order.id, session);
 
     const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(
       {

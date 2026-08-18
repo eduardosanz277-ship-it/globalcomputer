@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-order-confirmation-email.service";
+import { maybeSendStoreOrderStatusEmail } from "@/modules/commerce/store-order-status-email.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
 import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
 import { SiteOrderStatus } from "./store-orders.service";
@@ -217,6 +218,11 @@ export async function repoUpdateStoreOrderStatus(
       status,
       previousStatus,
       changedBy: changedBy ?? null,
+    });
+    await maybeSendStoreOrderStatusEmail({
+      orderId,
+      status,
+      supabase: createSupabaseAdminClient(),
     });
   }
   return {

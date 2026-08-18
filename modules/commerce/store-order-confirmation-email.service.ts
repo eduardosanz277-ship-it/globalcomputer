@@ -4,9 +4,14 @@ import {
   isUsableCustomerEmail,
   orderConfirmationTemplateId,
   resolveOrderConfirmationEmailLocale,
+  storeOrderAccountOrdersUrl,
   stripeSessionCustomerEmail,
 } from "@/lib/email/order-confirmation-locale";
 import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmationEmail";
+import {
+  shippingAddressLinesFromDb,
+  shippingAddressLinesFromStripeSession,
+} from "@/lib/order-shipping-lines";
 import {
   renderOrderConfirmationEmailSubject,
   type OrderConfirmationLineItem,
@@ -20,6 +25,7 @@ type ConfirmationEmailOrderRow = {
   order_number: string | null;
   customer_name: string | null;
   customer_email: string | null;
+  user_id?: string | null;
   status: string;
   locale: string | null;
   confirmation_email_sent_at?: string | null;
@@ -66,89 +72,6 @@ function formatOrderDate(iso: string, locale: "es" | "en"): string {
     dateStyle: "medium",
     timeStyle: "short",
   });
-}
-
-function shippingLinesFromStripeSession(
-  session: Stripe.Checkout.Session,
-): string[] {
-  const lines: string[] = [];
-  const name =
-    (
-      session as Stripe.Checkout.Session & {
-        shipping_details?: { name?: string | null };
-      }
-    ).shipping_details?.name?.trim() ||
-    session.customer_details?.name?.trim();
-  if (name) lines.push(name);
-
-  const shippingAddress =
-    (
-      session as Stripe.Checkout.Session & {
-        shipping_details?: {
-          address?: Stripe.Address | null;
-        };
-      }
-    ).shipping_details?.address ?? session.customer_details?.address;
-
-  if (shippingAddress) {
-    const street = [shippingAddress.line1, shippingAddress.line2]
-      .map((part) => part?.trim())
-      .filter(Boolean)
-      .join(", ");
-    if (street) lines.push(street);
-
-    const cityLine = [
-      shippingAddress.postal_code?.trim(),
-      shippingAddress.city?.trim(),
-      shippingAddress.state?.trim(),
-    ]
-      .filter(Boolean)
-      .join(" ");
-    if (cityLine) lines.push(cityLine);
-
-    if (shippingAddress.country?.trim()) {
-      lines.push(shippingAddress.country.trim().toUpperCase());
-    }
-  }
-
-  const phone = session.customer_details?.phone?.trim();
-  if (phone) lines.push(phone);
-
-  return lines;
-}
-
-function shippingLinesFromDb(row: {
-  recipient_name?: string | null;
-  recipient_phone?: string | null;
-  address_line?: string | null;
-  address_line_2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postal_code?: string | null;
-  country?: string | null;
-}): string[] {
-  const lines: string[] = [];
-  const name = row.recipient_name?.trim();
-  if (name) lines.push(name);
-
-  const street = [row.address_line, row.address_line_2]
-    .map((part) => part?.trim())
-    .filter(Boolean)
-    .join(", ");
-  if (street) lines.push(street);
-
-  const cityLine = [row.postal_code, row.city, row.state]
-    .map((part) => part?.trim())
-    .filter(Boolean)
-    .join(" ");
-  if (cityLine) lines.push(cityLine);
-
-  if (row.country?.trim()) lines.push(row.country.trim().toUpperCase());
-
-  const phone = row.recipient_phone?.trim();
-  if (phone) lines.push(phone);
-
-  return lines;
 }
 
 async function releaseConfirmationEmailClaim(
@@ -255,9 +178,9 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
   const appUrl = getAppBaseUrl();
 
   const orderSelectWithEmail =
-    "id, order_number, customer_name, customer_email, status, locale, confirmation_email_sent_at, confirmation_email_locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+    "id, order_number, customer_name, customer_email, user_id, status, locale, confirmation_email_sent_at, confirmation_email_locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
   const orderSelectBase =
-    "id, order_number, customer_name, customer_email, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+    "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
 
   let order: ConfirmationEmailOrderRow | null = null;
   let error: { message?: string; code?: string } | null = null;
@@ -381,13 +304,13 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
 
   let shippingAddressLines: string[] =
     shippingRow && typeof shippingRow === "object"
-      ? shippingLinesFromDb(shippingRow)
+      ? shippingAddressLinesFromDb(shippingRow)
       : input.session
-        ? shippingLinesFromStripeSession(input.session)
+        ? shippingAddressLinesFromStripeSession(input.session)
         : [];
 
   if (shippingAddressLines.length === 0 && stripeSession) {
-    shippingAddressLines = shippingLinesFromStripeSession(stripeSession);
+    shippingAddressLines = shippingAddressLinesFromStripeSession(stripeSession);
   }
 
   if (
@@ -449,7 +372,7 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
         totalAmount: parseMoney(order.total_amount),
         shippingAddressLines,
         orderLookupUrl: `${appUrl}/order-lookup`,
-        profileOrdersUrl: `${appUrl}/profile?tab=orders`,
+        profileOrdersUrl: storeOrderAccountOrdersUrl(appUrl, order.user_id),
       },
       {
         idempotencyKey: `order-confirmation-${input.orderId}`,

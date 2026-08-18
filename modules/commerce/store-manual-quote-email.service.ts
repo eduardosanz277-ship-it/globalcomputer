@@ -1,4 +1,5 @@
 import { getAppBaseUrl } from "@/lib/app-url";
+import { storeOrderAccountOrdersUrl } from "@/lib/email/order-confirmation-locale";
 import { resolveAppLocale } from "@/lib/i18n/parse-locale";
 import { sendManualQuoteRequestEmail } from "@/lib/email/sendManualQuoteRequestEmail";
 import type { OrderConfirmationLineItem } from "@/lib/email/templates/orderConfirmationTemplate";
@@ -74,7 +75,7 @@ export async function maybeSendManualQuoteRequestEmail(input: {
   const { data: order, error } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, customer_name, customer_email, status, locale, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
+      "id, order_number, customer_name, customer_email, user_id, status, locale, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("id", input.orderId)
     .maybeSingle();
@@ -137,7 +138,7 @@ export async function maybeSendManualQuoteRequestEmail(input: {
       merchandiseTotal: parseMoney(order.total_amount),
       shippingAddressLines,
       orderLookupUrl: `${appUrl}/order-lookup`,
-      profileOrdersUrl: `${appUrl}/profile?tab=orders`,
+      profileOrdersUrl: storeOrderAccountOrdersUrl(appUrl, order.user_id),
     });
 
     if (result.sent) {
