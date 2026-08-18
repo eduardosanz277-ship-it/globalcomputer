@@ -48,7 +48,16 @@ import {
   type StoreOrderStatusHistoryRow,
 } from "@/modules/commerce/store-orders.admin.service";
 import { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
-import { Check, Edit3, Eye, FilterX, Loader2, Package } from "lucide-react";
+import {
+  Check,
+  Edit3,
+  Eye,
+  FilterX,
+  Hand,
+  Loader2,
+  Package,
+  Zap,
+} from "lucide-react";
 import { createPortal } from "react-dom";
 import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
 import { STORE_ORDERS_STATUS_FILTER_WIDE_CH } from "@/lib/store-orders-status-filter-width";
@@ -117,13 +126,32 @@ function orderStatusBadgeClass(status: SiteOrderStatus) {
   return `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${STATUS_BADGE_CLASSES[status]}`;
 }
 
-const SHIPPING_METHOD_BADGE_CLASSES: Record<"automatic" | "manual", string> = {
-  automatic: "bg-indigo-50 text-indigo-700 border border-indigo-100",
-  manual: "bg-orange-50 text-orange-700 border border-orange-100",
+const SHIPPING_METHOD_BADGE_CLASS =
+  "inline-flex items-center gap-1 rounded-full border border-border bg-transparent px-2.5 py-1 text-xs font-semibold tracking-wide text-foreground/80";
+
+const SHIPPING_METHOD_ICON_CLASS: Record<"automatic" | "manual", string> = {
+  automatic: "text-[#2563EB]",
+  manual: "text-[#D97706]",
 };
 
-function shippingMethodBadgeClass(method: "automatic" | "manual") {
-  return `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${SHIPPING_METHOD_BADGE_CLASSES[method]}`;
+function ShippingMethodBadge({
+  method,
+  label,
+}: {
+  method: "automatic" | "manual";
+  label: string;
+}) {
+  const Icon = method === "automatic" ? Zap : Hand;
+  return (
+    <span className={SHIPPING_METHOD_BADGE_CLASS}>
+      <Icon
+        className={cn("h-3 w-3 shrink-0", SHIPPING_METHOD_ICON_CLASS[method])}
+        strokeWidth={2.25}
+        aria-hidden
+      />
+      {label}
+    </span>
+  );
 }
 
 function formatOrderDate(raw: string | null | undefined, locale: "es" | "en") {
@@ -704,11 +732,10 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           cellClassName: SHIPPING_METHOD_COLUMN_CLASS,
         },
         cell: ({ row }) => (
-          <span
-            className={shippingMethodBadgeClass(row.original.shipping_method)}
-          >
-            {shippingMethodLabels[row.original.shipping_method]}
-          </span>
+          <ShippingMethodBadge
+            method={row.original.shipping_method}
+            label={shippingMethodLabels[row.original.shipping_method]}
+          />
         ),
       },
       {
@@ -838,11 +865,10 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
             </p>
             <p className="text-sm text-muted-foreground">
               {t("admin.orders.mobile.shippingMethodLabel")}:{" "}
-              <span
-                className={shippingMethodBadgeClass(order.shipping_method)}
-              >
-                {shippingMethodLabels[order.shipping_method]}
-              </span>
+              <ShippingMethodBadge
+                method={order.shipping_method}
+                label={shippingMethodLabels[order.shipping_method]}
+              />
             </p>
             <div className="flex items-center gap-2">
               <span className={orderStatusBadgeClass(order.status)}>
