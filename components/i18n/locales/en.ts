@@ -44,7 +44,7 @@ export const en = {
     emailLabel: "Email",
     passwordLabel: "Password",
     buttons: {
-      submit: "Open admin panel",
+      submit: "Sign in",
       pending: "Signing in",
     },
     footer: {

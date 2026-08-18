@@ -46,8 +46,8 @@ export const es = {
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     buttons: {
-      submit: "Entrar al panel",
-      pending: "Entrando",
+      submit: "Iniciar sesión",
+      pending: "Iniciando sesión",
     },
     footer: {
       clientPrompt: "¿Eres cliente o empresa?",
