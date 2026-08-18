@@ -43,7 +43,7 @@ function SummaryTile({
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
-      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+      <p className="mt-1 break-all text-sm font-semibold tabular-nums text-foreground">
         {children}
       </p>
     </div>
@@ -71,8 +71,8 @@ export function GuestOrderDetailsPanel({ order }: Props) {
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/80 shadow-sm">
-      <div className="border-b border-border/60 bg-muted/25 px-5 py-5 sm:px-6">
+    <div className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card/80 shadow-sm">
+      <div className="border-b border-border/60 bg-muted/25 px-4 py-5 sm:px-6">
         <div className="flex gap-4">
           <div
             className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10 sm:flex"
@@ -80,12 +80,12 @@ export function GuestOrderDetailsPanel({ order }: Props) {
           >
             <Package className="h-5 w-5" strokeWidth={2} />
           </div>
-          <div className="min-w-0 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1.5">
             <h2 className="text-lg font-semibold leading-tight tracking-tight text-foreground">
               {t("orderLookup.resultTitle")}
             </h2>
             <div className="space-y-1.5 text-sm leading-relaxed text-muted-foreground">
-              <p>
+              <p className="break-words">
                 {t("orderLookup.orderPrefix")}{" "}
                 <span className="font-mono font-medium text-foreground">
                   {order.orderNumber}
@@ -139,16 +139,16 @@ export function GuestOrderDetailsPanel({ order }: Props) {
                       key={`${item.productName}-${index}`}
                       className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
                     >
-                      <td className="px-4 py-2.5 font-medium">
+                      <td className="max-w-[18rem] break-words px-4 py-2.5 font-medium">
                         {item.productName}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums">
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-2.5 tabular-nums">
+                      <td className="whitespace-nowrap px-4 py-2.5 tabular-nums">
                         {formatMoney(item.unitPrice)}
                       </td>
-                      <td className="px-4 py-2.5 font-semibold tabular-nums text-foreground">
+                      <td className="whitespace-nowrap px-4 py-2.5 font-semibold tabular-nums text-foreground">
                         {formatMoney(item.totalPrice)}
                       </td>
                     </tr>
@@ -159,7 +159,7 @@ export function GuestOrderDetailsPanel({ order }: Props) {
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <SummaryTile title={t("profile.summarySubtotal")}>
             {formatMoney(order.amountSubtotal)}
           </SummaryTile>

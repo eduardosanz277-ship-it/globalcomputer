@@ -130,8 +130,8 @@ export function OrderLookupClient() {
   const formError = formErrorMessage(formErrorKey);
 
   return (
-    <div className="mx-auto grid max-w-3xl gap-8 pb-10 lg:max-w-4xl">
-      <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
+    <div className="mx-auto grid w-full min-w-0 max-w-3xl gap-8 pb-10 lg:max-w-4xl">
+      <section className="min-w-0 rounded-2xl border border-border/70 bg-card p-4 shadow-soft sm:p-6">
         <div className="space-y-1">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
             {t("orderLookup.formTitle")}

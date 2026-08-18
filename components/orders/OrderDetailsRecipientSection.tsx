@@ -31,7 +31,7 @@ export function OrderDetailsRecipientSection({ recipient }: Props) {
             {t("profile.dialogRecipientTitle")}
           </p>
           <div className="space-y-1 text-sm leading-relaxed">
-            <p className="font-semibold text-foreground">
+            <p className="break-words font-semibold text-foreground">
               {recipient.recipientName}
             </p>
             <p className="text-foreground tabular-nums">
@@ -42,7 +42,7 @@ export function OrderDetailsRecipientSection({ recipient }: Props) {
                 {recipient.recipientEmail}
               </p>
             ) : null}
-            <div className="pt-1 text-muted-foreground">
+            <div className="space-y-0.5 break-words pt-1 text-muted-foreground">
               <p>{recipient.addressLine}</p>
               {recipient.addressLine2 ? <p>{recipient.addressLine2}</p> : null}
               {cityLine ? <p>{cityLine}</p> : null}

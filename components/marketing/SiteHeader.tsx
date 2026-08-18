@@ -696,7 +696,7 @@ export function SiteHeader({ user }: Props) {
           <div className="min-h-0 overflow-visible">
             <div
               className={cn(
-                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(10rem,1fr)_auto_auto] items-center gap-x-2 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(10rem,1fr)_auto_auto] sm:items-center sm:gap-x-2.5 sm:px-3 sm:pb-2",
+                "mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-1.5 gap-y-2 px-2.5 py-2 sm:min-h-[3.75rem] sm:grid-cols-[auto_auto_minmax(10rem,1fr)_auto_auto] sm:items-center sm:gap-x-2.5 sm:px-3 sm:pb-2",
               )}
             >
               <button
@@ -732,7 +732,7 @@ export function SiteHeader({ user }: Props) {
 
               <SearchAutocompleteDropdown
                 priceTier={storefrontPriceTier}
-                className="col-span-4 row-start-2 block min-w-[min(100%,10rem)] sm:col-span-1 sm:col-start-3 sm:row-start-1"
+                className="col-span-4 row-start-2 block min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1"
                 inputClassName="h-10 w-full rounded-full border border-border/70 bg-white/80 py-2 pl-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9 sm:py-1.5 sm:text-[13px]"
                 dropdownClassName="left-0 right-0"
               />
