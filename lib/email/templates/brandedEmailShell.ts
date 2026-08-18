@@ -29,6 +29,7 @@ export function wrapBrandedEmail(input: {
   const phoneDisplay = escapeHtml(SITE_CONTACT_PHONE_DISPLAY);
   const phoneTel = escapeHtml(SITE_CONTACT_PHONE_TEL);
 
+  const year = new Date().getFullYear();
   const helpHeading =
     input.locale === "en" ? "Need help?" : "¿Necesitas ayuda?";
   const writeUs =
@@ -72,7 +73,7 @@ export function wrapBrandedEmail(input: {
                 <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
                   ${escapeHtml(callUs)} <a href="tel:${phoneTel}" style="color:#38bdf8;text-decoration:none;">${phoneDisplay}</a>
                 </p>
-                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© ${brand}</p>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© ${year} ${brand}</p>
               </td>
             </tr>
           </table>
