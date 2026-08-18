@@ -17,7 +17,8 @@ import {
   repoSignInWithOtp,
   repoVerifyEmailOtp,
 } from "./auth.repository";
-import { getAppBaseUrl } from "@/lib/app-url";
+import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 /** Convierte errores de `signInWithOtp` (p. ej. límite de envío de email) en mensajes legibles. */
@@ -109,7 +110,10 @@ export async function adminPasswordLoginService(payload: AuthCredentials) {
   return { success: true as const };
 }
 
-export async function sendLoginOtpService(rawEmail: string) {
+export async function sendLoginOtpService(
+  rawEmail: string,
+  localeInput?: unknown,
+) {
   const parsed = emailOtpRequestSchema.safeParse({
     email: rawEmail.trim().toLowerCase(),
   });
@@ -129,8 +133,10 @@ export async function sendLoginOtpService(rawEmail: string) {
     );
   }
 
+  const locale = recognizedAppLocale(localeInput) ?? (await getServerLocale());
+
   try {
-    await repoSignInWithOtp(parsed.data.email);
+    await repoSignInWithOtp(parsed.data.email, locale);
   } catch (error: unknown) {
     throw mapSignInWithOtpError(error);
   }

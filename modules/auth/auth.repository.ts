@@ -1,3 +1,5 @@
+import type { Locale } from "@/components/i18n/translations";
+import { sendLoginOtpEmail } from "@/lib/email/sendLoginOtpEmail";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import {
@@ -46,6 +48,13 @@ function isPostgresUniqueViolation(err: unknown): boolean {
 }
 
 const OTP_COOLDOWN_SECONDS = 60;
+
+function loginOtpAuthTemplateData(locale: Locale) {
+  return {
+    locale,
+    year: String(new Date().getFullYear()),
+  };
+}
 
 function isRefreshTokenNotFoundError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -104,10 +113,100 @@ export async function repoLogin(credentials: AuthCredentials) {
   return data;
 }
 
+function isAuthUserNotFoundError(error: unknown): boolean {
+  const obj = error && typeof error === "object" ? error : null;
+  const code =
+    obj && "code" in obj ? String((obj as { code?: unknown }).code ?? "") : "";
+  const status =
+    obj && "status" in obj ? Number((obj as { status?: unknown }).status) : NaN;
+  const message = (
+    error instanceof Error ? error.message : String(error ?? "")
+  ).toLowerCase();
+  return (
+    code === "user_not_found" ||
+    status === 404 ||
+    message.includes("user not found") ||
+    message.includes("unable to find user")
+  );
+}
+
+async function persistLoginLocaleForExistingUser(
+  email: string,
+  locale: Locale,
+): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("set_auth_user_login_locale", {
+    check_email: email,
+    login_locale: locale,
+  });
+  if (error) {
+    console.error("set_auth_user_login_locale:", error.message);
+  }
+}
+
+async function generateLoginEmailOtp(
+  email: string,
+  locale: Locale,
+): Promise<string> {
+  const admin = createSupabaseAdminClient();
+  const first = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { data: loginOtpAuthTemplateData(locale) },
+  });
+
+  if (!first.error) {
+    const token = first.data.properties?.email_otp?.trim();
+    if (!token) {
+      throw new Error("No se pudo generar el código");
+    }
+    const user = first.data.user;
+    const templateData = loginOtpAuthTemplateData(locale);
+    if (
+      user?.id &&
+      (user.user_metadata?.locale !== templateData.locale ||
+        String(user.user_metadata?.year ?? "") !== templateData.year)
+    ) {
+      await admin.auth.admin.updateUserById(user.id, {
+        user_metadata: { ...(user.user_metadata ?? {}), ...templateData },
+      });
+    }
+    return token;
+  }
+
+  if (!isAuthUserNotFoundError(first.error)) {
+    throw first.error;
+  }
+
+  const created = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { ...loginOtpAuthTemplateData(locale), role: "CLIENT" },
+  });
+  if (created.error) {
+    const mapped = mapAuthAdminDuplicateEmail(created.error);
+    if (mapped.message !== DUPLICATE_EMAIL_MSG) {
+      throw mapped;
+    }
+  }
+
+  const second = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { data: loginOtpAuthTemplateData(locale) },
+  });
+  const token = second.data.properties?.email_otp?.trim();
+  if (second.error || !token) {
+    throw second.error ?? new Error("No se pudo generar el código");
+  }
+  return token;
+}
+
 /**
  * Passwordless: envía un código OTP (tipo email) y crea el usuario si no existe.
+ * El contenido del correo usa el locale de la UI en el momento del login.
  */
-export async function repoSignInWithOtp(email: string) {
+export async function repoSignInWithOtp(email: string, locale: Locale) {
   const normalizedEmail = email.trim().toLowerCase();
   const blockUntil = await repoGetOtpCooldown(normalizedEmail);
   const now = Date.now();
@@ -120,14 +219,29 @@ export async function repoSignInWithOtp(email: string) {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: normalizedEmail,
-    options: {
-      shouldCreateUser: true,
-    },
-  });
-  if (error) throw error;
+  await persistLoginLocaleForExistingUser(normalizedEmail, locale);
+
+  if (process.env.RESEND_API_KEY?.trim()) {
+    const token = await generateLoginEmailOtp(normalizedEmail, locale);
+    const { sent } = await sendLoginOtpEmail({
+      to: normalizedEmail,
+      token,
+      locale,
+    });
+    if (!sent) {
+      throw new Error("No se pudo enviar el código");
+    }
+  } else {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        shouldCreateUser: true,
+        data: loginOtpAuthTemplateData(locale),
+      },
+    });
+    if (error) throw error;
+  }
 
   const nextBlock = new Date(now + OTP_COOLDOWN_SECONDS * 1000);
   await repoUpsertOtpCooldown(normalizedEmail, nextBlock);
