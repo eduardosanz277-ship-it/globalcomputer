@@ -9,7 +9,7 @@ import { cn } from "@/utils/cn";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -36,6 +36,7 @@ export function OrderLookupClient() {
   const searchParams = useSearchParams();
   const [formErrorKey, setFormErrorKey] = useState<FormErrorKey | null>(null);
   const [order, setOrder] = useState<GuestOrderLookupResult | null>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
 
   const schema = useMemo(
     () =>
@@ -80,6 +81,26 @@ export function OrderLookupClient() {
   useEffect(() => {
     if (isSubmitted) void trigger();
   }, [locale, schema, isSubmitted, trigger]);
+
+  useEffect(() => {
+    if (!order) return;
+    const node = detailsRef.current;
+    if (!node) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    const timeoutId = window.setTimeout(() => {
+      node.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    }, 140);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [order]);
 
   function formErrorMessage(key: FormErrorKey | null): string | null {
     if (!key) return null;
@@ -199,7 +220,17 @@ export function OrderLookupClient() {
         </Form>
       </section>
 
-      {order ? <GuestOrderDetailsPanel order={order} /> : null}
+      {order ? (
+        <div
+          ref={detailsRef}
+          id="order-lookup-result"
+          tabIndex={-1}
+          aria-live="polite"
+          className="min-w-0 scroll-mt-[7.5rem] outline-none"
+        >
+          <GuestOrderDetailsPanel order={order} />
+        </div>
+      ) : null}
     </div>
   );
 }

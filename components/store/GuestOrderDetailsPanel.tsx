@@ -108,14 +108,34 @@ export function GuestOrderDetailsPanel({ order }: Props) {
         </div>
       </div>
 
-      <div className="space-y-5 px-5 py-5 sm:px-6">
+      <div className="space-y-5 px-4 py-5 sm:px-6">
         {order.items.length === 0 ? (
           <p className="rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-sm text-muted-foreground">
             {t("orderLookup.emptyItems")}
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
-            <div className="overflow-x-auto">
+          <div className="min-w-0 overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
+            <ul className="divide-y divide-primary/15 sm:hidden">
+              {order.items.map((item, index) => (
+                <li
+                  key={`${item.productName}-${index}`}
+                  className="space-y-1.5 px-3.5 py-3"
+                >
+                  <p className="break-words text-sm font-medium leading-snug text-foreground">
+                    {item.productName}
+                  </p>
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="tabular-nums text-muted-foreground">
+                      {item.quantity} × {formatMoney(item.unitPrice)}
+                    </span>
+                    <span className="shrink-0 font-semibold tabular-nums text-foreground">
+                      {formatMoney(item.totalPrice)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-left text-sm">
                 <thead className="bg-primary/[0.1] text-xs uppercase tracking-wide text-foreground/80">
                   <tr>
