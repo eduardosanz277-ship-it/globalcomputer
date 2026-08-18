@@ -328,6 +328,10 @@ export async function repoRegisterBusiness(payload: RegisterBusinessPayload) {
     employer_identification_number: ein,
     employerIdentificationNumber: ein,
   };
+  if (payload.locale === "es" || payload.locale === "en") {
+    meta.locale = payload.locale;
+    meta.year = String(new Date().getFullYear());
+  }
   if (payload.phone?.trim()) {
     const p = payload.phone.trim();
     meta.phone = p;

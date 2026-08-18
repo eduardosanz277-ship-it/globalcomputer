@@ -1,3 +1,5 @@
+import type { Locale } from "@/components/i18n/translations";
+
 export type UserRole = "CLIENT" | "BUSINESS" | "ADMIN";
 
 /** Solo aplica a `role === "BUSINESS"`; en otros roles es `null`. */
@@ -18,6 +20,8 @@ export interface RegisterBusinessPayload {
   phone?: string;
   email: string;
   employerIdentificationNumber: string;
+  /** Locale de la UI al registrarse; se usa en el correo de aprobación. */
+  locale?: Locale;
 }
 
 export interface SessionUser {

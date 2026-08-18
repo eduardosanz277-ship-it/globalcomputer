@@ -189,7 +189,10 @@ export async function registerService(payload: RegisterPayload) {
   return { success: true };
 }
 
-export async function registerBusinessService(payload: RegisterBusinessFormInput) {
+export async function registerBusinessService(
+  payload: RegisterBusinessFormInput,
+  localeInput?: unknown,
+) {
   const parsed = registerBusinessSchema.safeParse({
     businessName: payload.businessName,
     phone: payload.phone ?? "",
@@ -205,6 +208,7 @@ export async function registerBusinessService(payload: RegisterBusinessFormInput
     phone: parsed.data.phone,
     email: parsed.data.email,
     employerIdentificationNumber: parsed.data.employerIdentificationNumber,
+    locale: recognizedAppLocale(localeInput) ?? (await getServerLocale()),
   });
   return { success: true };
 }
