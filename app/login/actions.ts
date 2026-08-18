@@ -1,5 +1,7 @@
 "use server";
 
+import { getServerLocale } from "@/lib/i18n/server-locale";
+import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import {
   sendLoginOtpService,
   verifyLoginOtpService,
@@ -12,9 +14,12 @@ export type SendLoginOtpResult =
 /** Devuelve `{ ok: false, message }` en lugar de lanzar, para no responder 500 en errores esperados (p. ej. límite de envío de email). */
 export async function sendLoginOtpAction(
   email: string,
+  locale?: string,
 ): Promise<SendLoginOtpResult> {
   try {
-    await sendLoginOtpService(email);
+    const resolvedLocale =
+      recognizedAppLocale(locale) ?? (await getServerLocale());
+    await sendLoginOtpService(email, resolvedLocale);
     return { ok: true };
   } catch (e: unknown) {
     const message =

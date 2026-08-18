@@ -114,7 +114,7 @@ function LoginPageContent() {
 
   const { execute: sendOtp, isPending: sending } = useServerAction(
     async (email: string) => {
-      const res = await sendLoginOtpAction(email);
+      const res = await sendLoginOtpAction(email, locale);
       if (!res.ok) throw new Error(res.message);
       return res;
     },
