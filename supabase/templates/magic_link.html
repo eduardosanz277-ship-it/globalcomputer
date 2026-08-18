@@ -1,0 +1,104 @@
+{{ $locale := "" }}
+{{ $year := "" }}
+{{ if .Data }}{{ $locale = index .Data "locale" }}{{ $year = index .Data "year" }}{{ end }}
+{{ if eq $locale "en" }}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Your access code</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
+  <body style="margin:0;background:#f3f4f6;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#0f172a;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(15,23,42,.15);">
+            <tr>
+              <td style="padding:36px 40px;text-align:center;background:linear-gradient(120deg,#111827,#0ea5e9);">
+                <h1 style="margin:0;color:#fff;font-size:26px;font-weight:600;">Global Computers USA</h1>
+                <p style="margin:6px 0 0;color:#e0e7ff;font-size:14px;">Your secure access code</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 40px;background:#fff;">
+                <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:1.6;">
+                  Hi {{ .Email }}, to continue on Global Computers USA enter the following code. It is valid for <strong>1 hour</strong>.
+                </p>
+                <div style="margin:24px 0;padding:22px 18px;border-radius:18px;background:#0f172a;text-align:center;">
+                  <p style="margin:0;font-size:22px;letter-spacing:6px;font-weight:700;color:#fff;">{{ .Token }}</p>
+                </div>
+                <p style="margin:0;color:#64748b;font-size:14px;line-height:1.5;">
+                  If you didn't request this code, ignore this email. Never share your code with anyone.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" bgcolor="#0f172a" style="padding:24px 40px;background:#0f172a;border-top:1px solid #1e293b;text-align:center;">
+                <p style="margin:0;color:#e2e8f0;font-size:12px;font-weight:600;line-height:1.5;">Need help?</p>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
+                  Write to us at <a href="mailto:soporte@globalcomputer.com" style="color:#38bdf8;text-decoration:none;">soporte@globalcomputer.com</a>
+                </p>
+                <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
+                  Call us at <a href="tel:+17863951076" style="color:#38bdf8;text-decoration:none;">786-395-1076</a>
+                </p>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© {{ $year }} Global Computers USA</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+{{ else }}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tu código de acceso</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
+  <body style="margin:0;background:#f3f4f6;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#0f172a;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(15,23,42,.15);">
+            <tr>
+              <td style="padding:36px 40px;text-align:center;background:linear-gradient(120deg,#111827,#0ea5e9);">
+                <h1 style="margin:0;color:#fff;font-size:26px;font-weight:600;">Global Computers USA</h1>
+                <p style="margin:6px 0 0;color:#e0e7ff;font-size:14px;">Tu código de acceso seguro</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 40px;background:#fff;">
+                <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:1.6;">
+                  Hola {{ .Email }}, para continuar en Global Computers USA introduce el siguiente código. Tiene una validez de <strong>1 hora</strong>.
+                </p>
+                <div style="margin:24px 0;padding:22px 18px;border-radius:18px;background:#0f172a;text-align:center;">
+                  <p style="margin:0;font-size:22px;letter-spacing:6px;font-weight:700;color:#fff;">{{ .Token }}</p>
+                </div>
+                <p style="margin:0;color:#64748b;font-size:14px;line-height:1.5;">
+                  Si no solicitaste este código, ignora este correo. Nunca compartas tu código con nadie.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" bgcolor="#0f172a" style="padding:24px 40px;background:#0f172a;border-top:1px solid #1e293b;text-align:center;">
+                <p style="margin:0;color:#e2e8f0;font-size:12px;font-weight:600;line-height:1.5;">¿Necesitas ayuda?</p>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
+                  Escríbenos a <a href="mailto:soporte@globalcomputer.com" style="color:#38bdf8;text-decoration:none;">soporte@globalcomputer.com</a>
+                </p>
+                <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
+                  Llámanos al <a href="tel:+17863951076" style="color:#38bdf8;text-decoration:none;">786-395-1076</a>
+                </p>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© {{ $year }} Global Computers USA</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+{{ end }}
