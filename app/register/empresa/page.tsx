@@ -39,11 +39,16 @@ export default function RegisterEmpresaPage() {
     },
   });
 
-  const { execute, isPending } = useServerAction(registerBusinessAction, {
-    successMessage: t("registerBusiness.toast.success"),
-    errorMessage: t("registerBusiness.toast.error"),
-    onSuccess: () => router.push("/login"),
-  });
+  const { execute, isPending } = useServerAction(
+    async (values: RegisterBusinessFormInput) => {
+      await registerBusinessAction(values, locale);
+    },
+    {
+      successMessage: t("registerBusiness.toast.success"),
+      errorMessage: t("registerBusiness.toast.error"),
+      onSuccess: () => router.push("/login"),
+    },
+  );
 
   const errors = form.formState.errors;
 
