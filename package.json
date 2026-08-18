@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
