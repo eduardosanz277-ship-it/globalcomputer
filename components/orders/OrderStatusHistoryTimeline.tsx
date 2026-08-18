@@ -30,8 +30,8 @@ type Props = {
   /** Si es false, no muestra quién realizó el cambio (p. ej. panel de cliente). */
   showActor?: boolean;
   /**
-   * En viewports menores a 375px, la fecha va siempre debajo del estado
-   * (útil en consulta pública en pantallas muy estrechas).
+   * En viewports menores a `sm`, la fecha va debajo del estado
+   * (útil en consulta pública en pantallas estrechas).
    */
   stackDateBelowOnNarrow?: boolean;
 };
@@ -96,7 +96,7 @@ export function OrderStatusHistoryTimeline({
                     className={cn(
                       "flex flex-wrap items-center gap-2",
                       stackDateBelowOnNarrow &&
-                        "max-[374px]:flex-col max-[374px]:items-start max-[374px]:gap-1",
+                        "max-sm:flex-col max-sm:items-start max-sm:gap-1",
                     )}
                   >
                     <span

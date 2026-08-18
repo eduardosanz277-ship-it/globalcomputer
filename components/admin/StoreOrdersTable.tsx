@@ -320,9 +320,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           body: JSON.stringify({
             orderId,
             status: nextStatus,
-            ...(typeof amountShipping === "number"
-              ? { amountShipping }
-              : {}),
+            ...(typeof amountShipping === "number" ? { amountShipping } : {}),
           }),
         });
         if (!res.ok) {
@@ -411,7 +409,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       return;
     }
     if (parsed <= 0) {
-      setShippingAmountError(t("admin.orders.confirmShipping.shippingRequired"));
+      setShippingAmountError(
+        t("admin.orders.confirmShipping.shippingRequired"),
+      );
       return;
     }
     const amountShipping = Number(parsed.toFixed(2));
@@ -513,47 +513,50 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     };
   }, [calculateStatusMenuPosition, openStatusMenuOrderId]);
 
-  const handleShowItems = useCallback(async (order: AdminStoreOrderRow) => {
-    setDetailOrder(order);
-    setItemsError(null);
-    setOrderShippingAddress(null);
-    setOrderStatusHistory([]);
-    setItemsLoading(true);
-    setItemsDialogOpen(true);
-    try {
-      const res = await fetch("/api/admin/store-orders/items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id }),
-      });
-      const payload = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(payload?.error ?? t("admin.orders.items.loadError"));
-      }
-      if (Array.isArray(payload?.items)) {
-        setOrderItems(payload.items);
-      } else {
-        setOrderItems([]);
-      }
-      setOrderShippingAddress(
-        mapStoreOrderShippingAddressRow(payload?.shippingAddress ?? null),
-      );
-      setOrderStatusHistory(
-        Array.isArray(payload?.statusHistory) ? payload.statusHistory : [],
-      );
-    } catch (error) {
-      setOrderItems([]);
+  const handleShowItems = useCallback(
+    async (order: AdminStoreOrderRow) => {
+      setDetailOrder(order);
+      setItemsError(null);
       setOrderShippingAddress(null);
       setOrderStatusHistory([]);
-      setItemsError(
-        error instanceof Error
-          ? error.message
-          : t("admin.orders.items.loadError"),
-      );
-    } finally {
-      setItemsLoading(false);
-    }
-  }, [t]);
+      setItemsLoading(true);
+      setItemsDialogOpen(true);
+      try {
+        const res = await fetch("/api/admin/store-orders/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id }),
+        });
+        const payload = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(payload?.error ?? t("admin.orders.items.loadError"));
+        }
+        if (Array.isArray(payload?.items)) {
+          setOrderItems(payload.items);
+        } else {
+          setOrderItems([]);
+        }
+        setOrderShippingAddress(
+          mapStoreOrderShippingAddressRow(payload?.shippingAddress ?? null),
+        );
+        setOrderStatusHistory(
+          Array.isArray(payload?.statusHistory) ? payload.statusHistory : [],
+        );
+      } catch (error) {
+        setOrderItems([]);
+        setOrderShippingAddress(null);
+        setOrderStatusHistory([]);
+        setItemsError(
+          error instanceof Error
+            ? error.message
+            : t("admin.orders.items.loadError"),
+        );
+      } finally {
+        setItemsLoading(false);
+      }
+    },
+    [t],
+  );
 
   const closeItemsModal = useCallback(() => {
     setItemsDialogOpen(false);
@@ -931,7 +934,16 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         </li>
       );
     },
-    [openMobileStatusMenuOrderId, handleShowItems, requestStatusChange, locale, shippingMethodLabels, statusLabels, t, updating],
+    [
+      openMobileStatusMenuOrderId,
+      handleShowItems,
+      requestStatusChange,
+      locale,
+      shippingMethodLabels,
+      statusLabels,
+      t,
+      updating,
+    ],
   );
 
   const toolbarFilters = useMemo(
@@ -1294,7 +1306,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                 }}
               />
               {shippingAmountError ? (
-                <p className="text-sm text-destructive">{shippingAmountError}</p>
+                <p className="text-sm text-destructive">
+                  {shippingAmountError}
+                </p>
               ) : null}
             </div>
             <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/25 bg-primary/[0.03] px-2.5 py-2 text-xs sm:gap-3 sm:px-3 sm:text-sm">
