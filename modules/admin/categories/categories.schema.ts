@@ -12,6 +12,7 @@ export const categoryFormSchema = z.object({
     .max(200, "Máximo 200 caracteres")
     .transform((s) => s.trim()),
   active: z.boolean(),
+  isAccessoryType: z.boolean(),
 });
 
 export type CategoryFormValues = z.infer<typeof categoryFormSchema>;

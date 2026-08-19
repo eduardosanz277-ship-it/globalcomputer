@@ -12,6 +12,7 @@ type CategoryRow = {
   name_en?: string | null;
   slug: string;
   deleted_at: string | null;
+  is_accessory_type: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -23,6 +24,7 @@ function mapCategoryAdminRow(row: CategoryRow): CategoryAdmin {
     nameEn: row.name_en ?? null,
     slug: row.slug,
     active: row.deleted_at == null,
+    isAccessoryType: row.is_accessory_type,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -57,7 +59,7 @@ export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
   if (includeNameEn) {
     const { data, error } = await supabase
       .from("categories")
-      .select("id,name,name_en,slug")
+      .select("id,name,name_en,slug,is_accessory_type")
       .is("deleted_at", null)
       .order("name", { ascending: true });
 
@@ -67,12 +69,13 @@ export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
       name: row.name,
       nameEn: row.name_en ?? null,
       slug: row.slug,
+      isAccessoryType: Boolean(row.is_accessory_type),
     }));
   }
 
   const { data, error } = await supabase
     .from("categories")
-    .select("id,name,slug")
+    .select("id,name,slug,is_accessory_type")
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
@@ -82,6 +85,7 @@ export async function repoListCategoriesForAdmin(): Promise<AdminCategory[]> {
     name: row.name,
     nameEn: null,
     slug: row.slug,
+    isAccessoryType: Boolean(row.is_accessory_type),
   }));
 }
 
@@ -92,7 +96,9 @@ export async function repoListAllCategoriesAdmin(): Promise<CategoryAdmin[]> {
   if (includeNameEn) {
     const { data, error } = await supabase
       .from("categories")
-      .select("id,name,name_en,slug,deleted_at,created_at,updated_at")
+      .select(
+        "id,name,name_en,slug,deleted_at,is_accessory_type,created_at,updated_at",
+      )
       .order("name", { ascending: true });
 
     if (error) throw error;
@@ -101,7 +107,7 @@ export async function repoListAllCategoriesAdmin(): Promise<CategoryAdmin[]> {
 
   const { data, error } = await supabase
     .from("categories")
-    .select("id,name,slug,deleted_at,created_at,updated_at")
+    .select("id,name,slug,deleted_at,is_accessory_type,created_at,updated_at")
     .order("name", { ascending: true });
 
   if (error) throw error;
@@ -119,6 +125,7 @@ export async function repoCreateCategoryAdmin(
     name: payload.name,
     slug: payload.slug,
     deleted_at: deletedAtFromActive(payload.active),
+    is_accessory_type: payload.isAccessoryType,
   };
   if (includeNameEn) {
     insertPayload.name_en = payload.nameEn;
@@ -127,7 +134,9 @@ export async function repoCreateCategoryAdmin(
     const { data, error } = await supabase
       .from("categories")
       .insert(insertPayload)
-      .select("id,name,name_en,slug,deleted_at,created_at,updated_at")
+      .select(
+        "id,name,name_en,slug,deleted_at,is_accessory_type,created_at,updated_at",
+      )
       .single();
 
     if (error) throw error;
@@ -137,7 +146,7 @@ export async function repoCreateCategoryAdmin(
   const { data, error } = await supabase
     .from("categories")
     .insert(insertPayload)
-    .select("id,name,slug,deleted_at,created_at,updated_at")
+    .select("id,name,slug,deleted_at,is_accessory_type,created_at,updated_at")
     .single();
 
   if (error) throw error;
@@ -154,6 +163,7 @@ export async function repoUpdateCategoryAdmin(
     name: payload.name,
     slug: payload.slug,
     deleted_at: deletedAtFromActive(payload.active),
+    is_accessory_type: payload.isAccessoryType,
   };
   if (includeNameEn) {
     updatePayload.name_en = payload.nameEn;

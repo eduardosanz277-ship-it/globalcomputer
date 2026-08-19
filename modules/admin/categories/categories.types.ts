@@ -4,6 +4,7 @@ export type AdminCategory = {
   name: string;
   nameEn: string | null;
   slug: string;
+  isAccessoryType: boolean;
 };
 
 /** Fila en la tabla de administración de categorías. */
@@ -13,6 +14,7 @@ export type CategoryAdmin = {
   nameEn: string | null;
   slug: string;
   active: boolean;
+  isAccessoryType: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,6 +24,7 @@ export type CategoryAdminInsert = {
   nameEn: string;
   slug: string;
   active: boolean;
+  isAccessoryType: boolean;
 };
 
 export type CategoryAdminUpdate = CategoryAdminInsert;
