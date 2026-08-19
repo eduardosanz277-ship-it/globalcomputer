@@ -39,6 +39,13 @@ export const productCharacteristicValueInputSchema = z.object({
     .transform((s) => (s ?? "").trim()),
 });
 
+export const productAccessoryInputSchema = z.object({
+  accessoryProductId: z
+    .string()
+    .min(1, "Selecciona un producto")
+    .uuid("Producto inválido"),
+});
+
 export const productFormSchema = z.object({
   sku: z
     .string()
@@ -150,4 +157,7 @@ export const productFormSchema = z.object({
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 export type ProductCharacteristicValueInputValues = z.infer<
   typeof productCharacteristicValueInputSchema
+>;
+export type ProductAccessoryInputValues = z.infer<
+  typeof productAccessoryInputSchema
 >;

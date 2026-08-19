@@ -17,6 +17,16 @@ export type ProductCharacteristicValue = {
   value: string | null;
 };
 
+export type ProductAccessory = {
+  id: string;
+  accessoryProductId: string;
+  name: string;
+  nameEn: string | null;
+  sku: string;
+  imageUrl: string | null;
+  sortOrder: number;
+};
+
 /** Producto (tabla `products`). */
 export type Product = {
   id: string;
@@ -66,6 +76,7 @@ export type Product = {
   imageUrl: string | null;
   images: ProductImage[];
   characteristicValues: ProductCharacteristicValue[];
+  accessories: ProductAccessory[];
   createdAt: string;
   updatedAt: string;
   slug: string;
@@ -107,6 +118,10 @@ export type ProductUpdate = ProductInsert;
 export type ProductCharacteristicValueInput = {
   specificId: string;
   value?: string;
+};
+
+export type ProductAccessoryInput = {
+  accessoryProductId: string;
 };
 
 export type ExistingProductImageOutput = {

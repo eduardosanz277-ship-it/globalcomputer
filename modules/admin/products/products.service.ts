@@ -11,6 +11,7 @@ import {
   repoInsertProductImages,
   repoListProductImageUrlsByIds,
   repoListProducts,
+  repoReplaceProductAccessories,
   repoReplaceProductCharacteristicValues,
   repoUpsertLowStockAlertAt,
   repoUnsetPrimaryProductImage,
@@ -19,12 +20,14 @@ import {
   repoUpdateProductImagesMetadata,
 } from "./products.repository";
 import {
+  productAccessoryInputSchema,
   productCharacteristicValueInputSchema,
   productFormSchema,
   type ProductFormValues,
 } from "./products.schema";
 import type {
   ExistingProductImageOutput,
+  ProductAccessoryInput,
   ProductCharacteristicValueInput,
   ProductInsert,
   ProductUpdate,
@@ -335,6 +338,32 @@ function parseCharacteristicValues(
   return parsed;
 }
 
+function parseAccessories(
+  values: ProductAccessoryInput[] | undefined,
+  productId?: string,
+) {
+  const safe = values ?? [];
+  const parsed: ProductAccessoryInput[] = [];
+  const seen = new Set<string>();
+  for (const row of safe) {
+    const result = productAccessoryInputSchema.safeParse({
+      accessoryProductId: row.accessoryProductId,
+    });
+    if (!result.success) {
+      throw new Error(
+        result.error.errors[0]?.message ?? "Accesorio inválido",
+      );
+    }
+    if (productId && result.data.accessoryProductId === productId) {
+      throw new Error("Un producto no puede ser accesorio de sí mismo.");
+    }
+    if (seen.has(result.data.accessoryProductId)) continue;
+    seen.add(result.data.accessoryProductId);
+    parsed.push({ accessoryProductId: result.data.accessoryProductId });
+  }
+  return parsed;
+}
+
 export async function getAllProductsService() {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -347,6 +376,7 @@ export async function createProductService(
   primaryImageIndex = 0,
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
+  accessories?: ProductAccessoryInput[],
 ) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -359,6 +389,7 @@ export async function createProductService(
   await assertProductPlacementConsistent(parsed.data);
 
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
+  const parsedAccessories = parseAccessories(accessories);
 
   try {
     const payloadWithSlug = {
@@ -374,6 +405,10 @@ export async function createProductService(
         created.id,
         parsedCharacteristics,
       );
+    }
+
+    if (parsedAccessories.length > 0) {
+      await repoReplaceProductAccessories(created.id, parsedAccessories);
     }
 
     const validFiles = (imageFiles ?? []).filter((f) => f && f.size > 0);
@@ -413,6 +448,7 @@ export async function updateProductService(
   removedImageIds?: string[],
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
+  accessories?: ProductAccessoryInput[],
 ) {
   const current = await getCurrentUserService();
   ensureAdmin(current?.role);
@@ -425,6 +461,7 @@ export async function updateProductService(
   await assertProductPlacementConsistent(parsed.data);
 
   const parsedCharacteristics = parseCharacteristicValues(characteristicValues);
+  const parsedAccessories = parseAccessories(accessories, id);
 
   try {
     const before = await repoGetProductStockSnapshot(id);
@@ -470,6 +507,7 @@ export async function updateProductService(
     }
 
     await repoReplaceProductCharacteristicValues(id, parsedCharacteristics);
+    await repoReplaceProductAccessories(id, parsedAccessories);
 
     await notifyLowStockIfNeeded({
       productId: id,

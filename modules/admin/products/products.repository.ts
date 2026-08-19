@@ -2,6 +2,8 @@ import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type {
   ExistingProductImageOutput,
   Product,
+  ProductAccessory,
+  ProductAccessoryInput,
   ProductCharacteristicValueInput,
   ProductImage,
   ProductInsert,
@@ -87,6 +89,25 @@ type ProductRow = {
             | { name: string; name_en?: string | null }
             | { name: string; name_en?: string | null }[]
             | null;
+        }[]
+      | null;
+  }>;
+  product_accessories?: Array<{
+    id: string;
+    accessory_product_id: string;
+    sort_order: number;
+    accessory:
+      | {
+          name: string;
+          name_en: string | null;
+          sku: string;
+          product_images?: Array<{ url: string; is_primary: boolean }>;
+        }
+      | {
+          name: string;
+          name_en: string | null;
+          sku: string;
+          product_images?: Array<{ url: string; is_primary: boolean }>;
         }[]
       | null;
   }>;
@@ -278,6 +299,26 @@ function mapRow(row: ProductRow): Product {
         return a.specificName.localeCompare(b.specificName, "es");
       }) ?? [];
 
+  const accessories: ProductAccessory[] =
+    row.product_accessories
+      ?.map((pa) => {
+        const acc = Array.isArray(pa.accessory) ? pa.accessory[0] : pa.accessory;
+        const images = acc?.product_images ?? [];
+        const primary =
+          images.slice().sort((a, b) => Number(b.is_primary) - Number(a.is_primary))[0] ??
+          undefined;
+        return {
+          id: pa.id,
+          accessoryProductId: pa.accessory_product_id,
+          name: acc?.name ?? "—",
+          nameEn: acc?.name_en ?? null,
+          sku: acc?.sku ?? "",
+          imageUrl: primary?.url ?? null,
+          sortOrder: pa.sort_order,
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder) ?? [];
+
   return {
     id: row.id,
     sku: row.sku,
@@ -311,6 +352,7 @@ function mapRow(row: ProductRow): Product {
     imageUrl: primaryImage?.url ?? null,
     images,
     characteristicValues,
+    accessories,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     slug: row.slug,
@@ -318,7 +360,7 @@ function mapRow(row: ProductRow): Product {
 }
 
 const PRODUCT_SELECT =
-  "id, sku, slug, name, name_en, description, description_en, specifications, specifications_en, stock, pricing_strategy, cost, margin_client_pct, margin_business_pct, price_client, price_business, active, featured, discount_business_pct, discount_client_pct, shipping_type, shipping_surcharge_per_unit, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name, name_en), brand_types(name, name_en), categories(name, name_en), subcategories(name, name_en, category_id, categories(name, name_en)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, name_en, product_characteristics_general(name, name_en)))";
+  "id, sku, slug, name, name_en, description, description_en, specifications, specifications_en, stock, pricing_strategy, cost, margin_client_pct, margin_business_pct, price_client, price_business, active, featured, discount_business_pct, discount_client_pct, shipping_type, shipping_surcharge_per_unit, manual_pdf_url, brand_id, brand_type_id, category_id, subcategory_id, created_at, updated_at, brands(name, name_en), brand_types(name, name_en), categories(name, name_en), subcategories(name, name_en, category_id, categories(name, name_en)), product_images(id, url, is_primary), product_characteristic_values(id, characteristic_specific_id, value, product_characteristics_specific(name, name_en, product_characteristics_general(name, name_en))), product_accessories!product_accessories_product_id_fkey(id, accessory_product_id, sort_order, accessory:products!product_accessories_accessory_product_id_fkey(name, name_en, sku, product_images(url, is_primary)))";
 
 function placementToDbColumns(payload: ProductInsert): {
   category_id: string | null;
@@ -606,5 +648,29 @@ export async function repoReplaceProductCharacteristicValues(
         value: item.value?.trim() ? item.value.trim() : null,
       })),
     );
+  if (insertError) throw insertError;
+}
+
+export async function repoReplaceProductAccessories(
+  productId: string,
+  values: ProductAccessoryInput[],
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+
+  const { error: deleteError } = await supabase
+    .from("product_accessories")
+    .delete()
+    .eq("product_id", productId);
+  if (deleteError) throw deleteError;
+
+  if (values.length === 0) return;
+
+  const { error: insertError } = await supabase.from("product_accessories").insert(
+    values.map((item, index) => ({
+      product_id: productId,
+      accessory_product_id: item.accessoryProductId,
+      sort_order: index,
+    })),
+  );
   if (insertError) throw insertError;
 }
