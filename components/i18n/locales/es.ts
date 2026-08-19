@@ -89,6 +89,8 @@ export const es = {
     home: "Inicio",
     backToHome: "Volver al inicio",
     loading: "Cargando",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
   },
   header: {
     brandTagline: "Soluciones de seguridad y vigilancia",

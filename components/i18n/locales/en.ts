@@ -87,6 +87,8 @@ export const en = {
     home: "Home",
     backToHome: "Back to home",
     loading: "Loading",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
   },
   header: {
     brandTagline: "Security and Surveillance Solutions",

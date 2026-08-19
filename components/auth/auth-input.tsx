@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 /**
@@ -14,13 +16,46 @@ export type AuthInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(
   ({ className, type, ...props }, ref) => {
+    const [showPassword, setShowPassword] = React.useState(false);
+    const isPassword = type === "password";
+    const { t } = useI18n();
+
+    if (!isPassword) {
+      return (
+        <input
+          type={type}
+          className={cn(authInputClassName, className)}
+          ref={ref}
+          {...props}
+        />
+      );
+    }
+
     return (
-      <input
-        type={type}
-        className={cn(authInputClassName, className)}
-        ref={ref}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          className={cn(authInputClassName, "pr-10", className)}
+          ref={ref}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          tabIndex={-1}
+          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={
+            showPassword ? t("common.hidePassword") : t("common.showPassword")
+          }
+          aria-pressed={showPassword}
+        >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" aria-hidden />
+          ) : (
+            <Eye className="h-4 w-4" aria-hidden />
+          )}
+        </button>
+      </div>
     );
   },
 );
