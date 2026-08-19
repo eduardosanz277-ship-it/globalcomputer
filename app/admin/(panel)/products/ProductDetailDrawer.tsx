@@ -73,6 +73,7 @@ export function ProductDetailDrawer({
   const [specificCharacteristicsOpen, setSpecificCharacteristicsOpen] =
     useState(false);
   const [specificationsOpen, setSpecificationsOpen] = useState(false);
+  const [accessoriesOpen, setAccessoriesOpen] = useState(false);
   const open = Boolean(product);
 
   useEffect(() => {
@@ -80,6 +81,7 @@ export function ProductDetailDrawer({
     setDescriptionOpen(false);
     setSpecificCharacteristicsOpen(false);
     setSpecificationsOpen(false);
+    setAccessoriesOpen(false);
   }, [open, product?.id]);
 
   const characteristicGroups = useMemo(() => {
@@ -526,6 +528,58 @@ export function ProductDetailDrawer({
               ) : (
                 <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {t("admin.products.detail.noSpecificCharacteristics")}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <button
+            type="button"
+            onClick={() => setAccessoriesOpen((prev) => !prev)}
+            aria-expanded={accessoriesOpen}
+            aria-label={
+              accessoriesOpen
+                ? t("admin.products.detail.collapseAccessories")
+                : t("admin.products.detail.expandAccessories")
+            }
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/20"
+          >
+            <span className="text-sm font-medium text-foreground">
+              {t("admin.products.detail.accessories")}
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${accessoriesOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-out ${accessoriesOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden border-t border-border/70">
+              {(product?.accessories.length ?? 0) > 0 ? (
+                <div className="flex flex-wrap gap-2 p-4">
+                  {product?.accessories.map((item) => (
+                    <div
+                      key={item.id}
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5"
+                    >
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {locale === "en"
+                          ? item.nameEn?.trim() || item.name
+                          : item.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        · {item.sku}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  {t("admin.products.detail.noAccessories")}
                 </div>
               )}
             </div>
