@@ -18,6 +18,7 @@ import {
 } from "@/modules/admin/products/products.schema";
 import type {
   Product,
+  ProductAccessoryInput,
   ProductCharacteristicValueInput,
 } from "@/modules/admin/products/products.types";
 import {
@@ -81,6 +82,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product | null;
+  products: Product[];
   brands: Brand[];
   brandTypes: BrandType[];
   specificCharacteristics: SpecificCharacteristic[];
@@ -92,6 +94,7 @@ export function ProductFormDialog({
   open,
   onOpenChange,
   product,
+  products,
   brands,
   brandTypes,
   specificCharacteristics,
@@ -133,6 +136,9 @@ export function ProductFormDialog({
 
   const [characteristics, setCharacteristics] = useState<
     Array<{ specificId: string; value: string }>
+  >([]);
+  const [accessories, setAccessories] = useState<
+    Array<{ accessoryProductId: string }>
   >([]);
   const [manualPdfFile, setManualPdfFile] = useState<File | null>(null);
 
@@ -201,6 +207,11 @@ export function ProductFormDialog({
           value: item.value ?? "",
         })),
       );
+      setAccessories(
+        product.accessories.map((item) => ({
+          accessoryProductId: item.accessoryProductId,
+        })),
+      );
       setManualPdfFile(null);
     } else {
       form.reset({
@@ -231,6 +242,7 @@ export function ProductFormDialog({
         placementSubcategoryId: "",
       });
       setCharacteristics([]);
+      setAccessories([]);
       setManualPdfFile(null);
     }
   }, [open, product, form]);
@@ -386,6 +398,88 @@ export function ProductFormDialog({
     );
   };
 
+  const accessoryTypeCategoryIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of categories) {
+      if (c.isAccessoryType) ids.add(c.id);
+    }
+    return ids;
+  }, [categories]);
+
+  const subcategoryParentCategoryId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of subcategories) map.set(s.id, s.categoryId);
+    return map;
+  }, [subcategories]);
+
+  /** Categoría o subcategoría del producto (placement) que se usa para filtrar el picker de accesorios. */
+  const accessoryPlacementId = (p: Product): string | null =>
+    p.subcategoryId ?? p.categoryId;
+
+  /** Productos elegibles como accesorio: su categoría (directa o vía subcategoría) está marcada como «de tipo accesorio». */
+  const accessoryCandidates = useMemo(() => {
+    return products.filter((p) => {
+      if (product && p.id === product.id) return false;
+      const parentCategoryId = p.subcategoryId
+        ? subcategoryParentCategoryId.get(p.subcategoryId)
+        : p.categoryId;
+      return Boolean(parentCategoryId && accessoryTypeCategoryIds.has(parentCategoryId));
+    });
+  }, [products, product, subcategoryParentCategoryId, accessoryTypeCategoryIds]);
+
+  const localizedCategoryLabel = (c: AdminCategory): string =>
+    locale === "en" ? c.nameEn?.trim() || c.name : c.name;
+  const localizedSubcategoryLabel = (s: AdminSubcategory): string =>
+    locale === "en" ? s.nameEn?.trim() || s.name : s.name;
+
+  /** Opciones del filtro «categoría/subcategoría» del picker de accesorios: solo las marcadas «de tipo accesorio». */
+  const accessoryPlacementOptions = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [];
+    const accessoryCategories = categories
+      .filter((c) => c.isAccessoryType)
+      .sort((a, b) =>
+        localizedCategoryLabel(a).localeCompare(localizedCategoryLabel(b), locale),
+      );
+    for (const c of accessoryCategories) {
+      opts.push({ value: c.id, label: localizedCategoryLabel(c) });
+      const subs = subcategories
+        .filter((s) => s.categoryId === c.id)
+        .sort((a, b) =>
+          localizedSubcategoryLabel(a).localeCompare(
+            localizedSubcategoryLabel(b),
+            locale,
+          ),
+        );
+      for (const s of subs) {
+        opts.push({
+          value: s.id,
+          label: `${localizedCategoryLabel(c)} › ${localizedSubcategoryLabel(s)}`,
+        });
+      }
+    }
+    return opts;
+  }, [categories, subcategories, locale]);
+
+  const toggleAccessory = (accessoryProductId: string) => {
+    setAccessories((prev) => {
+      const exists = prev.some(
+        (item) => item.accessoryProductId === accessoryProductId,
+      );
+      if (exists) {
+        return prev.filter(
+          (item) => item.accessoryProductId !== accessoryProductId,
+        );
+      }
+      return [...prev, { accessoryProductId }];
+    });
+  };
+
+  const removeAccessory = (accessoryProductId: string) => {
+    setAccessories((prev) =>
+      prev.filter((item) => item.accessoryProductId !== accessoryProductId),
+    );
+  };
+
   const existingImages: ExistingServiceImageInput[] =
     product?.images.map((img) => ({
       id: img.id,
@@ -487,6 +581,12 @@ export function ProductFormDialog({
         toggleCharacteristic={toggleCharacteristic}
         removeCharacteristic={removeCharacteristic}
         updateCharacteristicValue={updateCharacteristicValue}
+        accessoryCandidates={accessoryCandidates}
+        accessoryPlacementId={accessoryPlacementId}
+        accessoryPlacementOptions={accessoryPlacementOptions}
+        accessories={accessories}
+        toggleAccessory={toggleAccessory}
+        removeAccessory={removeAccessory}
         existingImages={existingImages}
         manualPdfFile={manualPdfFile}
         setManualPdfFile={setManualPdfFile}
@@ -510,6 +610,12 @@ function ProductFormBody({
   toggleCharacteristic,
   removeCharacteristic,
   updateCharacteristicValue,
+  accessoryCandidates,
+  accessoryPlacementId,
+  accessoryPlacementOptions,
+  accessories,
+  toggleAccessory,
+  removeAccessory,
   existingImages,
   manualPdfFile,
   setManualPdfFile,
@@ -535,6 +641,12 @@ function ProductFormBody({
   toggleCharacteristic: (specificId: string) => void;
   removeCharacteristic: (specificId: string) => void;
   updateCharacteristicValue: (specificId: string, value: string) => void;
+  accessoryCandidates: Product[];
+  accessoryPlacementId: (p: Product) => string | null;
+  accessoryPlacementOptions: Array<{ value: string; label: string }>;
+  accessories: Array<{ accessoryProductId: string }>;
+  toggleAccessory: (accessoryProductId: string) => void;
+  removeAccessory: (accessoryProductId: string) => void;
   existingImages: ExistingServiceImageInput[];
   manualPdfFile: File | null;
   setManualPdfFile: (file: File | null) => void;
@@ -570,6 +682,9 @@ function ProductFormBody({
 
   const images = useServiceImagesManager(existingImages);
   const [selectedGeneralId, setSelectedGeneralId] = useState<string>("all");
+  const [accessorySearch, setAccessorySearch] = useState("");
+  const [accessoryPlacementFilter, setAccessoryPlacementFilter] =
+    useState<string>("all");
   const generalSectionRef = useRef<HTMLElement>(null);
   const [sectionMinHeightPx, setSectionMinHeightPx] = useState<number>();
 
@@ -580,7 +695,8 @@ function ProductFormBody({
     | "shipping"
     | "media"
     | "characteristics"
-    | "specifications";
+    | "specifications"
+    | "accessories";
 
   const PRODUCT_FORM_TABS: { id: ProductFormTabId; label: string }[] = [
     { id: "general", label: t("admin.products.form.tabs.general") },
@@ -595,6 +711,10 @@ function ProductFormBody({
     {
       id: "specifications",
       label: t("admin.products.form.tabs.specifications"),
+    },
+    {
+      id: "accessories",
+      label: t("admin.products.form.tabs.accessories"),
     },
   ];
 
@@ -704,6 +824,81 @@ function ProductFormBody({
     return Array.from(grouped.entries());
   }, [characteristics, locale, specificOptions]);
 
+  const accessorySelectedSet = useMemo(
+    () => new Set(accessories.map((a) => a.accessoryProductId)),
+    [accessories],
+  );
+
+  const localizedProductLabel = (p: Product): string =>
+    locale === "en" ? p.nameEn?.trim() || p.name : p.name;
+
+  const visibleAccessoryCandidates = useMemo(() => {
+    const query = accessorySearch.trim().toLowerCase();
+    let base = accessoryCandidates;
+    if (accessoryPlacementFilter !== "all") {
+      base = base.filter(
+        (p) => accessoryPlacementId(p) === accessoryPlacementFilter,
+      );
+    }
+    if (query) {
+      base = base.filter(
+        (p) =>
+          localizedProductLabel(p).toLowerCase().includes(query) ||
+          p.sku.toLowerCase().includes(query),
+      );
+    }
+    return base
+      .slice()
+      .sort((a, b) =>
+        localizedProductLabel(a).localeCompare(localizedProductLabel(b), locale),
+      );
+  }, [
+    accessoryCandidates,
+    accessorySearch,
+    accessoryPlacementFilter,
+    accessoryPlacementId,
+    locale,
+  ]);
+
+  /**
+   * Info para mostrar en la lista de seleccionados: prioriza los candidatos actuales
+   * (datos frescos) y cae al snapshot guardado en `product.accessories` para que un
+   * accesorio ya vinculado siga mostrándose aunque su categoría deje de ser «de tipo
+   * accesorio» (no desaparece de la vista hasta que el admin lo quite a propósito).
+   */
+  const accessoryDisplayById = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; nameEn: string | null; sku: string }
+    >();
+    for (const a of product?.accessories ?? []) {
+      map.set(a.accessoryProductId, {
+        name: a.name,
+        nameEn: a.nameEn,
+        sku: a.sku,
+      });
+    }
+    for (const p of accessoryCandidates) {
+      map.set(p.id, { name: p.name, nameEn: p.nameEn, sku: p.sku });
+    }
+    return map;
+  }, [product, accessoryCandidates]);
+
+  const selectedAccessoryProducts = useMemo(
+    () =>
+      accessories
+        .map((a) => {
+          const info = accessoryDisplayById.get(a.accessoryProductId);
+          if (!info) return null;
+          return { id: a.accessoryProductId, ...info };
+        })
+        .filter(
+          (p): p is { id: string; name: string; nameEn: string | null; sku: string } =>
+            Boolean(p),
+        ),
+    [accessories, accessoryDisplayById],
+  );
+
   const onSubmitForm = (values: ProductFormValues) => {
     onSubmit(
       values,
@@ -717,7 +912,8 @@ function ProductFormBody({
     activeTab === "shipping" ||
     activeTab === "media" ||
     activeTab === "characteristics" ||
-    activeTab === "specifications";
+    activeTab === "specifications" ||
+    activeTab === "accessories";
 
   return (
     <Form
@@ -1762,6 +1958,165 @@ function ProductFormBody({
                 </div>
               )}
             />
+          </section>
+        )}
+
+        {activeTab === "accessories" && (
+          <section
+            className={productFormSectionClassName}
+            style={sectionMinHeightStyle}
+          >
+            <header className="space-y-1">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground">
+                {t("admin.products.form.accessories.title")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.products.form.accessories.description")}
+              </p>
+            </header>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="accessory-placement-filter"
+                className="text-sm font-medium"
+              >
+                {t("admin.products.form.accessories.filterLabel")}
+              </Label>
+              <Select<{ value: string; label: string }, false>
+                instanceId="accessory-placement-filter"
+                inputId="accessory-placement-filter"
+                styles={appSelectStyles}
+                options={[
+                  {
+                    value: "all",
+                    label: t("admin.products.form.accessories.filterAll"),
+                  },
+                  ...accessoryPlacementOptions,
+                ]}
+                value={
+                  [
+                    {
+                      value: "all",
+                      label: t("admin.products.form.accessories.filterAll"),
+                    },
+                    ...accessoryPlacementOptions,
+                  ].find((option) => option.value === accessoryPlacementFilter) ??
+                  null
+                }
+                onChange={(option) => {
+                  if (option) setAccessoryPlacementFilter(option.value);
+                }}
+                isClearable={false}
+                isSearchable={false}
+                isDisabled={isPending || accessoryPlacementOptions.length === 0}
+                noOptionsMessage={() =>
+                  t("admin.products.form.accessories.noMatches")
+                }
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="accessory-search"
+                className="text-sm font-medium"
+              >
+                {t("admin.products.form.accessories.searchPlaceholder")}
+              </Label>
+              <Input
+                id="accessory-search"
+                value={accessorySearch}
+                onChange={(e) => setAccessorySearch(e.target.value)}
+                placeholder={t(
+                  "admin.products.form.accessories.searchPlaceholder",
+                )}
+                disabled={isPending}
+                className={adminServiceLikeInputClassName}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className={adminSlideOverNestedScrollClassName}>
+              {visibleAccessoryCandidates.map((item) => {
+                const selected = accessorySelectedSet.has(item.id);
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-border/60 p-3"
+                  >
+                    <label className="flex items-start gap-3">
+                      <Input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleAccessory(item.id)}
+                        disabled={isPending}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {locale === "en"
+                            ? item.nameEn?.trim() || item.name
+                            : item.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.sku}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                );
+              })}
+              {visibleAccessoryCandidates.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                  {accessoryCandidates.length === 0
+                    ? t("admin.products.form.accessories.noCandidates")
+                    : t("admin.products.form.accessories.noMatches")}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="border-t border-border/60" aria-hidden />
+
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("admin.products.form.accessories.selectedTitle")}
+              </h3>
+              {selectedAccessoryProducts.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("admin.products.form.accessories.selectedEmpty")}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedAccessoryProducts.map((item) => {
+                    const label =
+                      locale === "en"
+                        ? item.nameEn?.trim() || item.name
+                        : item.name;
+                    return (
+                      <div
+                        key={item.id}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {label}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => removeAccessory(item.id)}
+                          disabled={isPending}
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          aria-label={t(
+                            "admin.products.form.accessories.removeAria",
+                          ).replace("{name}", label)}
+                        >
+                          <X className="h-3 w-3" aria-hidden />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </section>
         )}
       </div>

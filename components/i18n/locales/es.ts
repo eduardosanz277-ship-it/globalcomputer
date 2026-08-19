@@ -725,6 +725,7 @@ export const es = {
           media: "Multimedia",
           characteristics: "Características",
           specifications: "Especificaciones",
+          accessories: "Accesorios",
         },
         fields: {
           name: "Nombre",
@@ -865,6 +866,20 @@ export const es = {
           emptyForFilter: "No hay características específicas para este filtro.",
           selectedTitle: "Características seleccionadas",
           selectedEmpty: "Aún no has marcado características específicas.",
+          removeAria: "Quitar {name}",
+        },
+        accessories: {
+          title: "Accesorios",
+          description:
+            "Vincula productos que se ofrecerán como accesorios de este producto (ej. soportes, tornillos, cables). Solo se muestran productos de categorías marcadas como «de tipo accesorio».",
+          filterLabel: "Filtrar por categoría de accesorio",
+          filterAll: "Todas las categorías de accesorio",
+          searchPlaceholder: "Buscar producto por nombre o SKU…",
+          noCandidates:
+            "No hay productos disponibles para vincular. Marca al menos una categoría como «de tipo accesorio».",
+          noMatches: "Sin coincidencias",
+          selectedTitle: "Accesorios vinculados",
+          selectedEmpty: "Aún no has vinculado accesorios a este producto.",
           removeAria: "Quitar {name}",
         },
       },

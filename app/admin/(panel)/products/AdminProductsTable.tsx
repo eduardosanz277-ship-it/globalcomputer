@@ -893,6 +893,7 @@ export function AdminProductsTable({
           if (!open) setEditing(null);
         }}
         product={editing}
+        products={products}
         brands={brands}
         brandTypes={brandTypes}
         specificCharacteristics={specificCharacteristics}

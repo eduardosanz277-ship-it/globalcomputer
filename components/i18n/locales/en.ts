@@ -717,6 +717,7 @@ export const en = {
           media: "Media",
           characteristics: "Characteristics",
           specifications: "Specifications",
+          accessories: "Accessories",
         },
         fields: {
           name: "Name (Spanish)",
@@ -857,6 +858,20 @@ export const en = {
           emptyForFilter: "No specific characteristics for this filter.",
           selectedTitle: "Selected characteristics",
           selectedEmpty: "You have not selected specific characteristics yet.",
+          removeAria: "Remove {name}",
+        },
+        accessories: {
+          title: "Accessories",
+          description:
+            "Link products that will be offered as accessories for this product (e.g. mounts, screws, cables). Only products from categories marked as \"accessory type\" are shown.",
+          filterLabel: "Filter by accessory category",
+          filterAll: "All accessory categories",
+          searchPlaceholder: "Search product by name or SKU…",
+          noCandidates:
+            "No products available to link. Mark at least one category as \"accessory type\".",
+          noMatches: "No matches",
+          selectedTitle: "Linked accessories",
+          selectedEmpty: "You have not linked accessories to this product yet.",
           removeAria: "Remove {name}",
         },
       },
