@@ -18,6 +18,7 @@ import {
   storefrontLocalizedText,
   storefrontProductDisplayName,
 } from "@/modules/catalog/storefront-product.shared";
+import { listAccessoryStorefrontProducts } from "@/modules/catalog/storefront-product-accessories.service";
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 import type { Metadata } from "next";
@@ -115,21 +116,28 @@ export default async function ProductoDetallePage({
     redirect(`/products/${product.slug}${qs}`);
   }
 
-  const [user, productReviews, similarProducts, breadcrumbPrefix, taxonomyBackPath] =
-    await Promise.all([
-      getCurrentUserService(),
-      listProductReviewsByProductId(product.id),
-      listSimilarStorefrontProducts({
-        productId: product.id,
-        categoriaId: product.category_id,
-        subcategoryId: product.subcategory_id,
-        marcaId: product.brand_id,
-        tipoProductoId: product.brand_type_id,
-        precio: product.price_client,
-      }),
-      resolveProductDetailBreadcrumbPrefix(product),
-      resolveProductTaxonomyListingPath(product),
-    ]);
+  const [
+    user,
+    productReviews,
+    similarProducts,
+    accessoryProducts,
+    breadcrumbPrefix,
+    taxonomyBackPath,
+  ] = await Promise.all([
+    getCurrentUserService(),
+    listProductReviewsByProductId(product.id),
+    listSimilarStorefrontProducts({
+      productId: product.id,
+      categoriaId: product.category_id,
+      subcategoryId: product.subcategory_id,
+      marcaId: product.brand_id,
+      tipoProductoId: product.brand_type_id,
+      precio: product.price_client,
+    }),
+    listAccessoryStorefrontProducts(product.id),
+    resolveProductDetailBreadcrumbPrefix(product),
+    resolveProductTaxonomyListingPath(product),
+  ]);
 
   const priceTier = resolveStorefrontPriceTier(user?.role);
 
@@ -168,6 +176,7 @@ export default async function ProductoDetallePage({
           priceTier={priceTier}
           initialProductReviews={productReviews}
           similarProducts={similarProducts}
+          accessoryProducts={accessoryProducts}
         />
       </div>
     </main>

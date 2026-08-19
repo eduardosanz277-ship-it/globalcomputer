@@ -75,6 +75,7 @@ type Props = {
   priceTier: StorefrontPriceTier;
   initialProductReviews: ProductReviewDetailListItem[];
   similarProducts: StorefrontProduct[];
+  accessoryProducts: StorefrontProduct[];
 };
 
 type ProductDescriptionCollapsibleProps = {
@@ -686,6 +687,7 @@ export function StorefrontProductDetailView({
   priceTier,
   initialProductReviews,
   similarProducts,
+  accessoryProducts,
 }: Props) {
   const { t, locale } = useI18n();
   const router = useRouter();
@@ -1241,6 +1243,20 @@ export function StorefrontProductDetailView({
           */}
         </div>
       </div>
+      {accessoryProducts.length > 0 ? (
+        <div
+          className={cn(
+            "mt-12 bg-[rgb(229,231,235)] shadow-none ring-0 sm:mt-14",
+            "-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+          )}
+        >
+          <SimilarProducts
+            products={accessoryProducts}
+            priceTier={priceTier}
+            title={t("storefront.productDetail.accessoriesTitle")}
+          />
+        </div>
+      ) : null}
       {similarProducts.length > 0 ? (
         <div
           className={cn(
