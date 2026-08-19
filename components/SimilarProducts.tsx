@@ -44,6 +44,8 @@ export type SimilarProductsProps = {
   className?: string;
   /** Oculta el título interno cuando la página ya define el encabezado de sección (p. ej. home). */
   hideHeading?: boolean;
+  /** Título del bloque; por defecto "Productos similares" (i18n). Permite reutilizar el carrusel para otros listados (ej. accesorios). */
+  title?: string;
 };
 
 /**
@@ -55,6 +57,7 @@ export function SimilarProducts({
   priceTier,
   className,
   hideHeading = false,
+  title,
 }: SimilarProductsProps) {
   const { t } = useI18n();
   /** Fila del título: mismo borde izquierdo que el contenido principal (referencia de alineación). */
@@ -231,7 +234,7 @@ export function SimilarProducts({
               "text-lg font-semibold tracking-tight text-foreground sm:text-xl",
             )}
           >
-            {t("storefront.productDetail.similarTitle")}
+            {title ?? t("storefront.productDetail.similarTitle")}
           </h2>
         </div>
       ) : (

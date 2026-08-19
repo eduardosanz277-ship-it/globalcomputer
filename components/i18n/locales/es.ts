@@ -415,6 +415,7 @@ export const es = {
       viewImageAria: "Ver imagen {n}",
       skuLabel: "SKU",
       similarTitle: "Productos similares",
+      accessoriesTitle: "Completa tu compra",
       similarPrevAria: "Productos anteriores",
       similarNextAria: "Productos siguientes",
       featuredAria: "Productos destacados",
