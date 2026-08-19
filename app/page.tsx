@@ -32,13 +32,7 @@ import {
 } from "@/modules/site/leave-review-data.service";
 import { cn } from "@/utils/cn";
 import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  Cable,
-  Camera,
-  HardDrive,
-  LayoutGrid,
-} from "lucide-react";
+import { ArrowRight, Cable, Camera, HardDrive, LayoutGrid } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,39 +51,39 @@ const CATEGORIES: Array<{
   chip: string;
   tint: string;
 }> = [
-    {
-      title: "Cámaras IP",
-      desc: "Color nocturno, PoE y 4K",
-      href: "#destacados",
-      Icon: Camera,
-      chip: "Popular",
-      tint: "from-primary/12 via-card to-primary/[0.02]",
-    },
-    {
-      title: "Grabadoras NVR/DVR",
-      desc: "Desde 4 hasta 32 canales",
-      href: "#destacados",
-      Icon: HardDrive,
-      chip: "Pro",
-      tint: "from-cyan-500/10 via-card to-card",
-    },
-    {
-      title: "Kits completos",
-      desc: "Todo para empezar ya",
-      href: "#destacados",
-      Icon: LayoutGrid,
-      chip: "Pack",
-      tint: "from-secondary/15 via-card to-card",
-    },
-    {
-      title: "Accesorios",
-      desc: "Cables, discos y más",
-      href: "#destacados",
-      Icon: Cable,
-      chip: "Extra",
-      tint: "from-violet-500/10 via-card to-card",
-    },
-  ];
+  {
+    title: "Cámaras IP",
+    desc: "Color nocturno, PoE y 4K",
+    href: "#destacados",
+    Icon: Camera,
+    chip: "Popular",
+    tint: "from-primary/12 via-card to-primary/[0.02]",
+  },
+  {
+    title: "Grabadoras NVR/DVR",
+    desc: "Desde 4 hasta 32 canales",
+    href: "#destacados",
+    Icon: HardDrive,
+    chip: "Pro",
+    tint: "from-cyan-500/10 via-card to-card",
+  },
+  {
+    title: "Kits completos",
+    desc: "Todo para empezar ya",
+    href: "#destacados",
+    Icon: LayoutGrid,
+    chip: "Pack",
+    tint: "from-secondary/15 via-card to-card",
+  },
+  {
+    title: "Accesorios",
+    desc: "Cables, discos y más",
+    href: "#destacados",
+    Icon: Cable,
+    chip: "Extra",
+    tint: "from-violet-500/10 via-card to-card",
+  },
+];
 
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
@@ -557,12 +551,12 @@ export default async function HomePage() {
 
           <div className="mt-6 lg:mt-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {featuredBrands.map((brand) => (
-                <article
-                  key={brand.id}
-                  className="group overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
-                >
-                  <Link
-                    href={`/brands/${brand.slug}`}
+              <article
+                key={brand.id}
+                className="group overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
+              >
+                <Link
+                  href={`/brands/${brand.slug}`}
                   className="block"
                   aria-label={`Ver productos / View products - ${brand.name}`}
                 >
@@ -586,8 +580,8 @@ export default async function HomePage() {
                   <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground break-words">
                     <LocalizedText es={brand.name} en={brand.nameEn} />
                   </h3>
-                    <Link
-                      href={`/brands/${brand.slug}`}
+                  <Link
+                    href={`/brands/${brand.slug}`}
                     aria-label={`Ver productos / View products - ${brand.name}`}
                     className={cn(
                       buttonVariants({ variant: "outline", size: "sm" }),

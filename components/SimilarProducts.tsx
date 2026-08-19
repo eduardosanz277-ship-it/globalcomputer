@@ -10,6 +10,7 @@ import { Inter } from "next/font/google";
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -46,6 +47,8 @@ export type SimilarProductsProps = {
   hideHeading?: boolean;
   /** Título del bloque; por defecto "Productos similares" (i18n). Permite reutilizar el carrusel para otros listados (ej. accesorios). */
   title?: string;
+  /** Subtítulo bajo el título. Por defecto el de productos similares; pásalo para accesorios u otros bloques. */
+  subtitle?: string;
 };
 
 /**
@@ -58,8 +61,14 @@ export function SimilarProducts({
   className,
   hideHeading = false,
   title,
+  subtitle,
 }: SimilarProductsProps) {
   const { t } = useI18n();
+  const headingId = useId();
+  const heading = title ?? t("storefront.productDetail.similarTitle");
+  const headingSubtitle =
+    subtitle ??
+    (title == null ? t("storefront.productDetail.similarSubtitle") : undefined);
   /** Fila del título: mismo borde izquierdo que el contenido principal (referencia de alineación). */
   const alignRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLUListElement>(null);
@@ -217,25 +226,27 @@ export function SimilarProducts({
   return (
     <section
       className={cn("group/similar w-full", className)}
-      aria-labelledby={hideHeading ? undefined : "similar-products-heading"}
+      aria-labelledby={hideHeading ? undefined : headingId}
       aria-label={
         hideHeading ? t("storefront.productDetail.featuredAria") : undefined
       }
     >
       {!hideHeading ? (
-        <div
-          ref={alignRef}
-          className="mb-4 flex items-end justify-between gap-3"
-        >
+        <div ref={alignRef} className="mb-4">
           <h2
-            id="similar-products-heading"
+            id={headingId}
             className={cn(
               inter.className,
               "text-lg font-semibold tracking-tight text-foreground sm:text-xl",
             )}
           >
-            {title ?? t("storefront.productDetail.similarTitle")}
+            {heading}
           </h2>
+          {headingSubtitle ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {headingSubtitle}
+            </p>
+          ) : null}
         </div>
       ) : (
         <div ref={alignRef} className="w-full" aria-hidden />

@@ -37,7 +37,9 @@ export function ServiceCardLink({
   const t = (es: string, en: string) => (locale === "en" ? en : es);
   const displayName = locale === "en" ? nameEn?.trim() || name : name;
   const rawDescription =
-    locale === "en" ? descriptionEn?.trim() || description || "" : description || "";
+    locale === "en"
+      ? descriptionEn?.trim() || description || ""
+      : description || "";
   const excerpt = clampText(plainTextFromHtml(rawDescription), 130);
 
   return (

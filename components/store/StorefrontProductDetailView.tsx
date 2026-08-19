@@ -44,10 +44,17 @@ import {
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
-import { hasPublishedRichHtml, resolveLocalizedRichHtml } from "@/lib/plainTextFromHtml";
+import {
+  hasPublishedRichHtml,
+  resolveLocalizedRichHtml,
+} from "@/lib/plainTextFromHtml";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { isNewFromCreatedAt, storefrontLocalizedText, storefrontProductDisplayName } from "@/modules/catalog/storefront-product.shared";
+import {
+  isNewFromCreatedAt,
+  storefrontLocalizedText,
+  storefrontProductDisplayName,
+} from "@/modules/catalog/storefront-product.shared";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import type { StorefrontProductDetail } from "@/modules/catalog/storefront-product-detail.service";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -97,7 +104,10 @@ type ReviewRatingOption = { value: ReviewRatingFilter; label: string };
 const TABLE_LIKE_TOOLTIP_CLASS =
   "rounded-xl border border-border/60 bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-xl";
 
-function formatSortSelectedLabel(prefix: string, option: ReviewDateSortOption): string {
+function formatSortSelectedLabel(
+  prefix: string,
+  option: ReviewDateSortOption,
+): string {
   return `${prefix} ${option.label}`;
 }
 
@@ -372,7 +382,9 @@ function ProductReviewsSection({
                       variant="outline"
                       className="h-10 w-auto justify-start gap-2 rounded-lg border-border/80 bg-card px-3 text-sm shadow-sm transition hover:bg-muted/50 sm:w-10 sm:px-0 sm:justify-center sm:gap-0"
                       onClick={clearFilters}
-                      aria-label={t("storefront.productDetail.reviewsClearFilters")}
+                      aria-label={t(
+                        "storefront.productDetail.reviewsClearFilters",
+                      )}
                     >
                       <FilterX className="h-4 w-4" aria-hidden />
                       <span className="sm:hidden">
@@ -430,9 +442,13 @@ function ProductReviewsSection({
                   <div className="flex items-center justify-between gap-3">
                     <StarRatingIcons
                       rating={row.rating}
-                      ariaLabel={t("storefront.productDetail.starsAria").replace(
+                      ariaLabel={t(
+                        "storefront.productDetail.starsAria",
+                      ).replace(
                         "{n}",
-                        String(Math.min(5, Math.max(0, Math.round(row.rating)))),
+                        String(
+                          Math.min(5, Math.max(0, Math.round(row.rating))),
+                        ),
                       )}
                     />
                     <CheckCircle2
@@ -576,10 +592,12 @@ function ProductDescriptionCollapsible({
 
 function ProductSpecsContent({ specifications }: { specifications: string }) {
   return (
-    <ProductDescriptionViewer
-      descripcion={specifications}
-      className="storefront-product-specs"
-    />
+    <div className="min-w-0 max-w-full overflow-x-auto">
+      <ProductDescriptionViewer
+        descripcion={specifications}
+        className="storefront-product-specs max-w-full break-words [&_img]:max-w-full"
+      />
+    </div>
   );
 }
 
@@ -665,7 +683,7 @@ function ProductInformationTabsSection({
         </h2>
       )}
 
-      <div className="mt-6" role={showTabs ? "tabpanel" : undefined}>
+      <div className="mt-4" role={showTabs ? "tabpanel" : undefined}>
         {showTabs ? (
           activeTab === "technical_specs" ? (
             <ProductSpecsContent specifications={specsHtml} />
@@ -867,7 +885,9 @@ export function StorefrontProductDetailView({
                                 goToPrevImage();
                               }}
                               className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:left-4"
-                              aria-label={t("storefront.productDetail.prevImageAria")}
+                              aria-label={t(
+                                "storefront.productDetail.prevImageAria",
+                              )}
                             >
                               <ChevronLeft
                                 className="h-6 w-6"
@@ -882,7 +902,9 @@ export function StorefrontProductDetailView({
                                 goToNextImage();
                               }}
                               className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:right-4"
-                              aria-label={t("storefront.productDetail.nextImageAria")}
+                              aria-label={t(
+                                "storefront.productDetail.nextImageAria",
+                              )}
                             >
                               <ChevronRight
                                 className="h-6 w-6"
@@ -969,10 +991,9 @@ export function StorefrontProductDetailView({
                         ? "border-primary opacity-100"
                         : "border-transparent opacity-70 hover:opacity-100",
                     )}
-                    aria-label={t("storefront.productDetail.viewImageAria").replace(
-                      "{n}",
-                      String(i + 1),
-                    )}
+                    aria-label={t(
+                      "storefront.productDetail.viewImageAria",
+                    ).replace("{n}", String(i + 1))}
                     aria-pressed={i === activeIdx}
                   >
                     <Image
@@ -1046,10 +1067,10 @@ export function StorefrontProductDetailView({
                     aria-hidden
                   />
                   {brandTypeHref ? (
-                      <Link
-                        href={brandTypeHref}
-                        className="transition hover:text-primary"
-                      >
+                    <Link
+                      href={brandTypeHref}
+                      className="transition hover:text-primary"
+                    >
                       {displayBrandTypeName}
                     </Link>
                   ) : (
@@ -1254,6 +1275,7 @@ export function StorefrontProductDetailView({
             products={accessoryProducts}
             priceTier={priceTier}
             title={t("storefront.productDetail.accessoriesTitle")}
+            subtitle={t("storefront.productDetail.accessoriesSubtitle")}
           />
         </div>
       ) : null}
@@ -1276,7 +1298,6 @@ export function StorefrontProductDetailView({
           />
         </div>
       ) : null}
-
       {specificationsForLocale || product.manual_pdf_url?.trim() ? (
         <ProductInformationTabsSection
           specifications={specificationsForLocale}

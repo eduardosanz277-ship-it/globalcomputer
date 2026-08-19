@@ -23,6 +23,7 @@ import {
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { hasPublishedRichHtml } from "@/lib/plainTextFromHtml";
 
 type Props = {
   product: Product | null;
@@ -287,11 +288,12 @@ export function ProductDetailDrawer({
             className={`grid transition-[grid-template-rows] duration-300 ease-out ${descriptionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
           >
             <div className="overflow-hidden border-t border-border/70">
-              {(locale === "en"
-                ? (product.descriptionEn ?? product.description)
-                : product.description
-              )?.trim() ? (
-                <div className="px-4 text-sm">
+              {hasPublishedRichHtml(
+                locale === "en"
+                  ? (product.descriptionEn ?? product.description)
+                  : product.description,
+              ) ? (
+                <div className="px-4 pb-2.5 pt-4 text-sm">
                   <ProductDescriptionViewer
                     descripcion={
                       locale === "en"
@@ -301,7 +303,7 @@ export function ProductDetailDrawer({
                   />
                 </div>
               ) : (
-                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                <div className="m-4 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {t("admin.products.detail.noDescription")}
                 </div>
               )}
@@ -526,8 +528,57 @@ export function ProductDetailDrawer({
                   ))}
                 </div>
               ) : (
-                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                <div className="m-4 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {t("admin.products.detail.noSpecificCharacteristics")}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <button
+            type="button"
+            onClick={() => setSpecificationsOpen((prev) => !prev)}
+            aria-expanded={specificationsOpen}
+            aria-label={
+              specificationsOpen
+                ? t("admin.products.detail.collapseSpecifications")
+                : t("admin.products.detail.expandSpecifications")
+            }
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/20"
+          >
+            <span className="text-sm font-medium text-foreground">
+              {t("admin.products.detail.specifications")}
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${specificationsOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-out ${specificationsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden border-t border-border/70">
+              {hasPublishedRichHtml(
+                locale === "en"
+                  ? (product.specificationsEn ?? product.specifications)
+                  : product.specifications,
+              ) ? (
+                <div className="min-w-0 max-w-full overflow-x-auto px-4 py-2.5 text-sm sm:pb-2.5 sm:pt-4">
+                  <ProductDescriptionViewer
+                    className="admin-product-specs max-w-full break-words [&_img]:max-w-full"
+                    descripcion={
+                      locale === "en"
+                        ? (product.specificationsEn ?? product.specifications ?? "")
+                        : (product.specifications ?? "")
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="m-4 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  {t("admin.products.detail.noSpecifications")}
                 </div>
               )}
             </div>
@@ -559,7 +610,7 @@ export function ProductDetailDrawer({
             className={`grid transition-[grid-template-rows] duration-300 ease-out ${accessoriesOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
           >
             <div className="overflow-hidden border-t border-border/70">
-              {(product?.accessories.length ?? 0) > 0 ? (
+              {(product?.accessories?.length ?? 0) > 0 ? (
                 <div className="flex flex-wrap gap-2 p-4">
                   {product?.accessories.map((item) => (
                     <div
@@ -578,55 +629,8 @@ export function ProductDetailDrawer({
                   ))}
                 </div>
               ) : (
-                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                <div className="m-4 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {t("admin.products.detail.noAccessories")}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
-          <button
-            type="button"
-            onClick={() => setSpecificationsOpen((prev) => !prev)}
-            aria-expanded={specificationsOpen}
-            aria-label={
-              specificationsOpen
-                ? t("admin.products.detail.collapseSpecifications")
-                : t("admin.products.detail.expandSpecifications")
-            }
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/20"
-          >
-            <span className="text-sm font-medium text-foreground">
-              {t("admin.products.form.tabs.specifications")}
-            </span>
-            <ChevronDown
-              className={`h-4 w-4 text-muted-foreground transition-transform ${specificationsOpen ? "rotate-180" : ""}`}
-              aria-hidden
-            />
-          </button>
-
-          <div
-            className={`grid transition-[grid-template-rows] duration-300 ease-out ${specificationsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-          >
-            <div className="overflow-hidden border-t border-border/70">
-              {(locale === "en"
-                ? (product.specificationsEn ?? product.specifications)
-                : product.specifications
-              )?.trim() ? (
-                <div className="px-4 text-sm">
-                  <ProductDescriptionViewer
-                    descripcion={
-                      locale === "en"
-                        ? (product.specificationsEn ?? product.specifications ?? "")
-                        : (product.specifications ?? "")
-                    }
-                  />
-                </div>
-              ) : (
-                <div className="m-3 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                  {t("admin.products.detail.noSpecifications")}
                 </div>
               )}
             </div>

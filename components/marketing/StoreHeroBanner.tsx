@@ -36,15 +36,18 @@ export function StoreHeroBanner({
         <div className="grid items-center gap-10">
           <div className="text-center md:max-w-[65%] md:text-left lg:max-w-[60%] xl:max-w-[56%]">
             <div className="px-4 sm:px-6 md:px-0">
-              <h1 className="text-[2rem] font-extrabold leading-tight tracking-tight text-foreground sm:text-[2.5rem] md:text-[28px] lg:text-[52px]">
-                {t("Instalación de Cámaras de", "Security Camera")}
-                <br />
-                {t("Seguridad", "Installation")}
+              <h1 className="text-[2rem] font-bold leading-tight tracking-tight text-foreground sm:text-[2.5rem] md:text-[28px] lg:text-[52px]">
+                {t("Tu seguridad, simple y clara", "Your security, simple and clear")}
               </h1>
-              <p className="mx-auto mt-4 text-pretty text-[14px] font-medium text-muted-foreground sm:text-[15px] md:mx-0 md:text-[14px] lg:whitespace-nowrap lg:text-[17px]">
+              <p className="mx-auto mt-4 text-pretty text-[14px] font-medium text-muted-foreground sm:text-[15px] md:mx-0 md:text-[14px] lg:text-[17px]">
                 {t(
-                  "Protege tu hogar o negocio con sistemas de videovigilancia de alta calidad.",
-                  "Protect your home or business with high-quality video surveillance systems.",
+                  "Cámaras, grabadoras y kits con precios claros, y equipos que te orientan.",
+                  "Cameras, recorders, and kits with clear prices, and teams that guide you.",
+                )}
+                <br />
+                {t(
+                  "Así debería ser comprar tecnología.",
+                  "This is how buying technology should feel.",
                 )}
               </p>
 

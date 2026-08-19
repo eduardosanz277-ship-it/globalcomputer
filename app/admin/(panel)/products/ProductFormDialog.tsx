@@ -1737,31 +1737,35 @@ function ProductFormBody({
                 const selected = selectedSet.has(item.id);
 
                 return (
-                  <div
+                  <label
                     key={item.id}
-                    className="rounded-lg border border-border/60 p-3"
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "border-border/60 hover:border-primary/40 hover:bg-primary/[0.03]",
+                      isPending && "cursor-not-allowed opacity-60",
+                    )}
                   >
-                    <label className="flex items-start gap-3">
-                      <Input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => toggleCharacteristic(item.id)}
-                        disabled={isPending}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {locale === "en"
-                            ? item.nameEn?.trim() || item.name
-                            : item.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {locale === "en"
-                            ? item.generalNameEn?.trim() || item.generalName
-                            : item.generalName}
-                        </p>
-                      </div>
-                    </label>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleCharacteristic(item.id)}
+                      disabled={isPending}
+                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border accent-primary text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {locale === "en"
+                          ? item.nameEn?.trim() || item.name
+                          : item.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {locale === "en"
+                          ? item.generalNameEn?.trim() || item.generalName
+                          : item.generalName}
+                      </p>
+                    </div>
 
                     {/* Temporalmente oculto: valor opcional por característica específica. */}
                     {/* {selected ? (
@@ -1781,7 +1785,7 @@ function ProductFormBody({
                     />
                   </div>
                 ) : null} */}
-                  </div>
+                  </label>
                 );
               })}
               {visibleSpecificOptions.length === 0 ? (
@@ -2027,7 +2031,7 @@ function ProductFormBody({
                 htmlFor="accessory-search"
                 className="text-sm font-medium"
               >
-                {t("admin.products.form.accessories.searchPlaceholder")}
+                {t("admin.products.form.accessories.searchLabel")}
               </Label>
               <Input
                 id="accessory-search"
@@ -2046,30 +2050,34 @@ function ProductFormBody({
               {visibleAccessoryCandidates.map((item) => {
                 const selected = accessorySelectedSet.has(item.id);
                 return (
-                  <div
+                  <label
                     key={item.id}
-                    className="rounded-lg border border-border/60 p-3"
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "border-border/60 hover:border-primary/40 hover:bg-primary/[0.03]",
+                      isPending && "cursor-not-allowed opacity-60",
+                    )}
                   >
-                    <label className="flex items-start gap-3">
-                      <Input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => toggleAccessory(item.id)}
-                        disabled={isPending}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {locale === "en"
-                            ? item.nameEn?.trim() || item.name
-                            : item.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.sku}
-                        </p>
-                      </div>
-                    </label>
-                  </div>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleAccessory(item.id)}
+                      disabled={isPending}
+                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border accent-primary text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {locale === "en"
+                          ? item.nameEn?.trim() || item.name
+                          : item.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.sku}
+                      </p>
+                    </div>
+                  </label>
                 );
               })}
               {visibleAccessoryCandidates.length === 0 ? (

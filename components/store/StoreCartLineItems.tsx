@@ -74,7 +74,11 @@ function CartLineRow({
     }
   };
 
-  const handleQtyChange = async (id: string, nextQty: number, maxQty?: number) => {
+  const handleQtyChange = async (
+    id: string,
+    nextQty: number,
+    maxQty?: number,
+  ) => {
     try {
       await runCartMutation(() => gcCartSetQty(id, nextQty, maxQty));
     } catch (error) {
@@ -129,13 +133,7 @@ function CartLineRow({
         className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted/50 ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:h-24 md:w-24"
       >
         {img ? (
-          <Image
-            src={img}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="96px"
-          />
+          <Image src={img} alt="" fill className="object-cover" sizes="96px" />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center text-muted-foreground"

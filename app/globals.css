@@ -704,6 +704,10 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
   font-size: 0.875rem;
 }
 
+.product-description-html:is(.admin-product-specs, .storefront-product-specs) table {
+  margin-top: 0;
+}
+
 .product-description-html th,
 .product-description-html td {
   border: 1px solid rgba(216, 216, 217, 0.9);
@@ -715,6 +719,76 @@ body.swal2-shown .swal2-container.swal-saas-hide-backdrop {
 .product-description-html th {
   background: rgba(238, 240, 244, 0.55);
   font-weight: 600;
+}
+
+/*
+ * Ficha de producto (admin y tienda) — Especificaciones técnicas:
+ * en móvil la tabla de 2 columnas se apila (etiqueta + valor).
+ */
+@media (max-width: 639px) {
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) .spec-accordion-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+    padding-block: 10px;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) table {
+    display: block;
+    width: 100%;
+    border: 0;
+    margin-block: 0 0.5rem;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) thead,
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) colgroup,
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) col,
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) tr:has(> th) {
+    display: none;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) tbody {
+    display: block;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+    border: 1px solid rgba(216, 216, 217, 0.9);
+    border-bottom-width: 0;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) tr:last-child {
+    border-bottom-width: 1px;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) th,
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) td {
+    border: 0;
+    padding: 10px 0.65rem;
+    width: auto !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) td:first-child {
+    font-weight: 600;
+    color: #2a2c30;
+    background: rgba(238, 240, 244, 0.55);
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs)
+    td:last-child:not(:first-child) {
+    color: rgba(42, 44, 48, 0.72);
+  }
+
+  .product-description-html:is(.admin-product-specs, .storefront-product-specs) .spec-accordion-row-name {
+    background: rgba(238, 240, 244, 0.55);
+    margin-inline: -1rem;
+    padding: 10px 1rem;
+  }
 }
 
 .product-description-html hr {
