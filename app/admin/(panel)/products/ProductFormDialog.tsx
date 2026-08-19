@@ -508,6 +508,10 @@ export function ProductFormDialog({
         value: c.value,
       }));
 
+    const accessoryValues: ProductAccessoryInput[] = accessories.map((a) => ({
+      accessoryProductId: a.accessoryProductId,
+    }));
+
     if (product) {
       executeUpdate(
         product.id,
@@ -518,6 +522,7 @@ export function ProductFormDialog({
         removedImages,
         characteristicValues,
         manualPdfFile,
+        accessoryValues,
       );
       return;
     }
@@ -528,6 +533,7 @@ export function ProductFormDialog({
       primaryIndex >= 0 ? primaryIndex : 0,
       characteristicValues,
       manualPdfFile,
+      accessoryValues,
     );
   };
 

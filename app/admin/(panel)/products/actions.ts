@@ -7,6 +7,7 @@ import {
 } from "@/modules/admin/products/products.service";
 import type {
   ExistingProductImageOutput,
+  ProductAccessoryInput,
   ProductCharacteristicValueInput,
   ProductInsert,
   ProductUpdate,
@@ -30,6 +31,7 @@ export async function createProductWithImageAction(
   primaryImageIndex?: number,
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
+  accessories?: ProductAccessoryInput[],
 ) {
   await createProductService(
     values,
@@ -37,6 +39,7 @@ export async function createProductWithImageAction(
     primaryImageIndex ?? 0,
     characteristicValues,
     manualPdfFile,
+    accessories,
   );
 }
 
@@ -49,6 +52,7 @@ export async function updateProductWithImageAction(
   removedImageIds?: string[],
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
+  accessories?: ProductAccessoryInput[],
 ) {
   await updateProductService(
     id,
@@ -59,5 +63,6 @@ export async function updateProductWithImageAction(
     removedImageIds,
     characteristicValues,
     manualPdfFile,
+    accessories,
   );
 }
