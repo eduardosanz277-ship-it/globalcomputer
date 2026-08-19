@@ -1253,6 +1253,9 @@ export const es = {
         activeLabel: "Activa",
         activeDescription:
           "Si está desactivada, no se muestra al asignar categorías a productos.",
+        isAccessoryTypeLabel: "Categoría de tipo accesorio",
+        isAccessoryTypeDescription:
+          "Los productos de esta categoría (y sus subcategorías) estarán disponibles para vincularse como accesorios de otros productos.",
         cancel: "Cancelar",
         save: "Guardar",
         saving: "Guardando",

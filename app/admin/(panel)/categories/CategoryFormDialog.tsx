@@ -38,7 +38,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
   const router = useRouter();
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
-    defaultValues: { name: "", nameEn: "", active: true },
+    defaultValues: { name: "", nameEn: "", active: true, isAccessoryType: false },
   });
   const { t, locale } = useI18n();
 
@@ -75,9 +75,10 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
         name: category.name,
         nameEn: category.nameEn ?? category.name,
         active: category.active,
+        isAccessoryType: category.isAccessoryType,
       });
     } else {
-      form.reset({ name: "", nameEn: "", active: true });
+      form.reset({ name: "", nameEn: "", active: true, isAccessoryType: false });
     }
   }, [open, category, form]);
 
@@ -173,6 +174,15 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
                 name="active"
                 label={t("admin.categories.form.activeLabel")}
                 description={t("admin.categories.form.activeDescription")}
+              />
+            </div>
+            <div className="border-t border-border/50 pt-4">
+              <FormSwitchField<CategoryFormValues>
+                name="isAccessoryType"
+                label={t("admin.categories.form.isAccessoryTypeLabel")}
+                description={t(
+                  "admin.categories.form.isAccessoryTypeDescription",
+                )}
               />
             </div>
           </div>

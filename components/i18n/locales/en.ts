@@ -1243,6 +1243,9 @@ export const en = {
         activeLabel: "Active",
         activeDescription:
           "When disabled, it's not shown while assigning categories to products.",
+        isAccessoryTypeLabel: "Accessory-type category",
+        isAccessoryTypeDescription:
+          "Products in this category (and its subcategories) will be available to link as accessories on other products.",
         cancel: "Cancel",
         save: "Save",
         saving: "Saving",
