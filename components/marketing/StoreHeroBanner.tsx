@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { HeroAjaxPulseVisual } from "@/components/marketing/HeroAjaxPulseVisual";
 import type { HeroCategory, HeroContact } from "@/components/marketing/StoreHero";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { inter } from "@/lib/fonts/inter";
@@ -140,22 +141,14 @@ export function StoreHeroBanner({
       />
 
       {/*
-        Fondo decorativo para desktop (lg): alineado a la derecha, mismo alto fijo que la
-        sección, detrás de la foto principal.
+        Visual animado para desktop (lg): círculos que "respiran" (se achican y bajan cada
+        5s, 1.2s de transición) igual que el prototipo de Figma "Desktop Ajax" ⇄
+        "Desktop Camara" (node-id 323:1185 / 323:1723). Alto fijo, centrado verticalmente,
+        pegado al borde derecho.
       */}
-      <div
-        className="pointer-events-none absolute right-0 top-1/2 z-0 hidden h-[500px] w-full -translate-y-1/2 bg-[url('/images/hero/fondo.svg')] bg-right bg-no-repeat bg-[length:auto_500px] lg:block"
-        aria-hidden
-      />
-
-      {/*
-        Imagen para desktop (lg): alto fijo en px (no relativo al viewport), centrada
-        verticalmente, para que se vea igual sin importar la resolución de pantalla.
-      */}
-      <div
-        className="pointer-events-none absolute right-0 top-1/2 z-[1] hidden h-[500px] w-full -translate-y-1/2 bg-[url('/images/hero/hero_lg.svg')] bg-right bg-no-repeat bg-[length:auto_500px] lg:block"
-        aria-hidden
-      />
+      <div className="pointer-events-none absolute right-0 top-1/2 z-0 hidden h-[500px] w-full -translate-y-1/2 lg:flex lg:justify-end">
+        <HeroAjaxPulseVisual />
+      </div>
     </section>
   );
 }
