@@ -239,8 +239,8 @@ export function StoreHero({
       </section>
       */}
 
-      {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual. Oculta temporalmente, no eliminar. */}
-      <div className="relative z-10 mx-auto -mt-8 hidden max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
+      {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual. */}
+      <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft-lg sm:flex sm:items-stretch sm:justify-between sm:gap-0 sm:p-0 sm:py-1">
           {trustBarRows.map((row, i) => {
             const { Icon } = row;
