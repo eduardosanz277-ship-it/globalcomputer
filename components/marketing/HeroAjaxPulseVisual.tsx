@@ -45,6 +45,58 @@ const IMAGES = [
   "/images/hero/cameras_devices.png",
 ] as const;
 
+/**
+ * Todo el componente está pensado para una altura de 500px fija; con aspectRatio
+ * 917.2/668 el root mide ≈686.53px de ancho. Estos valores en px (no %) son los mismos
+ * porcentajes usados en toda la animación (10.6%, 30.55%, 61.11%, y el círculo BLUE de más
+ * abajo) ya convertidos, para poder calcular a mano el arco de recorte de la foto.
+ */
+const ROOT_WIDTH_PX = 686.53;
+const BOX_LEFT_PX = 0.106 * ROOT_WIDTH_PX;
+const BOX_TOP_PX = 0.3055 * 500;
+const BOX_WIDTH_PX = ROOT_WIDTH_PX - BOX_LEFT_PX - 0.1299 * ROOT_WIDTH_PX;
+const BOX_HEIGHT_PX = 0.6111 * 500;
+const SLIDE_DISTANCE_PX = BOX_WIDTH_PX;
+/**
+ * En vez de un borde recto, el lado derecho de la caja de recorte de la foto sigue
+ * exactamente el arco del círculo azul (mismo centro y radio), como un path SVG:
+ * línea recta arriba, arco hacia afuera y de vuelta hacia adentro copiando la curva del
+ * círculo, línea recta abajo. Así el límite de recorte se confunde con el propio círculo
+ * en vez de mostrarse como un corte recto — no hace falta "esconder" el borde en ningún
+ * lado en particular, porque ya no hay borde recto que esconder.
+ */
+const BLUE_CENTER_X_PX = (0.3299 + 0.5402 / 2) * ROOT_WIDTH_PX;
+const BLUE_CENTER_Y_PX = 0.187 * 500 + (0.5402 * ROOT_WIDTH_PX) / 2;
+const BLUE_RADIUS_PX = (0.5402 * ROOT_WIDTH_PX) / 2;
+
+function arcXAtY(y: number): number {
+  const dy = y - BLUE_CENTER_Y_PX;
+  const dx = Math.sqrt(Math.max(BLUE_RADIUS_PX * BLUE_RADIUS_PX - dy * dy, 0));
+  return BLUE_CENTER_X_PX + dx;
+}
+
+const ARC_TOP_X = arcXAtY(BOX_TOP_PX) - BOX_LEFT_PX;
+const ARC_BOTTOM_X = arcXAtY(BOX_TOP_PX + BOX_HEIGHT_PX) - BOX_LEFT_PX;
+
+const PHOTO_BOX_CLIP_PATH = `path('M 0 0 L ${ARC_TOP_X} 0 A ${BLUE_RADIUS_PX} ${BLUE_RADIUS_PX} 0 0 1 ${ARC_BOTTOM_X} ${BOX_HEIGHT_PX} L 0 ${BOX_HEIGHT_PX} Z')`;
+
+/** El pack Ajax queda más ancho que el de cámaras, así que se corre un poco más a la izquierda para no verse tan pegado al círculo azul. */
+const EXTRA_RIGHT_INSET_PX: Record<(typeof IMAGES)[number], number> = {
+  "/images/hero/ajax_devices.png": 0.049 * BOX_WIDTH_PX,
+  "/images/hero/cameras_devices.png": 0,
+};
+
+/** El pack de cámaras queda flotando un poco alto respecto al pack Ajax; se baja un poco. */
+const EXTRA_TRANSLATE_Y: Record<(typeof IMAGES)[number], string> = {
+  "/images/hero/ajax_devices.png": "0px",
+  "/images/hero/cameras_devices.png": "7px",
+};
+
+const EXTRA_TRANSLATE_X: Record<(typeof IMAGES)[number], string> = {
+  "/images/hero/ajax_devices.png": "0px",
+  "/images/hero/cameras_devices.png": "1px",
+};
+
 type CircleSpec = {
   color: string;
   border?: string;
