@@ -2,18 +2,23 @@
 
 import { motion, useAnimation, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Animación del hero: 2 fotos que se alternan (pack Ajax / cluster de cámaras).
  *
- * Todo pasa en una sola transición simultánea de TRANSITION_SECONDS:
- *  - La foto actual sale deslizando hacia la derecha mientras la siguiente entra
- *    deslizando desde la derecha, al mismo tiempo (nunca queda espacio en blanco).
- *  - Los 3 círculos decorativos hacen su ciclo completo de encogerse/ocultarse y volver a
- *    crecer/aparecer DENTRO de esa misma ventana de tiempo: arrancan a encogerse en el
- *    instante en que la foto empieza a salir, y ya terminaron de reaparecer para cuando la
- *    foto que entra termina de asentarse.
+ * Todo arranca a la vez, en CIRCLE_TRANSITION / SLIDE_TRANSITION (misma duración,
+ * TRANSITION_SECONDS):
+ *  - Los 3 círculos decorativos se encogen rápido y pasan el resto del tiempo volviendo a
+ *    crecer (ver `times` en CIRCLE_TRANSITION) — el "in" de los círculos arranca mucho antes
+ *    de que la foto termine de salir.
+ *  - Al mismo tiempo que los círculos empiezan a encogerse, la foto actual empieza a salir
+ *    deslizando hacia la derecha mientras la siguiente entra deslizando desde la derecha
+ *    (nunca queda espacio en blanco).
+ *
+ * El borde derecho de la caja de recorte de la foto no es una línea recta: sigue el arco
+ * exacto del círculo azul (PHOTO_BOX_CLIP_PATH), así el límite de recorte se confunde con
+ * el propio círculo en vez de mostrarse como un corte recto.
  *
  * Se usan controles imperativos (useAnimation) para que la animación solo se dispare
  * cuando corresponde (nunca al montar la página) — al cargar, todo queda quieto en reposo
@@ -123,16 +128,25 @@ const BLUE: CircleSpec = {
   small: { left: 33.04, top: 74.55, size: 13.3 },
 };
 
+/**
+ * Cada círculo (RING/GOLD/BLUE) tiene DOS instancias en el DOM (A y B) que se turnan: en
+ * todo momento una está "grande" (visible, en reposo) y la otra "chica" (opacidad 0,
+ * escondida). En cada ciclo, la que estaba grande se desvanece por completo (encoge +
+ * opacidad a 0, sin volver a crecer — nada de rebote) mientras la otra aparece (crece +
+ * opacidad a 1) AL MISMO TIEMPO, con la misma duración — un cruce real entre dos círculos
+ * en vez de una sola animación de ida y vuelta, igual que ya se hace con las 2 fotos.
+ */
 const CIRCLE_TRANSITION = {
-  duration: TRANSITION_SECONDS,
+  duration: CIRCLE_DURATION_SECONDS,
   delay: CIRCLE_DELAY,
-  times: [0, 0.2, 1],
-  ease: [EASE_SMART_ANIMATE, EASE_SMART_ANIMATE],
+  ease: EASE_SMART_ANIMATE,
 };
 
 const SLIDE_TRANSITION = { duration: TRANSITION_SECONDS, ease: EASE_SMART_ANIMATE };
+/** Mismo timing exacto que SLIDE_TRANSITION, exportado para sincronizar el texto rotativo de categoría. */
+export const HERO_CYCLE_SLIDE_TRANSITION = SLIDE_TRANSITION;
 
-function circleRestStyle(spec: CircleSpec): React.CSSProperties {
+function circleBigStyle(spec: CircleSpec) {
   return {
     left: `${spec.big.left}%`,
     top: `${spec.big.top}%`,
@@ -141,27 +155,45 @@ function circleRestStyle(spec: CircleSpec): React.CSSProperties {
   };
 }
 
-function circlePulseKeyframes(spec: CircleSpec) {
+function circleSmallStyle(spec: CircleSpec) {
   return {
-    left: [`${spec.big.left}%`, `${spec.small.left}%`, `${spec.big.left}%`],
-    top: [`${spec.big.top}%`, `${spec.small.top}%`, `${spec.big.top}%`],
-    width: [`${spec.big.size}%`, `${spec.small.size}%`, `${spec.big.size}%`],
-    opacity: [1, 0, 1],
+    left: `${spec.small.left}%`,
+    top: `${spec.small.top}%`,
+    width: `${spec.small.size}%`,
+    opacity: 0,
   };
 }
 
-export function HeroAjaxPulseVisual({ className }: { className?: string }) {
+export function HeroAjaxPulseVisual({
+  className,
+  onCycleStart,
+}: {
+  className?: string;
+  /** Se llama justo al empezar cada ciclo, para que otros elementos (ej. el texto rotativo de categoría) se muevan exactamente en el mismo instante y nunca se desincronicen. */
+  onCycleStart?: () => void;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const [step, setStep] = useState(0);
 
-  const ringControls = useAnimation();
-  const goldControls = useAnimation();
-  const blueControls = useAnimation();
+  // Dos instancias por círculo (A/B) para el cruce real sin rebote — ver comentario arriba.
+  const ringA = useAnimation();
+  const ringB = useAnimation();
+  const goldA = useAnimation();
+  const goldB = useAnimation();
+  const blueA = useAnimation();
+  const blueB = useAnimation();
+  const showingARef = useRef(true);
+
   const outControls = useAnimation();
   const inControls = useAnimation();
 
   const currentSrc = IMAGES[step % IMAGES.length];
   const nextSrc = IMAGES[(step + 1) % IMAGES.length];
+
+  const onCycleStartRef = useRef(onCycleStart);
+  useEffect(() => {
+    onCycleStartRef.current = onCycleStart;
+  }, [onCycleStart]);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
@@ -169,17 +201,33 @@ export function HeroAjaxPulseVisual({ className }: { className?: string }) {
     let timeoutId: number;
 
     const runTransition = async () => {
-      void ringControls.start(circlePulseKeyframes(RING), CIRCLE_TRANSITION);
-      void goldControls.start(circlePulseKeyframes(GOLD), CIRCLE_TRANSITION);
-      void blueControls.start(circlePulseKeyframes(BLUE), CIRCLE_TRANSITION);
-      void outControls.start({ x: "100%" }, SLIDE_TRANSITION);
-      await inControls.start({ x: "0%" }, SLIDE_TRANSITION);
+      onCycleStartRef.current?.();
+
+      if (showingARef.current) {
+        void ringA.start(circleSmallStyle(RING), CIRCLE_TRANSITION);
+        void goldA.start(circleSmallStyle(GOLD), CIRCLE_TRANSITION);
+        void blueA.start(circleSmallStyle(BLUE), CIRCLE_TRANSITION);
+        void ringB.start(circleBigStyle(RING), CIRCLE_TRANSITION);
+        void goldB.start(circleBigStyle(GOLD), CIRCLE_TRANSITION);
+        void blueB.start(circleBigStyle(BLUE), CIRCLE_TRANSITION);
+      } else {
+        void ringB.start(circleSmallStyle(RING), CIRCLE_TRANSITION);
+        void goldB.start(circleSmallStyle(GOLD), CIRCLE_TRANSITION);
+        void blueB.start(circleSmallStyle(BLUE), CIRCLE_TRANSITION);
+        void ringA.start(circleBigStyle(RING), CIRCLE_TRANSITION);
+        void goldA.start(circleBigStyle(GOLD), CIRCLE_TRANSITION);
+        void blueA.start(circleBigStyle(BLUE), CIRCLE_TRANSITION);
+      }
+      showingARef.current = !showingARef.current;
+
+      void outControls.start({ x: `${SLIDE_DISTANCE_PX}px` }, SLIDE_TRANSITION);
+      await inControls.start({ x: "0px" }, SLIDE_TRANSITION);
 
       // La transición terminó: la foto "siguiente" pasa a ser la actual. Reseteamos las
       // capas al instante (sin animación) antes de que el próximo ciclo las reutilice.
       setStep((s) => s + 1);
-      outControls.set({ x: "0%" });
-      inControls.set({ x: "100%" });
+      outControls.set({ x: "0px" });
+      inControls.set({ x: `${SLIDE_DISTANCE_PX}px` });
     };
 
     const scheduleCycle = () => {
@@ -206,9 +254,20 @@ export function HeroAjaxPulseVisual({ className }: { className?: string }) {
           border: RING.border,
           aspectRatio: "1 / 1",
           zIndex: 0,
-          ...circleRestStyle(RING),
+          ...circleBigStyle(RING),
         }}
-        animate={ringControls}
+        animate={ringA}
+      />
+      <motion.div
+        style={{
+          position: "absolute",
+          borderRadius: "9999px",
+          border: RING.border,
+          aspectRatio: "1 / 1",
+          zIndex: 0,
+          ...circleSmallStyle(RING),
+        }}
+        animate={ringB}
       />
       <motion.div
         style={{
@@ -217,9 +276,20 @@ export function HeroAjaxPulseVisual({ className }: { className?: string }) {
           backgroundColor: GOLD.color,
           aspectRatio: "1 / 1",
           zIndex: 0,
-          ...circleRestStyle(GOLD),
+          ...circleBigStyle(GOLD),
         }}
-        animate={goldControls}
+        animate={goldA}
+      />
+      <motion.div
+        style={{
+          position: "absolute",
+          borderRadius: "9999px",
+          backgroundColor: GOLD.color,
+          aspectRatio: "1 / 1",
+          zIndex: 0,
+          ...circleSmallStyle(GOLD),
+        }}
+        animate={goldB}
       />
       <motion.div
         style={{
@@ -228,48 +298,100 @@ export function HeroAjaxPulseVisual({ className }: { className?: string }) {
           backgroundColor: BLUE.color,
           aspectRatio: "1 / 1",
           zIndex: 0,
-          ...circleRestStyle(BLUE),
+          ...circleBigStyle(BLUE),
         }}
-        animate={blueControls}
+        animate={blueA}
+      />
+      <motion.div
+        style={{
+          position: "absolute",
+          borderRadius: "9999px",
+          backgroundColor: BLUE.color,
+          aspectRatio: "1 / 1",
+          zIndex: 0,
+          ...circleSmallStyle(BLUE),
+        }}
+        animate={blueB}
       />
 
-      {/* Borde derecho pinneado exactamente al borde derecho del círculo azul en reposo (32.99% + 54.02% = 87.01%), igual para las 2 fotos. */}
+      {/*
+        El lado derecho de estas cajas ya no es una línea recta: sigue el arco del círculo
+        azul (PHOTO_BOX_CLIP_PATH), así el límite de recorte se confunde con el propio
+        círculo y la foto se ve deslizarse (entrar/salir) con normalidad, sin necesidad de
+        esconderla detrás de los círculos.
+      */}
       <div
         style={{
           position: "absolute",
           left: "10.6%",
-          right: "12.99%",
           top: "30.55%",
-          height: "61.11%",
+          width: `${BOX_WIDTH_PX}px`,
+          height: `${BOX_HEIGHT_PX}px`,
           overflow: "hidden",
-          zIndex: 1,
+          clipPath: PHOTO_BOX_CLIP_PATH,
+          zIndex: 2,
         }}
       >
         <motion.div
-          style={{ position: "absolute", inset: 0, x: "0%" }}
+          style={{ position: "absolute", inset: 0, x: "0px" }}
           animate={outControls}
         >
-          <Image
-            src={currentSrc}
-            alt=""
-            fill
-            className="object-contain object-right-bottom"
-            sizes="(min-width: 1024px) 700px, 60vw"
-            priority
-          />
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              right: `${EXTRA_RIGHT_INSET_PX[currentSrc]}px`,
+              transform: `translate(${EXTRA_TRANSLATE_X[currentSrc]}, ${EXTRA_TRANSLATE_Y[currentSrc]})`,
+            }}
+          >
+            <Image
+              src={currentSrc}
+              alt=""
+              fill
+              className="object-contain object-right-bottom"
+              sizes="(min-width: 1024px) 700px, 60vw"
+              priority
+            />
+          </div>
         </motion.div>
+      </div>
 
+      <div
+        style={{
+          position: "absolute",
+          left: "10.6%",
+          top: "30.55%",
+          width: `${BOX_WIDTH_PX}px`,
+          height: `${BOX_HEIGHT_PX}px`,
+          overflow: "hidden",
+          clipPath: PHOTO_BOX_CLIP_PATH,
+          zIndex: 2,
+        }}
+      >
         <motion.div
-          style={{ position: "absolute", inset: 0, x: "100%" }}
+          style={{ position: "absolute", inset: 0, x: `${SLIDE_DISTANCE_PX}px` }}
           animate={inControls}
         >
-          <Image
-            src={nextSrc}
-            alt=""
-            fill
-            className="object-contain object-right-bottom"
-            sizes="(min-width: 1024px) 700px, 60vw"
-          />
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              right: `${EXTRA_RIGHT_INSET_PX[nextSrc]}px`,
+              transform: `translate(${EXTRA_TRANSLATE_X[nextSrc]}, ${EXTRA_TRANSLATE_Y[nextSrc]})`,
+            }}
+          >
+            <Image
+              src={nextSrc}
+              alt=""
+              fill
+              className="object-contain object-right-bottom"
+              sizes="(min-width: 1024px) 700px, 60vw"
+            />
+          </div>
         </motion.div>
       </div>
     </div>
