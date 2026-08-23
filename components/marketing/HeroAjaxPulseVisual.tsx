@@ -25,9 +25,19 @@ import { useEffect, useState } from "react";
  */
 
 const EASE_SMART_ANIMATE: [number, number, number, number] = [0.263, -0.008, 0, 0.999];
-/** Duración total de la transición simultánea (salida+entrada de foto = ciclo completo de círculos). */
+/** Duración de la cortina de la foto (salida+entrada). */
 const TRANSITION_SECONDS = 1.4;
-const HOLD_MS = 3000;
+/**
+ * Duración del pulso completo de los círculos (encogerse y volver a crecer). Igual a
+ * TRANSITION_SECONDS a propósito: ambos arrancan juntos y terminan juntos (el "in" de los
+ * círculos termina justo cuando la foto termina de salir/entrar), pero gracias al reparto
+ * interno (`times` en CIRCLE_TRANSITION) el tramo de "in" en sí es más corto/ágil que el de
+ * "out", así se siente más rápido aunque ambos ciclos completos duren lo mismo.
+ */
+const CIRCLE_DURATION_SECONDS = TRANSITION_SECONDS;
+/** Se exporta para que otros elementos (ej. el texto rotativo de la categoría) sigan el mismo ritmo. */
+export const HERO_CYCLE_HOLD_MS = 3000;
+const HOLD_MS = HERO_CYCLE_HOLD_MS;
 const CIRCLE_DELAY = 0;
 
 const IMAGES = [
