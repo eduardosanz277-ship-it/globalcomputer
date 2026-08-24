@@ -40,7 +40,23 @@ export async function POST(req: Request) {
     event.type === "checkout.session.async_payment_succeeded"
   ) {
     const session = event.data.object as Stripe.Checkout.Session;
-    await syncOrderWithStripeSession(session, event.id, event.type);
+    try {
+      await syncOrderWithStripeSession(session, event.id, event.type);
+    } catch (err) {
+      // Return 500 explicitly so Stripe schedules a retry for transient errors
+      // (e.g. inventory RPC temporarily unavailable). Stripe retries with
+      // exponential backoff for up to 72 h; idempotency guards prevent double-processing.
+      console.error("[webhook] error procesando sesión de checkout", {
+        eventId: event.id,
+        eventType: event.type,
+        sessionId: session.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return NextResponse.json(
+        { error: "Error procesando el evento. Se reintentará." },
+        { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({ received: true });

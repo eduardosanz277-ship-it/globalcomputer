@@ -31,6 +31,7 @@ import {
 import type { ShippingQuoteLineInput } from "@/modules/shipping/shipping.types";
 import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-order-confirmation-email.service";
 import { maybeSendManualQuoteRequestEmail } from "@/modules/commerce/store-manual-quote-email.service";
+import { processOrderInventory } from "@/modules/commerce/inventory.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
 import { shippingAddressFromStripeSession } from "@/lib/order-shipping-lines";
 import {
@@ -121,6 +122,47 @@ async function maybeSendPaidStripeOrderConfirmation(input: {
     });
     return;
   }
+
+  // Process inventory from the createSiteOrder path (called when user reaches
+  // /cart/success). This is server-side and verifies payment via Stripe API.
+  // The RPC is idempotent: if the webhook already processed inventory it returns
+  // 'already_processed' immediately without touching any row.
+  try {
+    const inventoryResult = await processOrderInventory(
+      input.orderId,
+      input.supabase,
+    );
+
+    if (inventoryResult.status === "conflict") {
+      // Stripe confirmed payment but at least one item has insufficient stock.
+      // Do NOT send confirmation email; order needs admin review.
+      console.warn("[INVENTORY] conflict en ruta createSiteOrder - pedido requiere atención", {
+        orderId: input.orderId,
+        conflicts: inventoryResult.conflicts,
+      });
+      return;
+    }
+
+    if (inventoryResult.status === "error") {
+      // Transient error (e.g. DB temporarily unavailable or RPC not deployed yet).
+      // Do NOT throw here – the webhook handler is responsible for retries via
+      // Stripe's retry mechanism. Log and exit without sending email.
+      console.error("[INVENTORY] error en ruta createSiteOrder - email diferido al webhook", {
+        orderId: input.orderId,
+        error: inventoryResult.error,
+      });
+      return;
+    }
+
+    // status === 'success' | 'already_processed': inventory is confirmed.
+  } catch (err) {
+    console.error("[INVENTORY] error inesperado en ruta createSiteOrder", {
+      orderId: input.orderId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
   try {
     await maybeSendStoreOrderConfirmationEmail({
       orderId: input.orderId,
@@ -1217,7 +1259,37 @@ export async function syncOrderWithStripeSession(
     }
   }
 
+  // Inventory processing and email are intentionally placed OUTSIDE the
+  // seenEvent block so that Stripe retries (for the same event or different
+  // events of the same session) can re-attempt them if a transient error
+  // previously prevented their completion. Both operations are idempotent.
   if (session.payment_status === "paid") {
+    const inventoryResult = await processOrderInventory(order.id, supabase);
+
+    if (inventoryResult.status === "error") {
+      // Transient DB error: throw so that the webhook handler returns 5xx
+      // and Stripe schedules a retry. The event record is already persisted,
+      // so the retry will skip the seenEvent block and attempt inventory again.
+      throw new Error(
+        `[INVENTORY] Error al procesar inventario para pedido ${order.id}: ${inventoryResult.error}`,
+      );
+    }
+
+    if (inventoryResult.status === "conflict") {
+      // Stripe confirmed payment but we cannot fulfill the order.
+      // Do NOT send a confirmation email. The order is marked 'conflict'
+      // in store_orders.inventory_status so an admin can review it.
+      console.warn("[INVENTORY] conflict - pedido requiere atención administrativa", {
+        orderId: order.id,
+        sessionId: session.id,
+        conflicts: inventoryResult.conflicts,
+      });
+      return;
+    }
+
+    // status === 'success' | 'already_processed' — inventory is good.
+    // maybeSendStoreOrderConfirmationEmail verifies inventory_status internally
+    // before sending; the claim mechanism prevents duplicate sends.
     await maybeSendStoreOrderConfirmationEmail({
       orderId: order.id,
       session,
