@@ -768,6 +768,11 @@ export function SiteHeader({ user }: Props) {
                             "min-w-[252px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-md",
                             accountMenuMotionClass,
                           )}
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest("a, button")) {
+                              setAccountOpen(false);
+                            }
+                          }}
                         >
                           <div className="flex gap-3 border-b border-border px-3 py-3">
                             <span
@@ -1010,6 +1015,11 @@ export function SiteHeader({ user }: Props) {
                               accountMenuMotionClass,
                             )}
                             role="menu"
+                            onClick={(e) => {
+                              if ((e.target as HTMLElement).closest("a, button")) {
+                                setAccountOpen(false);
+                              }
+                            }}
                           >
                             <div className="flex gap-3 border-b border-border px-3 py-3">
                               <span

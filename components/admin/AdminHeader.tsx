@@ -237,6 +237,11 @@ export function AdminHeader({
                   userMenuMotionClass,
                 )}
                 role="menu"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("a, button")) {
+                    setOpen(false);
+                  }
+                }}
               >
                 <div className="border-b border-border px-3 py-2 sm:hidden">
                   <p className="text-xs text-muted-foreground">
@@ -258,7 +263,6 @@ export function AdminHeader({
                     href="/admin/home"
                     className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                     role="menuitem"
-                    onClick={() => setOpen(false)}
                   >
                     <LayoutDashboard className="h-4 w-4" />
                     {t("admin.header.adminPanel")}
