@@ -77,11 +77,11 @@ export async function reserveCartItem(
   const reservedActiveQty = await currentActiveReservationQty(productId);
   const reservedOther = Math.max(0, reservedActiveQty - existingQty);
   const availableForCart = Math.max(0, Number(product.stock ?? 0) - reservedOther);
-  if (targetQty > availableForCart) {
-    throw new CartReservationError(
-      "No hay stock suficiente para esa cantidad. Actualiza el carrito con una cantidad menor.",
-    );
-  }
+  // if (targetQty > availableForCart) {
+  //   throw new CartReservationError(
+  //     "No hay stock suficiente para esa cantidad. Actualiza el carrito con una cantidad menor.",
+  //   );
+  // }
 
   const expiresAt = reservationExpiresAt();
 
