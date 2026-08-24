@@ -54,8 +54,8 @@ function shippingLinesFromDb(row: {
   const phone = row.recipient_phone?.trim();
   if (phone) lines.push(phone);
 
-  const email = row.recipient_email?.trim();
-  if (email) lines.push(email);
+  // const email = row.recipient_email?.trim();
+  // if (email) lines.push(email);
 
   return lines;
 }
