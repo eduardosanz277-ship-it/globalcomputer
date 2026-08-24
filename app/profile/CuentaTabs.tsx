@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { appNavigationStart } from "@/lib/app-loading";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { cn } from "@/utils/cn";
@@ -46,9 +47,10 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
 
   const setTab = useCallback(
     (id: CuentaTabId) => {
+      if (id !== activeTab) appNavigationStart();
       router.replace(`/profile?tab=${id}`, { scroll: false });
     },
-    [router],
+    [router, activeTab],
   );
 
   const tabTriggerClass =
