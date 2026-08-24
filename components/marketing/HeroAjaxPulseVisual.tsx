@@ -63,7 +63,6 @@ const BOX_LEFT_PX = 0.106 * ROOT_WIDTH_PX;
 const BOX_TOP_PX = 0.3055 * 500;
 const BOX_WIDTH_PX = ROOT_WIDTH_PX - BOX_LEFT_PX - 0.1299 * ROOT_WIDTH_PX;
 const BOX_HEIGHT_PX = 0.6111 * 500;
-const SLIDE_DISTANCE_PX = BOX_WIDTH_PX;
 /**
  * En vez de un borde recto, el lado derecho de la caja de recorte de la foto sigue
  * exactamente el arco del círculo azul (mismo centro y radio), como un path SVG:
@@ -86,6 +85,49 @@ const ARC_TOP_X = arcXAtY(BOX_TOP_PX) - BOX_LEFT_PX;
 const ARC_BOTTOM_X = arcXAtY(BOX_TOP_PX + BOX_HEIGHT_PX) - BOX_LEFT_PX;
 
 const PHOTO_BOX_CLIP_PATH = `path('M 0 0 L ${ARC_TOP_X} 0 A ${BLUE_RADIUS_PX} ${BLUE_RADIUS_PX} 0 0 1 ${ARC_BOTTOM_X} ${BOX_HEIGHT_PX} L 0 ${BOX_HEIGHT_PX} Z')`;
+
+/**
+ * El pack de control de acceso llega hasta el borde del círculo DORADO en vez del azul —
+ * necesita su propia caja (más ancha) y su propio arco de recorte, calculados igual que los
+ * de arriba pero con la geometría del círculo GOLD.
+ */
+const GOLD_CENTER_X_PX = (0.3347 + 0.5866 / 2) * ROOT_WIDTH_PX;
+const GOLD_CENTER_Y_PX = 0.1243 * 500 + (0.5866 * ROOT_WIDTH_PX) / 2;
+const GOLD_RADIUS_PX = (0.5866 * ROOT_WIDTH_PX) / 2;
+const GOLD_BOX_WIDTH_PX = GOLD_CENTER_X_PX + GOLD_RADIUS_PX - BOX_LEFT_PX;
+/**
+ * Distancia que recorre la foto al deslizarse, y también dónde "aparca" oculta la que
+ * todavía no le toca entrar. Tiene que ser al menos tan grande como la caja MÁS ANCHA que
+ * exista (la del dorado, para el control de acceso) — si fuera solo BOX_WIDTH_PX (la del
+ * azul, más angosta), la foto aparcada podría quedar dentro de la caja más ancha y verse.
+ */
+const SLIDE_DISTANCE_PX = GOLD_BOX_WIDTH_PX;
+
+function goldArcXAtY(y: number): number {
+  const dy = y - GOLD_CENTER_Y_PX;
+  const dx = Math.sqrt(Math.max(GOLD_RADIUS_PX * GOLD_RADIUS_PX - dy * dy, 0));
+  return GOLD_CENTER_X_PX + dx;
+}
+
+const GOLD_ARC_TOP_X = goldArcXAtY(BOX_TOP_PX) - BOX_LEFT_PX;
+const GOLD_ARC_BOTTOM_X = goldArcXAtY(BOX_TOP_PX + BOX_HEIGHT_PX) - BOX_LEFT_PX;
+
+const GOLD_CLIP_PATH = `path('M 0 0 L ${GOLD_ARC_TOP_X} 0 A ${GOLD_RADIUS_PX} ${GOLD_RADIUS_PX} 0 0 1 ${GOLD_ARC_BOTTOM_X} ${BOX_HEIGHT_PX} L 0 ${BOX_HEIGHT_PX} Z')`;
+
+/** Ancho y forma de la caja de recorte, por imagen. Todas usan la del círculo azul salvo el control de acceso, que usa la del dorado (más ancha). */
+const IMAGE_BOX_WIDTH_PX: Record<(typeof IMAGES)[number], number> = {
+  "/images/hero/ajax_devices.png": BOX_WIDTH_PX,
+  "/images/hero/cameras_devices.png": BOX_WIDTH_PX,
+  "/images/hero/control.png": GOLD_BOX_WIDTH_PX,
+  "/images/hero/soporte.png": BOX_WIDTH_PX,
+};
+
+const IMAGE_CLIP_PATH: Record<(typeof IMAGES)[number], string> = {
+  "/images/hero/ajax_devices.png": PHOTO_BOX_CLIP_PATH,
+  "/images/hero/cameras_devices.png": PHOTO_BOX_CLIP_PATH,
+  "/images/hero/control.png": GOLD_CLIP_PATH,
+  "/images/hero/soporte.png": PHOTO_BOX_CLIP_PATH,
+};
 
 /** El pack Ajax queda más ancho que el de cámaras, así que se corre un poco más a la izquierda para no verse tan pegado al círculo azul. */
 const EXTRA_RIGHT_INSET_PX: Record<(typeof IMAGES)[number], number> = {
