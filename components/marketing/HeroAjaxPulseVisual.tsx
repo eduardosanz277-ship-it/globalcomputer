@@ -141,22 +141,29 @@ const EXTRA_RIGHT_INSET_PX: Record<(typeof IMAGES)[number], number> = {
 const EXTRA_TRANSLATE_Y: Record<(typeof IMAGES)[number], string> = {
   "/images/hero/ajax_devices.png": "0px",
   "/images/hero/cameras_devices.png": "7px",
-  "/images/hero/control.png": "0px",
+  "/images/hero/control.png": "15px",
   "/images/hero/soporte.png": "0px",
 };
 
 const EXTRA_TRANSLATE_X: Record<(typeof IMAGES)[number], string> = {
   "/images/hero/ajax_devices.png": "0px",
   "/images/hero/cameras_devices.png": "1px",
-  "/images/hero/control.png": "0px",
+  "/images/hero/control.png": "45px",
   "/images/hero/soporte.png": "0px",
 };
 
-/** El tester de soporte queda más alto que ancho, así que se ve más grande que el resto dentro de la misma caja; se reduce un poco, anclado a la misma esquina inferior derecha. */
+/**
+ * El tester de soporte queda más alto que ancho, así que se ve más grande que el resto
+ * dentro de la misma caja; se reduce un poco. El control de acceso se agranda un poco más
+ * de lo normal, pero al estar anclado abajo-a-la-derecha el sobrante crecía solo hacia
+ * arriba y se cortaba contra el techo de la caja (que ya estaba llena al 100% antes de
+ * agrandarla) — por eso EXTRA_TRANSLATE_Y lo baja un poco, repartiendo el sobrante entre
+ * arriba y abajo en vez de cortar solo arriba.
+ */
 const EXTRA_SCALE: Record<(typeof IMAGES)[number], number> = {
   "/images/hero/ajax_devices.png": 1,
   "/images/hero/cameras_devices.png": 1,
-  "/images/hero/control.png": 1,
+  "/images/hero/control.png": 1.05,
   "/images/hero/soporte.png": 0.8,
 };
 
@@ -383,10 +390,10 @@ export function HeroAjaxPulseVisual({
           position: "absolute",
           left: "10.6%",
           top: "30.55%",
-          width: `${BOX_WIDTH_PX}px`,
+          width: `${IMAGE_BOX_WIDTH_PX[currentSrc]}px`,
           height: `${BOX_HEIGHT_PX}px`,
           overflow: "hidden",
-          clipPath: PHOTO_BOX_CLIP_PATH,
+          clipPath: IMAGE_CLIP_PATH[currentSrc],
           zIndex: 2,
         }}
       >
@@ -422,10 +429,10 @@ export function HeroAjaxPulseVisual({
           position: "absolute",
           left: "10.6%",
           top: "30.55%",
-          width: `${BOX_WIDTH_PX}px`,
+          width: `${IMAGE_BOX_WIDTH_PX[nextSrc]}px`,
           height: `${BOX_HEIGHT_PX}px`,
           overflow: "hidden",
-          clipPath: PHOTO_BOX_CLIP_PATH,
+          clipPath: IMAGE_CLIP_PATH[nextSrc],
           zIndex: 2,
         }}
       >
