@@ -5,7 +5,10 @@ import {
   HERO_CYCLE_SLIDE_TRANSITION,
   HeroAjaxPulseVisual,
 } from "@/components/marketing/HeroAjaxPulseVisual";
-import type { HeroCategory, HeroContact } from "@/components/marketing/StoreHero";
+import type {
+  HeroCategory,
+  HeroContact,
+} from "@/components/marketing/StoreHero";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { inter } from "@/lib/fonts/inter";
 import { cn } from "@/utils/cn";
@@ -63,11 +66,23 @@ function HeroRotatingCategoryLabel({
     triggerRef.current = () => {
       const showingAlarms = showingAlarmsRef.current;
       if (showingAlarms) {
-        void alarmsControls.start({ y: "-100%", opacity: 0 }, HERO_CYCLE_SLIDE_TRANSITION);
-        void camerasControls.start({ y: "0%", opacity: 1 }, HERO_CYCLE_SLIDE_TRANSITION);
+        void alarmsControls.start(
+          { y: "-100%", opacity: 0 },
+          HERO_CYCLE_SLIDE_TRANSITION,
+        );
+        void camerasControls.start(
+          { y: "0%", opacity: 1 },
+          HERO_CYCLE_SLIDE_TRANSITION,
+        );
       } else {
-        void camerasControls.start({ y: "100%", opacity: 0 }, HERO_CYCLE_SLIDE_TRANSITION);
-        void alarmsControls.start({ y: "0%", opacity: 1 }, HERO_CYCLE_SLIDE_TRANSITION);
+        void camerasControls.start(
+          { y: "100%", opacity: 0 },
+          HERO_CYCLE_SLIDE_TRANSITION,
+        );
+        void alarmsControls.start(
+          { y: "0%", opacity: 1 },
+          HERO_CYCLE_SLIDE_TRANSITION,
+        );
       }
       showingAlarmsRef.current = !showingAlarms;
     };
@@ -137,7 +152,10 @@ export function StoreHeroBanner({
                 <HeroRotatingCategoryLabel t={t} triggerRef={labelTriggerRef} />
               </p>
               <h1 className="text-[1.9rem] font-bold leading-tight tracking-tight text-foreground sm:text-[2.35rem] md:text-[26px] lg:text-[48px]">
-                {t("Tu seguridad, simple y clara", "Your security, simple and clear")}
+                {t(
+                  "Tu seguridad, simple y clara",
+                  "Your security, simple and clear",
+                )}
               </h1>
               <p className="mx-auto mt-4 text-pretty text-[14px] font-medium text-muted-foreground sm:text-[15px] md:mx-0 md:text-[14px] lg:text-[17px]">
                 {t(
@@ -213,7 +231,10 @@ export function StoreHeroBanner({
                   )}
                   aria-label={`${t("Llamar al", "Call")} ${contact.phoneDisplay}`}
                 >
-                  <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                  <Phone
+                    className="h-4 w-4 shrink-0 text-primary"
+                    aria-hidden
+                  />
                   {contact.phoneDisplay}
                 </Link>
               </div>
@@ -280,7 +301,9 @@ export function StoreHeroBanner({
       */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden h-[500px] lg:block">
         <div className="mx-auto flex h-full w-full max-w-7xl justify-end md:px-8">
-          <HeroAjaxPulseVisual onCycleStart={() => labelTriggerRef.current?.()} />
+          <HeroAjaxPulseVisual
+            onCycleStart={() => labelTriggerRef.current?.()}
+          />
         </div>
       </div>
     </section>

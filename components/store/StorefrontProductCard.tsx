@@ -323,6 +323,16 @@ export function StorefrontProductCard({
           >
             {displayBrand}
           </p>
+          {p.sku ? (
+            <p
+              className={cn(
+                interClassName,
+                "mt-1 text-left text-[11px] leading-tight text-muted-foreground/70",
+              )}
+            >
+              SKU: {p.sku}
+            </p>
+          ) : null}
         </Link>
 
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
