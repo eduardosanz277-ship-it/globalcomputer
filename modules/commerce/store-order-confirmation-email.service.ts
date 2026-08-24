@@ -31,6 +31,8 @@ type ConfirmationEmailOrderRow = {
   confirmation_email_sent_at?: string | null;
   confirmation_email_locale?: string | null;
   stripe_session_id: string | null;
+  /** null = not yet processed, 'processed' = stock deducted, 'conflict' = insufficient stock */
+  inventory_status?: string | null;
   created_at: string | null;
   total_amount: string | number | null;
   amount_subtotal: string | number | null;
@@ -178,7 +180,7 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
   const appUrl = getAppBaseUrl();
 
   const orderSelectWithEmail =
-    "id, order_number, customer_name, customer_email, user_id, status, locale, confirmation_email_sent_at, confirmation_email_locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+    "id, order_number, customer_name, customer_email, user_id, status, locale, confirmation_email_sent_at, confirmation_email_locale, inventory_status, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
   const orderSelectBase =
     "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
 
@@ -248,6 +250,42 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
       orderLocale: order.locale ?? null,
       template,
       status: "skipped_already_sent",
+    });
+    return { sent: false };
+  }
+
+  // Block confirmation email for any order that has a known inventory conflict.
+  // This applies to both Stripe and manual orders: if we cannot deduct stock
+  // we must not send a "your order is confirmed" message.
+  if (order.inventory_status === "conflict") {
+    console.info("[ORDER_CONFIRMATION_EMAIL]", {
+      orderId: input.orderId,
+      locale,
+      orderLocale: order.locale ?? null,
+      template,
+      status: "skipped_inventory_conflict",
+      inventoryStatus: "conflict",
+    });
+    return { sent: false };
+  }
+
+  // For Stripe-paid orders specifically: also require inventory to be processed
+  // (not just "not in conflict"). This guards against the window where the
+  // webhook has not yet run and inventory_status is still null.
+  // inventory_status === undefined → column not yet in schema (pre-migration) → allow for backward compat.
+  // inventory_status === null → webhook/createSiteOrder not yet processed → skip and wait.
+  if (
+    order.stripe_session_id?.trim() &&
+    order.inventory_status !== undefined &&
+    order.inventory_status !== "processed"
+  ) {
+    console.info("[ORDER_CONFIRMATION_EMAIL]", {
+      orderId: input.orderId,
+      locale,
+      orderLocale: order.locale ?? null,
+      template,
+      status: "skipped_inventory_not_processed",
+      inventoryStatus: order.inventory_status ?? null,
     });
     return { sent: false };
   }
