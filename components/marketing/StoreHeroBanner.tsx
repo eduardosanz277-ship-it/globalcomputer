@@ -62,69 +62,53 @@ function HeroRotatingCategoryLabel({
   t: (es: string, en?: string | null) => string;
   triggerRef: React.MutableRefObject<(() => void) | null>;
 }) {
-  const alarmsControls = useAnimation();
-  const camerasControls = useAnimation();
-  const showingAlarmsRef = useRef(true);
+  const controls = [useAnimation(), useAnimation(), useAnimation(), useAnimation()];
+  const currentIndexRef = useRef(0);
 
   useEffect(() => {
     triggerRef.current = () => {
-      const showingAlarms = showingAlarmsRef.current;
-      if (showingAlarms) {
-        void alarmsControls.start(
-          { y: "-100%", opacity: 0 },
-          HERO_CYCLE_SLIDE_TRANSITION,
-        );
-        void camerasControls.start(
-          { y: "0%", opacity: 1 },
-          HERO_CYCLE_SLIDE_TRANSITION,
-        );
-      } else {
-        void camerasControls.start(
-          { y: "100%", opacity: 0 },
-          HERO_CYCLE_SLIDE_TRANSITION,
-        );
-        void alarmsControls.start(
-          { y: "0%", opacity: 1 },
-          HERO_CYCLE_SLIDE_TRANSITION,
-        );
-      }
-      showingAlarmsRef.current = !showingAlarms;
+      const current = currentIndexRef.current;
+      const next = (current + 1) % HERO_CATEGORY_LABELS.length;
+      void controls[current].start(
+        { y: offscreenY(current), opacity: 0 },
+        HERO_CYCLE_SLIDE_TRANSITION,
+      );
+      void controls[next].start(
+        { y: "0%", opacity: 1 },
+        HERO_CYCLE_SLIDE_TRANSITION,
+      );
+      currentIndexRef.current = next;
     };
     return () => {
       triggerRef.current = null;
     };
-  }, [alarmsControls, camerasControls, triggerRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerRef, ...controls]);
 
-  const alarms = HERO_CATEGORY_LABELS[0];
-  const cameras = HERO_CATEGORY_LABELS[1];
-  const alarmsText = t(alarms.es, alarms.en);
-  const camerasText = t(cameras.es, cameras.en);
+  const texts = HERO_CATEGORY_LABELS.map((label) => t(label.es, label.en));
 
   return (
     <span className="relative inline-block h-[1.6em] overflow-hidden align-bottom">
       {/*
-        Sizer invisible: los dos textos apilados en la misma celda de grid (no por cantidad
-        de caracteres, que no refleja el ancho real con fuente proporcional) para que el
+        Sizer invisible: los textos apilados en la misma celda de grid (no por cantidad de
+        caracteres, que no refleja el ancho real con fuente proporcional) para que el
         contenedor tome el ancho del más ancho de verdad y nunca se corte una letra.
       */}
       <span className="invisible grid whitespace-nowrap [&>*]:col-start-1 [&>*]:row-start-1">
-        <span>{alarmsText}</span>
-        <span>{camerasText}</span>
+        {texts.map((text, i) => (
+          <span key={i}>{text}</span>
+        ))}
       </span>
-      <motion.span
-        className="absolute inset-x-0 top-0 whitespace-nowrap"
-        style={{ y: "0%", opacity: 1 }}
-        animate={alarmsControls}
-      >
-        {alarmsText}
-      </motion.span>
-      <motion.span
-        className="absolute inset-x-0 top-0 whitespace-nowrap"
-        style={{ y: "100%", opacity: 0 }}
-        animate={camerasControls}
-      >
-        {camerasText}
-      </motion.span>
+      {texts.map((text, i) => (
+        <motion.span
+          key={i}
+          className="absolute inset-x-0 top-0 whitespace-nowrap"
+          style={i === 0 ? { y: "0%", opacity: 1 } : { y: offscreenY(i), opacity: 0 }}
+          animate={controls[i]}
+        >
+          {text}
+        </motion.span>
+      ))}
     </span>
   );
 }
