@@ -48,6 +48,8 @@ const CIRCLE_DELAY = 0;
 const IMAGES = [
   "/images/hero/ajax_devices.png",
   "/images/hero/cameras_devices.png",
+  "/images/hero/control.png",
+  "/images/hero/soporte.png",
 ] as const;
 
 /**
@@ -89,17 +91,31 @@ const PHOTO_BOX_CLIP_PATH = `path('M 0 0 L ${ARC_TOP_X} 0 A ${BLUE_RADIUS_PX} ${
 const EXTRA_RIGHT_INSET_PX: Record<(typeof IMAGES)[number], number> = {
   "/images/hero/ajax_devices.png": 0.049 * BOX_WIDTH_PX,
   "/images/hero/cameras_devices.png": 0,
+  "/images/hero/control.png": 0,
+  "/images/hero/soporte.png": 0.04 * BOX_WIDTH_PX,
 };
 
 /** El pack de cámaras queda flotando un poco alto respecto al pack Ajax; se baja un poco. */
 const EXTRA_TRANSLATE_Y: Record<(typeof IMAGES)[number], string> = {
   "/images/hero/ajax_devices.png": "0px",
   "/images/hero/cameras_devices.png": "7px",
+  "/images/hero/control.png": "0px",
+  "/images/hero/soporte.png": "0px",
 };
 
 const EXTRA_TRANSLATE_X: Record<(typeof IMAGES)[number], string> = {
   "/images/hero/ajax_devices.png": "0px",
   "/images/hero/cameras_devices.png": "1px",
+  "/images/hero/control.png": "0px",
+  "/images/hero/soporte.png": "0px",
+};
+
+/** El tester de soporte queda más alto que ancho, así que se ve más grande que el resto dentro de la misma caja; se reduce un poco, anclado a la misma esquina inferior derecha. */
+const EXTRA_SCALE: Record<(typeof IMAGES)[number], number> = {
+  "/images/hero/ajax_devices.png": 1,
+  "/images/hero/cameras_devices.png": 1,
+  "/images/hero/control.png": 1,
+  "/images/hero/soporte.png": 0.8,
 };
 
 type CircleSpec = {
