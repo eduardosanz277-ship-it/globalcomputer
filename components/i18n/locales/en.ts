@@ -180,7 +180,7 @@ export const en = {
     emailLabel: "Email",
     emailPlaceholder: "email@example.com",
     submit: "Look up",
-    submitting: "Looking up…",
+    submitting: "Looking up",
     errorGeneric: "The order could not be looked up. Please try again.",
     errorNotFound:
       "We couldn't find an order with those details. Check the number and email.",

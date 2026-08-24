@@ -182,7 +182,7 @@ export const es = {
     emailLabel: "Correo electrónico",
     emailPlaceholder: "correo@ejemplo.com",
     submit: "Consultar",
-    submitting: "Consultando…",
+    submitting: "Consultando",
     errorGeneric: "No se pudo consultar el pedido. Inténtalo de nuevo.",
     errorNotFound:
       "No encontramos un pedido con esos datos. Verifica el número y el correo.",
