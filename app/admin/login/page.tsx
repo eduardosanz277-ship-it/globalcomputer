@@ -19,6 +19,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { adminLoginAction } from "@/app/admin/login/actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { markLoginSuccessToast } from "@/lib/login-success-toast";
 import { loginSchema, type LoginSchema } from "@/modules/auth/auth.schema";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
@@ -36,8 +37,8 @@ export default function AdminLoginPage() {
   });
 
   const { execute, isPending } = useServerAction(adminLoginAction, {
-    successMessage: t("login.toast.signedIn"),
     onSuccess: () => {
+      markLoginSuccessToast();
       router.push("/admin/home");
       router.refresh();
     },

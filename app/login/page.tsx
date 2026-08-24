@@ -26,6 +26,7 @@ import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations"
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { markLoginSuccessToast } from "@/lib/login-success-toast";
 import {
   emailOtpCodeSchema,
   emailOtpRequestSchema,
@@ -179,8 +180,8 @@ function LoginPageContent() {
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
     verifyLoginOtpAction,
     {
-      successMessage: t("login.toast.signedIn"),
       onSuccess: () => {
+        markLoginSuccessToast();
         router.push("/");
         router.refresh();
       },

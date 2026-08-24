@@ -9,6 +9,7 @@ import { ConditionalSiteHeader } from "@/components/marketing/ConditionalSiteHea
 import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFooter";
 import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
+import { LoginSuccessToast } from "@/components/auth/LoginSuccessToast";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
@@ -83,6 +84,7 @@ export default async function RootLayout({
             style={{ zIndex: 10000 }}
             toastClassName="pointer-events-auto"
           />
+          <LoginSuccessToast />
         </I18nProvider>
       </body>
     </html>
