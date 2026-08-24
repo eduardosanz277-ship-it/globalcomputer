@@ -34,22 +34,26 @@ const HERO_VISUAL_DESIGN_HEIGHT = 500;
 const MOBILE_VISUAL_HEIGHT = 300;
 const TABLET_VISUAL_HEIGHT = 380;
 
-/** Debe coincidir en orden con IMAGES de HeroAjaxPulseVisual (Ajax primero, cámaras después). */
+/** Debe coincidir en orden con IMAGES de HeroAjaxPulseVisual (ajax, cámaras, control, soporte). */
 const HERO_CATEGORY_LABELS = [
   { es: "Alarmas de Seguridad", en: "Security Alarms" },
   { es: "Cámaras de Seguridad", en: "Security Cameras" },
+  { es: "Control de Acceso", en: "Access Control" },
+  { es: "Mantenimiento y Soporte", en: "Maintenance & Support" },
 ] as const;
+
+/** Índice par → entra desde arriba hacia abajo y se retira hacia arriba. Índice impar → entra desde abajo hacia arriba y se retira hacia abajo. Se alternan en orden, igual que antes con solo 2 textos. */
+function offscreenY(index: number) {
+  return index % 2 === 0 ? "-100%" : "100%";
+}
 
 /**
  * Texto que rota en sincronía EXACTA con las fotos de HeroAjaxPulseVisual: no tiene timer
  * propio, sino que `onCycleStart` (pasado por HeroAjaxPulseVisual) dispara el swap en el
  * mismísimo instante en que la foto empieza a cambiar, así nunca pueden desincronizarse.
  *
- * Cada texto tiene una dirección fija propia (no es un carrusel genérico): "Alarmas de
- * Seguridad" siempre entra desde arriba hacia abajo y, al salir, se retira hacia arriba (el
- * mismo camino por el que entró) — va con ajax_devices.png. "Cámaras de Seguridad" siempre
- * entra desde abajo hacia arriba y, al salir, se retira hacia abajo — va con
- * cameras_devices.png.
+ * Cada texto tiene una dirección fija propia según su índice (ver `offscreenY`), no es un
+ * carrusel genérico: siempre entra/sale por el mismo lado.
  */
 function HeroRotatingCategoryLabel({
   t,
