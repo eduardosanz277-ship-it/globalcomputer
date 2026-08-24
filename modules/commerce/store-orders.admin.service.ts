@@ -4,6 +4,7 @@ import { maybeSendStoreOrderConfirmationEmail } from "@/modules/commerce/store-o
 import { maybeSendStoreOrderStatusEmail } from "@/modules/commerce/store-order-status-email.service";
 import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-status-history";
 import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
+import { processOrderInventory } from "@/modules/commerce/inventory.service";
 import { SiteOrderStatus } from "./store-orders.service";
 
 export type { StoreOrderStatusHistoryRow };
@@ -191,9 +192,44 @@ export async function repoUpdateStoreOrderStatus(
       });
     }
 
+    // Process inventory atomically after confirming the manual order.
+    // For manual orders the admin's confirmation is the equivalent of
+    // Stripe's payment_status = 'paid' — it is the authoritative signal that
+    // the order will be fulfilled.
+    const adminSupabase = createSupabaseAdminClient();
+    const inventoryResult = await processOrderInventory(orderId, adminSupabase);
+
+    if (inventoryResult.status === "conflict") {
+      // Admin confirmed the order but at least one item has insufficient stock.
+      // The order status is already 'confirmed'; mark the conflict so the admin
+      // can review and resolve it. Do NOT send the confirmation email.
+      console.warn(
+        "[INVENTORY] conflict en confirmación manual de pedido - requiere atención",
+        { orderId, conflicts: inventoryResult.conflicts },
+      );
+      return {
+        status,
+        amount_shipping: String(shipping),
+        total_amount: String(totalAmount),
+      };
+    }
+
+    if (inventoryResult.status === "error") {
+      // Transient DB error. Unlike the Stripe webhook path, there is no
+      // automatic retry mechanism here. Log the error and continue so the
+      // admin at least gets feedback that the order was confirmed.
+      // The inventory can be reprocessed manually via Supabase Studio or by
+      // re-triggering this confirmation.
+      console.error(
+        "[INVENTORY] error al procesar inventario en confirmación manual",
+        { orderId, error: inventoryResult.error },
+      );
+      // Fall through to send the email anyway (admin is aware of the context).
+    }
+
     await maybeSendStoreOrderConfirmationEmail({
       orderId,
-      supabase: createSupabaseAdminClient(),
+      supabase: adminSupabase,
     });
 
     return {
