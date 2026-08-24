@@ -359,7 +359,8 @@ export function HeroAjaxPulseVisual({
               top: 0,
               bottom: 0,
               right: `${EXTRA_RIGHT_INSET_PX[currentSrc]}px`,
-              transform: `translate(${EXTRA_TRANSLATE_X[currentSrc]}, ${EXTRA_TRANSLATE_Y[currentSrc]})`,
+              transform: `translate(${EXTRA_TRANSLATE_X[currentSrc]}, ${EXTRA_TRANSLATE_Y[currentSrc]}) scale(${EXTRA_SCALE[currentSrc]})`,
+              transformOrigin: "right bottom",
             }}
           >
             <Image
@@ -397,7 +398,8 @@ export function HeroAjaxPulseVisual({
               top: 0,
               bottom: 0,
               right: `${EXTRA_RIGHT_INSET_PX[nextSrc]}px`,
-              transform: `translate(${EXTRA_TRANSLATE_X[nextSrc]}, ${EXTRA_TRANSLATE_Y[nextSrc]})`,
+              transform: `translate(${EXTRA_TRANSLATE_X[nextSrc]}, ${EXTRA_TRANSLATE_Y[nextSrc]}) scale(${EXTRA_SCALE[nextSrc]})`,
+              transformOrigin: "right bottom",
             }}
           >
             <Image
