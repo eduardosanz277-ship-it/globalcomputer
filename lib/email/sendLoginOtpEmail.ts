@@ -13,6 +13,7 @@ export async function sendLoginOtpEmail(input: {
   to: string;
   token: string;
   locale: Locale;
+  name?: string | null;
 }): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = resolveEmailFrom();
@@ -36,6 +37,7 @@ export async function sendLoginOtpEmail(input: {
         locale: input.locale,
         email: to,
         token: input.token,
+        name: input.name,
       }),
     }),
   });

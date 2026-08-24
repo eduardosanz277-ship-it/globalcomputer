@@ -7,6 +7,7 @@ export type LoginOtpTemplateInput = {
   locale: Locale;
   email: string;
   token: string;
+  name?: string | null;
 };
 
 function copy(locale: Locale) {
@@ -43,11 +44,13 @@ export function renderLoginOtpEmailTemplate(
 ): string {
   const t = copy(input.locale);
   const safeEmail = escapeHtml(input.email.trim().toLowerCase());
+  const safeName = input.name?.trim() ? escapeHtml(input.name.trim()) : null;
+  const safeDisplayName = safeName ?? safeEmail;
   const safeToken = escapeHtml(input.token.trim());
 
   const bodyHtml = `
     <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:1.6;">
-      ${t.intro(safeEmail)}
+      ${t.intro(safeDisplayName)}
     </p>
     <div style="margin:24px 0;padding:22px 18px;border-radius:18px;background:#0f172a;text-align:center;">
       <p style="margin:0;font-size:22px;letter-spacing:6px;font-weight:700;color:#fff;">${safeToken}</p>

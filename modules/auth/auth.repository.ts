@@ -147,7 +147,7 @@ async function persistLoginLocaleForExistingUser(
 async function generateLoginEmailOtp(
   email: string,
   locale: Locale,
-): Promise<string> {
+): Promise<{ token: string; userId: string | null }> {
   const admin = createSupabaseAdminClient();
   const first = await admin.auth.admin.generateLink({
     type: "magiclink",
@@ -171,7 +171,7 @@ async function generateLoginEmailOtp(
         user_metadata: { ...(user.user_metadata ?? {}), ...templateData },
       });
     }
-    return token;
+    return { token, userId: user?.id ?? null };
   }
 
   if (!isAuthUserNotFoundError(first.error)) {
@@ -199,7 +199,7 @@ async function generateLoginEmailOtp(
   if (second.error || !token) {
     throw second.error ?? new Error("No se pudo generar el código");
   }
-  return token;
+  return { token, userId: created.data.user?.id ?? second.data.user?.id ?? null };
 }
 
 /**
@@ -222,11 +222,24 @@ export async function repoSignInWithOtp(email: string, locale: Locale) {
   await persistLoginLocaleForExistingUser(normalizedEmail, locale);
 
   if (process.env.RESEND_API_KEY?.trim()) {
-    const token = await generateLoginEmailOtp(normalizedEmail, locale);
+    const { token, userId } = await generateLoginEmailOtp(normalizedEmail, locale);
+
+    let recipientName: string | null = null;
+    if (userId) {
+      const admin = createSupabaseAdminClient();
+      const { data: profileData } = await admin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .maybeSingle();
+      recipientName = profileData?.full_name?.trim() || null;
+    }
+
     const { sent } = await sendLoginOtpEmail({
       to: normalizedEmail,
       token,
       locale,
+      name: recipientName,
     });
     if (!sent) {
       throw new Error("No se pudo enviar el código");
