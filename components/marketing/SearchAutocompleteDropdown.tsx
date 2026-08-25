@@ -114,6 +114,7 @@ export function SearchAutocompleteDropdown({
   const searchParams = useSearchParams();
   const inputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
@@ -217,6 +218,12 @@ export function SearchAutocompleteDropdown({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
+  const dismissSearchInput = () => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+    inputRef.current?.blur();
+  };
+
   const navigateTo = (href: string) => {
     try {
       const next = new URL(href, window.location.href);
@@ -233,7 +240,7 @@ export function SearchAutocompleteDropdown({
   const goToSearch = (value = trimmedQuery) => {
     const q = value.trim();
     if (!q) return;
-    setIsOpen(false);
+    dismissSearchInput();
     navigateTo(`/products?q=${encodeURIComponent(q)}`);
   };
 
@@ -242,7 +249,7 @@ export function SearchAutocompleteDropdown({
       goToSearch(item.item);
       return;
     }
-    setIsOpen(false);
+    dismissSearchInput();
     navigateTo(item.item.url);
   };
 
@@ -272,8 +279,7 @@ export function SearchAutocompleteDropdown({
       return;
     }
     if (event.key === "Escape") {
-      setIsOpen(false);
-      setActiveIndex(-1);
+      dismissSearchInput();
     }
   };
 
@@ -385,6 +391,7 @@ export function SearchAutocompleteDropdown({
           aria-hidden
         />
         <input
+          ref={inputRef}
           id={inputId}
           type="search"
           name="q"
