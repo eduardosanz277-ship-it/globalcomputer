@@ -810,7 +810,7 @@ export function AdminProductsTable({
             </div>
           </DialogHeader>
 
-          <div className="max-h-[min(52vh,20rem)] overflow-y-auto px-6 py-5">
+          <div className="max-h-[min(70vh,28rem)] overflow-y-auto px-6 py-5">
             <div className="space-y-5">
               <div className="space-y-2">
                 <Label
@@ -886,7 +886,7 @@ export function AdminProductsTable({
                     }}
                     styles={appToolbarSelectStyles}
                     className="w-full"
-                    menuPlacement="auto"
+                    menuPlacement="top"
                   />
                 </div>
               </div>
@@ -911,7 +911,7 @@ export function AdminProductsTable({
                     }}
                     styles={appToolbarSelectStyles}
                     className="w-full"
-                    menuPlacement="auto"
+                    menuPlacement="top"
                   />
                 </div>
               </div>
