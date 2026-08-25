@@ -163,7 +163,7 @@ const EXTRA_TRANSLATE_X: Record<(typeof IMAGES)[number], string> = {
 const EXTRA_SCALE: Record<(typeof IMAGES)[number], number> = {
   "/images/hero/ajax_devices.png": 1,
   "/images/hero/cameras_devices.png": 1,
-  "/images/hero/control.png": 1,
+  "/images/hero/control.png": 0.96,
   "/images/hero/soporte.png": 0.8,
 };
 
