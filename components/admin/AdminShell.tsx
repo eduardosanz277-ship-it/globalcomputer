@@ -4,15 +4,18 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader, type AdminHeaderUser } from "./AdminHeader";
+import { NavBadgesProvider } from "./AdminNavBadgesContext";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
 type Props = {
   user: AdminHeaderUser;
   children: React.ReactNode;
+  /** Badge counts indexados por href (e.g. { "/admin/orders": 2 }). */
+  navBadges?: Record<string, number>;
 };
 
-export function AdminShell({ user, children }: Props) {
+export function AdminShell({ user, children, navBadges }: Props) {
   const { t, locale } = useI18n();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -53,6 +56,7 @@ export function AdminShell({ user, children }: Props) {
   }, []);
 
   return (
+    <NavBadgesProvider initialBadges={navBadges}>
     <div className="relative h-dvh min-h-0 overflow-x-hidden overflow-y-hidden bg-background">
       {mobileMenuOpen && (
         <button
@@ -116,5 +120,6 @@ export function AdminShell({ user, children }: Props) {
         </main>
       </div>
     </div>
+    </NavBadgesProvider>
   );
 }

@@ -659,9 +659,16 @@ export const es = {
           active: "Activos",
           inactive: "Inactivos",
         },
+        stockLabel: "Stock",
+        stock: {
+          all: "Todo el stock",
+          inStock: "En stock (>10)",
+          lowStock: "Stock bajo (1–10)",
+          outOfStock: "Sin stock (0)",
+        },
         modalTitle: "Filtros",
         modalDescription:
-          "Refina por marca, tipo y estado. Los cambios se aplican al pulsar Aplicar.",
+          "Refina por marca, tipo, estado y nivel de stock. Los cambios se aplican al pulsar Aplicar.",
       },
       table: {
         product: "Producto",
@@ -1400,6 +1407,16 @@ export const es = {
         shippingMethod: {
           all: "Todos los envíos",
         },
+        conflictBanner: {
+          title: (count: number) =>
+            count === 1
+              ? "1 pedido tiene conflicto de inventario"
+              : `${count} pedidos tienen conflicto de inventario`,
+          description:
+            "El cliente fue cobrado pero el stock es insuficiente. Requieren atención inmediata.",
+          filterButton: "Ver solo estos",
+          clearFilterButton: "Mostrar todos los pedidos",
+        },
       },
       table: {
         orderNumber: "Nº de orden",
@@ -1473,6 +1490,19 @@ export const es = {
         cancel: "Cancelar",
         confirm: "Confirmar pedido",
         confirming: "Confirmando…",
+      },
+      conflictResolution: {
+        title: "Conflicto de inventario",
+        description:
+          "Este pedido fue cobrado pero el stock es insuficiente. Selecciona una acción para resolverlo.",
+        refundButton: "Emitir reembolso",
+        refundingButton: "Emitiendo reembolso",
+        reprocessButton: "Reintentar inventario",
+        reprocessingButton: "Reintentando",
+        refundSuccess: "Reembolso emitido y pedido cancelado. El cliente fue notificado.",
+        reprocessSuccess: "Inventario procesado correctamente. Email de confirmación enviado.",
+        reprocessStillConflict: "El stock sigue siendo insuficiente. Ajusta el stock e intenta de nuevo.",
+        errorGeneric: "Ocurrió un error. Intenta de nuevo.",
       },
       toast: {
         statusUpdated: "Estado actualizado.",
@@ -2081,10 +2111,12 @@ export const es = {
         activeProducts: "Productos activos",
         activeProductsHint: "Disponibles en catálogo",
         noStockProducts: "Productos sin stock",
-        noStockProductsHint: "Stock en cero o negativo",
+        noStockProductsHint: "Stock en cero",
         availableServices: "Servicios disponibles",
         activeSubscriptions: "Suscripciones activas",
         activeSubscriptionsHint: "Empresas aprobadas",
+        conflictOrders: "Conflictos de inventario",
+        conflictOrdersHint: "Pedidos cobrados sin stock",
       },
       summary: {
         title: "Resumen del catálogo",

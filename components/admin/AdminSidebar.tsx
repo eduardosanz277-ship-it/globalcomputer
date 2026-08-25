@@ -10,6 +10,7 @@ import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { SITE_BRAND_NAME } from "@/lib/site";
 import { cn } from "@/utils/cn";
 import { ADMIN_NAV_GROUPS } from "./admin-nav-config";
+import { useNavBadges } from "./AdminNavBadgesContext";
 
 type Props = {
   collapsed: boolean;
@@ -68,6 +69,7 @@ export function AdminSidebar({
   onCloseMobile,
   onStartNavigation,
 }: Props) {
+  const { badges: navBadges } = useNavBadges();
   const { t } = useI18n();
   const pathname = usePathname() ?? "";
   /** En escritorio: barra estrecha con iconos; en móvil (drawer) siempre expandida */
@@ -204,6 +206,9 @@ export function AdminSidebar({
                     ? (openSubmenus[item.href] ?? false)
                     : false;
 
+                  const badge = navBadges?.[item.href] ?? 0;
+                  const badgeLabel = badge > 99 ? "99+" : String(badge);
+
                   return (
                     <li key={item.href}>
                       {hasChildren && collapsedNav ? (
@@ -211,7 +216,7 @@ export function AdminSidebar({
                           href={item.href}
                           onClick={() => handleLinkNavigation(item.href)}
                           className={cn(
-                            "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                            "relative flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                             parentActive && "border-l-[3px] border-l-primary",
                             parentActive
                               ? "bg-admin-muted text-admin"
@@ -220,6 +225,11 @@ export function AdminSidebar({
                           title={item.label}
                         >
                           <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                          {badge > 0 && (
+                            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold leading-none text-white">
+                              {badgeLabel}
+                            </span>
+                          )}
                         </Link>
                       ) : hasChildren ? (
                         <>
@@ -236,6 +246,11 @@ export function AdminSidebar({
                           >
                             <Icon className="h-5 w-5 shrink-0" aria-hidden />
                             <span className="flex-1 truncate">{item.label}</span>
+                            {badge > 0 && (
+                              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-none text-white">
+                                {badgeLabel}
+                              </span>
+                            )}
                             <ChevronDown
                               className={cn(
                                 "h-4 w-4 shrink-0 transition-transform",
@@ -279,13 +294,25 @@ export function AdminSidebar({
                             pathMatches(pathname, item.href)
                               ? "bg-admin-muted text-admin"
                               : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-                            collapsedNav && "justify-center px-0",
+                            collapsedNav && "relative justify-center px-0",
                           )}
                           title={collapsedNav ? item.label : undefined}
                         >
                           <Icon className="h-5 w-5 shrink-0" aria-hidden />
                           {!collapsedNav && (
-                            <span className="truncate">{item.label}</span>
+                            <>
+                              <span className="flex-1 truncate">{item.label}</span>
+                              {badge > 0 && (
+                                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-none text-white">
+                                  {badgeLabel}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {collapsedNav && badge > 0 && (
+                            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold leading-none text-white">
+                              {badgeLabel}
+                            </span>
                           )}
                         </Link>
                       )}

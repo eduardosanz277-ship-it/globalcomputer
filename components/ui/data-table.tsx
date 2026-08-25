@@ -290,7 +290,8 @@ export function DataTable<TData, TValue>({
         className={cn(
           "h-9 w-full rounded-lg border-border/90 bg-background pl-9 pr-3",
           "text-sm shadow-sm transition-[box-shadow,border-color]",
-          "placeholder:text-muted-foreground/70",
+          "overflow-hidden text-ellipsis",
+          "placeholder:text-ellipsis placeholder:text-muted-foreground/70",
           "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
           isLoading && "cursor-not-allowed opacity-60",
           toolbarSearchInputClassName,

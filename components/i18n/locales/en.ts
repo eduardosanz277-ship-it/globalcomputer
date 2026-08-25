@@ -651,9 +651,16 @@ export const en = {
           active: "Active",
           inactive: "Inactive",
         },
+        stockLabel: "Stock",
+        stock: {
+          all: "All stock levels",
+          inStock: "In stock (>10)",
+          lowStock: "Low stock (1–10)",
+          outOfStock: "Out of stock (0)",
+        },
         modalTitle: "Filters",
         modalDescription:
-          "Refine by brand, type, and status. Changes are applied when you click Apply.",
+          "Refine by brand, type, status, and stock level. Changes are applied when you click Apply.",
       },
       table: {
         product: "Product",
@@ -1390,6 +1397,16 @@ export const en = {
         shippingMethod: {
           all: "All shipping methods",
         },
+        conflictBanner: {
+          title: (count: number) =>
+            count === 1
+              ? "1 order has an inventory conflict"
+              : `${count} orders have inventory conflicts`,
+          description:
+            "The customer was charged but stock is insufficient. These require immediate attention.",
+          filterButton: "View only these",
+          clearFilterButton: "Show all orders",
+        },
       },
       table: {
         orderNumber: "Order no.",
@@ -1463,6 +1480,19 @@ export const en = {
         cancel: "Cancel",
         confirm: "Confirm order",
         confirming: "Confirming…",
+      },
+      conflictResolution: {
+        title: "Inventory conflict",
+        description:
+          "This order was charged but stock is insufficient. Select an action to resolve it.",
+        refundButton: "Issue refund",
+        refundingButton: "Issuing refund",
+        reprocessButton: "Retry inventory",
+        reprocessingButton: "Retrying",
+        refundSuccess: "Refund issued and order cancelled. Customer was notified.",
+        reprocessSuccess: "Inventory processed successfully. Confirmation email sent.",
+        reprocessStillConflict: "Stock is still insufficient. Adjust the stock and try again.",
+        errorGeneric: "An error occurred. Please try again.",
       },
       toast: {
         statusUpdated: "Status updated.",
@@ -2074,10 +2104,12 @@ export const en = {
         activeProducts: "Active products",
         activeProductsHint: "Available in catalog",
         noStockProducts: "Out-of-stock products",
-        noStockProductsHint: "Stock at zero or negative",
+        noStockProductsHint: "Stock at zero",
         availableServices: "Available services",
         activeSubscriptions: "Active subscriptions",
         activeSubscriptionsHint: "Approved businesses",
+        conflictOrders: "Inventory conflicts",
+        conflictOrdersHint: "Charged orders with no stock",
       },
       summary: {
         title: "Catalog summary",

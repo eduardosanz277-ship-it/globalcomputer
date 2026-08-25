@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -48,6 +49,8 @@ import {
   type StoreOrderStatusHistoryRow,
 } from "@/modules/commerce/store-orders.admin.service";
 import { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
+import { translations } from "@/components/i18n/translations";
+import { useNavBadges } from "@/components/admin/AdminNavBadgesContext";
 import {
   Check,
   Edit3,
@@ -56,6 +59,7 @@ import {
   Hand,
   Loader2,
   Package,
+  TriangleAlert,
   Zap,
 } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -188,6 +192,12 @@ function statusOptionsForOrder(
 function orderRowClassName(row: AdminStoreOrderRow): string {
   const base = "hover:bg-muted/50 transition-colors duration-150";
 
+  if (row.inventory_status === "conflict") {
+    return cn(
+      base,
+      "bg-amber-50/40 shadow-[inset_3px_0_0_rgba(217,119,6,0.7)]",
+    );
+  }
   if (row.status === "pending") {
     return cn(base, "shadow-[inset_2px_0_0_rgba(100,116,139,0.35)]");
   }
@@ -208,6 +218,7 @@ function orderRowClassName(row: AdminStoreOrderRow): string {
 
 export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   const { t, locale } = useI18n();
+  const { decrementBadge } = useNavBadges();
   const statusLabels = useMemo<Record<SiteOrderStatus, string>>(
     () => ({
       pending: t("admin.orders.status.pending"),
@@ -287,6 +298,14 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [shippingMethodFilter, setShippingMethodFilter] =
     useState<ShippingMethodFilterValue>("all");
+  const [conflictFilter, setConflictFilter] = useState(false);
+  const [conflictAction, setConflictAction] = useState<
+    "refund" | "reprocess" | null
+  >(null);
+  const [conflictActionMsg, setConflictActionMsg] = useState<{
+    type: "success" | "error" | "conflict";
+    text: string;
+  } | null>(null);
   const [confirmShippingOrder, setConfirmShippingOrder] =
     useState<AdminStoreOrderRow | null>(null);
   const [shippingAmountInput, setShippingAmountInput] = useState("");
@@ -566,10 +585,158 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     setOrderStatusHistory([]);
     setItemsError(null);
     setItemsLoading(false);
+    setConflictAction(null);
+    setConflictActionMsg(null);
   }, []);
+
+  const handleConflictRefund = useCallback(async () => {
+    if (!detailOrder) return;
+    setConflictAction("refund");
+    setConflictActionMsg(null);
+    try {
+      const res = await fetch("/api/admin/store-orders/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: detailOrder.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setConflictActionMsg({
+          type: "error",
+          text:
+            data?.error ?? t("admin.orders.conflictResolution.errorGeneric"),
+        });
+        return;
+      }
+      setConflictActionMsg({
+        type: "success",
+        text: t("admin.orders.conflictResolution.refundSuccess"),
+      });
+      setRows((prev) => {
+        const updated = prev.map((row) =>
+          row.id === detailOrder.id
+            ? { ...row, status: "cancelled" as const, inventory_status: null }
+            : row,
+        );
+        const remainingConflicts = updated.filter(
+          (r) => r.inventory_status === "conflict",
+        ).length;
+        if (remainingConflicts === 0) setConflictFilter(false);
+        return updated;
+      });
+      setDetailOrder((prev) =>
+        prev
+          ? { ...prev, status: "cancelled" as const, inventory_status: null }
+          : prev,
+      );
+      setOrderStatusHistory((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          status: "cancelled",
+          previousStatus: detailOrder.status,
+          changedByName: null,
+          note:
+            locale === "en"
+              ? "Refund issued due to inventory conflict."
+              : "Reembolso emitido por conflicto de inventario.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } catch {
+      setConflictActionMsg({
+        type: "error",
+        text: t("admin.orders.conflictResolution.errorGeneric"),
+      });
+    } finally {
+      setConflictAction(null);
+    }
+  }, [detailOrder, locale, t]);
+
+  const handleConflictReprocess = useCallback(async () => {
+    if (!detailOrder) return;
+    setConflictAction("reprocess");
+    setConflictActionMsg(null);
+    try {
+      const res = await fetch("/api/admin/store-orders/reprocess-inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: detailOrder.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data?.code === "STILL_CONFLICT") {
+        setConflictActionMsg({
+          type: "conflict",
+          text: t("admin.orders.conflictResolution.reprocessStillConflict"),
+        });
+        return;
+      }
+      if (!res.ok) {
+        setConflictActionMsg({
+          type: "error",
+          text:
+            data?.error ?? t("admin.orders.conflictResolution.errorGeneric"),
+        });
+        return;
+      }
+      setConflictActionMsg({
+        type: "success",
+        text: t("admin.orders.conflictResolution.reprocessSuccess"),
+      });
+      setRows((prev) => {
+        const updated = prev.map((row) =>
+          row.id === detailOrder.id
+            ? { ...row, inventory_status: "processed" as const }
+            : row,
+        );
+        const remainingConflicts = updated.filter(
+          (r) => r.inventory_status === "conflict",
+        ).length;
+        if (remainingConflicts === 0) setConflictFilter(false);
+        return updated;
+      });
+      setDetailOrder((prev) =>
+        prev ? { ...prev, inventory_status: "processed" as const } : prev,
+      );
+      // No se agrega entrada de historial: el estado del pedido no cambia.
+      // El reproceso es una corrección administrativa del inventario; la fecha
+      // y entrada "Confirmado" original permanecen intactas.
+    } catch {
+      setConflictActionMsg({
+        type: "error",
+        text: t("admin.orders.conflictResolution.errorGeneric"),
+      });
+    } finally {
+      setConflictAction(null);
+    }
+  }, [detailOrder, locale, t]);
+
+  const conflictCount = useMemo(
+    () => rows.filter((r) => r.inventory_status === "conflict").length,
+    [rows],
+  );
+
+  // Sync the sidebar badge whenever the local conflictCount changes.
+  // Using a ref to track the previous value avoids calling decrementBadge
+  // on the initial render (where no conflict has been resolved yet) and
+  // prevents the double-invocation issue that arises when decrementBadge
+  // is called inside a setRows functional updater (React Strict Mode runs
+  // updaters twice for side-effect detection, causing badge to drop by 2).
+  const prevConflictCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (
+      prevConflictCountRef.current !== null &&
+      conflictCount < prevConflictCountRef.current
+    ) {
+      const resolved = prevConflictCountRef.current - conflictCount;
+      decrementBadge("/admin/orders", resolved);
+    }
+    prevConflictCountRef.current = conflictCount;
+  }, [conflictCount, decrementBadge]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((order) => {
+      if (conflictFilter && order.inventory_status !== "conflict") return false;
       if (statusFilter !== "all" && order.status !== statusFilter) {
         return false;
       }
@@ -581,7 +748,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       }
       return true;
     });
-  }, [rows, shippingMethodFilter, statusFilter]);
+  }, [conflictFilter, rows, shippingMethodFilter, statusFilter]);
 
   const filterValue =
     statusFilterOptions.find((option) => option.value === statusFilter) ??
@@ -591,10 +758,11 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       (option) => option.value === shippingMethodFilter,
     ) ?? shippingMethodFilterOptions[0];
   const filtersAreDefault =
-    statusFilter === "all" && shippingMethodFilter === "all";
+    statusFilter === "all" && shippingMethodFilter === "all" && !conflictFilter;
   const clearFilters = useCallback(() => {
     setStatusFilter("all");
     setShippingMethodFilter("all");
+    setConflictFilter(false);
   }, []);
 
   const columns = useMemo<ColumnDef<AdminStoreOrderRow>[]>(
@@ -1069,6 +1237,40 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
             document.body,
           )
         : null}
+      {conflictCount > 0 ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-2">
+          <div className="flex min-w-0 items-start gap-3">
+            <TriangleAlert
+              className="mt-0.5 h-5 w-5 shrink-0 text-amber-600"
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-900">
+                {translations[locale].admin.orders.filters.conflictBanner.title(
+                  conflictCount,
+                )}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                {t("admin.orders.filters.conflictBanner.description")}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setConflictFilter((v) => !v)}
+            className={cn(
+              "self-start min-w-[9rem] shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ml-8 lg:ml-0 lg:self-auto",
+              conflictFilter
+                ? "border-amber-400 bg-amber-200 text-amber-900 hover:bg-amber-300"
+                : "border-amber-400 bg-white text-amber-800 hover:bg-amber-100",
+            )}
+          >
+            {conflictFilter
+              ? t("admin.orders.filters.conflictBanner.clearFilterButton")
+              : t("admin.orders.filters.conflictBanner.filterButton")}
+          </button>
+        </div>
+      ) : null}
       <DataTable
         columns={columns}
         data={filteredRows}
@@ -1231,6 +1433,79 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                   statusLabels={statusLabels}
                   statusBadgeClass={orderStatusBadgeClass}
                 />
+
+                {detailOrder.inventory_status === "conflict" ? (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+                    <div className="mb-3 flex items-start gap-2.5">
+                      <TriangleAlert
+                        className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600"
+                        aria-hidden
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-900">
+                          {t("admin.orders.conflictResolution.title")}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-amber-700">
+                          {t("admin.orders.conflictResolution.description")}
+                        </p>
+                      </div>
+                    </div>
+                    {conflictActionMsg ? (
+                      <p
+                        className={cn(
+                          "mb-3 rounded-lg px-3 py-2 text-xs font-medium",
+                          conflictActionMsg.type === "success"
+                            ? "bg-green-100 text-green-800"
+                            : conflictActionMsg.type === "conflict"
+                              ? "bg-amber-100 text-amber-900"
+                              : "bg-red-50 text-red-700",
+                        )}
+                      >
+                        {conflictActionMsg.text}
+                      </p>
+                    ) : null}
+                    {conflictActionMsg?.type !== "success" ? (
+                      <div className="ml-7 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        {detailOrder.stripe_session_id ? (
+                          <button
+                            type="button"
+                            disabled={conflictAction !== null}
+                            onClick={handleConflictRefund}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 sm:w-auto sm:justify-start"
+                          >
+                            {conflictAction === "refund" ? (
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                {t(
+                                  "admin.orders.conflictResolution.refundingButton",
+                                )}
+                              </>
+                            ) : (
+                              t("admin.orders.conflictResolution.refundButton")
+                            )}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          disabled={conflictAction !== null}
+                          onClick={handleConflictReprocess}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50 sm:w-auto sm:justify-start"
+                        >
+                          {conflictAction === "reprocess" ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              {t(
+                                "admin.orders.conflictResolution.reprocessingButton",
+                              )}
+                            </>
+                          ) : (
+                            t("admin.orders.conflictResolution.reprocessButton")
+                          )}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">

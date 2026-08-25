@@ -179,10 +179,12 @@ export function AdminProductsTable({
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [brandTypeFilter, setBrandTypeFilter] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<string>("all");
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [draftBrand, setDraftBrand] = useState<string>("all");
   const [draftBrandType, setDraftBrandType] = useState<string>("all");
   const [draftActive, setDraftActive] = useState<string>("all");
+  const [draftStock, setDraftStock] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [viewing, setViewing] = useState<Product | null>(null);
@@ -227,9 +229,14 @@ export function AdminProductsTable({
       const matchesActive =
         activeFilter === "all" ||
         (activeFilter === "active" ? p.active : !p.active);
-      return matchesBrand && matchesBrandType && matchesActive;
+      const matchesStock =
+        stockFilter === "all" ||
+        (stockFilter === "outOfStock" && p.stock <= 0) ||
+        (stockFilter === "lowStock" && p.stock > 0 && p.stock <= 10) ||
+        (stockFilter === "inStock" && p.stock > 10);
+      return matchesBrand && matchesBrandType && matchesActive && matchesStock;
     });
-  }, [products, brandFilter, brandTypeFilter, activeFilter]);
+  }, [products, brandFilter, brandTypeFilter, activeFilter, stockFilter]);
 
   const brandFilterValue =
     brandFilterOptions.find((o) => o.value === brandFilter) ??
@@ -262,14 +269,33 @@ export function AdminProductsTable({
     activeFilterOptions.find((o) => o.value === activeFilter) ??
     activeFilterOptions[0];
 
-  /** Filtros distintos de «todos» (marca, tipo, estado). */
+  const stockFilterOptions = useMemo<FilterOption[]>(
+    () => [
+      { value: "all", label: t("admin.products.filters.stock.all") },
+      { value: "inStock", label: t("admin.products.filters.stock.inStock") },
+      { value: "lowStock", label: t("admin.products.filters.stock.lowStock") },
+      { value: "outOfStock", label: t("admin.products.filters.stock.outOfStock") },
+    ],
+    [t],
+  );
+
+  const stockFilterValue =
+    stockFilterOptions.find((o) => o.value === stockFilter) ??
+    stockFilterOptions[0];
+
+  const draftStockFilterValue =
+    stockFilterOptions.find((o) => o.value === draftStock) ??
+    stockFilterOptions[0];
+
+  /** Filtros distintos de «todos» (marca, tipo, estado, stock). */
   const appliedFiltersCount = useMemo(() => {
     let n = 0;
     if (brandFilter !== "all") n += 1;
     if (brandTypeFilter !== "all") n += 1;
     if (activeFilter !== "all") n += 1;
+    if (stockFilter !== "all") n += 1;
     return n;
-  }, [brandFilter, brandTypeFilter, activeFilter]);
+  }, [brandFilter, brandTypeFilter, activeFilter, stockFilter]);
 
   const modalBrandTypeOptions = useMemo<FilterOption[]>(
     () => [
@@ -297,6 +323,7 @@ export function AdminProductsTable({
     setDraftBrand(brandFilter);
     setDraftBrandType(brandTypeFilter);
     setDraftActive(activeFilter);
+    setDraftStock(stockFilter);
     setFiltersModalOpen(true);
   };
 
@@ -304,12 +331,14 @@ export function AdminProductsTable({
     setDraftBrand("all");
     setDraftBrandType("all");
     setDraftActive("all");
+    setDraftStock("all");
   };
 
   const handleApplyModalFilters = () => {
     setBrandFilter(draftBrand);
     setBrandTypeFilter(draftBrandType);
     setActiveFilter(draftActive);
+    setStockFilter(draftStock);
     setFiltersModalOpen(false);
   };
 
@@ -317,6 +346,7 @@ export function AdminProductsTable({
     setBrandFilter("all");
     setBrandTypeFilter("all");
     setActiveFilter("all");
+    setStockFilter("all");
   }, []);
 
   const renderMobileRow = useCallback((row: Row<Product>) => {
@@ -714,6 +744,22 @@ export function AdminProductsTable({
               className="w-full"
             />
           </div>
+          <div className="flex w-full min-w-0 flex-1 items-center min-[1440px]:max-w-[13rem] xl:flex-none">
+            <Select<FilterOption, false>
+              instanceId="products-stock-filter"
+              inputId="products-stock-filter-input"
+              aria-label={t("admin.products.filters.stockLabel")}
+              isSearchable={false}
+              isClearable={false}
+              options={stockFilterOptions}
+              value={stockFilterValue}
+              onChange={(opt) => {
+                if (opt) setStockFilter(opt.value);
+              }}
+              styles={appToolbarSelectStyles}
+              className="w-full"
+            />
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -837,6 +883,31 @@ export function AdminProductsTable({
                     value={draftActiveFilterValue}
                     onChange={(opt) => {
                       if (opt) setDraftActive(opt.value);
+                    }}
+                    styles={appToolbarSelectStyles}
+                    className="w-full"
+                    menuPlacement="auto"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="products-filter-modal-stock"
+                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                >
+                  {t("admin.products.filters.stockLabel")}
+                </Label>
+                <div className="flex w-full min-w-0 items-center">
+                  <Select<FilterOption, false>
+                    instanceId="products-stock-filter-modal"
+                    inputId="products-filter-modal-stock"
+                    aria-label={t("admin.products.filters.stockLabel")}
+                    isSearchable={false}
+                    isClearable={false}
+                    options={stockFilterOptions}
+                    value={draftStockFilterValue}
+                    onChange={(opt) => {
+                      if (opt) setDraftStock(opt.value);
                     }}
                     styles={appToolbarSelectStyles}
                     className="w-full"

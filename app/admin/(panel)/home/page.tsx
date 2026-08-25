@@ -69,6 +69,7 @@ export default async function AdminHomePage() {
     totalBrandTypes,
     totalGeneralCharacteristics,
     totalSpecificCharacteristics,
+    conflictOrdersCount,
     recentProductsResult,
     productsByBrandResult,
   ] = await Promise.all([
@@ -135,6 +136,13 @@ export default async function AdminHomePage() {
       supabase
         .from("product_characteristics_specific")
         .select("id", { head: true, count: "exact" }),
+    ),
+    countRows(
+      "conflict orders",
+      supabase
+        .from("store_orders")
+        .select("id", { head: true, count: "exact" })
+        .eq("inventory_status", "conflict"),
     ),
     /** Últimos N productos por fecha de última modificación (`updated_at`). */
     supabase
@@ -210,6 +218,7 @@ export default async function AdminHomePage() {
       totalSubcategories={totalSubcategories}
       totalBrandTypes={totalBrandTypes}
       totalCharacteristics={totalCharacteristics}
+      conflictOrdersCount={conflictOrdersCount}
       chartItems={chartItems}
       recentProducts={recentProducts}
     />

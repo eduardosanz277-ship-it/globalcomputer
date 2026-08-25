@@ -532,6 +532,9 @@ export async function createSiteOrder(
             pricing.amount_shipping_base + pricing.amount_shipping_surcharge
           ).toFixed(2),
         );
+  const finalTotal = Number(
+    (totalAmount - pricing.amount_discount + shippingTotal).toFixed(2),
+  );
 
   const { locale, session } = await resolveLocaleForStripeCheckout(
     payload.stripeSessionId,
@@ -559,7 +562,7 @@ export async function createSiteOrder(
       stripe_session_id: payload.stripeSessionId ?? null,
       status: "confirmed",
       locale,
-      total_amount: Number(totalAmount.toFixed(2)),
+      total_amount: finalTotal,
       amount_subtotal: Number(totalAmount.toFixed(2)),
       amount_tax: 0,
       amount_shipping: shippingTotal,
@@ -567,7 +570,7 @@ export async function createSiteOrder(
       amount_shipping_base: pricing.amount_shipping_base,
       amount_shipping_surcharge: pricing.amount_shipping_surcharge,
       shipping_method: pricing.shipping_method,
-      stripe_amount_total: Number(totalAmount.toFixed(2)),
+      stripe_amount_total: finalTotal,
       stripe_payment_status: session?.payment_status ?? null,
       stripe_payment_intent: null,
     })

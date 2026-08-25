@@ -12,6 +12,21 @@ import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+function OrderNumberSkeleton() {
+  return (
+    <div
+      className="mt-6 inline-flex max-w-full animate-pulse items-center gap-2 rounded-xl border border-border/80 bg-card px-3 py-2.5 shadow-sm"
+      aria-hidden
+    >
+      <div className="min-w-0 text-left">
+        <div className="h-2.5 w-20 rounded-full bg-muted-foreground/20" />
+        <div className="mt-2 h-5 w-36 rounded-md bg-muted-foreground/15 sm:h-6 sm:w-44" />
+      </div>
+      <div className="h-9 w-9 shrink-0 rounded-lg bg-muted-foreground/10" />
+    </div>
+  );
+}
+
 type Props = {
   /** Nº de pedido ya resuelto en servidor (webhook / pedido previo). */
   initialOrderNumber?: string | null;
@@ -52,6 +67,11 @@ export function CartCheckoutSuccessClient({
   const done = useRef(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(
     initialOrderNumber?.trim() || null,
+  );
+  // Only show loading skeleton when there's a session to resolve but no
+  // server-side order number yet (webhook may still be processing).
+  const [loadingOrderNumber, setLoadingOrderNumber] = useState<boolean>(
+    !initialOrderNumber?.trim() && Boolean(sessionId),
   );
 
   useEffect(() => {
@@ -117,6 +137,9 @@ export function CartCheckoutSuccessClient({
         if (found) setOrderNumber(found);
       }
 
+      // Hide skeleton once all resolution paths are exhausted.
+      setLoadingOrderNumber(false);
+
       if (meta?.token) {
         await releaseCartReservations(meta.token).catch(() => undefined);
       }
@@ -147,7 +170,11 @@ export function CartCheckoutSuccessClient({
         {t("storefront.cartSuccess.emailHint")}
       </p>
 
-      {orderNumber ? <StoreOrderNumberCard orderNumber={orderNumber} /> : null}
+      {orderNumber ? (
+        <StoreOrderNumberCard orderNumber={orderNumber} />
+      ) : loadingOrderNumber ? (
+        <OrderNumberSkeleton />
+      ) : null}
 
       <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
         <Link

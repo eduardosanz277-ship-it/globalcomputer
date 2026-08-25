@@ -1,4 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { sendAdminInventoryConflictEmail } from "@/lib/email/sendAdminInventoryConflictEmail";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 // -------------------------------------------------------
 // Types
@@ -14,6 +16,9 @@ export type InventoryConflictItem = {
   product_id: string;
   requested: number;
   available: number;
+  /** Populated before sending admin emails; not returned by the RPC. */
+  product_name?: string;
+  product_sku?: string;
 };
 
 export type ProcessInventoryResult =
@@ -90,6 +95,75 @@ export async function processOrderInventory(
         available: c.available,
       })),
     });
+
+    // Awaited inside try/catch so the email is guaranteed to be attempted
+    // before the calling function returns (critical in serverless environments
+    // where fire-and-forget callbacks are killed when the response is sent).
+    try {
+      const { data: order, error: orderErr } = await db
+        .from("store_orders")
+        .select("order_number, customer_name, customer_email, total_amount, stripe_amount_total, shipping_method")
+        .eq("id", orderId)
+        .maybeSingle();
+
+      if (orderErr) {
+        console.error("[INVENTORY] no se pudo obtener el pedido para la alerta al admin", {
+          orderId,
+          error: orderErr.message,
+        });
+      } else if (!order) {
+        console.error("[INVENTORY] pedido no encontrado al intentar enviar alerta al admin", { orderId });
+      } else {
+        const appUrl = getAppBaseUrl();
+        const displayTotal =
+          order.shipping_method === "manual"
+            ? Number(order.total_amount ?? 0)
+            : Number(order.stripe_amount_total ?? 0);
+        const totalFormatted = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(displayTotal);
+
+        // Enrich conflict items with product name + SKU for the email table.
+        const productIds = conflicts.map((c) => c.product_id);
+        const enrichedConflicts = [...conflicts];
+        if (productIds.length > 0) {
+          const { data: products } = await db
+            .from("products")
+            .select("id, name, sku")
+            .in("id", productIds);
+          if (products && products.length > 0) {
+            const byId = new Map(products.map((p) => [String(p.id), p]));
+            for (const item of enrichedConflicts) {
+              const p = byId.get(item.product_id);
+              if (p) {
+                item.product_name = p.name ? String(p.name) : undefined;
+                item.product_sku = p.sku ? String(p.sku) : undefined;
+              }
+            }
+          }
+        }
+
+        const emailResult = await sendAdminInventoryConflictEmail({
+          orderNumber: String(order.order_number ?? "").trim() || orderId.slice(0, 8),
+          orderId,
+          customerName: String(order.customer_name ?? ""),
+          customerEmail: String(order.customer_email ?? ""),
+          totalAmount: totalFormatted,
+          conflicts: enrichedConflicts,
+          adminOrdersUrl: `${appUrl}/admin/orders`,
+        });
+
+        if (!emailResult.sent) {
+          console.warn("[INVENTORY] alerta al admin no enviada (ver logs de email)", { orderId });
+        } else {
+          console.info("[INVENTORY] alerta al admin enviada", { orderId });
+        }
+      }
+    } catch (alertErr) {
+      console.error("[INVENTORY] error al enviar alerta al admin", { orderId, error: alertErr });
+    }
+
     return { status: "conflict", orderId, conflicts };
   }
 

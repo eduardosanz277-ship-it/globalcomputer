@@ -15,6 +15,7 @@ export type AdminStoreOrderRow = {
   customer_name: string;
   customer_email: string;
   status: SiteOrderStatus;
+  inventory_status: "processed" | "conflict" | null;
   total_amount: string;
   amount_subtotal: string;
   amount_tax: string;
@@ -26,6 +27,7 @@ export type AdminStoreOrderRow = {
   stripe_amount_total: string;
   stripe_payment_status: string | null;
   stripe_session_id: string | null;
+  locale: string | null;
   created_at: string;
 };
 
@@ -61,7 +63,7 @@ export async function repoListAdminStoreOrders({
   let query = supabase
     .from("store_orders")
     .select(
-      "id, order_number, customer_name, customer_email, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, created_at",
+      "id, order_number, customer_name, customer_email, status, inventory_status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, locale, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -83,6 +85,10 @@ export async function repoListAdminStoreOrders({
       customer_name: String(row.customer_name),
       customer_email: String(row.customer_email),
       status: row.status as SiteOrderStatus,
+      inventory_status:
+        row.inventory_status === "processed" || row.inventory_status === "conflict"
+          ? row.inventory_status
+          : null,
       total_amount: String(row.total_amount),
       amount_subtotal: String(row.amount_subtotal),
       amount_tax: String(row.amount_tax),
@@ -95,6 +101,7 @@ export async function repoListAdminStoreOrders({
       stripe_amount_total: String(row.stripe_amount_total),
       stripe_payment_status: row.stripe_payment_status ?? null,
       stripe_session_id: row.stripe_session_id ?? null,
+      locale: row.locale ?? null,
       created_at: String(row.created_at),
     })) ?? []
   );
