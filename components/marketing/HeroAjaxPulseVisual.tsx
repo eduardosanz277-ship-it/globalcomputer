@@ -141,7 +141,7 @@ const EXTRA_RIGHT_INSET_PX: Record<(typeof IMAGES)[number], number> = {
 const EXTRA_TRANSLATE_Y: Record<(typeof IMAGES)[number], string> = {
   "/images/hero/ajax_devices.png": "0px",
   "/images/hero/cameras_devices.png": "7px",
-  "/images/hero/control.png": "0px",
+  "/images/hero/control.png": "-5px",
   "/images/hero/soporte.png": "0px",
 };
 
@@ -163,7 +163,7 @@ const EXTRA_TRANSLATE_X: Record<(typeof IMAGES)[number], string> = {
 const EXTRA_SCALE: Record<(typeof IMAGES)[number], number> = {
   "/images/hero/ajax_devices.png": 1,
   "/images/hero/cameras_devices.png": 1,
-  "/images/hero/control.png": 1.05,
+  "/images/hero/control.png": 1,
   "/images/hero/soporte.png": 0.8,
 };
 
