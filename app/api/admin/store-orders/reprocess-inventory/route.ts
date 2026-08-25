@@ -48,7 +48,9 @@ export async function POST(req: Request) {
     }
 
     // Retry inventory processing (RPC handles idempotency: no movements exist for conflict orders)
-    const result = await processOrderInventory(orderId, supabase);
+    const result = await processOrderInventory(orderId, supabase, {
+      notifyAdminOnConflict: false,
+    });
 
     if (result.status === "success") {
       // Audit record (Punto 6)
