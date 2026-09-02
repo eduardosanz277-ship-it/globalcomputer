@@ -23,6 +23,8 @@ export type SlideOverProps = {
   side?: "left" | "right";
   /** Clases extra para el cuerpo con scroll (debajo del encabezado). */
   contentClassName?: string;
+  /** Ref al div scrolleable (útil para resetear scroll desde fuera). */
+  contentRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 const SlideOverOverlay = React.forwardRef<
@@ -56,6 +58,7 @@ export function SlideOver({
   contentAriaLabel,
   side = "right",
   contentClassName,
+  contentRef,
 }: SlideOverProps) {
   const hasDescription =
     typeof description === "string"
@@ -123,6 +126,7 @@ export function SlideOver({
           </header>
 
           <div
+            ref={contentRef as React.RefObject<HTMLDivElement>}
             className={cn(
               "relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4",
               "overscroll-y-contain",
