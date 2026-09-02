@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
 import {
@@ -37,6 +37,7 @@ type ServiceFormProps = {
   className?: string;
   formId?: string;
   showActions?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 export function ServiceForm({
@@ -57,6 +58,7 @@ export function ServiceForm({
   className,
   formId,
   showActions = true,
+  scrollContainerRef,
 }: ServiceFormProps) {
   const { t, locale } = useI18n();
   const [name, setName] = useState(initialName);
@@ -88,6 +90,10 @@ export function ServiceForm({
   useEffect(() => {
     setBasicLanguageTab(locale === "en" ? "en" : "es");
   }, [locale]);
+
+  useLayoutEffect(() => {
+    scrollContainerRef?.current?.scrollTo({ top: 0 });
+  }, [activeTab, scrollContainerRef]);
 
   const images = useServiceImagesManager(existingImages);
 
@@ -233,7 +239,7 @@ export function ServiceForm({
         </button>
       </div>
 
-      <div className="relative z-0 min-h-0 flex-1 space-y-4 pt-4">
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col gap-4 pt-4">
         {activeTab === "basic" ? (
           <section className={adminSlideOverSectionClassName}>
             <div className="space-y-2">

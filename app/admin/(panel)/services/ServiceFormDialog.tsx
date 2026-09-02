@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Service } from "@/modules/admin/services/services.types";
 import {
@@ -54,6 +55,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
   );
 
   const isPending = isCreating || isUpdating;
+  const slideOverContentRef = useRef<HTMLDivElement>(null);
   const existingImages: ExistingServiceImageInput[] =
     service?.images.map((img) => ({
       id: img.id,
@@ -124,6 +126,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       description={t("admin.services.form.description")}
       panelClassName="md:w-[min(90vw,42rem)] lg:w-[50%] lg:max-w-none"
       contentClassName="bg-background px-4 pb-4 pt-0"
+      contentRef={slideOverContentRef}
       footer={
         <SlideOverFooter>
           <Button
@@ -148,6 +151,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
       <ServiceForm
         key={service ? `edit-${service.id}-${open}` : `new-${open}`}
         formId={SERVICE_FORM_ID}
+        scrollContainerRef={slideOverContentRef}
         initialName={service?.name ?? ""}
         initialNameEn={service?.nameEn ?? service?.name ?? ""}
         initialShortDescription={service?.shortDescription ?? ""}
