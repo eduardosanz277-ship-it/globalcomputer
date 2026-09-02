@@ -96,7 +96,7 @@ export function StorefrontProductCard({
     locale,
     p.brand_name,
     p.brand_name_en,
-  );
+  )?.toUpperCase();
 
   const handleAddToCart = async (productId: string, canBuy: boolean) => {
     if (!canBuy) {
@@ -314,24 +314,25 @@ export function StorefrontProductCard({
               "text-[14px] font-semibold leading-snug tracking-[0.015em] text-foreground line-clamp-2 transition group-hover/card:text-primary sm:text-[15px]",
             )}
           >
+            <p
+              className={cn(
+                interClassName,
+                "mb-0.5 text-left text-[11px] font-semibold leading-tight tracking-wide text-muted-foreground",
+              )}
+            >
+              {displayBrand}
+            </p>
             {displayName}
           </h3>
-          <p
-            className={cn(
-              interClassName,
-              "mt-1 text-left text-[12px] font-medium leading-tight text-muted-foreground",
-            )}
-          >
-            {displayBrand}
-          </p>
           {p.sku ? (
             <p
               className={cn(
                 interClassName,
-                "mt-1 text-left text-[11px] leading-tight text-muted-foreground/70",
+                "mb-2 mt-1 text-left text-[11px] leading-tight",
               )}
             >
-              SKU: {p.sku}
+              <span className="text-muted-foreground/80">SKU </span>
+              <span className="text-muted-foreground">{p.sku}</span>
             </p>
           ) : null}
         </Link>

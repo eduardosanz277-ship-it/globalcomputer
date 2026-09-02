@@ -743,7 +743,7 @@ export function StorefrontProductDetailView({
     locale,
     product.brand_name,
     product.brand_name_en,
-  );
+  )?.toUpperCase();
   const displayBrandTypeName = storefrontLocalizedText(
     locale,
     product.brand_type_name,
