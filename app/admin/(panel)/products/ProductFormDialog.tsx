@@ -537,6 +537,8 @@ export function ProductFormDialog({
     );
   };
 
+  const slideOverContentRef = useRef<HTMLDivElement>(null);
+
   return (
     <SlideOver
       open={open}
@@ -570,9 +572,11 @@ export function ProductFormDialog({
       }
       contentAriaLabel={t("admin.products.form.contentAria")}
       contentClassName="bg-background px-4 pb-4 pt-0"
+      contentRef={slideOverContentRef}
     >
       <ProductFormBody
         key={formKey}
+        scrollContainerRef={slideOverContentRef}
         pricingResetKey={formKey}
         form={form}
         onSubmit={handleSubmit}
@@ -625,6 +629,7 @@ function ProductFormBody({
   existingImages,
   manualPdfFile,
   setManualPdfFile,
+  scrollContainerRef,
 }: {
   form: ReturnType<typeof useForm<ProductFormValues>>;
   onSubmit: (
@@ -656,6 +661,7 @@ function ProductFormBody({
   existingImages: ExistingServiceImageInput[];
   manualPdfFile: File | null;
   setManualPdfFile: (file: File | null) => void;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t, locale } = useI18n();
   type GeneralFilterOption = { value: string; label: string };
@@ -725,6 +731,12 @@ function ProductFormBody({
   ];
 
   const [activeTab, setActiveTab] = useState<ProductFormTabId>("general");
+
+  // Resetea el scroll del SlideOver al inicio al cambiar de pestaña
+  useLayoutEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0 });
+  }, [activeTab, scrollContainerRef]);
+
   const [descriptionLanguageTab, setDescriptionLanguageTab] = useState<
     "es" | "en"
   >(locale === "en" ? "en" : "es");
