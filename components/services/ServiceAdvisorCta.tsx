@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
-import { Headset, MessageCircle, Phone } from "lucide-react";
+import { Headset, MessageCircle, PhoneCall } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
   phoneDisplay?: string;
   phoneTel?: string;
   className?: string;
+  /** Une el borde superior con el bloque anterior en móvil. */
+  flushTop?: boolean;
 };
 
 export function ServiceAdvisorCta({
@@ -19,6 +21,7 @@ export function ServiceAdvisorCta({
   phoneDisplay,
   phoneTel,
   className,
+  flushTop = false,
 }: Props) {
   const { locale, t } = useI18n();
   const displayName =
@@ -43,9 +46,12 @@ export function ServiceAdvisorCta({
         <a
           href={`tel:${phoneTel}`}
           className="inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-full border border-border/70 bg-background/80 px-5 text-sm font-semibold text-foreground/90 backdrop-blur-sm transition hover:border-primary/30 hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
+          aria-label={`${
+            locale === "en" ? "Talk to an advisor" : "Hablar con un asesor"
+          } (${phoneDisplay})`}
         >
-          <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-          {phoneDisplay}
+          <PhoneCall className="h-4 w-4 shrink-0" aria-hidden />
+          {locale === "en" ? "Talk to an advisor" : "Hablar con un asesor"}
         </a>
       ) : null}
     </>
@@ -56,8 +62,18 @@ export function ServiceAdvisorCta({
       aria-label={t("servicePage.advisorCta.ariaLabel")}
       className={cn("w-full", className)}
     >
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/50 via-primary/20 to-emerald-400/40 p-px shadow-soft-lg max-lg:rounded-t-none max-lg:border-x-0">
-        <div className="relative overflow-hidden rounded-[calc(1rem-1px)] bg-card/95 backdrop-blur-md max-lg:rounded-t-none">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/50 via-primary/20 to-emerald-400/40 p-px shadow-soft-lg",
+          flushTop && "max-lg:rounded-t-none max-lg:border-x-0",
+        )}
+      >
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-[calc(1rem-1px)] bg-card/95 backdrop-blur-md",
+            flushTop && "max-lg:rounded-t-none",
+          )}
+        >
           <div
             aria-hidden
             className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl"
