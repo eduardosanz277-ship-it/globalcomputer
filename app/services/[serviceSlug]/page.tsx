@@ -1,6 +1,8 @@
 import { LocalizedText } from "@/components/i18n/LocalizedText";
+import { resolveServiceGalleryImages } from "@/components/marketing/service-card-shared";
 import { ServiceAdvisorCta } from "@/components/services/ServiceAdvisorCta";
 import { ServiceDescriptionContent } from "@/components/services/ServiceDescriptionContent";
+import { ServiceGallery } from "@/components/services/ServiceGallery";
 import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { Inter } from "next/font/google";
@@ -45,6 +47,8 @@ export default async function ServiceSlugPage({ params }: Props) {
   }
 
   const contact = await getPublicSiteContact();
+  const galleryImages = resolveServiceGalleryImages(service.images);
+  const hasGallery = galleryImages.length > 0;
 
   const breadcrumbItems = [
     { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
@@ -74,9 +78,22 @@ export default async function ServiceSlugPage({ params }: Props) {
         <ServiceDescriptionContent
           description={service.description}
           descriptionEn={service.description_en}
+          className={
+            hasGallery
+              ? "max-lg:rounded-b-2xl max-lg:border-b max-lg:shadow-sm"
+              : undefined
+          }
         />
+        {hasGallery ? (
+          <ServiceGallery
+            images={galleryImages}
+            serviceName={service.name}
+            serviceNameEn={service.name_en}
+          />
+        ) : null}
         <ServiceAdvisorCta
-          className="max-lg:border-x max-lg:border-border/60 lg:mt-6"
+          className={hasGallery ? "mt-2 lg:mt-6" : "max-lg:border-x max-lg:border-border/60 lg:mt-6"}
+          flushTop={!hasGallery}
           serviceName={service.name}
           serviceNameEn={service.name_en}
           phoneDisplay={contact.phoneDisplay}
