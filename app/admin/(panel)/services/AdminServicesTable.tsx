@@ -64,12 +64,12 @@ function localizedServiceName(row: Service, locale: string): string {
   return row.name;
 }
 
-function localizedServiceDescription(
+function localizedServiceSummary(
   row: Service,
   locale: string,
 ): string | null {
-  if (locale === "en") return row.descriptionEn ?? row.description;
-  return row.description;
+  if (locale === "en") return row.shortDescriptionEn ?? row.shortDescription;
+  return row.shortDescription;
 }
 
 function RowActions({
@@ -128,7 +128,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
           <ServiceProfileCard
             name={localizedServiceName(r, locale)}
             imageUrl={r.imageUrl}
-            description={localizedServiceDescription(r, locale)}
+            description={localizedServiceSummary(r, locale)}
             updatedAt={r.updatedAt}
             className="hover:bg-muted/50 transition-colors duration-150"
             actions={
@@ -154,7 +154,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
       {
         id: "service",
         accessorFn: (row) =>
-          `${row.name} ${row.nameEn ?? ""} ${row.description ?? ""} ${row.descriptionEn ?? ""}`.trim(),
+          `${row.name} ${row.nameEn ?? ""} ${row.shortDescription ?? ""} ${row.shortDescriptionEn ?? ""}`.trim(),
         enableSorting: true,
         sortingFn: (rowA, rowB) =>
           localizedServiceName(rowA.original, locale).localeCompare(
@@ -177,7 +177,7 @@ export function AdminServicesTable({ services, isLoading = false }: Props) {
         cell: ({ row }) => {
           const r = row.original;
           const imageUrl = r.imageUrl;
-          const desc = serviceExcerpt(localizedServiceDescription(r, locale));
+          const desc = serviceExcerpt(localizedServiceSummary(r, locale));
           const localizedName = localizedServiceName(r, locale);
           return (
             <div className="flex min-w-0 items-start gap-3">

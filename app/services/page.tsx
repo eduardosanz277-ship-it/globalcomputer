@@ -65,8 +65,8 @@ export default async function ServicesPage() {
               key={s.id}
               name={s.name}
               nameEn={s.name_en}
-              description={s.description}
-              descriptionEn={s.description_en}
+              description={s.short_description}
+              descriptionEn={s.short_description_en}
               imageUrl={resolvePrimaryServiceImage(s.service_images)}
               href={`/services/${s.slug ?? s.id}`}
             />

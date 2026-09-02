@@ -61,7 +61,7 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
       ? services.map((s) => ({
           id: s.id,
           name: t(s.name, s.name_en),
-          description: t(s.description ?? "", s.description_en),
+          description: t(s.short_description ?? "", s.short_description_en),
           imageUrl: resolvePrimaryServiceImage(s.service_images),
           href: `/services/${s.slug ?? s.id}`,
         }))
