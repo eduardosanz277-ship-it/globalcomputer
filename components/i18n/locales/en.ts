@@ -243,6 +243,16 @@ export const en = {
       cta: "Talk to advisor",
       subjectPrefix: "Inquiry about {service}",
     },
+    gallery: {
+      ariaLabel: "Service image catalog",
+      title: "Completed projects",
+      description:
+        "Discover some of the projects and installations we have carried out for our clients.",
+      openImageAria: "View image {n} of {total}",
+      zoomTitle: "Image {n} of {total}",
+      prevImageAria: "Previous image",
+      nextImageAria: "Next image",
+    },
   },
   contactPage: {
     toastSent: "Message sent successfully",

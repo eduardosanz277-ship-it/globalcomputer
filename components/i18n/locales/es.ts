@@ -245,6 +245,16 @@ export const es = {
       cta: "Hablar con asesor",
       subjectPrefix: "Consulta sobre {service}",
     },
+    gallery: {
+      ariaLabel: "Catálogo de imágenes del servicio",
+      title: "Proyectos realizados",
+      description:
+        "Conoce algunos de los proyectos e instalaciones que hemos realizado para nuestros clientes.",
+      openImageAria: "Ver imagen {n} de {total}",
+      zoomTitle: "Imagen {n} de {total}",
+      prevImageAria: "Imagen anterior",
+      nextImageAria: "Imagen siguiente",
+    },
   },
   contactPage: {
     toastSent: "Mensaje enviado correctamente",
