@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import {
   repoCreateBrandType,
@@ -32,13 +32,13 @@ function mapDbError(err: unknown, fallback: string): Error {
 }
 
 export async function getAllBrandTypesService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListBrandTypes();
 }
 
 export async function createBrandTypeService(payload: BrandTypeInsert) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = brandTypeFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -56,7 +56,7 @@ export async function updateBrandTypeService(
   id: string,
   payload: BrandTypeUpdate
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const partial = brandTypeFormSchema.pick({
     brandId: true,
@@ -77,7 +77,7 @@ export async function updateBrandTypeService(
 }
 
 export async function deleteBrandTypeService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     await repoDeleteBrandType(id);

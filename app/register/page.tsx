@@ -21,9 +21,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useServerAction } from "@/hooks/use-server-action";
 import { registerAction } from "@/app/register/actions";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { locale } = useI18n();
   const form = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -33,11 +35,14 @@ export default function RegisterPage() {
     },
   });
 
-  const { execute, isPending } = useServerAction(registerAction, {
-    successMessage: "Registro completado",
-    errorMessage: "No se pudo registrar",
-    onSuccess: () => router.push("/"),
-  });
+  const { execute, isPending } = useServerAction(
+    (values: RegisterSchema) => registerAction(values, locale),
+    {
+      successMessage: "Registro completado",
+      errorMessage: "No se pudo registrar",
+      onSuccess: () => router.push("/"),
+    },
+  );
 
   const errors = form.formState.errors;
 

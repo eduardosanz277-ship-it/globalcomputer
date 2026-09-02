@@ -53,6 +53,14 @@ export const es = {
       clientPrompt: "¿Eres cliente o empresa?",
       clientLink: "Iniciar sesión",
     },
+    errors: {
+      invalidCredentials: "Correo o contraseña incorrectos.",
+      notAdmin:
+        "Este acceso es solo para administradores. Si eres cliente o empresa, inicia sesión en la página principal.",
+      network:
+        "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
+      generic: "No se pudo iniciar sesión. Inténtalo de nuevo.",
+    },
   },
   registerBusiness: {
     heading: {
@@ -79,6 +87,17 @@ export const es = {
         "Solicitud enviada. Un administrador debe aprobar tu cuenta; te notificaremos por correo cuando puedas iniciar sesión.",
       error: "No se pudo completar el registro",
     },
+    errors: {
+      duplicateEmail: "Ya existe una cuenta asociada a este correo electrónico.",
+      duplicateEin:
+        "Ya existe una cuenta registrada con este EIN (Employer Identification Number).",
+      userCreateFailed: "No se pudo crear el usuario.",
+      profileSaveFailed:
+        "No se pudo guardar el perfil en la base de datos. Contacta con soporte.",
+      network:
+        "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
+      generic: "No se pudo completar el registro.",
+    },
   },
   language: {
     spanish: "Español",
@@ -91,6 +110,26 @@ export const es = {
     loading: "Cargando",
     showPassword: "Mostrar contraseña",
     hidePassword: "Ocultar contraseña",
+    errors: {
+      network:
+        "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
+      unexpected: "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
+    },
+    connectionError: {
+      title: "Sin conexión con el servidor",
+      description:
+        "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
+      retry: "Reintentar",
+      retrying: "Reintentando",
+      reload: "Recargar página",
+      bannerOffline:
+        "Estás sin conexión. Los cambios no se guardarán hasta que vuelva la red.",
+    },
+    serverError: {
+      title: "No se pudo cargar esta sección",
+      description:
+        "Ocurrió un problema al procesar la solicitud. Vuelve a intentarlo en unos segundos.",
+    },
   },
   header: {
     brandTagline: "Soluciones de seguridad y vigilancia",
@@ -195,6 +234,17 @@ export const es = {
     orderPrefix: "Pedido:",
     emptyItems: "No hay artículos en este pedido.",
     trackLink: "Consultar este pedido",
+  },
+  servicePage: {
+    advisorCta: {
+      ariaLabel: "Contactar con un asesor sobre este servicio",
+      badge: "Asesoría personalizada",
+      title: "¿Necesitas ayuda con este servicio?",
+      description:
+        "Nuestro equipo te orienta sobre {service}: cotización, alcance e instalación sin compromiso.",
+      cta: "Hablar con asesor",
+      subjectPrefix: "Consulta sobre {service}",
+    },
   },
   contactPage: {
     toastSent: "Mensaje enviado correctamente",
@@ -328,6 +378,7 @@ export const es = {
       toastCheckoutInvalidResponse: "Respuesta inválida del servidor.",
       productUnavailable:
         "Un producto de tu carrito ya no está disponible.",
+      productsLoadError: "No se pudieron cargar los productos del carrito.",
       remove: "Quitar",
       removeFromCartAria: "Eliminar del carrito",
       noPhoto: "Sin imagen",

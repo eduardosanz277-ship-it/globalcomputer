@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  APP_NAVIGATION_CANCEL_EVENT,
   APP_NAVIGATION_START_EVENT,
   appLoadingDone,
   appLoadingStart,
@@ -132,15 +133,18 @@ export function AppLoadingListener() {
 
     const onPopState = () => beginNavigation();
     const onProgrammaticNav = () => beginNavigation();
+    const onCancelNav = () => endNavigation();
 
     document.addEventListener("click", onDocumentClick, true);
     window.addEventListener("popstate", onPopState);
     window.addEventListener(APP_NAVIGATION_START_EVENT, onProgrammaticNav);
+    window.addEventListener(APP_NAVIGATION_CANCEL_EVENT, onCancelNav);
 
     return () => {
       document.removeEventListener("click", onDocumentClick, true);
       window.removeEventListener("popstate", onPopState);
       window.removeEventListener(APP_NAVIGATION_START_EVENT, onProgrammaticNav);
+      window.removeEventListener(APP_NAVIGATION_CANCEL_EVENT, onCancelNav);
       stopLocationPoll();
       clearNavTimeout();
     };

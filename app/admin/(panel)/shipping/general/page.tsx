@@ -1,12 +1,12 @@
 import { getShippingSettingsAdminService } from "@/modules/shipping/shipping.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { ShippingGeneralForm } from "./ShippingGeneralForm";
 import { ShippingGeneralPageHeader } from "./ShippingGeneralPageHeader";
 
 export default async function AdminShippingGeneralPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAllGeneralCharacteristicsService } from "@/modules/admin/general-characteristics/general-characteristics.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminGeneralCharacteristicsTable } from "./AdminGeneralCharacteristicsTable";
 import { GeneralCharacteristicsPageHeader } from "./GeneralCharacteristicsPageHeader";
@@ -13,7 +13,7 @@ async function AdminGeneralCharacteristicsTableSection() {
 }
 
 export default async function AdminGeneralCharacteristicsPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

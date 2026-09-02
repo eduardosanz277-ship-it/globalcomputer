@@ -1,6 +1,8 @@
 import { LocalizedText } from "@/components/i18n/LocalizedText";
+import { ServiceAdvisorCta } from "@/components/services/ServiceAdvisorCta";
 import { ServiceDescriptionContent } from "@/components/services/ServiceDescriptionContent";
 import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { Inter } from "next/font/google";
 import { notFound, redirect } from "next/navigation";
 import { getServiceBySlugOrId } from "@/modules/catalog/storefront-services.service";
@@ -42,6 +44,8 @@ export default async function ServiceSlugPage({ params }: Props) {
     redirect(`/services/${service.slug}`);
   }
 
+  const contact = await getPublicSiteContact();
+
   const breadcrumbItems = [
     { label: <LocalizedText es="Inicio" en="Home" />, href: "/" },
     {
@@ -66,10 +70,17 @@ export default async function ServiceSlugPage({ params }: Props) {
         breadcrumbClassName={inter.className}
       />
 
-      <div className="relative z-10 w-full max-lg:-mt-4 max-lg:pb-0 lg:z-20 lg:-mt-12 lg:mx-auto lg:max-w-7xl lg:px-8 lg:pb-12">
+      <div className="relative z-10 w-full max-lg:-mt-4 max-lg:pb-8 lg:z-20 lg:-mt-12 lg:mx-auto lg:max-w-7xl lg:px-8 lg:pb-12">
         <ServiceDescriptionContent
           description={service.description}
           descriptionEn={service.description_en}
+        />
+        <ServiceAdvisorCta
+          className="max-lg:border-x max-lg:border-border/60 lg:mt-6"
+          serviceName={service.name}
+          serviceNameEn={service.name_en}
+          phoneDisplay={contact.phoneDisplay}
+          phoneTel={contact.phoneTel}
         />
       </div>
     </main>

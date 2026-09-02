@@ -6,7 +6,7 @@ import { getCatalogCategoriesForAdminService } from "@/modules/admin/categories/
 import { getAllProductsService } from "@/modules/admin/products/products.service";
 import { getAllSpecificCharacteristicsService } from "@/modules/admin/specific-characteristics/specific-characteristics.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminProductsTable } from "./AdminProductsTable";
 import { ProductsPageHeader } from "./ProductsPageHeader";
@@ -39,7 +39,7 @@ async function AdminProductsTableSection() {
 }
 
 export default async function AdminProductsPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

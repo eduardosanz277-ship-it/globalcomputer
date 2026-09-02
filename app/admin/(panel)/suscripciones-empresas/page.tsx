@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { listBusinessProfilesService } from "@/modules/admin/business-profiles/business-profiles.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminSuscripcionesEmpresasTable } from "./AdminSuscripcionesEmpresasTable";
@@ -13,7 +13,7 @@ async function TableSection() {
 }
 
 export default async function AdminSuscripcionesEmpresasPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

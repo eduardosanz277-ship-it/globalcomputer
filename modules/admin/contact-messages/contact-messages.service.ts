@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import {
   repoGetContactNotificationsAdmin,
@@ -23,7 +23,7 @@ export async function listContactMessagesAdminService(): Promise<
 }
 
 export async function getContactNotificationsAdminService(): Promise<ContactNotificationsPayload> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoGetContactNotificationsAdmin(8);
 }
@@ -31,7 +31,7 @@ export async function getContactNotificationsAdminService(): Promise<ContactNoti
 export async function markContactMessageReadAdminService(
   id: string,
 ): Promise<void> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   await repoMarkContactMessageReadAdmin(id);
 }

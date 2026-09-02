@@ -1,11 +1,15 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { useTransition } from "react";
 import { toast } from "react-toastify";
 
 interface Options<TArgs extends any[], TResult> {
   successMessage?: string;
   errorMessage?: string;
+  /** Sustituye el formateo por defecto (p. ej. errores de dominio muy específicos). */
+  formatError?: (error: unknown) => string | undefined;
   onSuccess?: (result: TResult) => void;
   /** Se ejecuta siempre tras la acción (éxito o error), p. ej. `router.refresh()`. */
   onSettled?: () => void;
@@ -15,6 +19,7 @@ export function useServerAction<TArgs extends any[], TResult>(
   action: (...args: TArgs) => Promise<TResult>,
   options: Options<TArgs, TResult> = {},
 ) {
+  const { t } = useI18n();
   const [isPending, startTransition] = useTransition();
 
   const runAction = async (...args: TArgs): Promise<TResult> => {
@@ -26,19 +31,9 @@ export function useServerAction<TArgs extends any[], TResult>(
       options.onSuccess?.(result);
       return result;
     } catch (error: unknown) {
-      const fromApi =
-        error instanceof Error && error.message.trim()
-          ? error.message
-          : typeof error === "object" &&
-              error !== null &&
-              "message" in error &&
-              typeof (error as { message?: unknown }).message === "string"
-            ? (error as { message: string }).message
-            : null;
       const message =
-        fromApi ??
-        options.errorMessage ??
-        "Ha ocurrido un error inesperado";
+        options.formatError?.(error) ??
+        formatClientError(error, t, { errorMessage: options.errorMessage });
       toast.error(message);
       throw error;
     } finally {

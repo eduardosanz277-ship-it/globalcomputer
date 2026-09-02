@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import {
   repoCreateService,
@@ -204,7 +204,7 @@ async function syncServiceBanners(
 }
 
 export async function getAllServicesService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListServices();
 }
@@ -215,7 +215,7 @@ export async function createServiceService(
   primaryImageIndex = 0,
   bannerFiles?: ServiceBannerFiles,
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = serviceFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -249,7 +249,7 @@ export async function updateServiceService(
   bannerFiles?: ServiceBannerFiles,
   bannerRemovals?: ServiceBannerRemovals,
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = serviceFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -292,7 +292,7 @@ export async function updateServiceService(
 }
 
 export async function deleteServiceService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     const service = await repoGetServiceById(id);

@@ -1,5 +1,13 @@
+import { failOnNetworkError } from "@/lib/errors/rsc-network-error";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
+
+function warnUnlessNetwork(error: unknown, context: string): void {
+  failOnNetworkError(error);
+  if (error) {
+    console.warn(context, error);
+  }
+}
 
 type ServiceImageRow = {
   id: string;
@@ -76,7 +84,7 @@ export async function getServiceBySlug(
     .maybeSingle();
 
   if (error) {
-    console.warn("[storefront] getServiceBySlug", normalizedSlug, error.message);
+    warnUnlessNetwork(error, "[storefront] getServiceBySlug");
     return null;
   }
   if (!data) return null;
@@ -94,7 +102,7 @@ export async function getServiceById(
     .maybeSingle();
 
   if (error) {
-    console.warn("[storefront] getServiceById", id, error.message);
+    warnUnlessNetwork(error, "[storefront] getServiceById");
     return null;
   }
   if (!data) return null;
@@ -127,7 +135,7 @@ export async function listStorefrontServiceHeroSlides(): Promise<
     .order("name", { ascending: true });
 
   if (error) {
-    console.warn("[storefront] listStorefrontServiceHeroSlides", error.message);
+    warnUnlessNetwork(error, "[storefront] listStorefrontServiceHeroSlides");
     return [];
   }
 

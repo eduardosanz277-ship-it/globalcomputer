@@ -2,9 +2,11 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { translate } from "@/lib/i18n/get-translation";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
+import { rethrowTaggingNetworkError } from "@/lib/errors/rsc-network-error";
 import { mapStoreOrderShippingAddressRow } from "@/lib/order-shipping-recipient";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
 import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import type { Metadata } from "next";
@@ -13,6 +15,12 @@ import { Suspense } from "react";
 import { CuentaTabs } from "./CuentaTabs";
 import { ProfilePageHeading } from "./ProfilePageHeading";
 import { CuentaAddress, CuentaOrder } from "./types";
+
+function throwIfSupabaseError(error: unknown): void {
+  if (!error) return;
+  if (isNetworkActionError(error)) rethrowTaggingNetworkError(error);
+  throw error;
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
@@ -23,21 +31,22 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CuentaPage() {
-  const user = await getCurrentUserService();
+  const user = await getCurrentUserStrictService();
   if (!user) {
     redirect("/login");
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
       "full_name, role, created_at, updated_at, phone, employer_identification_number",
     )
     .eq("id", user.id)
     .maybeSingle();
+  throwIfSupabaseError(profileError);
 
-  const { data: addresses } = await supabase
+  const { data: addresses, error: addressesError } = await supabase
     .from("addresses")
     .select(
       "id, first_name, last_name, company, apartment, phone, street, city, state, postal_code, country, is_default, created_at",
@@ -45,6 +54,7 @@ export default async function CuentaPage() {
     .eq("user_id", user.id)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
+  throwIfSupabaseError(addressesError);
 
   const mappedAddresses: CuentaAddress[] = (addresses ?? []).map((address) => ({
     id: address.id,
@@ -61,7 +71,7 @@ export default async function CuentaPage() {
     isDefault: Boolean(address.is_default),
   }));
 
-  const { data: orders } = await supabase
+  const { data: orders, error: ordersError } = await supabase
     .from("store_orders")
     .select(
       "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
@@ -69,6 +79,7 @@ export default async function CuentaPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(6);
+  throwIfSupabaseError(ordersError);
 
   const orderIds = (orders ?? []).map((order) => String(order.id));
   const historyByOrderId = new Map<string, StoreOrderStatusHistoryRow[]>();

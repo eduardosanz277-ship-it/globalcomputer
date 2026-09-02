@@ -48,9 +48,16 @@ export function isAppLoadingActive() {
 }
 
 export const APP_NAVIGATION_START_EVENT = "gc:navigation-start";
+export const APP_NAVIGATION_CANCEL_EVENT = "gc:navigation-cancel";
 
 /** Arranca la barra superior en navegaciones programáticas (`router.push`). */
 export function appNavigationStart() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(APP_NAVIGATION_START_EVENT));
+}
+
+/** Corta la barra superior cuando la navegación se aborta (p. ej. sin conexión). */
+export function appNavigationCancel() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(APP_NAVIGATION_CANCEL_EVENT));
 }

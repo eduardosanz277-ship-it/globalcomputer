@@ -51,6 +51,14 @@ export const en = {
       clientPrompt: "Customer or business account?",
       clientLink: "Sign in",
     },
+    errors: {
+      invalidCredentials: "Incorrect email or password.",
+      notAdmin:
+        "This access is for administrators only. If you are a customer or business account, sign in on the main page.",
+      network:
+        "Could not connect to the server. Check your Internet connection and try again.",
+      generic: "Could not sign in. Please try again.",
+    },
   },
   registerBusiness: {
     heading: {
@@ -77,6 +85,17 @@ export const en = {
         "Request sent. An administrator must approve your account; we will email you when you can sign in.",
       error: "Registration could not be completed",
     },
+    errors: {
+      duplicateEmail: "An account is already associated with this email address.",
+      duplicateEin:
+        "An account is already registered with this EIN (Employer Identification Number).",
+      userCreateFailed: "Could not create the user account.",
+      profileSaveFailed:
+        "Could not save the profile to the database. Please contact support.",
+      network:
+        "Could not connect to the server. Check your Internet connection and try again.",
+      generic: "Registration could not be completed.",
+    },
   },
   language: {
     spanish: "Spanish",
@@ -89,6 +108,26 @@ export const en = {
     loading: "Loading",
     showPassword: "Show password",
     hidePassword: "Hide password",
+    errors: {
+      network:
+        "Could not connect to the server. Check your Internet connection and try again.",
+      unexpected: "An unexpected error occurred. Please try again.",
+    },
+    connectionError: {
+      title: "No connection to the server",
+      description:
+        "Could not connect to the server. Check your Internet connection and try again.",
+      retry: "Try again",
+      retrying: "Retrying",
+      reload: "Reload page",
+      bannerOffline:
+        "You are offline. Changes won't be saved until the connection returns.",
+    },
+    serverError: {
+      title: "This section could not be loaded",
+      description:
+        "Something went wrong while processing the request. Please try again in a few seconds.",
+    },
   },
   header: {
     brandTagline: "Security and Surveillance Solutions",
@@ -193,6 +232,17 @@ export const en = {
     orderPrefix: "Order:",
     emptyItems: "This order has no items.",
     trackLink: "Track this order",
+  },
+  servicePage: {
+    advisorCta: {
+      ariaLabel: "Contact an advisor about this service",
+      badge: "Personalized advisory",
+      title: "Need help with this service?",
+      description:
+        "Our team can guide you on {service}: quote, scope, and installation with no obligation.",
+      cta: "Talk to advisor",
+      subjectPrefix: "Inquiry about {service}",
+    },
   },
   contactPage: {
     toastSent: "Message sent successfully",
@@ -324,6 +374,7 @@ export const en = {
       toastCheckoutInvalidResponse: "Invalid server response.",
       productUnavailable:
         "An item in your cart is no longer available.",
+      productsLoadError: "Could not load the products in your cart.",
       remove: "Remove",
       removeFromCartAria: "Remove from cart",
       noPhoto: "No image",

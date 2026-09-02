@@ -18,10 +18,14 @@ export async function listAccessoryStorefrontProducts(
   if (error || !data?.length) return [];
 
   const orderedIds = data.map((row) => String(row.accessory_product_id));
-  const products = await getStorefrontProductsByIds(orderedIds);
-  const byId = new Map(products.map((p) => [p.id, p]));
+  try {
+    const products = await getStorefrontProductsByIds(orderedIds);
+    const byId = new Map(products.map((p) => [p.id, p]));
 
-  return orderedIds
-    .map((id) => byId.get(id))
-    .filter((p): p is StorefrontProduct => Boolean(p));
+    return orderedIds
+      .map((id) => byId.get(id))
+      .filter((p): p is StorefrontProduct => Boolean(p));
+  } catch {
+    return [];
+  }
 }

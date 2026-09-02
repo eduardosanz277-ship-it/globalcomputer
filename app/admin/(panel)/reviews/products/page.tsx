@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { listProductReviewsAdminService } from "@/modules/admin/product-reviews/product-reviews.service";
 import { AdminProductReviewsTable } from "./AdminProductReviewsTable";
 import { ProductReviewsPageHeader } from "./ProductReviewsPageHeader";
@@ -28,7 +28,7 @@ async function ProductReviewsTableSection() {
 }
 
 export default async function AdminProductReviewsPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

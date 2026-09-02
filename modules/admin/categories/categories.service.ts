@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { categoryFormSchema } from "./categories.schema";
 import {
@@ -39,7 +39,7 @@ function mapDbError(err: unknown, fallback: string): Error {
 export async function getCatalogCategoriesForAdminService(): Promise<
   [AdminCategory[], AdminSubcategory[]]
 > {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return Promise.all([
     repoListCategoriesForAdmin(),
@@ -48,13 +48,13 @@ export async function getCatalogCategoriesForAdminService(): Promise<
 }
 
 export async function getAllCategoriesAdminService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListAllCategoriesAdmin();
 }
 
 export async function createCategoryAdminService(payload: CategoryAdminInsert) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = categoryFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -72,7 +72,7 @@ export async function updateCategoryAdminService(
   id: string,
   payload: CategoryAdminUpdate,
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = categoryFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -87,7 +87,7 @@ export async function updateCategoryAdminService(
 }
 
 export async function softDeleteCategoryAdminService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     await repoSoftDeleteCategoryAdmin(id);

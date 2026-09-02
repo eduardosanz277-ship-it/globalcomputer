@@ -11,7 +11,12 @@ const inter = Inter({
   display: "swap",
 });
 
-export default async function ContactPage() {
+type Props = {
+  searchParams: Promise<{ subject?: string }>;
+};
+
+export default async function ContactPage({ searchParams }: Props) {
+  const { subject } = await Promise.resolve(searchParams);
   const contact = await getPublicSiteContact();
 
   return (
@@ -43,7 +48,10 @@ export default async function ContactPage() {
         </div>
       </div>
       <div className="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-        <ContactPageClient contact={contact} />
+        <ContactPageClient
+          contact={contact}
+          initialSubject={subject?.trim() ?? ""}
+        />
       </div>
     </main>
   );

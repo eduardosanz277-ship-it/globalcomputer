@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { subcategoryFormSchema } from "./subcategories.schema";
 import {
@@ -35,7 +35,7 @@ function mapDbError(err: unknown, fallback: string): Error {
 }
 
 export async function getAllSubcategoriesAdminService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListAllSubcategoriesAdmin();
 }
@@ -43,7 +43,7 @@ export async function getAllSubcategoriesAdminService() {
 export async function createSubcategoryAdminService(
   payload: SubcategoryAdminInsert,
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = subcategoryFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -61,7 +61,7 @@ export async function updateSubcategoryAdminService(
   id: string,
   payload: SubcategoryAdminUpdate,
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = subcategoryFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -76,7 +76,7 @@ export async function updateSubcategoryAdminService(
 }
 
 export async function softDeleteSubcategoryAdminService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     await repoSoftDeleteSubcategoryAdmin(id);

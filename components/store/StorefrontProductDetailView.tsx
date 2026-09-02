@@ -50,6 +50,7 @@ import {
 } from "@/lib/plainTextFromHtml";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import {
   isNewFromCreatedAt,
   storefrontLocalizedText,
@@ -1164,11 +1165,11 @@ export function StorefrontProductDetailView({
                     await gcCartAddProduct(product.id, cartQty);
                     setCartQty(1);
                   } catch (error) {
-                    const message =
-                      error instanceof Error
-                        ? error.message
-                        : t("storefront.card.toastAddError");
-                    toast.error(message);
+                    toast.error(
+                      formatClientError(error, t, {
+                        errorMessage: t("storefront.card.toastAddError"),
+                      }),
+                    );
                   } finally {
                     setIsAddingToCart(false);
                   }

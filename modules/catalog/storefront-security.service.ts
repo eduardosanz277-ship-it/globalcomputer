@@ -1,5 +1,11 @@
 import { slugify } from "@/lib/slugify";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { failOnNetworkError } from "@/lib/errors/rsc-network-error";
+
+function warnUnlessNetwork(error: unknown, context: string): void {
+  failOnNetworkError(error);
+  if (error) console.warn(context, error);
+}
 import {
   mapStorefrontProductRow,
   STOREFRONT_PRODUCT_SELECT,
@@ -68,7 +74,7 @@ export async function getCharacteristicGeneralById(
   }
 
   if (error) {
-    console.warn("[storefront-security] getCharacteristicGeneralById", generalId, error.message);
+    warnUnlessNetwork(error, `[storefront-security] getCharacteristicGeneralById ${generalId}`);
     return null;
   }
   if (!data) return null;
@@ -103,7 +109,7 @@ export async function listSpecificsForGeneral(
   }
 
   if (error) {
-    console.warn("[storefront-security] listSpecificsForGeneral", generalId, error.message);
+    warnUnlessNetwork(error, `[storefront-security] listSpecificsForGeneral ${generalId}`);
     return [];
   }
   if (!data) return [];
@@ -146,7 +152,7 @@ export async function getCharacteristicSpecificById(
   }
 
   if (error) {
-    console.warn("[storefront-security] getCharacteristicSpecificById", specificId, error.message);
+    warnUnlessNetwork(error, `[storefront-security] getCharacteristicSpecificById ${specificId}`);
     return null;
   }
   if (!data) return null;
@@ -184,7 +190,7 @@ export async function getCharacteristicGeneralBySlug(
 
   if (error) {
     if (looksLikeMissingColumnError(error)) return null;
-    console.warn("[storefront-security] getCharacteristicGeneralBySlug", slug, error.message);
+    warnUnlessNetwork(error, `[storefront-security] getCharacteristicGeneralBySlug ${slug}`);
     return null;
   }
   if (!data) return null;
@@ -224,11 +230,9 @@ export async function getCharacteristicSpecificBySlug(
 
   if (error) {
     if (looksLikeMissingColumnError(error)) return null;
-    console.warn(
-      "[storefront-security] getCharacteristicSpecificBySlug",
-      generalId,
-      slug,
-      error.message,
+    warnUnlessNetwork(
+      error,
+      `[storefront-security] getCharacteristicSpecificBySlug ${generalId}/${slug}`,
     );
     return null;
   }
@@ -296,10 +300,9 @@ export async function listProductsByGeneralId(
     .in("characteristic_specific_id", specificIds);
 
   if (linkErr) {
-    console.warn(
-      "[storefront-security] product_characteristic_values (general)",
-      generalId,
-      linkErr.message,
+    warnUnlessNetwork(
+      linkErr,
+      `[storefront-security] product_characteristic_values (general) ${generalId}`,
     );
     return [];
   }
@@ -314,7 +317,11 @@ export async function listProductsByGeneralId(
     .eq("active", true)
     .order("name");
 
-  if (prodErr || !rows) return [];
+  if (prodErr) {
+    warnUnlessNetwork(prodErr, `[storefront-security] products by general ${generalId}`);
+    return [];
+  }
+  if (!rows) return [];
   return rows.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -333,10 +340,9 @@ export async function listProductsByGeneralAndSpecific(
     .eq("characteristic_specific_id", specificId);
 
   if (linkErr) {
-    console.warn(
-      "[storefront-security] product_characteristic_values",
-      specificId,
-      linkErr.message,
+    warnUnlessNetwork(
+      linkErr,
+      `[storefront-security] product_characteristic_values ${specificId}`,
     );
     return [];
   }
@@ -351,6 +357,10 @@ export async function listProductsByGeneralAndSpecific(
     .eq("active", true)
     .order("name");
 
-  if (prodErr || !rows) return [];
+  if (prodErr) {
+    warnUnlessNetwork(prodErr, `[storefront-security] products by specific ${specificId}`);
+    return [];
+  }
+  if (!rows) return [];
   return rows.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }

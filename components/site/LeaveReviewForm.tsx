@@ -4,6 +4,8 @@ import { useEffect, useId, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
 import { Label, RequiredMark } from "@/components/ui/label";
@@ -49,6 +51,7 @@ export function LeaveReviewForm({
   onPendingChange,
   variant = "default",
 }: LeaveReviewFormProps) {
+  const { t } = useI18n();
   const uid = useId();
   const ratingFieldId = `${uid}-rating`;
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -119,9 +122,18 @@ export function LeaveReviewForm({
         cache: "no-store",
       });
 
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+      };
+
       if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error ?? "No se pudo enviar la reseña.");
+        if (response.status === 503 || payload.code === "NETWORK") {
+          throw new TypeError("Failed to fetch");
+        }
+        throw new Error(
+          payload.error ?? t("storefront.productDetail.reviewFormError"),
+        );
       }
 
       reset(defaultValues);
@@ -135,9 +147,11 @@ export function LeaveReviewForm({
       }
     } catch (error) {
       console.error("LeaveReviewForm submit", error);
-      const message =
-        error instanceof Error ? error.message : "Error inesperado.";
-      toast.error(message);
+      toast.error(
+        formatClientError(error, t, {
+          errorMessage: t("storefront.productDetail.reviewFormError"),
+        }),
+      );
     }
   };
 

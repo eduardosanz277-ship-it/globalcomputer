@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import {
   repoCreateGeneralCharacteristic,
@@ -33,7 +33,7 @@ function mapDbError(err: unknown, fallback: string): Error {
 }
 
 export async function getAllGeneralCharacteristicsService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListGeneralCharacteristics();
 }
@@ -41,7 +41,7 @@ export async function getAllGeneralCharacteristicsService() {
 export async function createGeneralCharacteristicService(
   payload: GeneralCharacteristicInsert
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = generalCharacteristicFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -59,7 +59,7 @@ export async function updateGeneralCharacteristicService(
   id: string,
   payload: GeneralCharacteristicUpdate
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = generalCharacteristicFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -74,7 +74,7 @@ export async function updateGeneralCharacteristicService(
 }
 
 export async function deleteGeneralCharacteristicService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     await repoDeleteGeneralCharacteristic(id);

@@ -14,6 +14,8 @@ import { SimilarProducts } from "@/components/SimilarProducts";
 import { StorefrontProductGrid } from "@/components/store/StorefrontProductGrid";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
+import { throwRemoteError } from "@/lib/errors/rsc-network-error";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
@@ -88,7 +90,7 @@ const CATEGORIES: Array<{
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
   const [
-    { data: servicesData },
+    servicesResult,
     products,
     featuredProducts,
     user,
@@ -117,6 +119,10 @@ export default async function HomePage() {
     getStoreRatingSummary(),
     listStorefrontServiceHeroSlides(),
   ]);
+  if (servicesResult.error && isNetworkActionError(servicesResult.error)) {
+    throwRemoteError(servicesResult.error);
+  }
+  const servicesData = servicesResult.data;
   const priceTier = resolveStorefrontPriceTier(user?.role);
   const discountedProducts = products.filter(
     (p) => p.discount_client_pct > 0 || p.discount_business_pct > 0,

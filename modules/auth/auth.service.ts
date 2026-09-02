@@ -1,3 +1,4 @@
+import { REGISTER_BUSINESS_ERROR } from "./auth.errors";
 import {
   emailOtpRequestSchema,
   emailOtpVerifySchema,
@@ -19,10 +20,16 @@ import {
 } from "./auth.repository";
 import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { translate } from "@/lib/i18n/get-translation";
+import type { Locale } from "@/components/i18n/translations";
+import {
+  extractErrorMessage,
+  isNetworkActionError,
+} from "@/lib/errors/network-action-error";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 /** Convierte errores de `signInWithOtp` (p. ej. límite de envío de email) en mensajes legibles. */
-function mapSignInWithOtpError(error: unknown): Error {
+function mapSignInWithOtpError(error: unknown, locale: Locale): Error {
   const obj = error && typeof error === "object" ? error : null;
   const code =
     obj && "code" in obj ? String((obj as { code?: unknown }).code ?? "") : "";
@@ -39,10 +46,14 @@ function mapSignInWithOtpError(error: unknown): Error {
       "Demasiadas solicitudes. Espera unos minutos e inténtalo de nuevo.",
     );
   }
-  if (error instanceof Error) {
-    return error;
+  if (isNetworkActionError(error)) {
+    return new Error(translate(locale, "common.errors.network"));
   }
-  return new Error(String(error));
+  const message = extractErrorMessage(error);
+  if (message) {
+    return new Error(message);
+  }
+  return new Error(translate(locale, "common.errors.unexpected"));
 }
 
 /**
@@ -85,7 +96,27 @@ export async function syncProfileAfterLoginService(): Promise<void> {
 }
 
 /** Solo administradores (email + contraseña en /admin/login). */
-export async function adminPasswordLoginService(payload: AuthCredentials) {
+function isInvalidLoginCredentialsError(error: unknown): boolean {
+  const message = (
+    error instanceof Error ? error.message : String(error ?? "")
+  ).toLowerCase();
+  const obj = error && typeof error === "object" ? error : null;
+  const code =
+    obj && "code" in obj ? String((obj as { code?: unknown }).code ?? "") : "";
+  return (
+    code === "invalid_credentials" ||
+    message.includes("invalid login credentials") ||
+    message.includes("invalid email or password")
+  );
+}
+
+export async function adminPasswordLoginService(
+  payload: AuthCredentials,
+  localeInput?: unknown,
+) {
+  const locale = (recognizedAppLocale(localeInput) ??
+    (await getServerLocale())) as Locale;
+
   const normalized = {
     email: payload.email.trim().toLowerCase(),
     password: payload.password.trim(),
@@ -96,14 +127,27 @@ export async function adminPasswordLoginService(payload: AuthCredentials) {
     throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
   }
 
-  await repoLogin(parsed.data);
+  try {
+    await repoLogin(parsed.data);
+  } catch (error: unknown) {
+    if (isInvalidLoginCredentialsError(error)) {
+      throw new Error(translate(locale, "adminLogin.errors.invalidCredentials"));
+    }
+    if (isNetworkActionError(error)) {
+      throw new Error(translate(locale, "common.errors.network"));
+    }
+    throw new Error(
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : translate(locale, "adminLogin.errors.generic"),
+    );
+  }
+
   const user = await repoGetSessionUser();
 
   if (user?.role !== "ADMIN") {
     await repoLogout();
-    throw new Error(
-      "Este acceso es solo para administradores. Si eres cliente o empresa, inicia sesión en la página principal."
-    );
+    throw new Error(translate(locale, "adminLogin.errors.notAdmin"));
   }
 
   await syncProfileAfterLoginService();
@@ -138,11 +182,16 @@ export async function sendLoginOtpService(
   try {
     await repoSignInWithOtp(parsed.data.email, locale);
   } catch (error: unknown) {
-    throw mapSignInWithOtpError(error);
+    throw mapSignInWithOtpError(error, locale);
   }
 }
 
-export async function verifyLoginOtpService(rawEmail: string, rawCode: string) {
+export async function verifyLoginOtpService(
+  rawEmail: string,
+  rawCode: string,
+  localeInput?: unknown,
+) {
+  const locale = recognizedAppLocale(localeInput) ?? (await getServerLocale());
   const parsed = emailOtpVerifySchema.safeParse({
     email: rawEmail.trim().toLowerCase(),
     code: rawCode.replace(/\s/g, ""),
@@ -151,7 +200,17 @@ export async function verifyLoginOtpService(rawEmail: string, rawCode: string) {
     throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
   }
 
-  await repoVerifyEmailOtp(parsed.data.email, parsed.data.code);
+  try {
+    await repoVerifyEmailOtp(parsed.data.email, parsed.data.code);
+  } catch (error: unknown) {
+    if (isNetworkActionError(error)) {
+      throw new Error(translate(locale, "common.errors.network"));
+    }
+    const message = extractErrorMessage(error);
+    throw new Error(
+      message || translate(locale, "common.errors.unexpected"),
+    );
+  }
 
   const user = await repoGetSessionUser();
   if (user?.role === "ADMIN") {
@@ -179,13 +238,27 @@ export async function verifyLoginOtpService(rawEmail: string, rawCode: string) {
   await syncProfileAfterLoginService();
 }
 
-export async function registerService(payload: RegisterPayload) {
+export async function registerService(
+  payload: RegisterPayload,
+  localeInput?: unknown,
+) {
+  const locale = recognizedAppLocale(localeInput) ?? (await getServerLocale());
   const parsed = registerSchema.safeParse(payload);
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
   }
 
-  await repoRegister(parsed.data);
+  try {
+    await repoRegister(parsed.data);
+  } catch (error: unknown) {
+    if (isNetworkActionError(error)) {
+      throw new Error(translate(locale, "common.errors.network"));
+    }
+    const message = extractErrorMessage(error);
+    throw new Error(
+      message || translate(locale, "common.errors.unexpected"),
+    );
+  }
   return { success: true };
 }
 
@@ -193,6 +266,9 @@ export async function registerBusinessService(
   payload: RegisterBusinessFormInput,
   localeInput?: unknown,
 ) {
+  const locale = (recognizedAppLocale(localeInput) ??
+    (await getServerLocale())) as Locale;
+
   const parsed = registerBusinessSchema.safeParse({
     businessName: payload.businessName,
     phone: payload.phone ?? "",
@@ -203,22 +279,60 @@ export async function registerBusinessService(
     throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
   }
 
-  await repoRegisterBusiness({
-    businessName: parsed.data.businessName,
-    phone: parsed.data.phone,
-    email: parsed.data.email,
-    employerIdentificationNumber: parsed.data.employerIdentificationNumber,
-    locale: recognizedAppLocale(localeInput) ?? (await getServerLocale()),
-  });
+  try {
+    await repoRegisterBusiness({
+      businessName: parsed.data.businessName,
+      phone: parsed.data.phone,
+      email: parsed.data.email,
+      employerIdentificationNumber: parsed.data.employerIdentificationNumber,
+      locale,
+    });
+  } catch (error: unknown) {
+    throw mapRegisterBusinessError(error, locale);
+  }
+
   return { success: true };
+}
+
+function mapRegisterBusinessError(error: unknown, locale: Locale): Error {
+  const code = extractErrorMessage(error);
+
+  switch (code) {
+    case REGISTER_BUSINESS_ERROR.DUPLICATE_EMAIL:
+      return new Error(
+        translate(locale, "registerBusiness.errors.duplicateEmail"),
+      );
+    case REGISTER_BUSINESS_ERROR.DUPLICATE_EIN:
+      return new Error(translate(locale, "registerBusiness.errors.duplicateEin"));
+    case REGISTER_BUSINESS_ERROR.USER_CREATE_FAILED:
+      return new Error(
+        translate(locale, "registerBusiness.errors.userCreateFailed"),
+      );
+    case REGISTER_BUSINESS_ERROR.PROFILE_SAVE_FAILED:
+      return new Error(
+        translate(locale, "registerBusiness.errors.profileSaveFailed"),
+      );
+    default:
+      if (isNetworkActionError(error)) {
+        return new Error(translate(locale, "common.errors.network"));
+      }
+      return new Error(
+        code.trim() || translate(locale, "registerBusiness.errors.generic"),
+      );
+  }
 }
 
 export async function getCurrentUserService() {
   return repoGetSessionUser();
 }
 
+/** Para mutaciones y guards: un fallo de red se propaga en vez de parecer "sin permisos". */
+export async function getCurrentUserStrictService() {
+  return repoGetSessionUser({ throwOnNetworkError: true });
+}
+
 export async function ensureAdminUserService() {
-  const user = await getCurrentUserService();
+  const user = await getCurrentUserStrictService();
   if (!user || user.role !== "ADMIN") {
     throw new Error("Unauthorized");
   }

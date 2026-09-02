@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { repoGetSubcategoryCategoryId } from "@/modules/admin/subcategories/subcategories.repository";
 import {
@@ -365,7 +365,7 @@ function parseAccessories(
 }
 
 export async function getAllProductsService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListProducts();
 }
@@ -378,7 +378,7 @@ export async function createProductService(
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   const parsed = productFormSchema.safeParse(payload);
@@ -450,7 +450,7 @@ export async function updateProductService(
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
 ) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   const parsed = productFormSchema.safeParse(payload);
@@ -523,7 +523,7 @@ export async function updateProductService(
 }
 
 export async function deleteProductService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   try {

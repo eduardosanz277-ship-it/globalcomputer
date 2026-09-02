@@ -1,6 +1,7 @@
 "use client";
 
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
+import { CartProductsLoadError } from "@/components/store/CartProductsLoadError";
 import { ManualQuoteShippingAddressForm } from "@/components/store/ManualQuoteShippingAddressForm";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { useCartProductsMap } from "@/components/store/useCartProductsMap";
@@ -33,17 +34,23 @@ export function StoreCartDrawer({
   const { t } = useI18n();
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
-  const { productsById, loading } = useCartProductsMap(ids);
+  const isCartEmpty = items.length === 0;
+  const drawerActive = open && !isCartEmpty;
+
+  const { productsById, loading, loadError, retry } = useCartProductsMap(ids, {
+    enabled: drawerActive,
+  });
   const { mutationPending, runCartMutation } = useRunCartMutation();
   const listBusy = loading || mutationPending;
-  /** Empieza en true para no pintar el listado un frame antes que los importes. */
   const [summaryPending, setSummaryPending] = useState(true);
   const [step, setStep] = useState<DrawerStep>("cart");
   const { quoteLoading, submitManualQuote } = useManualQuoteSubmit(items);
 
-  /** Solo el carrito vacío real; no mezclar con `loading` (evita skeleton + pie inconsistente al borrar). */
-  const isCartEmpty = items.length === 0;
-  const showAddressStep = step === "address" && !isCartEmpty;
+  const productsLoadFailed = Boolean(loadError) && !loading;
+  const showCartLoading = drawerActive && loading && !loadError;
+  const showCartReady = drawerActive && !loading && !loadError;
+  const showAddressStep =
+    showCartReady && step === "address" && !productsLoadFailed;
 
   useEffect(() => {
     if (!open) setStep("cart");
@@ -81,12 +88,8 @@ export function StoreCartDrawer({
       }
       contentClassName="bg-muted/90"
       footer={
-        isCartEmpty ? null : showAddressStep ? (
+        isCartEmpty || productsLoadFailed || showCartLoading ? null : showAddressStep ? (
           <SlideOverFooter className="flex-col items-stretch gap-0 border-t-0 bg-muted/10 px-4 pb-5 pt-4">
-            {/*
-              Misma altura que la zona de botones del carrito:
-              separador → gap space-y-4 (pt-4) → botones → pb-5 del footer.
-            */}
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="button"
@@ -114,12 +117,13 @@ export function StoreCartDrawer({
               </Button>
             </div>
           </SlideOverFooter>
-        ) : (
+        ) : showCartReady ? (
           <SlideOverFooter className="flex-col items-stretch gap-0 border-t-0 bg-muted/10 px-4 py-5">
             <StoreCartOrderSummary
               items={items}
               productsById={productsById}
               loading={listBusy}
+              productsLoadFailed={false}
               tier={tier}
               variant="drawer"
               panelOpen={open && step === "cart"}
@@ -128,7 +132,7 @@ export function StoreCartDrawer({
               onQuoteAddressRequest={() => setStep("address")}
             />
           </SlideOverFooter>
-        )
+        ) : null
       }
     >
       {isCartEmpty ? (
@@ -156,6 +160,12 @@ export function StoreCartDrawer({
             {t("storefront.cart.continueShopping")}
           </Link>
         </div>
+      ) : productsLoadFailed ? (
+        <CartProductsLoadError
+          error={loadError}
+          onRetry={retry}
+          variant="panel"
+        />
       ) : showAddressStep ? (
         <ManualQuoteShippingAddressForm
           formId={ADDRESS_FORM_ID}
@@ -163,12 +173,26 @@ export function StoreCartDrawer({
           submitting={quoteLoading}
           onSubmit={submitManualQuote}
         />
+      ) : showCartLoading ? (
+        <div className="space-y-2.5">
+          <StoreCartLineItems
+            items={items}
+            productsById={{}}
+            loading
+            mutationPending={false}
+            summaryPending={false}
+            runCartMutation={runCartMutation}
+            tier={tier}
+            dense
+            onProductNavigate={handleClose}
+          />
+        </div>
       ) : (
         <div className="space-y-2.5">
           <StoreCartLineItems
             items={items}
             productsById={productsById}
-            loading={loading}
+            loading={false}
             mutationPending={mutationPending}
             summaryPending={summaryPending}
             runCartMutation={runCartMutation}

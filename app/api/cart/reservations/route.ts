@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import {
   clearCartReservations,
   reserveCartItem,
@@ -52,10 +53,14 @@ export async function POST(req: Request) {
     if (error instanceof CartReservationError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
+    const network = isNetworkActionError(error);
     console.error("cart/reservations POST error:", error);
     return NextResponse.json(
-      { error: "No se pudo reservar el producto. Intenta nuevamente." },
-      { status: 500 },
+      {
+        error: "No se pudo reservar el producto. Intenta nuevamente.",
+        ...(network ? { code: "NETWORK" } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }
@@ -73,10 +78,14 @@ export async function DELETE(req: Request) {
     await clearCartReservations(token);
     return NextResponse.json({ ok: true });
   } catch (error) {
+    const network = isNetworkActionError(error);
     console.error("cart/reservations DELETE error:", error);
     return NextResponse.json(
-      { error: "No se pudo limpiar las reservas del carrito." },
-      { status: 500 },
+      {
+        error: "No se pudo limpiar las reservas del carrito.",
+        ...(network ? { code: "NETWORK" } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }

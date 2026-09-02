@@ -121,6 +121,7 @@ function LoginPageContent() {
     },
     {
       successMessage: t("login.toast.otpSent"),
+      errorMessage: t("login.errors.default"),
       onSuccess: () => {
         const e = emailForm.getValues("email").trim().toLowerCase();
         setEmailForCode(e);
@@ -178,8 +179,9 @@ function LoginPageContent() {
   }, [blockedUntil]);
 
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
-    verifyLoginOtpAction,
+    (email: string, code: string) => verifyLoginOtpAction(email, code, locale),
     {
+      errorMessage: t("login.errors.default"),
       onSuccess: () => {
         markLoginSuccessToast();
         router.push("/");

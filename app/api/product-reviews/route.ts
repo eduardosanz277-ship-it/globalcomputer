@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { createProductReviewFormSchema } from "@/modules/site/product-reviews.schema";
 import { createProductReview } from "@/modules/site/product-reviews.service";
@@ -49,9 +51,17 @@ export async function POST(req: Request) {
     }
 
     console.error("product-reviews POST error:", error);
+    const network = isNetworkActionError(error);
     return NextResponse.json(
-      { error: translate(locale, "storefront.productDetail.reviewApiSaveError") },
-      { status: 500 },
+      {
+        error: formatServerErrorMessage(
+          error,
+          locale,
+          "storefront.productDetail.reviewApiSaveError",
+        ),
+        ...(network ? { code: "NETWORK" as const } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }

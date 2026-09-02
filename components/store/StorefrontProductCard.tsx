@@ -17,6 +17,7 @@ import {
   type StorefrontProduct,
 } from "@/modules/catalog/storefront-product.shared";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { buildStorefrontProductHref } from "@/lib/storefront-product-nav";
 import { cn } from "@/utils/cn";
 import { ImageOff, Plus, ShoppingCart } from "lucide-react";
@@ -107,11 +108,11 @@ export function StorefrontProductCard({
       await new Promise((resolve) => window.setTimeout(resolve, 220));
       await gcCartAddProduct(productId, 1);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : t("storefront.card.toastAddError");
-      toast.error(message);
+      toast.error(
+        formatClientError(error, t, {
+          errorMessage: t("storefront.card.toastAddError"),
+        }),
+      );
     } finally {
       setAddingProductId((current) => (current === productId ? null : current));
     }

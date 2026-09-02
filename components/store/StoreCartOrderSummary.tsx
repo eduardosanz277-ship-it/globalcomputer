@@ -19,6 +19,7 @@ import { cn } from "@/utils/cn";
 import { Gift, Info, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { toast } from "react-toastify";
 
 /** Skeleton de importe: misma caja que el número para no cambiar la altura de la fila. */
@@ -60,6 +61,7 @@ export function StoreCartOrderSummary({
   items,
   productsById,
   loading,
+  productsLoadFailed = false,
   tier,
   variant,
   panelOpen,
@@ -70,6 +72,8 @@ export function StoreCartOrderSummary({
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
   loading: boolean;
+  /** Fallo al hidratar productos: no tratar como “producto no disponible” ni pending infinito. */
+  productsLoadFailed?: boolean;
   tier: StorefrontPriceTier;
   variant: "drawer" | "page";
   panelOpen?: boolean;
@@ -82,9 +86,9 @@ export function StoreCartOrderSummary({
   const { t, locale } = useI18n();
   const subtotal = computeCartSubtotal(items, productsById, tier);
   const totalUnits = gcCartTotalUnits(items);
-  const hasUnresolvedProducts = items.some(
-    (line) => !productsById[line.productId],
-  );
+  const hasUnresolvedProducts =
+    !productsLoadFailed &&
+    items.some((line) => !productsById[line.productId]);
   const hasSurchargeProducts = items.some((line) => {
     const product = productsById[line.productId];
     if (!product) return false;
@@ -128,16 +132,22 @@ export function StoreCartOrderSummary({
 
   useLayoutEffect(() => {
     if (variant === "drawer" && !panelOpen) return;
-    if (items.length === 0) {
+    if (items.length === 0 || productsLoadFailed) {
       setShippingLoading(false);
       return;
     }
     setShippingLoading(true);
-  }, [items, hasUnresolvedProducts, variant, panelOpen, locale]);
+  }, [items, hasUnresolvedProducts, productsLoadFailed, variant, panelOpen, locale]);
 
   useEffect(() => {
     if (variant === "drawer" && !panelOpen) return;
     if (items.length === 0) {
+      setShippingQuote(null);
+      setShippingLoading(false);
+      return;
+    }
+    /** Fallo de hidratación: no cotizar envío ni dejar pending infinito. */
+    if (productsLoadFailed) {
       setShippingQuote(null);
       setShippingLoading(false);
       return;
@@ -173,11 +183,11 @@ export function StoreCartOrderSummary({
     return () => {
       cancelled = true;
     };
-  }, [items, hasUnresolvedProducts, variant, panelOpen, locale]);
+  }, [items, hasUnresolvedProducts, productsLoadFailed, variant, panelOpen, locale]);
 
   async function goToStripeCheckout() {
     if (checkoutLockRef.current) return;
-    if (items.length === 0 || hasUnresolvedProducts) return;
+    if (items.length === 0 || productsLoadFailed || hasUnresolvedProducts) return;
     if (shippingQuote?.requiresQuote) return;
     checkoutLockRef.current = true;
     setCheckoutLoading(true);
@@ -192,8 +202,15 @@ export function StoreCartOrderSummary({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items, locale: checkoutLocale }),
       });
-      const data = (await res.json()) as { url?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+        code?: string;
+      };
       if (!res.ok) {
+        if (res.status === 503 || data.code === "NETWORK") {
+          throw new TypeError("Failed to fetch");
+        }
         throw new Error(
           data.error ?? t("storefront.cart.toastCheckoutStartError"),
         );
@@ -206,17 +223,18 @@ export function StoreCartOrderSummary({
     } catch (e) {
       checkoutLockRef.current = false;
       setCheckoutLoading(false);
-      const msg =
-        e instanceof Error
-          ? e.message
-          : t("storefront.cart.toastCheckoutStartError");
-      toast.error(msg);
+      toast.error(
+        formatClientError(e, t, {
+          errorMessage: t("storefront.cart.toastCheckoutStartError"),
+        }),
+      );
     }
   }
 
   function openManualQuoteAddress() {
     if (
       items.length === 0 ||
+      productsLoadFailed ||
       hasUnresolvedProducts ||
       !shippingQuote?.requiresQuote ||
       !shippingQuote.whatsappUrl
@@ -230,6 +248,7 @@ export function StoreCartOrderSummary({
   const checkoutDisabled =
     loading ||
     items.length === 0 ||
+    productsLoadFailed ||
     hasUnresolvedProducts ||
     checkoutLoading ||
     shippingLoading ||
@@ -285,6 +304,7 @@ export function StoreCartOrderSummary({
   const quoteDisabled =
     loading ||
     items.length === 0 ||
+    productsLoadFailed ||
     hasUnresolvedProducts ||
     pricesPending ||
     !shippingQuote?.whatsappUrl;

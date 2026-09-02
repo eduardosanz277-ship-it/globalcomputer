@@ -15,6 +15,7 @@ import {
   createProductReviewFormSchema,
   type ProductReviewFormValues,
 } from "@/modules/site/product-reviews.schema";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
@@ -121,10 +122,17 @@ export function ProductReviewForm({
         cache: "no-store",
       });
 
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+      };
+
       if (!response.ok) {
-        const payload = await response.json().catch(() => null);
+        if (response.status === 503 || payload.code === "NETWORK") {
+          throw new TypeError("Failed to fetch");
+        }
         throw new Error(
-          payload?.error ?? t("storefront.productDetail.reviewFormError"),
+          payload.error ?? t("storefront.productDetail.reviewFormError"),
         );
       }
 
@@ -145,11 +153,11 @@ export function ProductReviewForm({
       }
     } catch (error) {
       console.error("ProductReviewForm submit", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : t("storefront.productDetail.reviewFormUnexpected");
-      toast.error(message);
+      toast.error(
+        formatClientError(error, t, {
+          errorMessage: t("storefront.productDetail.reviewFormUnexpected"),
+        }),
+      );
     }
   };
 

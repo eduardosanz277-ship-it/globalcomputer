@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAllCategoriesAdminService } from "@/modules/admin/categories/categories.service";
 import { getAllSubcategoriesAdminService } from "@/modules/admin/subcategories/subcategories.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminSubcategoriesTable } from "./AdminSubcategoriesTable";
 import { SubcategoriesPageHeader } from "./SubcategoriesPageHeader";
@@ -23,7 +23,7 @@ async function AdminSubcategoriesTableSection() {
 }
 
 export default async function AdminSubcategoriesPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

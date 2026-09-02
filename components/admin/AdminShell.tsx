@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader, type AdminHeaderUser } from "./AdminHeader";
 import { NavBadgesProvider } from "./AdminNavBadgesContext";
+import { AdminOfflineBanner } from "./AdminOfflineBanner";
+import { ConnectionErrorState } from "@/components/errors/ConnectionErrorState";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { appNavigationCancel } from "@/lib/app-loading";
 import { cn } from "@/utils/cn";
+
+/** Margen antes de dar por fallida una navegación que no llega a resolverse. */
+const NAVIGATION_TIMEOUT_MS = 8000;
 
 type Props = {
   user: AdminHeaderUser;
@@ -18,9 +24,11 @@ type Props = {
 export function AdminShell({ user, children, navBadges }: Props) {
   const { t, locale } = useI18n();
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [panelLoading, setPanelLoading] = useState(false);
+  const [navigationFailed, setNavigationFailed] = useState(false);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -28,7 +36,44 @@ export function AdminShell({ user, children, navBadges }: Props) {
 
   useEffect(() => {
     setPanelLoading(false);
+    setNavigationFailed(false);
   }, [pathname]);
+
+  /**
+   * Sin red la petición RSC nunca resuelve y la ruta no cambia, así que el spinner se
+   * quedaría indefinidamente: lo cortamos al perder conexión o al agotar el margen.
+   */
+  useEffect(() => {
+    if (!panelLoading) return;
+
+    const fail = () => {
+      setPanelLoading(false);
+      setNavigationFailed(true);
+      appNavigationCancel();
+    };
+    const timeoutId = window.setTimeout(fail, NAVIGATION_TIMEOUT_MS);
+    window.addEventListener("offline", fail);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("offline", fail);
+    };
+  }, [panelLoading]);
+
+  const handleStartNavigation = useCallback(() => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setNavigationFailed(true);
+      appNavigationCancel();
+      return;
+    }
+    setNavigationFailed(false);
+    setPanelLoading(true);
+  }, []);
+
+  const retryNavigation = useCallback(() => {
+    setNavigationFailed(false);
+    router.refresh();
+  }, [router]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -72,7 +117,7 @@ export function AdminShell({ user, children, navBadges }: Props) {
         onToggleCollapsed={() => setCollapsed((c) => !c)}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
-        onStartNavigation={() => setPanelLoading(true)}
+        onStartNavigation={handleStartNavigation}
       />
 
       <div
@@ -86,18 +131,23 @@ export function AdminShell({ user, children, navBadges }: Props) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
+        <AdminOfflineBanner />
         <main className="admin-panel relative min-h-0 w-full min-w-0 flex-1 overflow-hidden">
           <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4">
-            <div
-              className={cn(
-                "transition-[filter,opacity] duration-200 ease-out",
-                panelLoading &&
-                  "pointer-events-none select-none blur-[2px] opacity-75",
-              )}
-              aria-hidden={panelLoading}
-            >
-              {children}
-            </div>
+            {navigationFailed ? (
+              <ConnectionErrorState onRetry={retryNavigation} />
+            ) : (
+              <div
+                className={cn(
+                  "transition-[filter,opacity] duration-200 ease-out",
+                  panelLoading &&
+                    "pointer-events-none select-none blur-[2px] opacity-75",
+                )}
+                aria-hidden={panelLoading}
+              >
+                {children}
+              </div>
+            )}
           </div>
 
           <div

@@ -10,6 +10,7 @@ import { ConditionalSiteFooter } from "@/components/marketing/ConditionalSiteFoo
 import { HomeBackToTopButton } from "@/components/marketing/HomeBackToTopButton";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { LoginSuccessToast } from "@/components/auth/LoginSuccessToast";
+import { PublicNavigationGuard } from "@/components/errors/PublicNavigationGuard";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
@@ -70,7 +71,9 @@ export default async function RootLayout({
           <AppLoadingListener />
           <ScrollToTopOnPathname />
           <ConditionalSiteHeader user={user} />
-          <main className="relative isolate z-0 flex-1">{children}</main>
+          <main className="relative isolate z-0 flex-1">
+            <PublicNavigationGuard>{children}</PublicNavigationGuard>
+          </main>
           <ConditionalSiteFooter contact={contact} />
           <HomeBackToTopButton />
           <ToastContainer

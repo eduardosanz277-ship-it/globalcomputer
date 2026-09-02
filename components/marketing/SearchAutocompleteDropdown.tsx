@@ -12,6 +12,7 @@ import type {
   SearchSuggestions,
 } from "@/modules/catalog/catalog-search.service";
 import { appNavigationStart } from "@/lib/app-loading";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { cn } from "@/utils/cn";
 import { Grid2X2, ImageOff, Loader2, Search, Tag } from "lucide-react";
 import Image from "next/image";
@@ -116,10 +117,12 @@ export function SearchAutocompleteDropdown({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const fetchGenRef = useRef(0);
 
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [suggestions, setSuggestions] = useState<SearchSuggestions>({
     query: "",
@@ -165,12 +168,15 @@ export function SearchAutocompleteDropdown({
     if (!isOpen || showPopular) {
       abortRef.current?.abort();
       setIsLoading(false);
+      setLoadError(null);
       setSuggestions({ query: "", products: [], brands: [], categories: [] });
       return;
     }
 
     setIsLoading(true);
+    setLoadError(null);
     const controller = new AbortController();
+    const fetchGen = ++fetchGenRef.current;
     abortRef.current?.abort();
     abortRef.current = controller;
 
@@ -184,13 +190,23 @@ export function SearchAutocompleteDropdown({
           signal: controller.signal,
           cache: "no-store",
         });
-        if (!response.ok) throw new Error("Search suggestions failed");
-        const data = (await response.json()) as SearchSuggestions;
+        const data = (await response.json().catch(() => ({}))) as SearchSuggestions & {
+          error?: string;
+          code?: string;
+        };
+        if (fetchGen !== fetchGenRef.current) return;
+        if (!response.ok) {
+          if (response.status === 503 || data.code === "NETWORK") {
+            throw new TypeError("Failed to fetch");
+          }
+          throw new Error(data.error ?? "search_failed");
+        }
         setSuggestions(data);
+        setLoadError(null);
         setActiveIndex(-1);
       } catch (error) {
-        if (controller.signal.aborted) return;
-        console.error("No se pudieron cargar las sugerencias", error);
+        if (controller.signal.aborted || fetchGen !== fetchGenRef.current) return;
+        setLoadError(formatClientError(error, t));
         setSuggestions({
           query: trimmedQuery,
           products: [],
@@ -198,7 +214,9 @@ export function SearchAutocompleteDropdown({
           categories: [],
         });
       } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
+        if (!controller.signal.aborted && fetchGen === fetchGenRef.current) {
+          setIsLoading(false);
+        }
       }
     }, DEBOUNCE_MS);
 
@@ -206,7 +224,7 @@ export function SearchAutocompleteDropdown({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [isOpen, locale, showPopular, trimmedQuery]);
+  }, [isOpen, locale, showPopular, t, trimmedQuery]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -447,6 +465,10 @@ export function SearchAutocompleteDropdown({
             <div className="flex items-center justify-center gap-2 px-4 py-10 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               {t("header.search.loading")}
+            </div>
+          ) : loadError ? (
+            <div className="px-4 py-10 text-center" role="alert">
+              <p className="text-sm text-muted-foreground">{loadError}</p>
             </div>
           ) : hasResults ? (
             <div className="space-y-4">

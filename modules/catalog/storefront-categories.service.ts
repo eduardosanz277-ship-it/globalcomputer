@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { assertRemoteOk, failOnNetworkError } from "@/lib/errors/rsc-network-error";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
 
@@ -33,8 +34,8 @@ export const getStorefrontCategoriesWithSubcategories = cache(
         .order("name", { ascending: true }),
     ]);
 
-    if (categoriesResult.error) throw categoriesResult.error;
-    if (subcategoriesResult.error) throw subcategoriesResult.error;
+    assertRemoteOk(categoriesResult.error);
+    assertRemoteOk(subcategoriesResult.error);
 
     const byCategory = new Map<
       string,
@@ -81,7 +82,11 @@ export const getStorefrontCategoryById = cache(
       .is("deleted_at", null)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      failOnNetworkError(error);
+      return null;
+    }
+    if (!data) return null;
     return {
       id: data.id as string,
       name: data.name as string,
@@ -113,7 +118,11 @@ export const getStorefrontSubcategoryById = cache(
       .is("deleted_at", null)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      failOnNetworkError(error);
+      return null;
+    }
+    if (!data) return null;
     return {
       id: data.id as string,
       name: data.name as string,
@@ -145,7 +154,11 @@ export const getStorefrontSubcategoryInCategory = cache(
       .is("deleted_at", null)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      failOnNetworkError(error);
+      return null;
+    }
+    if (!data) return null;
     return {
       id: data.id as string,
       name: data.name as string,
@@ -169,7 +182,11 @@ export const getStorefrontCategoryBySlug = cache(
       .eq("slug", slug)
       .is("deleted_at", null)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) {
+      failOnNetworkError(error);
+      return null;
+    }
+    if (!data) return null;
     return {
       id: data.id as string,
       name: data.name as string,
@@ -195,7 +212,11 @@ export const getStorefrontSubcategoryInCategoryBySlug = cache(
       .eq("slug", slug)
       .is("deleted_at", null)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) {
+      failOnNetworkError(error);
+      return null;
+    }
+    if (!data) return null;
     return {
       id: data.id as string,
       name: data.name as string,

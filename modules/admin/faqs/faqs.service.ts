@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { faqFormSchema } from "./faqs.schema";
 import {
@@ -24,13 +24,13 @@ function mapDbError(err: unknown, fallback: string): Error {
 }
 
 export async function getAllFaqsAdminService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListAllFaqsAdmin();
 }
 
 export async function createFaqAdminService(payload: FaqAdminInsert) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = faqFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -44,7 +44,7 @@ export async function createFaqAdminService(payload: FaqAdminInsert) {
 }
 
 export async function updateFaqAdminService(id: string, payload: FaqAdminUpdate) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = faqFormSchema.safeParse(payload);
   if (!parsed.success) {
@@ -58,7 +58,7 @@ export async function updateFaqAdminService(id: string, payload: FaqAdminUpdate)
 }
 
 export async function deleteFaqAdminService(id: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   try {
     await repoDeleteFaqAdmin(id);

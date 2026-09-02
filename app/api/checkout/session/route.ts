@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import type { GcCartItem } from "@/lib/store-cart";
 import {
   CheckoutSessionError,
@@ -40,8 +42,9 @@ export async function POST(req: Request) {
     qty: i.qty,
   }));
 
+  const locale = parsed.data.locale;
+
   try {
-    const locale = parsed.data.locale;
     console.info("[checkout/session] locale recibido del cliente", { locale });
     const { url } = await createHostedCheckoutSession(items, locale);
     return NextResponse.json({ url });
@@ -53,9 +56,13 @@ export async function POST(req: Request) {
       );
     }
     console.error("[checkout/session]", e);
+    const network = isNetworkActionError(e);
     return NextResponse.json(
-      { error: "No se pudo iniciar el pago. Inténtalo de nuevo." },
-      { status: 500 },
+      {
+        error: formatServerErrorMessage(e, locale),
+        ...(network ? { code: "NETWORK" as const } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }

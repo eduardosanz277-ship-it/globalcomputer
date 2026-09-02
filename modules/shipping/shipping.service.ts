@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { calculateShipping } from "./shipping.calculator";
 import { findOverlappingRate } from "./shipping.calculator";
@@ -34,7 +34,7 @@ export async function getShippingSettingsService(): Promise<ShippingSettings> {
 }
 
 export async function getShippingSettingsAdminService(): Promise<ShippingSettings> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoGetShippingSettings();
 }
@@ -42,13 +42,13 @@ export async function getShippingSettingsAdminService(): Promise<ShippingSetting
 export async function updateShippingSettingsAdminService(
   input: ShippingSettingsInput,
 ): Promise<ShippingSettings> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoUpdateShippingSettings(input);
 }
 
 export async function listShippingRatesAdminService(): Promise<ShippingRate[]> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListShippingRates();
 }
@@ -60,7 +60,7 @@ export async function listActiveShippingRatesService(): Promise<ShippingRate[]> 
 export async function createShippingRateAdminService(
   input: ShippingRateInput,
 ): Promise<ShippingRate> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const existing = await repoListShippingRates();
   const overlap = findOverlappingRate(input, existing);
@@ -76,7 +76,7 @@ export async function updateShippingRateAdminService(
   id: string,
   input: ShippingRateInput,
 ): Promise<ShippingRate> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const existing = await repoListShippingRates();
   const overlap = findOverlappingRate(input, existing, id);
@@ -89,7 +89,7 @@ export async function updateShippingRateAdminService(
 }
 
 export async function deleteShippingRateAdminService(id: string): Promise<void> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   await repoDeleteShippingRate(id);
 }
@@ -98,7 +98,7 @@ export async function setShippingRateActiveAdminService(
   id: string,
   active: boolean,
 ): Promise<ShippingRate> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoSetShippingRateActive(id, active);
 }

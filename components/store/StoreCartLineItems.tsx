@@ -1,5 +1,6 @@
 "use client";
 
+import { CartProductsLoadError } from "@/components/store/CartProductsLoadError";
 import { cartLineUnitPrice } from "@/components/store/cart-line-price";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
@@ -17,6 +18,7 @@ import {
   storefrontProductDisplayName,
 } from "@/modules/catalog/storefront-product.shared";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { cn } from "@/utils/cn";
 import { ImageOff, Trash2 } from "lucide-react";
 import Image from "next/image";
@@ -24,11 +26,11 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 
 function toastCartError(error: unknown, t: (key: string) => string) {
-  const message =
-    error instanceof Error
-      ? error.message
-      : t("storefront.cart.toastUpdateError");
-  toast.error(message);
+  toast.error(
+    formatClientError(error, t, {
+      errorMessage: t("storefront.cart.toastUpdateError"),
+    }),
+  );
 }
 
 function CartLineSkeleton({ dense }: { dense?: boolean }) {
@@ -202,6 +204,8 @@ export function StoreCartLineItems({
   items,
   productsById,
   loading,
+  loadError = null,
+  onRetryLoad,
   mutationPending,
   summaryPending,
   runCartMutation,
@@ -212,6 +216,9 @@ export function StoreCartLineItems({
   items: GcCartItem[];
   productsById: Record<string, StorefrontProduct>;
   loading: boolean;
+  /** Fallo al cargar productos del carrito (red / API); no es “producto dado de baja”. */
+  loadError?: unknown | null;
+  onRetryLoad?: () => void;
   mutationPending: boolean;
   /** Pending de importes/envío: listado y precios se revelan a la vez. */
   summaryPending?: boolean;
@@ -220,11 +227,14 @@ export function StoreCartLineItems({
   dense?: boolean;
   onProductNavigate?: () => void;
 }) {
+  const { t } = useI18n();
+
   if (items.length === 0) {
     return null;
   }
 
-  const showSkeleton = loading || mutationPending || Boolean(summaryPending);
+  const showSkeleton =
+    !loadError && (loading || mutationPending || Boolean(summaryPending));
 
   if (showSkeleton) {
     return (
@@ -233,6 +243,12 @@ export function StoreCartLineItems({
           <CartLineSkeleton key={item.productId} dense={dense} />
         ))}
       </>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <CartProductsLoadError error={loadError} onRetry={onRetryLoad} />
     );
   }
 

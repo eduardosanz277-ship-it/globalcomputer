@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { toast } from "react-toastify";
 import {
   Clock3,
@@ -45,9 +46,10 @@ const CONTACT_MAP_GOOGLE_MAPS_URL =
 
 type Props = {
   contact: PublicSiteContact;
+  initialSubject?: string;
 };
 
-export function ContactPageClient({ contact }: Props) {
+export function ContactPageClient({ contact, initialSubject = "" }: Props) {
   const { t } = useI18n();
   const form = useForm<ContactRequestFormValues>({
     resolver: zodResolver(contactRequestFormSchema),
@@ -55,7 +57,7 @@ export function ContactPageClient({ contact }: Props) {
       name: "",
       email: "",
       phone: "",
-      subject: "",
+      subject: initialSubject,
       message: "",
     },
     mode: "onSubmit",
@@ -113,14 +115,26 @@ export function ContactPageClient({ contact }: Props) {
         cache: "no-store",
       });
 
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+      };
+
       if (!response.ok) {
-        throw new Error("request_failed");
+        if (response.status === 503 || data.code === "NETWORK") {
+          throw new TypeError("Failed to fetch");
+        }
+        throw new Error(data.error ?? "request_failed");
       }
 
       reset();
       toast.success(t("contactPage.toastSent"));
-    } catch {
-      toast.error(t("contactPage.toastError"));
+    } catch (error) {
+      toast.error(
+        formatClientError(error, t, {
+          errorMessage: t("contactPage.toastError"),
+        }),
+      );
     }
   };
 

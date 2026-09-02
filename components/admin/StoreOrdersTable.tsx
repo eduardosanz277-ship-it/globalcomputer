@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { SortableHeader } from "@/components/admin/admin-sortable-table-header";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { cn } from "@/utils/cn";
 import {
   Tooltip,
@@ -381,9 +382,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         toast.success(t("admin.orders.toast.statusUpdated"));
       } catch (error) {
         toast.error(
-          error instanceof Error
-            ? error.message
-            : t("admin.orders.toast.statusChangeError"),
+          formatClientError(error, t, {
+            errorMessage: t("admin.orders.toast.statusChangeError"),
+          }),
         );
         throw error;
       } finally {
@@ -566,9 +567,9 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         setOrderShippingAddress(null);
         setOrderStatusHistory([]);
         setItemsError(
-          error instanceof Error
-            ? error.message
-            : t("admin.orders.items.loadError"),
+          formatClientError(error, t, {
+            errorMessage: t("admin.orders.items.loadError"),
+          }),
         );
       } finally {
         setItemsLoading(false);

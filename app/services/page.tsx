@@ -8,6 +8,7 @@ import {
   type ServiceRow,
 } from "@/components/marketing/service-card-shared";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { assertRemoteOk } from "@/lib/errors/rsc-network-error";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,12 +18,13 @@ const inter = Inter({
 
 export default async function ServicesPage() {
   const supabase = await getCatalogSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("services")
     .select(
       "id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)",
     )
     .order("name", { ascending: true });
+  assertRemoteOk(error);
 
   const rows = (data ?? []) as ServiceRow[];
 

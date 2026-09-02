@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { APP_CONFIG_KEYS, type AppConfigSettings } from "./app-config.types";
 import {
@@ -59,7 +59,7 @@ function mapRowsToSettings(
 }
 
 export async function getAppConfigSettingsService(): Promise<AppConfigSettings> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const rows = await repoGetAppConfigByKeys([
     ...APP_CONFIG_KEYS,
@@ -70,7 +70,7 @@ export async function getAppConfigSettingsService(): Promise<AppConfigSettings> 
 }
 
 export async function updateAppConfigSettingsService(input: AppConfigFormValues) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   const parsed = appConfigFormSchema.parse(input);
   await repoUpsertAppConfigEntries([

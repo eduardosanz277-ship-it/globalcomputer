@@ -1,5 +1,13 @@
+import { failOnNetworkError } from "@/lib/errors/rsc-network-error";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
+
+function warnUnlessNetwork(error: unknown, context: string): void {
+  failOnNetworkError(error);
+  if (error) {
+    console.warn(context, error);
+  }
+}
 
 export type StorefrontProductCharacteristicRow = {
   id: string;
@@ -319,7 +327,7 @@ export async function getStorefrontProductDetailById(
     .maybeSingle();
 
   if (error) {
-    console.warn("[storefront] getStorefrontProductDetailById", id, error.message);
+    warnUnlessNetwork(error, `[storefront] getStorefrontProductDetailById ${id}`);
     return null;
   }
   if (!data) return null;
@@ -339,7 +347,7 @@ export async function getStorefrontProductDetailBySlug(
     .maybeSingle();
 
   if (error) {
-    console.warn("[storefront] getStorefrontProductDetailBySlug", slug, error.message);
+    warnUnlessNetwork(error, `[storefront] getStorefrontProductDetailBySlug ${slug}`);
     return null;
   }
   if (!data) return null;

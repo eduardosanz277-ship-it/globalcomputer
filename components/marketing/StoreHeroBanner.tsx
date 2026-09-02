@@ -12,7 +12,7 @@ import type {
 import { buttonVariants } from "@/components/ui/button-variants";
 import { inter } from "@/lib/fonts/inter";
 import { cn } from "@/utils/cn";
-import { Headphones, Phone, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, Headphones, PhoneCall, ShieldCheck, Truck } from "lucide-react";
 import { motion, useAnimation } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -134,7 +134,7 @@ export function StoreHeroBanner({
     >
       <div className="relative z-20 mx-auto w-full max-w-7xl bg-transparent py-6 sm:py-8 md:px-8 md:py-6">
         <div className="grid items-center gap-10">
-          <div className="text-center md:max-w-[48%] md:text-left lg:max-w-[60%] xl:max-w-[56%]">
+          <div className="text-left md:max-w-[48%] lg:max-w-[60%] xl:max-w-[56%]">
             <div className="px-4 sm:px-6 md:px-0">
               <p className="text-[15px] font-bold uppercase tracking-wider text-primary sm:text-base lg:text-lg">
                 <HeroRotatingCategoryLabel t={t} triggerRef={labelTriggerRef} />
@@ -145,19 +145,48 @@ export function StoreHeroBanner({
                   "Your security, simple and clear",
                 )}
               </h1>
-              <p className="mx-auto mt-4 text-pretty text-[14px] font-medium text-muted-foreground sm:text-[15px] md:mx-0 md:text-[14px] lg:text-[17px]">
+              <p className="mx-auto mt-4 text-pretty text-[14px] font-medium text-muted-foreground sm:text-[15px] md:mx-0 md:text-[14px] lg:max-w-[78%] lg:text-[17px] min-[1180px]:max-w-none">
                 {t(
                   "Cámaras, grabadoras y kits con precios claros, y equipos que te orientan.",
                   "Cameras, recorders, and kits with clear prices, and teams that guide you.",
-                )}
-                <br />
+                )}{" "}
                 {t(
                   "Así debería ser comprar tecnología.",
                   "This is how buying technology should feel.",
                 )}
               </p>
 
-              <ul className="mt-6 flex flex-wrap justify-center gap-2 md:justify-start">
+            </div>
+
+            <div className="px-4 sm:px-6 md:px-0">
+              <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start">
+                <Link
+                  href="/products"
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "h-10 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/85 sm:h-11 sm:w-auto",
+                  )}
+                >
+                  {t("Comprar ahora", "Shop now")}
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                </Link>
+                <Link
+                  href={`tel:${contact.phoneTel}`}
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "h-10 w-full gap-2 rounded-full border-border bg-white px-5 font-semibold text-foreground transition hover:bg-muted/60 sm:h-11 sm:w-auto",
+                  )}
+                  aria-label={`${t("Hablar con un asesor", "Talk to an advisor")} (${contact.phoneDisplay})`}
+                >
+                  <PhoneCall
+                    className="h-4 w-4 shrink-0 text-foreground"
+                    aria-hidden
+                  />
+                  {t("Hablar con un asesor", "Talk to an advisor")}
+                </Link>
+              </div>
+
+              <ul className="mt-5 flex flex-wrap justify-start gap-2">
                 {TRUST_PILLS.map(({ Icon, label, labelEn }) => (
                   <li
                     key={label}
@@ -171,17 +200,11 @@ export function StoreHeroBanner({
                   </li>
                 ))}
               </ul>
-            </div>
 
             {/*
-              Visual animado solo para mobile: va encima de los botones, pegado al borde
-              derecho real. HeroAjaxPulseVisual está pensado para una altura de 500px fija
-              (todas sus medidas internas son en base a eso), así que en vez de reescribir
-              su geometría, se envuelve en un wrapper de MOBILE_VISUAL_HEIGHT de alto con
-              un `scale()` que lo reduce completo (posición, círculos, recorte) de forma
-              proporcional. Desde md (tablet) en adelante se usa el layout de dos columnas
-              con el visual a la derecha ocupando el alto de la sección (ver bloques
-              absolutos más abajo).
+              Visual animado solo para mobile: aparece después de los CTAs y trust pills.
+              HeroAjaxPulseVisual está pensado para 500px fijos; se reduce con scale()
+              proporcional al alto deseado en móvil.
             */}
             <div
               className="relative ml-auto mr-0 mt-6 w-full md:hidden"
@@ -195,37 +218,10 @@ export function StoreHeroBanner({
                   transformOrigin: "top right",
                 }}
               >
-                {/* Sin onCycleStart aquí: solo la instancia de desktop dispara el texto rotativo (ver más abajo), para no disparar el swap varias veces por ciclo si hay más de una instancia montada a la vez. */}
+                {/* Sin onCycleStart aquí: solo la instancia de desktop dispara el texto rotativo. */}
                 <HeroAjaxPulseVisual />
               </div>
             </div>
-
-            <div className="px-4 sm:px-6 md:px-0">
-              <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start">
-                <Link
-                  href="/products"
-                  className={cn(
-                    buttonVariants({ size: "lg" }),
-                    "h-10 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground transition hover:scale-[1.02] hover:bg-primary sm:h-11 sm:w-auto",
-                  )}
-                >
-                  {t("Comprar ahora", "Shop now")}
-                </Link>
-                <Link
-                  href={`tel:${contact.phoneTel}`}
-                  className={cn(
-                    buttonVariants({ size: "lg", variant: "outline" }),
-                    "h-10 w-full gap-2 rounded-full border-border bg-white px-5 font-semibold text-foreground transition hover:bg-muted/60 sm:h-11 sm:w-auto",
-                  )}
-                  aria-label={`${t("Llamar al", "Call")} ${contact.phoneDisplay}`}
-                >
-                  <Phone
-                    className="h-4 w-4 shrink-0 text-primary"
-                    aria-hidden
-                  />
-                  {contact.phoneDisplay}
-                </Link>
-              </div>
 
               {/*
                 Solo en tablet (md) esta lista se sale del ancho de la columna (48% del
@@ -237,7 +233,7 @@ export function StoreHeroBanner({
                 <p className="text-[16px] font-bold uppercase tracking-wider text-foreground">
                   {t("Explorar por categorías", "Browse by category")}
                 </p>
-                <ul className="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
+                <ul className="mt-3 flex flex-wrap justify-start gap-2">
                   {categories.map((c) => (
                     <li key={c.id}>
                       <Link

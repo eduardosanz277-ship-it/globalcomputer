@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@/components/i18n/translations";
+import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import { getCatalogSearchSuggestions } from "@/modules/catalog/catalog-search.service";
 import type { Locale } from "@/components/i18n/translations";
 
@@ -23,9 +25,17 @@ export async function GET(request: Request) {
     return NextResponse.json(suggestions);
   } catch (error) {
     console.error("[search/suggest] failed", error);
+    const network = isNetworkActionError(error);
     return NextResponse.json(
-      { query: q, products: [], brands: [], categories: [] },
-      { status: 200 },
+      {
+        query: q,
+        products: [],
+        brands: [],
+        categories: [],
+        error: formatServerErrorMessage(error, locale),
+        ...(network ? { code: "NETWORK" as const } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }

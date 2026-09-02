@@ -8,6 +8,7 @@ import {
   openWhatsAppWindowForUserGesture,
   redirectAfterManualQuoteSuccess,
 } from "@/lib/manual-quote-success";
+import { formatClientError } from "@/lib/errors/format-client-error";
 import { gcCartClear, type GcCartItem } from "@/lib/store-cart";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -57,9 +58,9 @@ export function useManualQuoteSubmit(items: GcCartItem[]) {
     } catch (e) {
       closePreOpenedWhatsAppWindow(whatsappWindow);
       toast.error(
-        e instanceof Error
-          ? e.message
-          : t("storefront.cart.toastQuoteOrderError"),
+        formatClientError(e, t, {
+          errorMessage: t("storefront.cart.toastQuoteOrderError"),
+        }),
       );
       setQuoteLoading(false);
     }

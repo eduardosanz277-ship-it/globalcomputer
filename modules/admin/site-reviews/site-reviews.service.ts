@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import {
   repoDeleteSiteReviewAdmin,
@@ -14,7 +14,7 @@ function ensureAdmin(role?: UserRole) {
 }
 
 export async function listSiteReviewsAdminService(): Promise<AdminSiteReview[]> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListSiteReviewsAdmin();
 }
@@ -23,13 +23,13 @@ export async function updateSiteReviewActiveAdminService(
   id: string,
   active: boolean,
 ): Promise<void> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   await repoUpdateSiteReviewActiveAdmin(id, active);
 }
 
 export async function deleteSiteReviewAdminService(id: string): Promise<void> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   await repoDeleteSiteReviewAdmin(id);
 }

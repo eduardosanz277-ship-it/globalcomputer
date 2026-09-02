@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { repoListBusinessProfiles } from "./business-profiles.repository";
 
@@ -10,7 +10,7 @@ function ensureAdmin(role?: UserRole) {
 
 /** Datos desde `profiles` donde `role` es empresa (BUSINESS). */
 export async function listBusinessProfilesService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoListBusinessProfiles();
 }

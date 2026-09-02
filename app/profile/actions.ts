@@ -1,19 +1,41 @@
 "use server";
 import { translate } from "@/lib/i18n/get-translation";
 import { getServerLocale } from "@/lib/i18n/server-locale";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
+import { rethrowTaggingNetworkError } from "@/lib/errors/rsc-network-error";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
+function throwIfSupabaseError(error: unknown): void {
+  if (!error) return;
+  if (isNetworkActionError(error)) rethrowTaggingNetworkError(error);
+  throw error;
+}
+
 async function getAuthenticatedUserId() {
   const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) {
+  let user: Awaited<
+    ReturnType<typeof supabase.auth.getUser>
+  >["data"]["user"] | null = null;
+  let authError: Error | null = null;
+
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+    authError = result.error;
+  } catch (error) {
+    rethrowTaggingNetworkError(error);
+    throw error;
+  }
+
+  if (authError) {
+    if (isNetworkActionError(authError)) rethrowTaggingNetworkError(authError);
+    throw new Error(translate(locale, "profile.errorSessionRequired"));
+  }
+  if (!user) {
     throw new Error(translate(locale, "profile.errorSessionRequired"));
   }
 
@@ -33,7 +55,10 @@ async function getAuthenticatedUserId() {
     .select("id")
     .eq("id", user.id)
     .maybeSingle();
-  if (profileError) throw profileError;
+  if (profileError) {
+    if (isNetworkActionError(profileError)) rethrowTaggingNetworkError(profileError);
+    throw profileError;
+  }
   if (!profile) {
     const resolvedRole = isAdminEmail
       ? allowedRoles.has(adminRole)
@@ -50,7 +75,7 @@ async function getAuthenticatedUserId() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
-    if (insertError) throw insertError;
+    if (insertError) throwIfSupabaseError(insertError);
   }
   return { supabase, userId: user.id };
 }
@@ -65,7 +90,7 @@ export async function updateProfileNameAction(payload: { name: string }) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
-  if (error) throw error;
+  if (error) throwIfSupabaseError(error);
   return null;
 }
 
@@ -92,7 +117,7 @@ async function clearDefaultAddressesForUser(
     .update({ is_default: false, updated_at: new Date().toISOString() })
     .eq("user_id", userId)
     .eq("is_default", true);
-  if (error) throw error;
+  if (error) throwIfSupabaseError(error);
 }
 
 export async function addAddressAction(payload: AddAddressPayload) {
@@ -134,7 +159,7 @@ export async function addAddressAction(payload: AddAddressPayload) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
-  if (error) throw error;
+  if (error) throwIfSupabaseError(error);
   return null;
 }
 
@@ -181,7 +206,7 @@ export async function updateAddressAction(payload: UpdateAddressPayload) {
     })
     .eq("id", payload.addressId)
     .eq("user_id", userId);
-  if (error) throw error;
+  if (error) throwIfSupabaseError(error);
   return null;
 }
 
@@ -192,6 +217,6 @@ export async function deleteAddressAction(payload: { addressId: string }) {
     .delete()
     .eq("id", payload.addressId)
     .eq("user_id", userId);
-  if (error) throw error;
+  if (error) throwIfSupabaseError(error);
   return null;
 }

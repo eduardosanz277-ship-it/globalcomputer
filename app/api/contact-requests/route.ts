@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
+import { getServerLocale } from "@/lib/i18n/server-locale";
 import { contactRequestFormSchema } from "@/modules/site/contact-requests.schema";
 import { createContactRequest } from "@/modules/site/contact-requests.service";
 
@@ -21,6 +24,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const locale = await getServerLocale();
+
   try {
     await createContactRequest(parsed.data);
     return NextResponse.json(
@@ -29,9 +34,13 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("contact-requests POST error:", error);
+    const network = isNetworkActionError(error);
     return NextResponse.json(
-      { error: "No se pudo enviar el mensaje" },
-      { status: 500 },
+      {
+        error: formatServerErrorMessage(error, locale, "contactPage.toastError"),
+        ...(network ? { code: "NETWORK" as const } : {}),
+      },
+      { status: network ? 503 : 500 },
     );
   }
 }

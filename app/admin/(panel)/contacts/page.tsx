@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { listContactMessagesAdminService } from "@/modules/admin/contact-messages/contact-messages.service";
 import { AdminContactsTable } from "./AdminContactsTable";
 import { ContactsErrorState } from "./ContactsErrorState";
@@ -28,7 +28,7 @@ async function AdminContactsTableSection() {
 }
 
 export default async function AdminContactsPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

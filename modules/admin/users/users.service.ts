@@ -1,4 +1,4 @@
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import type { UserRole } from "@/modules/auth/auth.types";
 import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
@@ -19,19 +19,19 @@ function ensureAdmin(role?: UserRole) {
 }
 
 export async function getAllUsersService() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   return repoGetAllUsers();
 }
 
 export async function updateUserRoleService(userId: string, role: UserRole) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   await repoUpdateUserRole(userId, role);
 }
 
 export async function approveBusinessRegistrationService(userId: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   const admin = createSupabaseAdminClient();
@@ -83,7 +83,7 @@ export async function approveBusinessRegistrationService(userId: string) {
 
 /** Marca la solicitud como rechazada (pendiente, sin estado o aprobada). */
 export async function rejectBusinessRegistrationService(userId: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   const admin = createSupabaseAdminClient();
@@ -105,7 +105,7 @@ export async function rejectBusinessRegistrationService(userId: string) {
 }
 
 export async function deleteUserService(userId: string) {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
   if (!current) {
     throw new Error("No autenticado");
@@ -131,7 +131,7 @@ export async function deleteUserService(userId: string) {
 export async function getUserDetailService(
   userId: string
 ): Promise<AdminUserDetail> {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   ensureAdmin(current?.role);
 
   const admin = createSupabaseAdminClient();

@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StoreOrdersTable } from "@/components/admin/StoreOrdersTable";
 import { repoListAdminStoreOrders } from "@/modules/commerce/store-orders.admin.service";
 import { ensureAdminUserService } from "@/modules/auth/auth.service";
+import { isTaggedNetworkError } from "@/lib/errors/rsc-network-error";
 import { OrdersErrorState } from "./OrdersErrorState";
 import { OrdersPageHeader } from "./OrdersPageHeader";
 
@@ -29,6 +30,9 @@ export default async function AdminOrdersPage() {
       </Card>
     );
   } catch (error) {
+    // La pista sobre RLS sólo aplica a fallos reales de permisos; sin red la resuelve
+    // el error boundary del panel con el estado de conexión.
+    if (isTaggedNetworkError(error)) throw error;
     const message = formatAdminOrdersError(error);
     return <OrdersErrorState message={message} />;
   }

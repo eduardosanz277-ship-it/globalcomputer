@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAllUsersService } from "@/modules/admin/users/users.service";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { redirect } from "next/navigation";
 import { AdminUsersTable } from "./AdminUsersTable";
 import { UsersPageHeader } from "./UsersPageHeader";
@@ -13,7 +13,7 @@ async function AdminUsersTableSection() {
 }
 
 export default async function AdminUsersPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

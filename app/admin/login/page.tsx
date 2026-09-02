@@ -37,6 +37,7 @@ export default function AdminLoginPage() {
   });
 
   const { execute, isPending } = useServerAction(adminLoginAction, {
+    errorMessage: t("adminLogin.errors.generic"),
     onSuccess: () => {
       markLoginSuccessToast();
       router.push("/admin/home");
@@ -44,7 +45,7 @@ export default function AdminLoginPage() {
     },
   });
 
-  const onSubmit = (values: LoginSchema) => execute(values);
+  const onSubmit = (values: LoginSchema) => execute(values, locale);
 
   const errors = form.formState.errors;
 

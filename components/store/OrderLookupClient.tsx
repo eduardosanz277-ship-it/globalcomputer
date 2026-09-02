@@ -29,6 +29,7 @@ type FormErrorKey =
   | "INVALID_BODY"
   | "INVALID_JSON"
   | "SERVER_ERROR"
+  | "NETWORK"
   | "GENERIC";
 
 export function OrderLookupClient() {
@@ -108,6 +109,7 @@ export function OrderLookupClient() {
     if (key === "INVALID_BODY" || key === "INVALID_JSON") {
       return t("orderLookup.errorInvalidBody");
     }
+    if (key === "NETWORK") return t("common.errors.network");
     return t("orderLookup.errorGeneric");
   }
 
@@ -144,7 +146,7 @@ export function OrderLookupClient() {
       }
       setOrder(payload.order);
     } catch {
-      setFormErrorKey("GENERIC");
+      setFormErrorKey("NETWORK");
     }
   }
 

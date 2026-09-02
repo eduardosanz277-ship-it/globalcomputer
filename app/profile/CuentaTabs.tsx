@@ -1,11 +1,13 @@
 "use client";
 
+import { ConnectionErrorState } from "@/components/errors/ConnectionErrorState";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useClientNavigationFailure } from "@/hooks/use-client-navigation-failure";
 import { appNavigationStart } from "@/lib/app-loading";
+import { cn } from "@/utils/cn";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
-import { cn } from "@/utils/cn";
 import { AddressesSection } from "./AddressesSection";
 import { OrdersSection } from "./OrdersSection";
 import { ProfileForm } from "./ProfileForm";
@@ -45,12 +47,18 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
     [searchParams],
   );
 
+  const navigationKey = `${activeTab}:${searchParams.toString()}`;
+  const { failed, startNavigation, retry } =
+    useClientNavigationFailure(navigationKey);
+
   const setTab = useCallback(
     (id: CuentaTabId) => {
-      if (id !== activeTab) appNavigationStart();
+      if (id === activeTab) return;
+      appNavigationStart();
+      if (!startNavigation()) return;
       router.replace(`/profile?tab=${id}`, { scroll: false });
     },
-    [router, activeTab],
+    [router, activeTab, startNavigation],
   );
 
   const tabTriggerClass =
@@ -74,15 +82,22 @@ export function CuentaTabs({ initialName, email, addresses, orders }: Props) {
           </TabsTrigger>
         ))}
       </TabsList>
-      <TabsContent value="profile">
-        <ProfileForm initialName={initialName} email={email} />
-      </TabsContent>
-      <TabsContent value="orders">
-        <OrdersSection orders={orders} />
-      </TabsContent>
-      <TabsContent value="addresses">
-        <AddressesSection addresses={addresses} />
-      </TabsContent>
+
+      {failed ? (
+        <ConnectionErrorState onRetry={retry} />
+      ) : (
+        <>
+          <TabsContent value="profile">
+            <ProfileForm initialName={initialName} email={email} />
+          </TabsContent>
+          <TabsContent value="orders">
+            <OrdersSection orders={orders} />
+          </TabsContent>
+          <TabsContent value="addresses">
+            <AddressesSection addresses={addresses} />
+          </TabsContent>
+        </>
+      )}
     </Tabs>
   );
 }

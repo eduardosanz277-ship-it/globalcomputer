@@ -8,11 +8,12 @@ import {
   RegisterPayload,
   SessionUser,
 } from "./auth.types";
-
-const DUPLICATE_EMAIL_MSG =
-  "Ya existe una cuenta con este correo electrónico.";
-const DUPLICATE_EIN_MSG =
-  "Ya existe una cuenta registrada con este EIN (Employer Identification Number).";
+import {
+  extractErrorMessage,
+  isNetworkActionError,
+} from "@/lib/errors/network-action-error";
+import { rethrowTaggingNetworkError } from "@/lib/errors/rsc-network-error";
+import { REGISTER_BUSINESS_ERROR } from "./auth.errors";
 
 /** Errores típicos de Auth Admin al crear usuario con email ya registrado. */
 function mapAuthAdminDuplicateEmail(error: unknown): Error {
@@ -32,9 +33,12 @@ function mapAuthAdminDuplicateEmail(error: unknown): Error {
     (msg.includes("duplicate") &&
       (msg.includes("email") || msg.includes("users_email")))
   ) {
-    return new Error(DUPLICATE_EMAIL_MSG);
+    return new Error(REGISTER_BUSINESS_ERROR.DUPLICATE_EMAIL);
   }
-  return error instanceof Error ? error : new Error(String(error));
+  const message = extractErrorMessage(error);
+  return error instanceof Error && message === error.message.trim()
+    ? error
+    : new Error(message || "Auth error", { cause: error });
 }
 
 function isPostgresUniqueViolation(err: unknown): boolean {
@@ -185,7 +189,7 @@ async function generateLoginEmailOtp(
   });
   if (created.error) {
     const mapped = mapAuthAdminDuplicateEmail(created.error);
-    if (mapped.message !== DUPLICATE_EMAIL_MSG) {
+    if (mapped.message !== REGISTER_BUSINESS_ERROR.DUPLICATE_EMAIL) {
       throw mapped;
     }
   }
@@ -332,7 +336,7 @@ export async function repoRegisterBusiness(payload: RegisterBusinessPayload) {
 
   if (einCheckError) throw einCheckError;
   if (existingEin) {
-    throw new Error(DUPLICATE_EIN_MSG);
+    throw new Error(REGISTER_BUSINESS_ERROR.DUPLICATE_EIN);
   }
 
   const meta: Record<string, string> = {
@@ -362,7 +366,7 @@ export async function repoRegisterBusiness(payload: RegisterBusinessPayload) {
   if (error) throw mapAuthAdminDuplicateEmail(error);
   const userId = data.user?.id;
   if (!userId) {
-    throw new Error("No se pudo crear el usuario.");
+    throw new Error(REGISTER_BUSINESS_ERROR.USER_CREATE_FAILED);
   }
 
   // El trigger en auth.users debería insertar en profiles; si no existe (migración ausente,
@@ -386,15 +390,13 @@ export async function repoRegisterBusiness(payload: RegisterBusinessPayload) {
   if (profileError) {
     if (isPostgresUniqueViolation(profileError)) {
       await admin.auth.admin.deleteUser(userId);
-      throw new Error(DUPLICATE_EIN_MSG);
+      throw new Error(REGISTER_BUSINESS_ERROR.DUPLICATE_EIN);
     }
     throw profileError;
   }
   if (!savedProfile?.id) {
     await admin.auth.admin.deleteUser(userId);
-    throw new Error(
-      "No se pudo guardar el perfil en la base de datos. Contacta con soporte."
-    );
+    throw new Error(REGISTER_BUSINESS_ERROR.PROFILE_SAVE_FAILED);
   }
 
   return data;
@@ -407,7 +409,15 @@ function normalizeRole(
   return null;
 }
 
-export async function repoGetSessionUser(): Promise<SessionUser | null> {
+/**
+ * @param options.throwOnNetworkError Distingue "sin sesión" de "sin conexión": con `true`
+ * los fallos de red se propagan en lugar de devolver `null` (que los guards interpretarían
+ * como falta de permisos). Los layouts públicos lo omiten para seguir renderizando offline.
+ */
+export async function repoGetSessionUser(options?: {
+  throwOnNetworkError?: boolean;
+}): Promise<SessionUser | null> {
+  const throwOnNetworkError = options?.throwOnNetworkError ?? false;
   const supabase = await createSupabaseServerClient();
 
   // getUser() valida el JWT en el servidor; getSession() puede estar desfasado en RSC.
@@ -421,16 +431,27 @@ export async function repoGetSessionUser(): Promise<SessionUser | null> {
     if (isRefreshTokenNotFoundError(e)) {
       return null;
     }
+    if (throwOnNetworkError) rethrowTaggingNetworkError(e);
     throw e;
   }
 
-  if (error || !user) return null;
+  if (error) {
+    if (throwOnNetworkError && isNetworkActionError(error)) {
+      rethrowTaggingNetworkError(error);
+    }
+    return null;
+  }
+  if (!user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("full_name, role, business_registration_status")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileError && throwOnNetworkError && isNetworkActionError(profileError)) {
+    rethrowTaggingNetworkError(profileError);
+  }
 
   const fromProfile = normalizeRole(profile?.role ?? null);
   const fromMeta = normalizeRole(

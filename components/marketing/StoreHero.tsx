@@ -163,7 +163,7 @@ export function StoreHero({
                   href="/products"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground transition hover:scale-[1.02] hover:bg-primary sm:w-auto",
+                    "h-14 w-full gap-2 rounded-full bg-primary px-8 font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/85 sm:w-auto",
                   )}
                 >
                   <span className="text-base sm:text-[1.05rem]">

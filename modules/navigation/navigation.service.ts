@@ -1,4 +1,6 @@
 import { cache } from "react";
+import { isNetworkActionError } from "@/lib/errors/network-action-error";
+import { throwRemoteError } from "@/lib/errors/rsc-network-error";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
 import {
@@ -64,6 +66,20 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
       .is("deleted_at", null)
       .order("name"),
   ]);
+
+  for (const result of [
+    generalResult,
+    specificResult,
+    brandsResult,
+    brandTypesResult,
+    servicesResult,
+    categoriesResult,
+    subcategoriesResult,
+  ]) {
+    if (result.error && isNetworkActionError(result.error)) {
+      throwRemoteError(result.error);
+    }
+  }
 
   if (generalResult.error) {
     console.warn(

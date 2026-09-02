@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { isGlobalAdmin } from "@/modules/auth/auth.guards";
-import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { listSiteReviewsAdminService } from "@/modules/admin/site-reviews/site-reviews.service";
 import { AdminSiteReviewsTable } from "./AdminSiteReviewsTable";
 import { SiteReviewsPageHeader } from "./SiteReviewsPageHeader";
@@ -28,7 +28,7 @@ async function SiteReviewsTableSection() {
 }
 
 export default async function AdminSiteReviewsPage() {
-  const current = await getCurrentUserService();
+  const current = await getCurrentUserStrictService();
   if (!isGlobalAdmin(current?.role)) {
     redirect("/admin");
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { CartProductsLoadError } from "@/components/store/CartProductsLoadError";
 import { StoreCartLineItems } from "@/components/store/StoreCartLineItems";
 import { StoreCartOrderSummary } from "@/components/store/StoreCartOrderSummary";
 import { ManualQuoteShippingAddressSlideOver } from "@/components/store/ManualQuoteShippingAddressSlideOver";
@@ -19,7 +20,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
   const { t } = useI18n();
   const items = useGcCart();
   const ids = items.map((i) => i.productId);
-  const { productsById, loading } = useCartProductsMap(ids);
+  const { productsById, loading, loadError, retry } = useCartProductsMap(ids);
   const { mutationPending, runCartMutation } = useRunCartMutation();
   const listBusy = loading || mutationPending;
   /** Empieza en true para no pintar el listado un frame antes que los importes. */
@@ -59,6 +60,18 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
     );
   }
 
+  const productsLoadFailed = Boolean(loadError) && !loading;
+
+  if (productsLoadFailed) {
+    return (
+      <CartProductsLoadError
+        error={loadError}
+        onRetry={retry}
+        variant="panel"
+      />
+    );
+  }
+
   return (
     <div className="mx-auto grid max-w-7xl gap-5 px-4 py-4 sm:px-6 sm:py-6 md:gap-6 lg:grid-cols-12 lg:gap-8 lg:px-8 lg:py-10">
       <div className={cn("space-y-3 lg:col-span-8")}>
@@ -83,6 +96,7 @@ export function StoreCartView({ tier }: { tier: StorefrontPriceTier }) {
           items={items}
           productsById={productsById}
           loading={listBusy}
+          productsLoadFailed={Boolean(loadError)}
           tier={tier}
           variant="page"
           onUiPendingChange={setSummaryPending}

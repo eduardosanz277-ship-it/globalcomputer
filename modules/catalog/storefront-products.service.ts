@@ -1,3 +1,4 @@
+import { assertRemoteOk, failOnNetworkError } from "@/lib/errors/rsc-network-error";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
@@ -451,6 +452,7 @@ export async function getBrandById(
   }
 
   if (error) {
+    failOnNetworkError(error);
     console.warn("[storefront] getBrandById", brandId, error.message);
     return null;
   }
@@ -487,6 +489,7 @@ export async function getBrandBySlug(
   }
 
   if (error) {
+    failOnNetworkError(error);
     console.warn("[storefront] getBrandBySlug", slug, error.message);
     return null;
   }
@@ -536,6 +539,7 @@ export async function getBrandTypeById(
   }
 
   if (error) {
+    failOnNetworkError(error);
     console.warn("[storefront] getBrandTypeById", brandTypeId, error.message);
     return null;
   }
@@ -576,6 +580,7 @@ export async function getBrandTypeBySlug(
   }
 
   if (error) {
+    failOnNetworkError(error);
     console.warn(
       "[storefront] getBrandTypeBySlug",
       brandId,
@@ -658,7 +663,8 @@ export async function listAllActiveStorefrontProducts(): Promise<
     .eq("active", true)
     .order("name");
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -679,7 +685,8 @@ export async function listFeaturedStorefrontProducts(
     .order("updated_at", { ascending: false })
     .limit(cap);
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -698,7 +705,8 @@ export async function listAllFeaturedStorefrontProducts(): Promise<
     .eq("featured", true)
     .order("updated_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -713,7 +721,8 @@ export async function listProductsByBrandId(
     .eq("active", true)
     .order("name");
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -730,7 +739,8 @@ export async function listProductsByBrandAndType(
     .eq("active", true)
     .order("name");
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -749,6 +759,7 @@ export async function listProductsByCategoryId(
     .is("deleted_at", null);
 
   if (subErr) {
+    failOnNetworkError(subErr);
     console.warn(
       "[storefront] listProductsByCategoryId subcategories",
       subErr.message,
@@ -773,16 +784,16 @@ export async function listProductsByCategoryId(
 
   const { data, error } = await query.order("name");
 
-  if (error || !data) {
-    if (error) {
-      console.warn(
-        "[storefront] listProductsByCategoryId",
-        categoryId,
-        error.message,
-      );
-    }
+  if (error) {
+    assertRemoteOk(error);
+    console.warn(
+      "[storefront] listProductsByCategoryId",
+      categoryId,
+      error.message,
+    );
     return [];
   }
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -797,7 +808,8 @@ export async function listProductsBySubcategoryId(
     .eq("active", true)
     .order("name");
 
-  if (error || !data) return [];
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
@@ -814,6 +826,9 @@ export async function getStorefrontProductsByIds(
     .in("id", unique)
     .eq("active", true);
 
-  if (error || !data) return [];
+  if (error) {
+    assertRemoteOk(error);
+  }
+  if (!data) return [];
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
