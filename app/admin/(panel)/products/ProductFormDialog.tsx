@@ -75,7 +75,7 @@ function getManualPdfDisplayName(file: File | null, url: string): string {
   }
 }
 
-/** Alto mínimo de las demás pestañas = alto natural de Información general. */
+/** Contenedor tipo tarjeta para formularios en SlideOver (alineado con `ServiceForm`). */
 const productFormSectionClassName = adminSlideOverSectionClassName;
 
 type Props = {
@@ -697,8 +697,6 @@ function ProductFormBody({
   const [accessorySearch, setAccessorySearch] = useState("");
   const [accessoryPlacementFilter, setAccessoryPlacementFilter] =
     useState<string>("all");
-  const generalSectionRef = useRef<HTMLElement>(null);
-  const [sectionMinHeightPx, setSectionMinHeightPx] = useState<number>();
 
   type ProductFormTabId =
     | "general"
@@ -743,31 +741,6 @@ function ProductFormBody({
   const [specificationsLanguageTab, setSpecificationsLanguageTab] = useState<
     "es" | "en"
   >(locale === "en" ? "en" : "es");
-
-  useLayoutEffect(() => {
-    if (activeTab !== "general") return;
-    const el = generalSectionRef.current;
-    if (!el) return;
-
-    const updateHeight = () => {
-      const next = Math.ceil(el.getBoundingClientRect().height);
-      if (next > 0) setSectionMinHeightPx(next);
-    };
-
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [
-    activeTab,
-    watchedPlacementCategoryId,
-    locale,
-    subcategoriesForCategory.length,
-  ]);
-
-  const sectionMinHeightStyle = sectionMinHeightPx
-    ? ({ minHeight: sectionMinHeightPx } as const)
-    : undefined;
 
   useEffect(() => {
     const next = locale === "en" ? "en" : "es";
@@ -926,22 +899,12 @@ function ProductFormBody({
     );
   };
 
-  const removeContentTopMargin =
-    activeTab === "shipping" ||
-    activeTab === "media" ||
-    activeTab === "characteristics" ||
-    activeTab === "specifications" ||
-    activeTab === "accessories";
-
   return (
     <Form
       id={PRODUCT_FORM_ID}
       form={form}
       onSubmit={onSubmitForm}
-      className={cn(
-        "flex min-h-0 min-w-0 flex-col gap-0",
-        removeContentTopMargin && "space-y-0",
-      )}
+      className="flex min-h-0 min-w-0 flex-col gap-0 space-y-0"
     >
       <div
         role="tablist"
@@ -967,12 +930,9 @@ function ProductFormBody({
         ))}
       </div>
 
-      <div className="relative z-0 min-h-0 flex-1 space-y-4">
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col gap-4 pt-4">
         {activeTab === "general" && (
-          <section
-            ref={generalSectionRef}
-            className={productFormSectionClassName}
-          >
+          <section className={productFormSectionClassName}>
             <div className="w-full">
               <div>
                 <FormField
@@ -1195,10 +1155,7 @@ function ProductFormBody({
         )}
 
         {activeTab === "description" && (
-          <section
-            className={productFormSectionClassName}
-            style={sectionMinHeightStyle}
-          >
+          <section className={productFormSectionClassName}>
             <div className="space-y-2">
               <div
                 role="tablist"
@@ -1315,15 +1272,11 @@ function ProductFormBody({
             form={form}
             isPending={isPending}
             sectionClassName={productFormSectionClassName}
-            sectionStyle={sectionMinHeightStyle}
           />
         </div>
 
         {activeTab === "shipping" && (
-          <section
-            className={productFormSectionClassName}
-            style={sectionMinHeightStyle}
-          >
+          <section className={productFormSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
                 {t("admin.products.form.shipping.title")}
@@ -1697,10 +1650,7 @@ function ProductFormBody({
         )}
 
         {activeTab === "characteristics" && (
-          <section
-            className={productFormSectionClassName}
-            style={sectionMinHeightStyle}
-          >
+          <section className={productFormSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
                 {t("admin.products.form.characteristics.title")}
@@ -1868,10 +1818,7 @@ function ProductFormBody({
         )}
 
         {activeTab === "specifications" && (
-          <section
-            className={productFormSectionClassName}
-            style={sectionMinHeightStyle}
-          >
+          <section className={productFormSectionClassName}>
             <div className="space-y-2">
               <div
                 role="tablist"
@@ -1984,10 +1931,7 @@ function ProductFormBody({
         )}
 
         {activeTab === "accessories" && (
-          <section
-            className={productFormSectionClassName}
-            style={sectionMinHeightStyle}
-          >
+          <section className={productFormSectionClassName}>
             <header className="space-y-1">
               <h2 className="text-sm font-semibold tracking-wide text-foreground">
                 {t("admin.products.form.accessories.title")}
