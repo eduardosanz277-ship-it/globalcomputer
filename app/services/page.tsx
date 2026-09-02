@@ -21,7 +21,7 @@ export default async function ServicesPage() {
   const { data, error } = await supabase
     .from("services")
     .select(
-      "id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)",
+      "id, name, name_en, slug, short_description, short_description_en, service_images(id, url, is_primary, sort_order)",
     )
     .order("name", { ascending: true });
   assertRemoteOk(error);

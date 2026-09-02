@@ -105,7 +105,7 @@ export default async function HomePage() {
     supabase
       .from("services")
       .select(
-        "id, name, name_en, slug, description, description_en, service_images(id, url, is_primary, sort_order)",
+        "id, name, name_en, slug, short_description, short_description_en, service_images(id, url, is_primary, sort_order)",
       )
       .limit(6),
     listAllActiveStorefrontProducts(),

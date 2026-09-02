@@ -4,6 +4,8 @@ export type ServiceRow = {
   name_en?: string | null;
   description: string | null;
   description_en?: string | null;
+  short_description?: string | null;
+  short_description_en?: string | null;
   slug?: string | null;
   service_images?: Array<{
     id: string;
