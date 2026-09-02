@@ -34,3 +34,15 @@ export function resolvePrimaryServiceImage(
     .filter((img) => Boolean(img.url));
   return ordered[0]?.url ?? null;
 }
+
+/** Imágenes del servicio para el catálogo público, sin la principal. */
+export function resolveServiceGalleryImages(
+  images: ServiceRow["service_images"],
+): Array<{ id: string; url: string }> {
+  if (!images || images.length === 0) return [];
+  return images
+    .filter((img) => Boolean(img.url?.trim()) && !img.is_primary)
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999))
+    .map((img) => ({ id: img.id, url: img.url }));
+}
