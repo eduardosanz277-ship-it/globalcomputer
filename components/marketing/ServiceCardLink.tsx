@@ -4,7 +4,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
 import Image from "next/image";
 import { Poppins } from "next/font/google";
-import { ArrowUpRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { plainTextFromHtml } from "@/lib/plainTextFromHtml";
 import { clampText } from "@/components/marketing/service-card-shared";
@@ -23,6 +23,7 @@ type ServiceCardLinkProps = {
   descriptionEn?: string | null;
   imageUrl: string | null;
   href: string;
+  showAdvisorCta?: boolean;
 };
 
 export function ServiceCardLink({
@@ -32,6 +33,7 @@ export function ServiceCardLink({
   descriptionEn,
   imageUrl,
   href,
+  showAdvisorCta = true,
 }: ServiceCardLinkProps) {
   const { locale } = useI18n();
   const t = (es: string, en: string) => (locale === "en" ? en : es);
@@ -43,7 +45,7 @@ export function ServiceCardLink({
   const excerpt = clampText(plainTextFromHtml(rawDescription), 130);
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-soft-lg">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-300 bg-card shadow-soft transition duration-300 hover:shadow-soft-lg">
       <Link
         href={href}
         className="relative block aspect-[16/10] shrink-0 overflow-hidden border-b border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset"
@@ -69,7 +71,7 @@ export function ServiceCardLink({
           <h3
             className={cn(
               poppins.className,
-              "text-lg font-semibold leading-snug text-foreground transition group-hover:text-primary",
+              "text-base font-medium leading-snug text-foreground transition group-hover:text-primary",
             )}
           >
             {displayName}
@@ -82,21 +84,26 @@ export function ServiceCardLink({
         <div className="mt-auto flex shrink-0 flex-col gap-2 pt-5 sm:flex-row sm:flex-wrap">
           <Link
             href={href}
-            className="inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 sm:flex-initial sm:justify-start"
+            className="group/cta inline-flex h-10 min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-primary/25 bg-transparent px-4 text-[15px] font-medium text-primary transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
           >
             {t("Ver servicio", "View service")}
-            <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden />
+            <ArrowRight
+              className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/cta:translate-x-1"
+              aria-hidden
+            />
           </Link>
           <Link
             href="/contact"
-            className="inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-4 text-sm font-semibold text-foreground/90 backdrop-blur-sm transition hover:border-primary/30 hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 sm:flex-initial sm:justify-start"
+            className={cn(
+              "inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-4 text-sm font-semibold text-foreground/90 backdrop-blur-sm transition hover:border-primary/30 hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 sm:flex-initial sm:justify-start",
+              !showAdvisorCta && "hidden",
+            )}
           >
             {t("Hablar con asesor", "Talk to advisor")}
             <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         </div>
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent opacity-0 transition group-hover:opacity-100" />
     </article>
   );
 }
