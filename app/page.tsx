@@ -300,7 +300,10 @@ export default async function HomePage() {
         </section> */}
 
       {/* Services */}
-      <ServicesSection services={(servicesData ?? []) as ServiceWithI18n[]} />
+      <ServicesSection
+        services={(servicesData ?? []) as ServiceWithI18n[]}
+        contact={contact}
+      />
 
       {/* Banner emocional */}
       {/* <section className="border-y border-border/60 bg-gradient-to-br from-primary/[0.09] via-background to-secondary/[0.06] py-20 sm:py-24">

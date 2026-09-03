@@ -129,6 +129,7 @@ export function ServicesSection({
               description={s.description}
               imageUrl={s.imageUrl}
               href={s.href}
+              showAdvisorCta={false}
             />
           ))}
         </div>

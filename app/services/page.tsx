@@ -59,7 +59,7 @@ export default async function ServicesPage() {
         </div>
       </div>
       <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [&>*]:min-h-0">
           {rows.map((s) => (
             <ServiceCardLink
               key={s.id}
@@ -69,6 +69,7 @@ export default async function ServicesPage() {
               descriptionEn={s.short_description_en}
               imageUrl={resolvePrimaryServiceImage(s.service_images)}
               href={`/services/${s.slug ?? s.id}`}
+              showAdvisorCta={false}
             />
           ))}
         </div>
