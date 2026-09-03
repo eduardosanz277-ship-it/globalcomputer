@@ -8,7 +8,11 @@ import {
   type ServiceRow,
 } from "@/components/marketing/service-card-shared";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
+import type { HeroContact } from "@/components/marketing/StoreHero";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
+import { PhoneCall } from "lucide-react";
+import Link from "next/link";
 
 const fallbackServices: Array<{
   name: string;
@@ -51,7 +55,13 @@ export type ServiceWithI18n = ServiceRow & {
   description_en?: string | null;
 };
 
-export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
+export function ServicesSection({
+  services,
+  contact,
+}: {
+  services: ServiceWithI18n[];
+  contact: HeroContact;
+}) {
   const { locale } = useI18n();
   const t = (es: string, en?: string | null) =>
     locale === "en" ? en?.trim() || es : es;
@@ -82,10 +92,9 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 lg:gap-8">
           <HomeSectionHeading
             align="left"
-            // eyebrow="Servicios"
             title={t(
               "Servicios para tu instalación",
               "Services for your installation",
@@ -94,34 +103,25 @@ export function ServicesSection({ services }: { services: ServiceWithI18n[] }) {
               "Instalación profesional, mantenimiento preventivo y asesoría especializada para que tu sistema de seguridad funcione siempre sin complicaciones.",
               "Professional installation, preventive maintenance, and specialized advisory so your security system keeps working without complications.",
             )}
-            className="max-w-none"
+            className="min-w-0 max-w-3xl flex-1"
             titleClassName="text-3xl sm:text-4xl"
           />
-          {/*
-          <div className="flex flex-wrap gap-3 lg:shrink-0">
+          {contact.phoneTel ? (
             <Link
-              href="#ayuda"
+              href={`tel:${contact.phoneTel}`}
               className={cn(
-                buttonVariants({ variant: "default", size: "default" }),
-                "rounded-full shadow-sm",
+                buttonVariants({ variant: "outline" }),
+                "w-full shrink-0 gap-2 rounded-full border-primary/30 bg-card px-5 font-semibold hover:bg-primary/5 sm:w-auto",
               )}
+              aria-label={`${t("Hablar con un asesor", "Talk to an advisor")} (${contact.phoneDisplay})`}
             >
-              Solicitar instalación
+              <PhoneCall className="h-4 w-4 shrink-0" aria-hidden />
+              {t("Hablar con un asesor", "Talk to an advisor")}
             </Link>
-            <Link
-              href="#ayuda"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "default" }),
-                "rounded-full border-primary/30 bg-background hover:bg-primary/5",
-              )}
-            >
-              Hablar con asesor
-            </Link>
-          </div>
-          */}
+          ) : null}
         </div>
 
-        <div className="mt-6 lg:mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-h-0">
+        <div className="mt-6 lg:mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [&>*]:min-h-0">
           {list.map((s) => (
             <ServiceCardLink
               key={s.id}
