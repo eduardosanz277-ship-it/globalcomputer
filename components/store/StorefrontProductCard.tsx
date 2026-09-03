@@ -308,6 +308,26 @@ export function StorefrontProductCard({
       </div>
 
       <div className="flex flex-1 flex-col p-4">
+        {displayBrand && p.brand_slug ? (
+          <Link
+            href={`/brands/${p.brand_slug}`}
+            className={cn(
+              interClassName,
+              "mb-0.5 block text-left text-[11px] font-semibold leading-tight tracking-wide text-muted-foreground outline-none ring-offset-2 transition hover:text-primary focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary",
+            )}
+          >
+            {displayBrand}
+          </Link>
+        ) : displayBrand ? (
+          <p
+            className={cn(
+              interClassName,
+              "mb-0.5 text-left text-[11px] font-semibold leading-tight tracking-wide text-muted-foreground",
+            )}
+          >
+            {displayBrand}
+          </p>
+        ) : null}
         <Link
           href={productHref}
           className="min-w-0 outline-none ring-offset-2 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary"
@@ -315,31 +335,23 @@ export function StorefrontProductCard({
           <h3
             className={cn(
               interClassName,
-              "text-[14px] font-semibold leading-snug tracking-[0.015em] text-foreground line-clamp-2 transition group-hover/card:text-primary sm:text-[15px]",
+              "text-[14px] font-semibold leading-snug tracking-[0.015em] text-foreground line-clamp-2 transition hover:text-primary sm:text-[15px]",
             )}
           >
-            <p
-              className={cn(
-                interClassName,
-                "mb-0.5 text-left text-[11px] font-semibold leading-tight tracking-wide text-muted-foreground",
-              )}
-            >
-              {displayBrand}
-            </p>
             {displayName}
           </h3>
-          {p.sku ? (
-            <p
-              className={cn(
-                interClassName,
-                "mb-2 mt-1 text-left text-[11px] leading-tight",
-              )}
-            >
-              <span className="text-muted-foreground/80">SKU </span>
-              <span className="text-muted-foreground">{p.sku}</span>
-            </p>
-          ) : null}
         </Link>
+        {p.sku ? (
+          <p
+            className={cn(
+              interClassName,
+              "mb-2 mt-1 text-left text-[11px] leading-tight",
+            )}
+          >
+            <span className="text-muted-foreground/80">SKU </span>
+            <span className="text-muted-foreground">{p.sku}</span>
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           {showCompare ? (
