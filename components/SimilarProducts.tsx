@@ -49,6 +49,8 @@ export type SimilarProductsProps = {
   title?: string;
   /** Subtítulo bajo el título. Por defecto el de productos similares; pásalo para accesorios u otros bloques. */
   subtitle?: string;
+  /** Clases extra para la imagen de cada card (p. ej. más altura en destacados). */
+  productImageClassName?: string;
 };
 
 /**
@@ -62,6 +64,7 @@ export function SimilarProducts({
   hideHeading = false,
   title,
   subtitle,
+  productImageClassName,
 }: SimilarProductsProps) {
   const { t } = useI18n();
   const headingId = useId();
@@ -380,6 +383,7 @@ export function SimilarProducts({
               priceTier={priceTier}
               interClassName={inter.className}
               embedPlain
+              imageClassName={productImageClassName}
               className={cn(
                 "w-[min(17.5rem,calc(100vw-2.5rem))] shrink-0 snap-start sm:w-[17.5rem]",
               )}

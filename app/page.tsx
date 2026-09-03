@@ -243,6 +243,7 @@ export default async function HomePage() {
                 hideHeading
                 products={featuredProducts}
                 priceTier={priceTier}
+                productImageClassName="aspect-square"
               />
             ) : (
               <FeaturedProductsEmptyState />

@@ -74,6 +74,8 @@ export type StorefrontProductCardProps = {
    * sin elevación al hover, superficies opacas sin mezclas.
    */
   embedPlain?: boolean;
+  /** Clases extra para el contenedor de la imagen (p. ej. otra proporción). */
+  imageClassName?: string;
 };
 
 export function StorefrontProductCard({
@@ -82,6 +84,7 @@ export function StorefrontProductCard({
   className,
   interClassName,
   embedPlain = false,
+  imageClassName,
 }: StorefrontProductCardProps) {
   const { locale, t } = useI18n();
   const pathname = usePathname();
@@ -148,8 +151,9 @@ export function StorefrontProductCard({
            * `overflow-hidden` + `rounded-t-2xl` aquí recortan la imagen y el overlay
            * a los bordes redondeados superiores de la tarjeta sin afectar la sombra del <li>.
            */
-          "relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl",
+          "relative aspect-square w-full overflow-hidden rounded-t-2xl",
           embedPlain ? "bg-[rgb(229,231,235)]" : "bg-muted/40",
+          imageClassName,
         )}
       >
         <Link
