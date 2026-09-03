@@ -78,11 +78,7 @@ export default async function ServiceSlugPage({ params }: Props) {
         <ServiceDescriptionContent
           description={service.description}
           descriptionEn={service.description_en}
-          className={
-            hasGallery
-              ? "max-lg:rounded-b-2xl max-lg:border-b max-lg:shadow-sm"
-              : undefined
-          }
+          className="max-lg:rounded-b-2xl max-lg:border-b max-lg:shadow-sm"
         />
         {hasGallery ? (
           <ServiceGallery
@@ -92,8 +88,11 @@ export default async function ServiceSlugPage({ params }: Props) {
           />
         ) : null}
         <ServiceAdvisorCta
-          className={hasGallery ? "mt-2 lg:mt-6" : "max-lg:border-x max-lg:border-border/60 lg:mt-6"}
-          flushTop={!hasGallery}
+          className={
+            hasGallery
+              ? "mt-2 px-4 sm:px-6 lg:mt-6 lg:px-0"
+              : "mt-4 px-4 sm:px-6 lg:mt-6 lg:px-0"
+          }
           serviceName={service.name}
           serviceNameEn={service.name_en}
           phoneDisplay={contact.phoneDisplay}

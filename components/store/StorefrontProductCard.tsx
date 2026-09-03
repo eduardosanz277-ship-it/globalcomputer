@@ -140,8 +140,8 @@ export function StorefrontProductCard({
          */
         "group/card flex flex-col rounded-2xl bg-card",
         embedPlain
-          ? "border-0 shadow-sm outline-none ring-0 transition-shadow hover:translate-y-0 hover:shadow-md"
-          : "border border-border/50 shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-soft-lg",
+          ? "border border-gray-300 shadow-sm outline-none ring-0 transition-shadow hover:translate-y-0 hover:shadow-md"
+          : "border border-gray-300 shadow-soft transition duration-300 hover:shadow-soft-lg",
         className,
       )}
     >
