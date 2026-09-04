@@ -35,6 +35,19 @@ export type StorefrontService = {
 const SERVICE_SELECT =
   "id, name, name_en, slug, short_description, short_description_en, text_align, description, description_en, banner_mobile_url, banner_tablet_url, banner_desktop_url, service_images(id, url, is_primary, sort_order)";
 
+const SERVICE_CARD_SELECT =
+  "id, name, name_en, slug, short_description, short_description_en, service_images(id, url, is_primary, sort_order)";
+
+export type StorefrontServiceCard = {
+  id: string;
+  name: string;
+  name_en: string | null;
+  slug: string;
+  short_description: string | null;
+  short_description_en: string | null;
+  service_images: ServiceImageRow[];
+};
+
 function mapTextAlign(value: string | null | undefined): "left" | "center" | "right" {
   if (value === "center" || value === "right") return value;
   return "left";
@@ -171,4 +184,48 @@ export async function getServiceBySlugOrId(
   const idService = await getServiceById(param);
   if (idService) return { service: idService, source: "id" };
   return null;
+}
+
+function mapServiceCard(data: {
+  id: string;
+  name: string;
+  name_en: string | null;
+  slug: string | null;
+  short_description: string | null;
+  short_description_en: string | null;
+  service_images: ServiceImageRow[] | null;
+}): StorefrontServiceCard {
+  return {
+    id: data.id,
+    name: data.name,
+    name_en: data.name_en ?? null,
+    slug: data.slug ?? slugify(data.name),
+    short_description: data.short_description ?? null,
+    short_description_en: data.short_description_en ?? null,
+    service_images: (data.service_images ?? []) as ServiceImageRow[],
+  };
+}
+
+/** Tarjetas de servicios para listados y secciones relacionadas. */
+export async function listStorefrontServiceCards(
+  excludeServiceId?: string,
+): Promise<StorefrontServiceCard[]> {
+  const supabase = await getCatalogSupabase();
+  let query = supabase
+    .from("services")
+    .select(SERVICE_CARD_SELECT)
+    .order("name", { ascending: true });
+
+  if (excludeServiceId) {
+    query = query.neq("id", excludeServiceId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    warnUnlessNetwork(error, "[storefront] listStorefrontServiceCards");
+    return [];
+  }
+
+  return (data ?? []).map(mapServiceCard);
 }

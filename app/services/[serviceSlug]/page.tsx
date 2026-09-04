@@ -4,10 +4,14 @@ import { ServiceAdvisorCta } from "@/components/services/ServiceAdvisorCta";
 import { ServiceDescriptionContent } from "@/components/services/ServiceDescriptionContent";
 import { ServiceGallery } from "@/components/services/ServiceGallery";
 import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
+import { ServiceOtherServicesSection } from "@/components/services/ServiceOtherServicesSection";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { Inter } from "next/font/google";
 import { notFound, redirect } from "next/navigation";
-import { getServiceBySlugOrId } from "@/modules/catalog/storefront-services.service";
+import {
+  getServiceBySlugOrId,
+  listStorefrontServiceCards,
+} from "@/modules/catalog/storefront-services.service";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,7 +50,10 @@ export default async function ServiceSlugPage({ params }: Props) {
     redirect(`/services/${service.slug}`);
   }
 
-  const contact = await getPublicSiteContact();
+  const [contact, otherServices] = await Promise.all([
+    getPublicSiteContact(),
+    listStorefrontServiceCards(service.id),
+  ]);
   const galleryImages = resolveServiceGalleryImages(service.images);
   const hasGallery = galleryImages.length > 0;
 
@@ -99,6 +106,7 @@ export default async function ServiceSlugPage({ params }: Props) {
           phoneTel={contact.phoneTel}
         />
       </div>
+      <ServiceOtherServicesSection services={otherServices} />
     </main>
   );
 }
