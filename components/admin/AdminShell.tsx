@@ -130,6 +130,7 @@ export function AdminShell({ user, children, navBadges }: Props) {
         <AdminHeader
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
+          useStoreLanguageSwitch
         />
         <AdminOfflineBanner />
         <main className="admin-panel relative min-h-0 w-full min-w-0 flex-1 overflow-hidden">
