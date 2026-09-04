@@ -79,14 +79,7 @@ export function ServiceGallery({
         description={t("servicePage.gallery.description")}
       />
 
-      <div
-        className={cn(
-          "mt-6 grid gap-3 sm:mt-8 sm:gap-4",
-          total === 1 && "mx-auto max-w-md grid-cols-1",
-          total === 2 && "grid-cols-2",
-          total >= 3 && "grid-cols-2 md:grid-cols-3",
-        )}
-      >
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-8 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {images.map((img, index) => (
           <button
             key={img.id}
@@ -102,7 +95,7 @@ export function ServiceGallery({
               src={img.url}
               alt={`${displayName} ${index + 1}`}
               fill
-              sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 50vw"
+              sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 90vw"
               className="object-cover transition duration-500 ease-out group-hover:scale-110"
             />
             <div

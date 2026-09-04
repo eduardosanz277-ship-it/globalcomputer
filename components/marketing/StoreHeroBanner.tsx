@@ -12,7 +12,13 @@ import type {
 import { buttonVariants } from "@/components/ui/button-variants";
 import { inter } from "@/lib/fonts/inter";
 import { cn } from "@/utils/cn";
-import { ArrowRight, Headphones, PhoneCall, ShieldCheck, Truck } from "lucide-react";
+import {
+  ArrowRight,
+  Headphones,
+  PhoneCall,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 import { motion, useAnimation } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -31,8 +37,8 @@ const TRUST_PILLS = [
  * alto real deseado en cada breakpoint.
  */
 const HERO_VISUAL_DESIGN_HEIGHT = 500;
-const MOBILE_VISUAL_HEIGHT = 300;
-const TABLET_VISUAL_HEIGHT = 380;
+const MOBILE_VISUAL_HEIGHT = 255;
+const TABLET_VISUAL_HEIGHT = 330;
 
 /** Debe coincidir en orden con IMAGES de HeroAjaxPulseVisual (ajax, cámaras, control, soporte). */
 const HERO_CATEGORY_LABELS = [
@@ -62,7 +68,12 @@ function HeroRotatingCategoryLabel({
   t: (es: string, en?: string | null) => string;
   triggerRef: React.MutableRefObject<(() => void) | null>;
 }) {
-  const controls = [useAnimation(), useAnimation(), useAnimation(), useAnimation()];
+  const controls = [
+    useAnimation(),
+    useAnimation(),
+    useAnimation(),
+    useAnimation(),
+  ];
   const currentIndexRef = useRef(0);
 
   useEffect(() => {
@@ -103,7 +114,9 @@ function HeroRotatingCategoryLabel({
         <motion.span
           key={i}
           className="absolute inset-x-0 top-0 whitespace-nowrap"
-          style={i === 0 ? { y: "0%", opacity: 1 } : { y: offscreenY(i), opacity: 0 }}
+          style={
+            i === 0 ? { y: "0%", opacity: 1 } : { y: offscreenY(i), opacity: 0 }
+          }
           animate={controls[i]}
         >
           {text}
@@ -129,11 +142,11 @@ export function StoreHeroBanner({
     <section
       className={cn(
         inter.className,
-        "relative flex flex-col justify-center overflow-hidden bg-white pb-8 sm:pb-10 md:min-h-[420px] lg:min-h-[540px]",
+        "relative flex flex-col justify-center overflow-hidden bg-white py-4 md:min-h-[370px] lg:min-h-[460px] min-[1101px]:pb-10 min-[1101px]:md:min-h-[390px] min-[1101px]:lg:min-h-[500px]",
       )}
     >
-      <div className="relative z-20 mx-auto w-full max-w-7xl bg-transparent py-6 sm:py-8 md:px-8 md:py-6">
-        <div className="grid items-center gap-10">
+      <div className="relative z-20 mx-auto w-full max-w-7xl bg-transparent py-4 sm:py-5 md:px-8 md:py-4 min-[1101px]:py-5 min-[1101px]:sm:py-6 min-[1101px]:md:py-5">
+        <div className="grid items-center gap-8 min-[1101px]:gap-10">
           <div className="text-left md:max-w-[48%] lg:max-w-[60%] xl:max-w-[56%]">
             <div className="px-4 sm:px-6 md:px-0">
               <p className="text-[15px] font-bold uppercase tracking-wider text-primary sm:text-base lg:text-lg">
@@ -155,11 +168,10 @@ export function StoreHeroBanner({
                   "This is how buying technology should feel.",
                 )}
               </p>
-
             </div>
 
             <div className="px-4 sm:px-6 md:px-0">
-              <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start">
+              <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start min-[1101px]:mt-7">
                 <Link
                   href="/products"
                   className={cn(
@@ -201,27 +213,27 @@ export function StoreHeroBanner({
                 ))}
               </ul>
 
-            {/*
+              {/*
               Visual animado solo para mobile: aparece después de los CTAs y trust pills.
               HeroAjaxPulseVisual está pensado para 500px fijos; se reduce con scale()
               proporcional al alto deseado en móvil.
             */}
-            <div
-              className="relative ml-auto mr-0 mt-6 w-full md:hidden"
-              style={{ height: MOBILE_VISUAL_HEIGHT }}
-            >
               <div
-                className="absolute right-0 top-0"
-                style={{
-                  height: HERO_VISUAL_DESIGN_HEIGHT,
-                  transform: `scale(${MOBILE_VISUAL_HEIGHT / HERO_VISUAL_DESIGN_HEIGHT})`,
-                  transformOrigin: "top right",
-                }}
+                className="relative ml-auto mr-0 mt-6 w-full md:hidden"
+                style={{ height: MOBILE_VISUAL_HEIGHT }}
               >
-                {/* Sin onCycleStart aquí: solo la instancia de desktop dispara el texto rotativo. */}
-                <HeroAjaxPulseVisual />
+                <div
+                  className="absolute right-0 top-0"
+                  style={{
+                    height: HERO_VISUAL_DESIGN_HEIGHT,
+                    transform: `scale(${MOBILE_VISUAL_HEIGHT / HERO_VISUAL_DESIGN_HEIGHT})`,
+                    transformOrigin: "top right",
+                  }}
+                >
+                  {/* Sin onCycleStart aquí: solo la instancia de desktop dispara el texto rotativo. */}
+                  <HeroAjaxPulseVisual />
+                </div>
               </div>
-            </div>
 
               {/*
                 Solo en tablet (md) esta lista se sale del ancho de la columna (48% del
@@ -229,7 +241,7 @@ export function StoreHeroBanner({
                 está anclada a la izquierda (sin mx-auto), así crece hacia la derecha sin
                 necesitar reposicionarse. En mobile y desktop (lg/xl) queda igual que antes.
               */}
-              <div className="mt-9 md:w-[208.34%] lg:w-auto lg:pr-20 xl:pr-28">
+              <div className="mt-7 md:w-[208.34%] lg:w-auto lg:pr-20 min-[1101px]:mt-9 xl:pr-28">
                 <p className="text-[16px] font-bold uppercase tracking-wider text-foreground">
                   {t("Explorar por categorías", "Browse by category")}
                 </p>
@@ -279,15 +291,18 @@ export function StoreHeroBanner({
       {/*
         Visual animado para desktop (lg): círculos que "respiran" (se achican y bajan cada
         5s, 1.2s de transición) igual que el prototipo de Figma "Desktop Ajax" ⇄
-        "Desktop Camara" (node-id 323:1185 / 323:1723). Alto fijo, pegado arriba: los
-        últimos 40px de la sección quedan libres para que la tira de confianza flotante
-        (que sube con -mt-10 desde la sección siguiente) no quede detrás de la imagen.
+        "Desktop Camara" (node-id 323:1185 / 323:1723). Alto fijo, pegado arriba.
       */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden h-[500px] lg:block">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden lg:block min-[1101px]:h-[500px] max-[1100px]:h-[460px]">
         <div className="mx-auto flex h-full w-full max-w-7xl justify-end md:px-8">
-          <HeroAjaxPulseVisual
-            onCycleStart={() => labelTriggerRef.current?.()}
-          />
+          <div
+            className="origin-top-right max-[1100px]:scale-[0.92] min-[1101px]:scale-100"
+            style={{ height: HERO_VISUAL_DESIGN_HEIGHT }}
+          >
+            <HeroAjaxPulseVisual
+              onCycleStart={() => labelTriggerRef.current?.()}
+            />
+          </div>
         </div>
       </div>
     </section>
