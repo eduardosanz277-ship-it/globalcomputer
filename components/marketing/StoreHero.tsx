@@ -1,29 +1,33 @@
 "use client";
 
-import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 // Slider de banners de servicios: comentado a favor del nuevo StoreHeroBanner.
 // import { HeroServiceSlider } from "@/components/marketing/HeroServiceSlider";
 import { StoreHeroBanner } from "@/components/marketing/StoreHeroBanner";
 import type { StorefrontServiceHeroSlide } from "@/modules/catalog/storefront-services.service";
 import type { StoreRatingSummary } from "@/modules/site/leave-review-data.service";
-import { cn } from "@/utils/cn";
-import { ShieldCheck, Star, Truck } from "lucide-react";
+import { BadgeCheck, Headphones, ShieldCheck, Truck } from "lucide-react";
 
-const TRUST_BAR_TAIL = [
+const TRUST_BAR_ITEMS = [
   {
     Icon: Truck,
-    text: "Envío nacional",
-    textEn: "Nationwide shipping",
-    sub: "EE. UU.",
-    subEn: "U.S.",
+    title: { es: "Envíos nacionales", en: "Nationwide Shipping" },
+    desc: { es: "Enviamos a todo EE. UU.", en: "Shipping across the U.S." },
   },
   {
     Icon: ShieldCheck,
-    text: "Pago seguro",
-    textEn: "Secure payment",
-    sub: "datos protegidos",
-    subEn: "protected data",
+    title: { es: "Pagos seguros", en: "Secure Payments" },
+    desc: { es: "Checkout protegido", en: "Protected checkout" },
+  },
+  {
+    Icon: BadgeCheck,
+    title: { es: "Garantía real", en: "Real Warranty" },
+    desc: { es: "Compra con confianza", en: "Buy with confidence" },
+  },
+  {
+    Icon: Headphones,
+    title: { es: "Soporte experto", en: "Expert Support" },
+    desc: { es: "Estamos para ayudarte", en: "We're here to help" },
   },
 ] as const;
 
@@ -42,8 +46,6 @@ export type HeroContact = {
 export function StoreHero({
   categories,
   contact,
-  ratingSummary,
-  heroSlides,
 }: {
   categories: HeroCategory[];
   contact: HeroContact;
@@ -53,38 +55,6 @@ export function StoreHero({
   const { locale } = useI18n();
   const t = (es: string, en?: string | null) =>
     locale === "en" ? en?.trim() || es : es;
-
-  const trustBarRows = useMemo(() => {
-    const { average, count } = ratingSummary;
-    const fmt = (n: number) => {
-      const s = n.toFixed(1);
-      return locale === "en" ? s : s.replace(".", ",");
-    };
-    const first =
-      average != null && count > 0
-        ? {
-            Icon: Star,
-            text:
-              locale === "en"
-                ? `${fmt(average)} average rating`
-                : `${fmt(average)} valoración media`,
-            sub:
-              locale === "en"
-                ? count === 1
-                  ? "1 review"
-                  : `${count} reviews`
-                : count === 1
-                  ? "1 valoración"
-                  : `${count} valoraciones`,
-          }
-        : {
-            Icon: Star,
-            text:
-              locale === "en" ? "Average rating" : "Valoración media",
-            sub: locale === "en" ? "No reviews yet" : "Aún sin reseñas",
-          };
-    return [...[first], ...TRUST_BAR_TAIL] as const;
-  }, [locale, ratingSummary]);
 
   return (
     <div className="relative">
@@ -239,36 +209,31 @@ export function StoreHero({
       </section>
       */}
 
-      {/* Tira de confianza que “flota” sobre el fondo gris — típico e-commerce actual. */}
-      <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft-lg sm:flex sm:items-stretch sm:justify-between sm:gap-0 sm:p-0 sm:py-1">
-          {trustBarRows.map((row, i) => {
-            const { Icon } = row;
-            const isTail = "textEn" in row;
-            return (
-              <div
-                key={i === 0 ? "hero-trust-rating" : row.text}
-                className={cn(
-                  "flex flex-1 items-center gap-3 px-4 py-3 sm:justify-center sm:py-4 sm:px-6",
-                  i > 0 && "border-t border-border/60 sm:border-l sm:border-t-0",
-                )}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" aria-hidden />
+      <section className="w-full border-y border-gray-200 bg-white min-[1101px]:relative min-[1101px]:z-10 min-[1101px]:-mt-7">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {TRUST_BAR_ITEMS.map((item) => (
+              <div key={item.title.es} className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E8EEF5] text-primary">
+                  <item.Icon
+                    className="h-5 w-5"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
                 </span>
                 <div className="min-w-0 text-left">
-                  <p className="text-sm font-semibold text-foreground sm:text-base">
-                    {isTail ? t(row.text, row.textEn) : row.text}
+                  <p className="text-[15px] font-semibold text-foreground">
+                    {t(item.title.es, item.title.en)}
                   </p>
-                  <p className="text-sm text-muted-foreground sm:text-base">
-                    {isTail ? t(row.sub, row.subEn) : row.sub}
+                  <p className="text-sm text-muted-foreground">
+                    {t(item.desc.es, item.desc.en)}
                   </p>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
