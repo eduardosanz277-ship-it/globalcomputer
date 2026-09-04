@@ -3,10 +3,12 @@ import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
+import { ServicesListingAdvisorCta } from "@/components/marketing/ServicesListingAdvisorCta";
 import {
   resolvePrimaryServiceImage,
   type ServiceRow,
 } from "@/components/marketing/service-card-shared";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { assertRemoteOk } from "@/lib/errors/rsc-network-error";
 
@@ -18,6 +20,7 @@ const inter = Inter({
 
 export default async function ServicesPage() {
   const supabase = await getCatalogSupabase();
+  const contact = await getPublicSiteContact();
   const { data, error } = await supabase
     .from("services")
     .select(
@@ -48,8 +51,8 @@ export default async function ServicesPage() {
               }
               description={
                 <LocalizedText
-                  es="Lista completa de servicios disponibles."
-                  en="Complete list of available services."
+                  es="Elige el servicio que necesitas y solicita una evaluación gratuita."
+                  en="Choose the service you need and request a free evaluation."
                 />
               }
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
@@ -58,7 +61,7 @@ export default async function ServicesPage() {
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-6 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-6 max-w-7xl px-4 pb-8 sm:px-6 sm:pb-10 lg:px-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [&>*]:min-h-0">
           {rows.map((s) => (
             <ServiceCardLink
@@ -74,6 +77,10 @@ export default async function ServicesPage() {
           ))}
         </div>
       </div>
+      <ServicesListingAdvisorCta
+        phoneDisplay={contact.phoneDisplay}
+        phoneTel={contact.phoneTel}
+      />
     </main>
   );
 }
