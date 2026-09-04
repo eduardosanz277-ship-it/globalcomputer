@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBell";
+import { StoreLanguageSwitch } from "@/components/marketing/StoreLanguageSwitch";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
@@ -45,6 +46,8 @@ type Props = {
   hideBell?: boolean;
   /** Icono + drawer de carrito (pago / cotización), p. ej. en `/profile`. */
   showCart?: boolean;
+  /** Switch EN/ES en escritorio; en móvil sigue el selector circular. */
+  useStoreLanguageSwitch?: boolean;
 };
 
 export function AdminHeader({
@@ -54,6 +57,7 @@ export function AdminHeader({
   brandHref: brandHrefProp,
   hideBell = false,
   showCart = false,
+  useStoreLanguageSwitch = false,
 }: Props) {
   const brandHref =
     brandHrefProp ?? (variant === "standalone" ? "/" : "/admin/home");
@@ -180,14 +184,30 @@ export function AdminHeader({
           </Button>
         ) : null}
 
-        <LanguageSelector
-          className={cn(
-            "flex shrink-0 gap-1",
-            variant === "admin" && "hidden md:flex",
-          )}
-          buttonClassName="bg-muted/80"
-          aria-label={t("admin.header.languageToggle")}
-        />
+        {useStoreLanguageSwitch ? (
+          <>
+            {variant === "standalone" ? (
+              <LanguageSelector
+                className="flex shrink-0 md:hidden"
+                buttonClassName="bg-muted/80"
+                aria-label={t("admin.header.languageToggle")}
+              />
+            ) : null}
+            <StoreLanguageSwitch
+              className="hidden shrink-0 md:inline-flex"
+              aria-label={t("admin.header.languageToggle")}
+            />
+          </>
+        ) : (
+          <LanguageSelector
+            className={cn(
+              "flex shrink-0 gap-1",
+              variant === "admin" && "hidden md:flex",
+            )}
+            buttonClassName="bg-muted/80"
+            aria-label={t("admin.header.languageToggle")}
+          />
+        )}
 
         <span
           className={cn(

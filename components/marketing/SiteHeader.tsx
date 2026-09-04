@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLogo } from "@/components/brand/AppLogo";
-import { LanguageSelector } from "@/components/i18n/LanguageSelector";
+import { StoreLanguageSwitch } from "@/components/marketing/StoreLanguageSwitch";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { SearchAutocompleteDropdown } from "@/components/marketing/SearchAutocompleteDropdown";
 import { useDropdownPresence } from "@/components/marketing/useDropdownPresence";
@@ -949,9 +949,9 @@ export function SiteHeader({ user }: Props) {
               </div>
 
               <div className="flex min-w-0 justify-self-end gap-0.5 sm:gap-2">
-                <LanguageSelector
-                  className="hidden gap-1 sm:flex"
-                  buttonClassName="bg-muted/80"
+                <StoreLanguageSwitch
+                  className="hidden sm:inline-flex"
+                  aria-label={t("admin.header.languageToggle")}
                 />
                 <Button
                   variant="ghost"
@@ -1558,9 +1558,8 @@ export function SiteHeader({ user }: Props) {
                   {t("header.menuTitle")}
                 </span>
                 <div className="flex items-center gap-2">
-                  <LanguageSelector
-                    className="rounded-full bg-muted/80 p-0 shadow-sm"
-                    buttonClassName="h-8 w-8 text-[11px]"
+                  <StoreLanguageSwitch
+                    aria-label={t("admin.header.languageToggle")}
                   />
                   <button
                     type="button"
