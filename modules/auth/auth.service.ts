@@ -56,6 +56,37 @@ function mapSignInWithOtpError(error: unknown, locale: Locale): Error {
   return new Error(translate(locale, "common.errors.unexpected"));
 }
 
+function isInvalidOtpError(error: unknown): boolean {
+  const message = (
+    error instanceof Error ? error.message : String(error ?? "")
+  ).toLowerCase();
+  const obj = error && typeof error === "object" ? error : null;
+  const code =
+    obj && "code" in obj ? String((obj as { code?: unknown }).code ?? "") : "";
+  return (
+    code === "otp_expired" ||
+    code === "invalid_otp" ||
+    message.includes("token has expired or is invalid") ||
+    message.includes("invalid otp") ||
+    message.includes("otp expired") ||
+    message.includes("token inválido")
+  );
+}
+
+function mapVerifyOtpError(error: unknown, locale: Locale): Error {
+  if (isInvalidOtpError(error)) {
+    return new Error(translate(locale, "login.errors.invalidCode"));
+  }
+  if (isNetworkActionError(error)) {
+    return new Error(translate(locale, "common.errors.network"));
+  }
+  const message = extractErrorMessage(error);
+  if (message && !isInvalidOtpError(new Error(message))) {
+    return new Error(message);
+  }
+  return new Error(translate(locale, "login.errors.default"));
+}
+
 /**
  * Tras login correcto (enlace, código o contraseña admin): actualiza `profiles`
  * con datos de `auth` (p. ej. nombre desde metadata) y `updated_at`.
@@ -203,13 +234,7 @@ export async function verifyLoginOtpService(
   try {
     await repoVerifyEmailOtp(parsed.data.email, parsed.data.code);
   } catch (error: unknown) {
-    if (isNetworkActionError(error)) {
-      throw new Error(translate(locale, "common.errors.network"));
-    }
-    const message = extractErrorMessage(error);
-    throw new Error(
-      message || translate(locale, "common.errors.unexpected"),
-    );
+    throw mapVerifyOtpError(error, locale);
   }
 
   const user = await repoGetSessionUser();

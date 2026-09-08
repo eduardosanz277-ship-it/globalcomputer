@@ -27,6 +27,7 @@ import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
 import { markLoginSuccessToast } from "@/lib/login-success-toast";
+import { Loader2 } from "lucide-react";
 import {
   emailOtpCodeSchema,
   emailOtpRequestSchema,
@@ -57,6 +58,12 @@ const OTP_COOLDOWN_SECONDS = 60;
 const OTP_COOLDOWN_MS = OTP_COOLDOWN_SECONDS * 1000;
 const languageLabelKey = LANGUAGE_LABEL_KEY;
 
+function formatCountdown(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,6 +76,7 @@ function LoginPageContent() {
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [blockedUntil, setBlockedUntil] = useState<Date | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [isFetchingCooldown, setIsFetchingCooldown] = useState(false);
@@ -84,10 +92,6 @@ function LoginPageContent() {
   });
 
   const watchedEmail = emailForm.watch("email") ?? "";
-  const normalizedEmail = useMemo(
-    () => watchedEmail.trim().toLowerCase(),
-    [watchedEmail],
-  );
 
   const fetchCooldown = useCallback(async (email: string) => {
     if (!email) {
@@ -123,41 +127,77 @@ function LoginPageContent() {
       successMessage: t("login.toast.otpSent"),
       errorMessage: t("login.errors.default"),
       onSuccess: () => {
-        const e = emailForm.getValues("email").trim().toLowerCase();
+        const e =
+          emailForm.getValues("email").trim().toLowerCase() || emailForCode;
         setEmailForCode(e);
         codeForm.reset({ code: "" });
+        setIsEditingEmail(false);
         setStep("code");
         setBlockedUntil(new Date(Date.now() + OTP_COOLDOWN_MS));
       },
     },
   );
 
-  const handleGoToVerify = useCallback(() => {
-    if (!normalizedEmail) return;
-    setEmailForCode(normalizedEmail);
-    setStep("code");
-  }, [normalizedEmail]);
-
   const handleEmailSubmit = async (values: EmailOtpRequestSchema) => {
     const email = values.email.trim().toLowerCase();
-    if (blockedUntil && blockedUntil.getTime() > Date.now()) {
-      setEmailForCode(email);
+    if (
+      blockedUntil &&
+      blockedUntil.getTime() > Date.now() &&
+      email === emailForCode
+    ) {
       setStep("code");
       return;
     }
-    await sendOtp(email);
+    sendOtp(email);
+  };
+
+  const startEditEmail = useCallback(() => {
+    emailForm.setValue("email", emailForCode);
+    setIsEditingEmail(true);
+  }, [emailForCode, emailForm]);
+
+  const cancelEditEmail = useCallback(() => {
+    emailForm.setValue("email", emailForCode);
+    setIsEditingEmail(false);
+  }, [emailForCode, emailForm]);
+
+  const handleBackToSignIn = useCallback(() => {
+    emailForm.setValue("email", emailForCode);
+    codeForm.reset({ code: "" });
+    setIsEditingEmail(false);
+    setStep("email");
+  }, [emailForCode, emailForm, codeForm]);
+
+  const handleSaveEmail = (values: EmailOtpRequestSchema) => {
+    const email = values.email.trim().toLowerCase();
+    const previousEmail = emailForCode;
+    setEmailForCode(email);
+    setIsEditingEmail(false);
+    codeForm.reset({ code: "" });
+
+    if (email !== previousEmail) {
+      sendOtp(email);
+      return;
+    }
+
+    void fetchCooldown(email);
+  };
+
+  const handleResendCode = () => {
+    if (!emailForCode || isCooldownActive || sending) return;
+    emailForm.setValue("email", emailForCode);
+    sendOtp(emailForCode);
   };
 
   useEffect(() => {
-    if (!normalizedEmail) {
-      setBlockedUntil(null);
-      return;
-    }
-    const timer = setTimeout(() => {
-      fetchCooldown(normalizedEmail);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [normalizedEmail, fetchCooldown]);
+    if (step !== "email" || watchedEmail.trim()) return;
+    setBlockedUntil(null);
+  }, [step, watchedEmail]);
+
+  useEffect(() => {
+    if (step !== "code" || !emailForCode) return;
+    void fetchCooldown(emailForCode);
+  }, [step, emailForCode, fetchCooldown]);
 
   useEffect(() => {
     if (!blockedUntil) {
@@ -193,10 +233,28 @@ function LoginPageContent() {
   const emailErrors = emailForm.formState.errors;
   const codeErrors = codeForm.formState.errors;
   const isCooldownActive = Boolean(blockedUntil && cooldownSeconds > 0);
-  const cooldownRetryMessage = t("login.cooldown.retry").replace(
-    "{seconds}",
-    String(cooldownSeconds),
+  const resendCountdownLabel = t("login.verify.resendIn").replace(
+    "{time}",
+    formatCountdown(cooldownSeconds),
   );
+
+  const verifyHeadingDescription =
+    step === "code" && !isEditingEmail ? (
+      <>
+        {t("login.verify.subtitlePrefix")}{" "}
+        <span className="font-medium text-foreground break-all">
+          {emailForCode}
+        </span>
+        {" · "}
+        <button
+          type="button"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+          onClick={startEditEmail}
+        >
+          {t("login.verify.changeEmail")}
+        </button>
+      </>
+    ) : undefined;
 
   return (
     <AuthLayout>
@@ -209,21 +267,30 @@ function LoginPageContent() {
               <button
                 key={lang}
                 type="button"
-                className={`rounded-full px-3 py-1 transition ${isActive
+                className={`rounded-full px-3 py-1 transition ${
+                  isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
-                  }`}
+                }`}
                 onClick={() => setLocale(lang)}
                 aria-pressed={isActive}
               >
-                {t(LANGUAGE_LABEL_KEY[lang])}
+                {t(languageLabelKey[lang])}
               </button>
             );
           })}
         </div>
         <AuthHeading
-          title={t("login.heading.title")}
-          description={t("login.heading.description")}
+          title={
+            step === "code"
+              ? t("login.verify.title")
+              : t("login.heading.title")
+          }
+          description={
+            step === "email"
+              ? t("login.heading.description")
+              : verifyHeadingDescription
+          }
         />
 
         {loginError ? <AuthAlert>{loginError}</AuthAlert> : null}
@@ -246,42 +313,46 @@ function LoginPageContent() {
               type="submit"
               pending={sending}
               pendingLabel={t("login.buttons.sending")}
-              disabled={sending || isCooldownActive}
+              disabled={sending}
             >
-              {isCooldownActive
-                ? `${t("login.buttons.verifyOtp")} (${cooldownSeconds}s)`
-                : t("login.buttons.continue")}
+              {t("login.buttons.continue")}
             </AuthPrimaryButton>
-            {isCooldownActive ? (
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  {isFetchingCooldown
-                    ? t("login.cooldown.checking")
-                    : cooldownRetryMessage}
-                </p>
-                <AuthInlineLinkRow>
-                  <span>{t("login.links.alreadyHaveCode")}</span>
-                  <button
-                    type="button"
-                    className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-                    onClick={handleGoToVerify}
-                  >
-                    {t("login.buttons.verifyOtp")}
-                  </button>
-                </AuthInlineLinkRow>
-              </div>
-            ) : null}
           </Form>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">
-                {t("login.codeSentPrefix")}
-              </span>
-              <span className="font-medium text-foreground">
-                {emailForCode}
-              </span>
-            </div>
+            {isEditingEmail ? (
+              <Form
+                form={emailForm}
+                onSubmit={handleSaveEmail}
+                className="space-y-3 text-left"
+              >
+                <AuthField
+                  name="email"
+                  label={t("login.emailLabel")}
+                  type="email"
+                  autoComplete="email"
+                  required
+                  error={emailErrors.email?.message}
+                />
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                    onClick={cancelEditEmail}
+                  >
+                    {t("login.verify.cancelEdit")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {t("login.verify.saveEmail")}
+                  </button>
+                </div>
+              </Form>
+            ) : null}
+
             <Form
               form={codeForm}
               onSubmit={(v) => verifyOtp(emailForCode, v.code)}
@@ -305,6 +376,32 @@ function LoginPageContent() {
                   </p>
                 ) : null}
               </div>
+
+              <p className="text-sm text-muted-foreground">
+                {t("login.verify.resendPrompt")}{" "}
+                {sending ? (
+                  <span className="inline-flex items-center gap-1.5 font-medium text-foreground/80">
+                    <Loader2
+                      className="h-3.5 w-3.5 animate-spin"
+                      aria-hidden
+                    />
+                    {t("login.verify.resendingOtp")}
+                  </span>
+                ) : isFetchingCooldown ? (
+                  <span>{t("login.cooldown.checking")}</span>
+                ) : isCooldownActive ? (
+                  <span>{resendCountdownLabel}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+                    onClick={handleResendCode}
+                  >
+                    {t("login.verify.resendLink")}
+                  </button>
+                )}
+              </p>
+
               <AuthPrimaryButton
                 type="submit"
                 pending={verifying}
@@ -312,21 +409,6 @@ function LoginPageContent() {
               >
                 {t("login.buttons.submitCode")}
               </AuthPrimaryButton>
-              <div className="text-center text-sm leading-relaxed text-muted-foreground">
-                <AuthInlineLinkRow>
-                  <span>{t("login.links.notYourEmail")}</span>
-                  <button
-                    type="button"
-                    className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-                    onClick={() => {
-                      setStep("email");
-                      codeForm.reset({ code: "" });
-                    }}
-                  >
-                    {t("login.links.changeEmail")}
-                  </button>
-                </AuthInlineLinkRow>
-              </div>
             </Form>
           </div>
         )}
@@ -354,7 +436,14 @@ function LoginPageContent() {
           </AuthFooterLinks>
         ) : null}
       </AuthCard>
-      <AuthBackToHome />
+      {step === "email" ? (
+        <AuthBackToHome />
+      ) : (
+        <AuthBackToHome
+          onClick={handleBackToSignIn}
+          label={t("login.links.backToSignIn")}
+        />
+      )}
     </AuthLayout>
   );
 }

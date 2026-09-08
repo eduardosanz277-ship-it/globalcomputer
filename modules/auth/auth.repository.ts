@@ -1,5 +1,6 @@
 import type { Locale } from "@/components/i18n/translations";
 import { sendLoginOtpEmail } from "@/lib/email/sendLoginOtpEmail";
+import { translate } from "@/lib/i18n/get-translation";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import {
@@ -217,9 +218,17 @@ export async function repoSignInWithOtp(email: string, locale: Locale) {
   if (blockUntil && blockUntil.getTime() > now) {
     const remainingSeconds = Math.ceil((blockUntil.getTime() - now) / 1000);
     const timeLabel =
-      remainingSeconds === 1 ? "segundo" : `${remainingSeconds} segundos`;
+      remainingSeconds === 1
+        ? translate(locale, "login.cooldown.oneSecond")
+        : translate(locale, "login.cooldown.multipleSeconds").replace(
+            "{seconds}",
+            String(remainingSeconds),
+          );
     throw new Error(
-      `Ya enviaste un código recientemente. Intenta de nuevo en ${timeLabel}.`,
+      translate(locale, "login.cooldown.recentlySent").replace(
+        "{time}",
+        timeLabel,
+      ),
     );
   }
 

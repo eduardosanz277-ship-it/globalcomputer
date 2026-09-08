@@ -7,6 +7,17 @@ export const en = {
     emailLabel: "Email",
     codeLabel: "Verification code",
     codeSentPrefix: "Code sent to ",
+    verify: {
+      title: "Check your email",
+      subtitlePrefix: "We sent a 6-digit code to",
+      changeEmail: "Change",
+      cancelEdit: "Cancel",
+      saveEmail: "Done",
+      resendPrompt: "Didn't receive the code?",
+      resendIn: "Resend code in {time}",
+      resendLink: "Resend code",
+      resendingOtp: "Resending code",
+    },
     buttons: {
       continue: "Continue",
       verifyOtp: "Verify OTP",
@@ -17,9 +28,13 @@ export const en = {
     cooldown: {
       retry: "Resend available in {seconds} seconds.",
       checking: "Checking availability",
+      recentlySent: "You recently sent a code. Try again in {time}.",
+      oneSecond: "1 second",
+      multipleSeconds: "{seconds} seconds",
     },
     links: {
       alreadyHaveCode: "Already have a code?",
+      backToSignIn: "Back to sign in",
       businessPrompt: "Business account?",
       businessLink: "Create business account",
       adminPrompt: "Administrator?",
@@ -33,6 +48,7 @@ export const en = {
     },
     errors: {
       default: "Sign-in failed. Request a new link or code via your email.",
+      invalidCode: "Incorrect or expired code. Check it or request a new one.",
     },
     loading: "Loading",
   },

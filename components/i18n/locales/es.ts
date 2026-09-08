@@ -7,6 +7,17 @@ export const es = {
     emailLabel: "Correo electrónico",
     codeLabel: "Código de verificación",
     codeSentPrefix: "Código enviado a ",
+    verify: {
+      title: "Revisa tu correo",
+      subtitlePrefix: "Enviamos un código de 6 dígitos a",
+      changeEmail: "Cambiar",
+      cancelEdit: "Cancelar",
+      saveEmail: "Listo",
+      resendPrompt: "¿No recibiste el código?",
+      resendIn: "Reenviar código en {time}",
+      resendLink: "Reenviar código",
+      resendingOtp: "Reenviando código",
+    },
     buttons: {
       continue: "Continuar",
       verifyOtp: "Verificar OTP",
@@ -17,9 +28,14 @@ export const es = {
     cooldown: {
       retry: "Reenviar disponible en {seconds} segundos.",
       checking: "Comprobando disponibilidad",
+      recentlySent:
+        "Ya enviaste un código recientemente. Intenta de nuevo en {time}.",
+      oneSecond: "1 segundo",
+      multipleSeconds: "{seconds} segundos",
     },
     links: {
       alreadyHaveCode: "¿Ya tienes un código?",
+      backToSignIn: "Volver a iniciar sesión",
       businessPrompt: "¿Eres empresa?",
       businessLink: "Crear cuenta empresarial",
       adminPrompt: "¿Administrador?",
@@ -35,6 +51,8 @@ export const es = {
     errors: {
       default:
         "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
+      invalidCode:
+        "Código incorrecto o expirado. Revísalo o solicita uno nuevo.",
     },
     loading: "Cargando",
   },
