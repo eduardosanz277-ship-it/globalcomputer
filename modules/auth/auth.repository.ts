@@ -76,8 +76,8 @@ function isRefreshTokenNotFoundError(error: unknown): boolean {
 
 export async function repoGetOtpCooldown(email: string): Promise<Date | null> {
   const normalizedEmail = email.trim().toLowerCase();
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
     .from("otp_resend_locks")
     .select("blocked_until")
     .eq("email", normalizedEmail)
@@ -91,8 +91,8 @@ export async function repoGetOtpCooldown(email: string): Promise<Date | null> {
 
 export async function repoUpsertOtpCooldown(email: string, blockedUntil: Date) {
   const normalizedEmail = email.trim().toLowerCase();
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
     .from("otp_resend_locks")
     .upsert(
       {
