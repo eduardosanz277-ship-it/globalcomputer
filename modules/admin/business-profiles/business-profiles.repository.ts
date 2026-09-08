@@ -66,3 +66,21 @@ export async function repoListBusinessProfiles(): Promise<
     };
   });
 }
+
+/** Suscripciones empresariales pendientes de aprobación (`pending` o sin estado). */
+export async function repoCountPendingBusinessProfiles(): Promise<number> {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { count, error } = await admin
+      .from("profiles")
+      .select("id", { head: true, count: "exact" })
+      .eq("role", "BUSINESS")
+      .or(
+        "business_registration_status.eq.pending,business_registration_status.is.null",
+      );
+    if (error) throw error;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}

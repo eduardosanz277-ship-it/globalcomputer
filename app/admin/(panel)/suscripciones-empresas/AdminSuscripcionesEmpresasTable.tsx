@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useNavBadges } from "@/components/admin/AdminNavBadgesContext";
 import { useServerAction } from "@/hooks/use-server-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
@@ -53,8 +54,15 @@ const APPROVAL_FILTER_VALUES = [
   "rejected",
 ] as const;
 const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
+const SUBSCRIPTIONS_NAV_HREF = "/admin/suscripciones-empresas";
 
 type ApprovalFilter = (typeof APPROVAL_FILTER_VALUES)[number];
+
+function isPendingBusinessRegistration(
+  status: BusinessRegistrationStatus | null | undefined,
+): boolean {
+  return status === "pending" || status == null;
+}
 
 function approvalLabel(
   s: BusinessRegistrationStatus | null | undefined,
@@ -240,10 +248,17 @@ function SuscripcionesRowActionsMenu({
   row,
   onViewDetail,
   onDeleteSuccess,
+  onRegistrationStatusChange,
+  onUserRemoved,
 }: {
   row: AdminBusinessProfileRow;
   onViewDetail: () => void;
   onDeleteSuccess: () => void;
+  onRegistrationStatusChange?: (
+    userId: string,
+    status: BusinessRegistrationStatus,
+  ) => void;
+  onUserRemoved?: (userId: string) => void;
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -261,6 +276,9 @@ function SuscripcionesRowActionsMenu({
       successMessage: t("admin.businessSubscriptions.toast.approved"),
       errorMessage: t("admin.businessSubscriptions.toast.approveError"),
       onSuccess: () => {
+        if (isPendingBusinessRegistration(row.businessRegistrationStatus)) {
+          onRegistrationStatusChange?.(row.id, "approved");
+        }
         onDeleteSuccess();
         setOpen(false);
       },
@@ -272,6 +290,9 @@ function SuscripcionesRowActionsMenu({
       successMessage: t("admin.businessSubscriptions.toast.rejected"),
       errorMessage: t("admin.businessSubscriptions.toast.rejectError"),
       onSuccess: () => {
+        if (isPendingBusinessRegistration(row.businessRegistrationStatus)) {
+          onRegistrationStatusChange?.(row.id, "rejected");
+        }
         onDeleteSuccess();
         setOpen(false);
       },
@@ -283,6 +304,7 @@ function SuscripcionesRowActionsMenu({
       successMessage: t("admin.businessSubscriptions.toast.deleted"),
       errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
       onSuccess: () => {
+        onUserRemoved?.(row.id);
         onDeleteSuccess();
         setOpen(false);
       },
@@ -501,12 +523,47 @@ function SuscripcionesRowActionsMenu({
 }
 
 export function AdminSuscripcionesEmpresasTable({
-  rows,
+  rows: initialRows,
   isLoading = false,
 }: Props) {
   const { t, locale } = useI18n();
+  const { setBadge } = useNavBadges();
+  const [rows, setRows] = useState(initialRows);
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("all");
+
+  useEffect(() => {
+    setRows(initialRows);
+  }, [initialRows]);
+
+  const pendingCount = useMemo(
+    () =>
+      rows.filter((row) =>
+        isPendingBusinessRegistration(row.businessRegistrationStatus),
+      ).length,
+    [rows],
+  );
+
+  useEffect(() => {
+    setBadge(SUBSCRIPTIONS_NAV_HREF, pendingCount);
+  }, [pendingCount, setBadge]);
+
+  const handleRegistrationStatusChange = useCallback(
+    (userId: string, status: BusinessRegistrationStatus) => {
+      setRows((prev) =>
+        prev.map((row) =>
+          row.id === userId
+            ? { ...row, businessRegistrationStatus: status }
+            : row,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleUserRemoved = useCallback((userId: string) => {
+    setRows((prev) => prev.filter((row) => row.id !== userId));
+  }, []);
   const approvalFilterOptions = useMemo(
     () =>
       [
@@ -569,12 +626,14 @@ export function AdminSuscripcionesEmpresasTable({
                   current === r.id ? null : current,
                 );
               }}
+              onRegistrationStatusChange={handleRegistrationStatusChange}
+              onUserRemoved={handleUserRemoved}
             />
           }
         />
       </li>
     );
-  }, []);
+  }, [handleRegistrationStatusChange, handleUserRemoved]);
 
   const columns = useMemo<ColumnDef<AdminBusinessProfileRow>[]>(
     () => [
@@ -784,11 +843,13 @@ export function AdminSuscripcionesEmpresasTable({
                 current === row.original.id ? null : current,
               );
             }}
+            onRegistrationStatusChange={handleRegistrationStatusChange}
+            onUserRemoved={handleUserRemoved}
           />
         ),
       },
     ],
-    [locale, t],
+    [handleRegistrationStatusChange, handleUserRemoved, locale, t],
   );
 
   const toolbarFilters = useMemo(
@@ -860,6 +921,8 @@ export function AdminSuscripcionesEmpresasTable({
         userId={detailUserId}
         onClose={() => setDetailUserId(null)}
         subscriptionContext
+        onBusinessRegistrationStatusChange={handleRegistrationStatusChange}
+        onUserRemoved={handleUserRemoved}
       />
     </div>
   );

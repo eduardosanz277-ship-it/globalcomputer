@@ -189,6 +189,8 @@ export async function sendLoginOtpService(
   rawEmail: string,
   localeInput?: unknown,
 ) {
+  const locale = recognizedAppLocale(localeInput) ?? (await getServerLocale());
+
   const parsed = emailOtpRequestSchema.safeParse({
     email: rawEmail.trim().toLowerCase(),
   });
@@ -198,17 +200,11 @@ export async function sendLoginOtpService(
 
   const blockReason = await repoGetBusinessLoginBlockReason(parsed.data.email);
   if (blockReason === "pending") {
-    throw new Error(
-      "Tu cuenta de empresa está pendiente de aprobación por un administrador. Te avisaremos por correo cuando puedas iniciar sesión."
-    );
+    throw new Error(translate(locale, "login.errors.pendingBusiness"));
   }
   if (blockReason === "rejected") {
-    throw new Error(
-      "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información."
-    );
+    throw new Error(translate(locale, "login.errors.rejectedBusiness"));
   }
-
-  const locale = recognizedAppLocale(localeInput) ?? (await getServerLocale());
 
   try {
     await repoSignInWithOtp(parsed.data.email, locale);
@@ -240,9 +236,7 @@ export async function verifyLoginOtpService(
   const user = await repoGetSessionUser();
   if (user?.role === "ADMIN") {
     await repoLogout();
-    throw new Error(
-      "Las cuentas de administrador deben iniciar sesión en /admin/login."
-    );
+    throw new Error(translate(locale, "login.errors.adminPortalRequired"));
   }
 
   if (user?.role === "BUSINESS") {
@@ -250,13 +244,9 @@ export async function verifyLoginOtpService(
     if (s !== "approved") {
       await repoLogout();
       if (s === "rejected") {
-        throw new Error(
-          "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información."
-        );
+        throw new Error(translate(locale, "login.errors.rejectedBusiness"));
       }
-      throw new Error(
-        "Tu cuenta de empresa está pendiente de aprobación por un administrador."
-      );
+      throw new Error(translate(locale, "login.errors.pendingBusiness"));
     }
   }
 

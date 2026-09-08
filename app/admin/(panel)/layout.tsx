@@ -3,6 +3,7 @@ import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
 import { canAccessAdminRoutes } from "@/modules/auth/auth.guards";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { repoCountPendingBusinessProfiles } from "@/modules/admin/business-profiles/business-profiles.repository";
 
 async function getConflictOrdersCount(): Promise<number> {
   try {
@@ -17,15 +18,35 @@ async function getConflictOrdersCount(): Promise<number> {
   }
 }
 
+async function getPendingBusinessSubscriptionsCount(): Promise<number> {
+  return repoCountPendingBusinessProfiles();
+}
+
+function buildNavBadges(
+  conflictOrdersCount: number,
+  pendingSubscriptionsCount: number,
+): Record<string, number> | undefined {
+  const badges: Record<string, number> = {};
+  if (conflictOrdersCount > 0) {
+    badges["/admin/orders"] = conflictOrdersCount;
+  }
+  if (pendingSubscriptionsCount > 0) {
+    badges["/admin/suscripciones-empresas"] = pendingSubscriptionsCount;
+  }
+  return Object.keys(badges).length > 0 ? badges : undefined;
+}
+
 export default async function AdminPanelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [user, conflictOrdersCount] = await Promise.all([
-    getCurrentUserStrictService(),
-    getConflictOrdersCount(),
-  ]);
+  const [user, conflictOrdersCount, pendingSubscriptionsCount] =
+    await Promise.all([
+      getCurrentUserStrictService(),
+      getConflictOrdersCount(),
+      getPendingBusinessSubscriptionsCount(),
+    ]);
 
   if (!user) {
     redirect("/admin/login");
@@ -42,7 +63,10 @@ export default async function AdminPanelLayout({
         email: user.email,
         role: user.role,
       }}
-      navBadges={conflictOrdersCount > 0 ? { "/admin/orders": conflictOrdersCount } : undefined}
+      navBadges={buildNavBadges(
+        conflictOrdersCount,
+        pendingSubscriptionsCount,
+      )}
     >
       {children}
     </AdminShell>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import type { AdminUserDetail } from "@/modules/admin/users/users.types";
+import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import {
   approveBusinessRegistrationAction,
   deleteUserAction,
@@ -41,6 +42,11 @@ type Props = {
    * (sin badge de rol ni último acceso en el detalle).
    */
   subscriptionContext?: boolean;
+  onBusinessRegistrationStatusChange?: (
+    userId: string,
+    status: BusinessRegistrationStatus,
+  ) => void;
+  onUserRemoved?: (userId: string) => void;
 };
 
 function businessStatusText(
@@ -346,6 +352,8 @@ export function UserDetailDrawer({
   userId,
   onClose,
   subscriptionContext = false,
+  onBusinessRegistrationStatusChange,
+  onUserRemoved,
 }: Props) {
   const { t } = useI18n();
   const router = useRouter();
@@ -358,7 +366,17 @@ export function UserDetailDrawer({
     useServerAction(approveBusinessRegistrationAction, {
       successMessage: t("admin.userDetail.toast.approved"),
       errorMessage: t("admin.userDetail.toast.approveError"),
-      onSuccess: () => onClose(),
+      onSuccess: () => {
+        if (
+          userId &&
+          detail &&
+          (detail.businessRegistrationStatus === "pending" ||
+            detail.businessRegistrationStatus == null)
+        ) {
+          onBusinessRegistrationStatusChange?.(userId, "approved");
+        }
+        onClose();
+      },
       onSettled: () => router.refresh(),
     });
 
@@ -366,7 +384,17 @@ export function UserDetailDrawer({
     useServerAction(rejectBusinessRegistrationAction, {
       successMessage: t("admin.userDetail.toast.rejected"),
       errorMessage: t("admin.userDetail.toast.rejectError"),
-      onSuccess: () => onClose(),
+      onSuccess: () => {
+        if (
+          userId &&
+          detail &&
+          (detail.businessRegistrationStatus === "pending" ||
+            detail.businessRegistrationStatus == null)
+        ) {
+          onBusinessRegistrationStatusChange?.(userId, "rejected");
+        }
+        onClose();
+      },
       onSettled: () => router.refresh(),
     });
 
@@ -374,7 +402,12 @@ export function UserDetailDrawer({
     useServerAction(deleteUserAction, {
       successMessage: t("admin.businessSubscriptions.toast.deleted"),
       errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
-      onSuccess: () => onClose(),
+      onSuccess: () => {
+        if (userId) {
+          onUserRemoved?.(userId);
+        }
+        onClose();
+      },
       onSettled: () => router.refresh(),
     });
 

@@ -23,7 +23,7 @@ function copy(locale: EmailLocale) {
       approvedHtml: (safeName: string) =>
         `La solicitud de registro de <strong style="color:#0f172a;">${safeName}</strong> ha sido <strong style="color:#0f172a;">aprobada</strong>.`,
       loginHint: (brand: string) =>
-        `Ya puedes iniciar sesión en ${brand} con el código que enviamos a tu correo.`,
+        `Ya puedes iniciar sesión en ${brand}. Solicita un código de acceso con tu correo para ingresar.`,
       cta: "Iniciar sesión",
     };
   }
@@ -38,7 +38,7 @@ function copy(locale: EmailLocale) {
     approvedHtml: (safeName: string) =>
       `The registration request for <strong style="color:#0f172a;">${safeName}</strong> has been <strong style="color:#0f172a;">approved</strong>.`,
     loginHint: (brand: string) =>
-      `You can now sign in to ${brand} with the code we sent to your email.`,
+      `You can now sign in to ${brand}. Request an access code using your email to log in.`,
     cta: "Sign in",
   };
 }

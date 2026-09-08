@@ -53,6 +53,12 @@ export const es = {
         "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
       invalidCode:
         "Código incorrecto o expirado. Revísalo o solicita uno nuevo.",
+      pendingBusiness:
+        "Tu cuenta de empresa está pendiente de aprobación. Te notificaremos por correo cuando puedas iniciar sesión.",
+      rejectedBusiness:
+        "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
+      adminPortalRequired:
+        "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
     },
     loading: "Cargando",
   },
@@ -102,7 +108,7 @@ export const es = {
     },
     toast: {
       success:
-        "Solicitud enviada. Un administrador debe aprobar tu cuenta; te notificaremos por correo cuando puedas iniciar sesión.",
+        "Solicitud enviada. Te notificaremos por correo cuando tu cuenta sea aprobada.",
       error: "No se pudo completar el registro",
     },
     errors: {

@@ -49,6 +49,12 @@ export const en = {
     errors: {
       default: "Sign-in failed. Request a new link or code via your email.",
       invalidCode: "Incorrect or expired code. Check it or request a new one.",
+      pendingBusiness:
+        "Your business account is pending approval. We will notify you by email when you can log in.",
+      rejectedBusiness:
+        "Your business application was rejected. Contact support for more details.",
+      adminPortalRequired:
+        "Admin accounts must log in via the admin access page.",
     },
     loading: "Loading",
   },
@@ -98,7 +104,7 @@ export const en = {
     },
     toast: {
       success:
-        "Request sent. An administrator must approve your account; we will email you when you can sign in.",
+        "Request sent. We will notify you by email when your account is approved.",
       error: "Registration could not be completed",
     },
     errors: {

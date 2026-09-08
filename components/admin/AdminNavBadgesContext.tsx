@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type NavBadgesContextValue = {
   badges: Record<string, number>;
@@ -20,6 +20,11 @@ export function NavBadgesProvider({
   const [badges, setBadges] = useState<Record<string, number>>(
     initialBadges ?? {},
   );
+
+  useEffect(() => {
+    if (!initialBadges) return;
+    setBadges((prev) => ({ ...prev, ...initialBadges }));
+  }, [initialBadges]);
 
   const setBadge = useCallback((href: string, count: number) => {
     setBadges((prev) => ({ ...prev, [href]: Math.max(0, count) }));

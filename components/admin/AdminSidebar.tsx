@@ -12,6 +12,8 @@ import { cn } from "@/utils/cn";
 import { ADMIN_NAV_GROUPS } from "./admin-nav-config";
 import { useNavBadges } from "./AdminNavBadgesContext";
 
+const SUBSCRIPTIONS_NAV_HREF = "/admin/suscripciones-empresas";
+
 type Props = {
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -69,7 +71,7 @@ export function AdminSidebar({
   onCloseMobile,
   onStartNavigation,
 }: Props) {
-  const { badges: navBadges } = useNavBadges();
+  const { badges: navBadges, setBadge } = useNavBadges();
   const { t } = useI18n();
   const pathname = usePathname() ?? "";
   /** En escritorio: barra estrecha con iconos; en móvil (drawer) siempre expandida */
@@ -81,6 +83,24 @@ export function AdminSidebar({
   useEffect(() => {
     setOpenSubmenus((prev) => closeSubmenusOutsidePath(pathname, prev));
   }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch("/api/admin/nav-badges/pending-subscriptions")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { count?: number } | null) => {
+        if (cancelled || data == null || typeof data.count !== "number") return;
+        setBadge(SUBSCRIPTIONS_NAV_HREF, data.count);
+      })
+      .catch(() => {
+        /* badge conserva el último valor conocido */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, setBadge]);
 
   const toggleSubmenu = (key: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [key]: !prev[key] }));

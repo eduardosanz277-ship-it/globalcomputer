@@ -35,23 +35,11 @@ import {
   type EmailOtpRequestSchema,
 } from "@/modules/auth/auth.schema";
 
-const loginErrorMessages: Record<string, Record<Locale, string>> = {
-  admin: {
-    es: "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
-    en: "Admin accounts must log in via the admin access page.",
-  },
-  auth: {
-    es: "No se pudo iniciar sesión. Solicita un nuevo enlace o código desde tu email.",
-    en: "Sign-in failed. Request a new link or code via your email.",
-  },
-  pending_business: {
-    es: "Tu cuenta de empresa está pendiente de aprobación. Te avisaremos por correo cuando puedas entrar.",
-    en: "Your business account is pending admin approval. We'll notify you once it's ready.",
-  },
-  rejected_business: {
-    es: "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
-    en: "Your business application was rejected. Contact support for more details.",
-  },
+const loginErrorKeys: Record<string, string> = {
+  admin: "login.errors.adminPortalRequired",
+  auth: "login.errors.default",
+  pending_business: "login.errors.pendingBusiness",
+  rejected_business: "login.errors.rejectedBusiness",
 };
 
 const OTP_COOLDOWN_SECONDS = 60;
@@ -71,8 +59,9 @@ function LoginPageContent() {
   const loginError = useMemo(() => {
     const code = searchParams.get("error");
     if (!code) return null;
-    return loginErrorMessages[code]?.[locale] ?? t("login.errors.default");
-  }, [searchParams, locale, t]);
+    const key = loginErrorKeys[code];
+    return key ? t(key) : t("login.errors.default");
+  }, [searchParams, t]);
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
