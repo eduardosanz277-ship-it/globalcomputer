@@ -371,7 +371,8 @@ export function UserDetailDrawer({
           userId &&
           detail &&
           (detail.businessRegistrationStatus === "pending" ||
-            detail.businessRegistrationStatus == null)
+            detail.businessRegistrationStatus == null ||
+            detail.businessRegistrationStatus === "rejected")
         ) {
           onBusinessRegistrationStatusChange?.(userId, "approved");
         }
@@ -492,7 +493,8 @@ export function UserDetailDrawer({
   const showApproveButton =
     Boolean(detail && userId && detail.role === "BUSINESS") &&
     (detail?.businessRegistrationStatus === "pending" ||
-      detail?.businessRegistrationStatus == null);
+      detail?.businessRegistrationStatus == null ||
+      detail?.businessRegistrationStatus === "rejected");
 
   const showRejectButton =
     Boolean(detail && userId && detail.role === "BUSINESS") &&

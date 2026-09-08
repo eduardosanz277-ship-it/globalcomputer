@@ -4,6 +4,7 @@ import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AdminUserDetail } from "./users.types";
 import { sendBusinessApprovalEmail } from "@/lib/email/sendBusinessApprovalEmail";
+import { sendBusinessRejectionEmail } from "@/lib/email/sendBusinessRejectionEmail";
 import {
   repoApproveBusinessRegistration,
   repoRejectBusinessRegistration,
@@ -89,7 +90,7 @@ export async function rejectBusinessRegistrationService(userId: string) {
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin
     .from("profiles")
-    .select("role, business_registration_status")
+    .select("role, full_name, business_registration_status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -101,6 +102,31 @@ export async function rejectBusinessRegistrationService(userId: string) {
   }
 
   await repoRejectBusinessRegistration(userId);
+
+  const { data: authData } = await admin.auth.admin.getUserById(userId);
+  const email = authData?.user?.email;
+  if (email) {
+    try {
+      const recipientLocale = recognizedAppLocale(
+        authData.user?.user_metadata?.locale,
+      );
+      const { sent } = await sendBusinessRejectionEmail(email, recipientLocale);
+      if (!sent) {
+        throw new Error(
+          "Falta RESEND_API_KEY; no se envió el correo de aviso.",
+        );
+      }
+    } catch (e) {
+      const detail =
+        e instanceof Error
+          ? e.message
+          : "Error al contactar con el servicio de correo.";
+      throw new Error(
+        `La solicitud quedó rechazada en el sistema, pero el correo no se pudo enviar: ${detail}`,
+      );
+    }
+  }
+
   return { success: true as const };
 }
 

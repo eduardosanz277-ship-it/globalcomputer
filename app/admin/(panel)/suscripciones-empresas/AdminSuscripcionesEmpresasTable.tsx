@@ -64,6 +64,14 @@ function isPendingBusinessRegistration(
   return status === "pending" || status == null;
 }
 
+function canApproveBusinessRegistration(
+  status: BusinessRegistrationStatus | null | undefined,
+): boolean {
+  return (
+    status === "pending" || status == null || status === "rejected"
+  );
+}
+
 function approvalLabel(
   s: BusinessRegistrationStatus | null | undefined,
   t: (key: string) => string,
@@ -276,7 +284,7 @@ function SuscripcionesRowActionsMenu({
       successMessage: t("admin.businessSubscriptions.toast.approved"),
       errorMessage: t("admin.businessSubscriptions.toast.approveError"),
       onSuccess: () => {
-        if (isPendingBusinessRegistration(row.businessRegistrationStatus)) {
+        if (canApproveBusinessRegistration(row.businessRegistrationStatus)) {
           onRegistrationStatusChange?.(row.id, "approved");
         }
         onDeleteSuccess();
@@ -355,6 +363,9 @@ function SuscripcionesRowActionsMenu({
   const showPendingActions =
     row.businessRegistrationStatus === "pending" ||
     row.businessRegistrationStatus == null;
+
+  const showRejectedApproveOnly =
+    row.businessRegistrationStatus === "rejected";
 
   const showApprovedRejectOnly = row.businessRegistrationStatus === "approved";
 
@@ -452,6 +463,25 @@ function SuscripcionesRowActionsMenu({
             >
               <XCircle className="h-4 w-4 shrink-0" aria-hidden />
               {t("admin.businessSubscriptions.menu.reject")}
+            </button>
+          </>
+        ) : null}
+
+        {showRejectedApproveOnly ? (
+          <>
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
+              disabled={busy}
+              onClick={() => {
+                setOpen(false);
+                void handleApprove();
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+              {t("admin.businessSubscriptions.menu.approve")}
             </button>
           </>
         ) : null}
