@@ -30,10 +30,29 @@ export async function sendLoginOtpAction(
   }
 }
 
+export type VerifyLoginOtpResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+/** Devuelve `{ ok: false, message }` en lugar de lanzar (Next.js oculta throws en prod). */
 export async function verifyLoginOtpAction(
   email: string,
   code: string,
   locale?: string,
-) {
-  await verifyLoginOtpService(email, code, locale);
+): Promise<VerifyLoginOtpResult> {
+  const resolvedLocale =
+    recognizedAppLocale(locale) ?? (await getServerLocale());
+  try {
+    await verifyLoginOtpService(email, code, resolvedLocale);
+    return { ok: true };
+  } catch (e: unknown) {
+    return {
+      ok: false,
+      message: formatServerErrorMessage(
+        e,
+        resolvedLocale,
+        "login.errors.default",
+      ),
+    };
+  }
 }
