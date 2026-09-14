@@ -13,6 +13,7 @@ import {
   repoGetSessionUser,
   repoLogin,
   repoLogout,
+  mapAuthAdminDuplicateEmail,
   repoRegister,
   repoRegisterBusiness,
   repoSignInWithOtp,
@@ -266,15 +267,23 @@ export async function registerService(
   try {
     await repoRegister(parsed.data);
   } catch (error: unknown) {
-    if (isNetworkActionError(error)) {
-      throw new Error(translate(locale, "common.errors.network"));
-    }
-    const message = extractErrorMessage(error);
-    throw new Error(
-      message || translate(locale, "common.errors.unexpected"),
-    );
+    throw mapRegisterClientError(error, locale);
   }
   return { success: true };
+}
+
+function mapRegisterClientError(error: unknown, locale: Locale): Error {
+  const duplicate = mapAuthAdminDuplicateEmail(error);
+  if (duplicate.message === REGISTER_BUSINESS_ERROR.DUPLICATE_EMAIL) {
+    return new Error(
+      translate(locale, "registerBusiness.errors.duplicateEmail"),
+    );
+  }
+  if (isNetworkActionError(error)) {
+    return new Error(translate(locale, "common.errors.network"));
+  }
+  const message = extractErrorMessage(error);
+  return new Error(message || translate(locale, "common.errors.unexpected"));
 }
 
 export async function registerBusinessService(

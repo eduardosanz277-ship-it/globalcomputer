@@ -41,7 +41,9 @@ export default function RegisterEmpresaPage() {
 
   const { execute, isPending } = useServerAction(
     async (values: RegisterBusinessFormInput) => {
-      await registerBusinessAction(values, locale);
+      const res = await registerBusinessAction(values, locale);
+      if (!res.ok) throw new Error(res.message);
+      return res;
     },
     {
       successMessage: t("registerBusiness.toast.success"),

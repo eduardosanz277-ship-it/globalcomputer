@@ -36,7 +36,11 @@ export default function RegisterPage() {
   });
 
   const { execute, isPending } = useServerAction(
-    (values: RegisterSchema) => registerAction(values, locale),
+    async (values: RegisterSchema) => {
+      const res = await registerAction(values, locale);
+      if (!res.ok) throw new Error(res.message);
+      return res;
+    },
     {
       successMessage: "Registro completado",
       errorMessage: "No se pudo registrar",
