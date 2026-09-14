@@ -16,8 +16,8 @@ import {
 import { rethrowTaggingNetworkError } from "@/lib/errors/rsc-network-error";
 import { REGISTER_BUSINESS_ERROR } from "./auth.errors";
 
-/** Errores típicos de Auth Admin al crear usuario con email ya registrado. */
-function mapAuthAdminDuplicateEmail(error: unknown): Error {
+/** Errores típicos de Auth al crear usuario con email ya registrado. */
+export function mapAuthAdminDuplicateEmail(error: unknown): Error {
   const msg =
     (error instanceof Error ? error.message : String(error)).toLowerCase();
   const code =
@@ -221,9 +221,9 @@ export async function repoSignInWithOtp(email: string, locale: Locale) {
       remainingSeconds === 1
         ? translate(locale, "login.cooldown.oneSecond")
         : translate(locale, "login.cooldown.multipleSeconds").replace(
-            "{seconds}",
-            String(remainingSeconds),
-          );
+          "{seconds}",
+          String(remainingSeconds),
+        );
     throw new Error(
       translate(locale, "login.cooldown.recentlySent").replace(
         "{time}",
