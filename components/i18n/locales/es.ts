@@ -114,7 +114,7 @@ export const es = {
     errors: {
       duplicateEmail: "Ya existe una cuenta asociada a este correo electrónico.",
       duplicateEin:
-        "Ya existe una cuenta registrada con este EIN (Employer Identification Number).",
+        "Ya existe una cuenta registrada con este EIN (Número de Identificación del Empleador).",
       userCreateFailed: "No se pudo crear el usuario.",
       profileSaveFailed:
         "No se pudo guardar el perfil en la base de datos. Contacta con soporte.",
