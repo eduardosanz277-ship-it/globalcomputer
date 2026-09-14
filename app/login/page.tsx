@@ -208,7 +208,11 @@ function LoginPageContent() {
   }, [blockedUntil]);
 
   const { execute: verifyOtp, isPending: verifying } = useServerAction(
-    (email: string, code: string) => verifyLoginOtpAction(email, code, locale),
+    async (email: string, code: string) => {
+      const res = await verifyLoginOtpAction(email, code, locale);
+      if (!res.ok) throw new Error(res.message);
+      return res;
+    },
     {
       errorMessage: t("login.errors.default"),
       onSuccess: () => {
