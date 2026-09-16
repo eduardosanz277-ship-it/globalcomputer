@@ -25,7 +25,7 @@ export async function sendLoginOtpAction(
   } catch (e: unknown) {
     return {
       ok: false,
-      message: formatServerErrorMessage(e, resolvedLocale),
+      message: formatServerErrorMessage(e, resolvedLocale, "login.errors.default"),
     };
   }
 }
