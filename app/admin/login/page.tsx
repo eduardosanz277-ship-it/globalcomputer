@@ -36,7 +36,13 @@ export default function AdminLoginPage() {
     },
   });
 
-  const { execute, isPending } = useServerAction(adminLoginAction, {
+  const { execute, isPending } = useServerAction(
+    async (values: LoginSchema) => {
+      const res = await adminLoginAction(values, locale);
+      if (!res.ok) throw new Error(res.message);
+      return res;
+    },
+    {
     errorMessage: t("adminLogin.errors.generic"),
     onSuccess: () => {
       markLoginSuccessToast();
@@ -45,7 +51,7 @@ export default function AdminLoginPage() {
     },
   });
 
-  const onSubmit = (values: LoginSchema) => execute(values, locale);
+  const onSubmit = (values: LoginSchema) => execute(values);
 
   const errors = form.formState.errors;
 
