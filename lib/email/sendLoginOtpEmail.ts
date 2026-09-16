@@ -1,4 +1,5 @@
 import type { Locale } from "@/components/i18n/translations";
+import { getBrandedEmailFooterContact } from "@/lib/email/branded-email-contact.server";
 import { resolveEmailFrom } from "@/lib/email/email-brand";
 import {
   renderLoginOtpEmailSubject,
@@ -23,6 +24,8 @@ export async function sendLoginOtpEmail(input: {
     return { sent: false };
   }
 
+  const footerContact = await getBrandedEmailFooterContact();
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -38,6 +41,7 @@ export async function sendLoginOtpEmail(input: {
         email: to,
         token: input.token,
         name: input.name,
+        footerContact,
       }),
     }),
   });

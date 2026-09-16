@@ -5,6 +5,7 @@ import {
   storeOrderAccountOrdersUrl,
 } from "@/lib/email/order-confirmation-locale";
 import { sendOrderStatusUpdateEmail } from "@/lib/email/sendOrderStatusUpdateEmail";
+import { mapOrderEmailLineItems } from "@/lib/email/map-order-email-line-items.server";
 import {
   shippingAddressFromStripeSession,
   shippingAddressLinesFromDb,
@@ -50,7 +51,9 @@ type StatusEmailOrderRow = {
   amount_discount: string | number | null;
   store_order_items:
     | Array<{
+        product_id: string;
         product_name: string | null;
+        product_sku: string | null;
         quantity: number | null;
         unit_price: string | number | null;
         total_price: string | number | null;
@@ -142,7 +145,7 @@ export async function maybeSendStoreOrderStatusEmail(input: {
   const { data: order, error } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price )",
+      "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_id, product_name, product_sku, quantity, unit_price, total_price )",
     )
     .eq("id", input.orderId)
     .maybeSingle();
@@ -173,12 +176,11 @@ export async function maybeSendStoreOrderStatusEmail(input: {
   }
 
   const itemsRaw = row.store_order_items ?? [];
-  const items = (Array.isArray(itemsRaw) ? itemsRaw : []).map((item) => ({
-    productName: String(item.product_name ?? "").trim(),
-    quantity: Number(item.quantity ?? 0),
-    unitPrice: parseMoney(item.unit_price),
-    totalPrice: parseMoney(item.total_price),
-  }));
+  const items = await mapOrderEmailLineItems(
+    supabase,
+    Array.isArray(itemsRaw) ? itemsRaw : [],
+    { appUrl, fallbackProductName: "Producto" },
+  );
 
   if (items.length === 0) {
     console.warn("[ORDER_STATUS_EMAIL]", {

@@ -1,3 +1,4 @@
+import { getBrandedEmailFooterContact } from "@/lib/email/branded-email-contact.server";
 import { resolveEmailFrom } from "@/lib/email/email-brand";
 import {
   renderOrderStatusUpdateEmailSubject,
@@ -33,6 +34,8 @@ export async function sendOrderStatusUpdateEmail(
     headers["Idempotency-Key"] = idempotencyKey.slice(0, 256);
   }
 
+  const footerContact = await getBrandedEmailFooterContact();
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers,
@@ -40,7 +43,7 @@ export async function sendOrderStatusUpdateEmail(
       from,
       to: [to.trim().toLowerCase()],
       subject: renderOrderStatusUpdateEmailSubject(input),
-      html: renderOrderStatusUpdateEmailTemplate(input),
+      html: renderOrderStatusUpdateEmailTemplate({ ...input, footerContact }),
     }),
   });
 

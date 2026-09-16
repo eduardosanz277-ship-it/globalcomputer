@@ -1,3 +1,4 @@
+import { getBrandedEmailFooterContact } from "@/lib/email/branded-email-contact.server";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { escapeHtml } from "@/lib/email/escapeHtml";
 import {
@@ -83,6 +84,8 @@ export async function sendBusinessApprovalEmail(
     </div>
   `;
 
+  const footerContact = await getBrandedEmailFooterContact();
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -99,6 +102,7 @@ export async function sendBusinessApprovalEmail(
         bannerSubtitle: t.bannerSubtitle,
         preheader: t.preheader(brand),
         bodyHtml,
+        footerContact,
       }),
     }),
   });

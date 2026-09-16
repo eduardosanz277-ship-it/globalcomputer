@@ -1,20 +1,25 @@
 import { escapeHtml } from "@/lib/email/escapeHtml";
-import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
-import { renderOrderEmailCtas } from "@/lib/email/templates/orderEmailBlocks";
-import type { OrderConfirmationLineItem } from "@/lib/email/templates/orderConfirmationTemplate";
+import { wrapBrandedEmail, type BrandedEmailFooterContact } from "@/lib/email/templates/brandedEmailShell";
+import {
+  renderOrderEmailCtas,
+  renderOrderEmailProductName,
+  renderOrderEmailSkuLine,
+  type OrderEmailLineItem,
+} from "@/lib/email/templates/orderEmailBlocks";
 
 export type ManualQuoteRequestTemplateInput = {
   locale: "es" | "en";
   customerName: string;
   orderNumber: string;
   orderDate: string;
-  items: OrderConfirmationLineItem[];
+  items: OrderEmailLineItem[];
   amountSubtotal: number;
   amountDiscount: number;
   merchandiseTotal: number;
   shippingAddressLines: string[];
   orderLookupUrl: string;
   profileOrdersUrl?: string | null;
+  footerContact?: BrandedEmailFooterContact;
 };
 
 function formatUsd(value: number): string {
@@ -79,18 +84,24 @@ function copy(locale: "es" | "en") {
 }
 
 function renderItemsTable(
-  items: OrderConfirmationLineItem[],
+  items: OrderEmailLineItem[],
   qtyLabel: string,
 ): string {
   return items
     .map((item) => {
-      const name = escapeHtml(item.productName.trim() || "Producto");
+      const nameBlock = renderOrderEmailProductName(
+        item.productName,
+        "Producto",
+        item.productUrl,
+      );
+      const sku = item.productSku?.trim();
+      const skuLine = sku ? renderOrderEmailSkuLine(sku) : "";
       const qty = String(item.quantity);
       const unit = formatUsd(item.unitPrice);
       const total = formatUsd(item.totalPrice);
       return `<tr>
         <td style="padding:14px 0;border-bottom:1px solid #eef2f7;vertical-align:top;">
-          <div style="font-size:14px;font-weight:600;color:#0f172a;line-height:1.4;">${name}</div>
+          ${nameBlock}${skuLine}
           <div style="font-size:12px;color:#6b7280;margin-top:4px;">${escapeHtml(qtyLabel)}: ${qty} · ${escapeHtml(unit)}</div>
         </td>
         <td style="padding:14px 0;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right;font-size:14px;font-weight:600;color:#0f172a;">${escapeHtml(total)}</td>
@@ -196,5 +207,6 @@ export function renderManualQuoteRequestEmailTemplate(
     bannerSubtitle: t.bannerSubtitle,
     preheader: t.preheader(input.orderNumber),
     bodyHtml,
+    footerContact: input.footerContact,
   });
 }

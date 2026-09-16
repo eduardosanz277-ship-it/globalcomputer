@@ -56,6 +56,14 @@ export const en = {
       adminPortalRequired:
         "Admin accounts must log in via the admin access page.",
     },
+    form: {
+      errors: {
+        emailRequired: "Email is required",
+        emailInvalid: "Enter a valid email address",
+        codeRequired: "The code is required",
+        codeFormat: "The code must be exactly 6 digits",
+      },
+    },
     loading: "Loading",
   },
   adminLogin: {

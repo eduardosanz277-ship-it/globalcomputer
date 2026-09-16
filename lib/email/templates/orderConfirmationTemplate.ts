@@ -2,7 +2,7 @@ import {
   orderConfirmationTemplateId,
   type EmailLocale,
 } from "@/lib/email/order-confirmation-locale";
-import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
+import { wrapBrandedEmail, type BrandedEmailFooterContact } from "@/lib/email/templates/brandedEmailShell";
 import {
   renderOrderTransactionalEmailBody,
   type OrderEmailBodyCopy,
@@ -25,6 +25,7 @@ export type OrderConfirmationTemplateInput = {
   shippingAddressLines: string[];
   orderLookupUrl: string;
   profileOrdersUrl?: string | null;
+  footerContact?: BrandedEmailFooterContact;
 };
 
 function copy(locale: EmailLocale): OrderEmailBodyCopy & {
@@ -124,5 +125,6 @@ export function renderOrderConfirmationEmailTemplate(
       orderLookupUrl: input.orderLookupUrl,
       profileOrdersUrl: input.profileOrdersUrl,
     }),
+    footerContact: input.footerContact,
   });
 }

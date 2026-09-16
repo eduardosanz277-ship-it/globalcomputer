@@ -33,6 +33,7 @@ export type AdminStoreOrderRow = {
 
 export type AdminStoreOrderItemRow = {
   product_name: string;
+  product_sku: string | null;
   quantity: number;
   unit_price: string;
   total_price: string;
@@ -281,7 +282,7 @@ export async function repoListAdminStoreOrderItems(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("store_order_items")
-    .select("product_name, quantity, unit_price, total_price")
+    .select("product_name, product_sku, quantity, unit_price, total_price")
     .eq("store_order_id", orderId)
     .order("product_name", { ascending: true });
   if (error) {
@@ -292,6 +293,10 @@ export async function repoListAdminStoreOrderItems(
   return (
     data?.map((row) => ({
       product_name: String(row.product_name),
+      product_sku:
+        typeof row.product_sku === "string" && row.product_sku.trim()
+          ? row.product_sku.trim()
+          : null,
       quantity: Number(row.quantity ?? 0),
       unit_price: String(row.unit_price ?? "0"),
       total_price: String(row.total_price ?? "0"),

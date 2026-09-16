@@ -74,7 +74,7 @@ export default async function CuentaPage() {
   const { data: orders, error: ordersError } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, stripe_amount_total, created_at, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
+      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, stripe_amount_total, created_at, store_order_items ( product_name, product_sku, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -136,6 +136,7 @@ export default async function CuentaPage() {
       items:
         order.store_order_items?.map((item) => ({
           productName: item.product_name,
+          productSku: item.product_sku?.trim() || null,
           quantity: item.quantity,
           unitPrice: Number(item.unit_price) || 0,
           totalPrice: Number(item.total_price) || 0,

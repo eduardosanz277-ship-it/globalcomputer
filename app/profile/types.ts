@@ -32,6 +32,7 @@ export type CuentaOrder = {
   statusHistory: StoreOrderStatusHistoryRow[];
   items: Array<{
     productName: string;
+    productSku: string | null;
     quantity: number;
     unitPrice: number;
     totalPrice: number;

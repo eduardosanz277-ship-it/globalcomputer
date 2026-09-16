@@ -2,6 +2,7 @@ import { getAppBaseUrl } from "@/lib/app-url";
 import { storeOrderAccountOrdersUrl } from "@/lib/email/order-confirmation-locale";
 import { resolveAppLocale } from "@/lib/i18n/parse-locale";
 import { sendManualQuoteRequestEmail } from "@/lib/email/sendManualQuoteRequestEmail";
+import { mapOrderEmailLineItems } from "@/lib/email/map-order-email-line-items.server";
 import type { OrderConfirmationLineItem } from "@/lib/email/templates/orderConfirmationTemplate";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
@@ -75,7 +76,7 @@ export async function maybeSendManualQuoteRequestEmail(input: {
   const { data: order, error } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, customer_name, customer_email, user_id, status, locale, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
+      "id, order_number, customer_name, customer_email, user_id, status, locale, shipping_method, created_at, total_amount, amount_subtotal, amount_discount, store_order_items ( product_id, product_name, product_sku, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("id", input.orderId)
     .maybeSingle();
@@ -99,14 +100,11 @@ export async function maybeSendManualQuoteRequestEmail(input: {
   }
 
   const itemsRaw = order.store_order_items ?? [];
-  const items: OrderConfirmationLineItem[] = (
-    Array.isArray(itemsRaw) ? itemsRaw : []
-  ).map((row) => ({
-    productName: String(row.product_name ?? "Producto"),
-    quantity: Number(row.quantity ?? 0),
-    unitPrice: parseMoney(row.unit_price),
-    totalPrice: parseMoney(row.total_price),
-  }));
+  const items: OrderConfirmationLineItem[] = await mapOrderEmailLineItems(
+    supabase,
+    Array.isArray(itemsRaw) ? itemsRaw : [],
+    { appUrl, fallbackProductName: "Producto" },
+  );
 
   if (items.length === 0) {
     console.warn("[email] cotización manual: sin líneas", input.orderId);

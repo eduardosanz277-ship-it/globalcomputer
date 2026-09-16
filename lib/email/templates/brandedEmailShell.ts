@@ -1,12 +1,26 @@
 import { escapeHtml } from "@/lib/email/escapeHtml";
 import { EMAIL_BRAND_NAME } from "@/lib/email/email-brand";
 import {
+  SITE_CONTACT_EMAIL,
   SITE_CONTACT_PHONE_DISPLAY,
   SITE_CONTACT_PHONE_TEL,
 } from "@/lib/site";
 
-/** Correo de soporte mostrado en el footer de todos los emails de marca. */
-export const EMAIL_SUPPORT_ADDRESS = "soporte@globalcomputer.com";
+export type BrandedEmailFooterContact = {
+  supportEmail: string;
+  phoneDisplay: string;
+  phoneTel: string;
+};
+
+function resolveFooterContact(
+  contact?: Partial<BrandedEmailFooterContact>,
+): BrandedEmailFooterContact {
+  return {
+    supportEmail: contact?.supportEmail?.trim() || SITE_CONTACT_EMAIL,
+    phoneDisplay: contact?.phoneDisplay?.trim() || SITE_CONTACT_PHONE_DISPLAY,
+    phoneTel: contact?.phoneTel?.trim() || SITE_CONTACT_PHONE_TEL,
+  };
+}
 
 /**
  * Envoltorio alineado píxel a píxel con la plantilla OTP de Supabase:
@@ -20,14 +34,17 @@ export function wrapBrandedEmail(input: {
   bannerSubtitle: string;
   preheader?: string;
   bodyHtml: string;
+  /** Si no se pasa, usa `app_config` vía el sender o los fallbacks de `lib/site`. */
+  footerContact?: Partial<BrandedEmailFooterContact>;
 }): string {
   const brand = escapeHtml(EMAIL_BRAND_NAME);
   const title = escapeHtml(input.title);
   const bannerSubtitle = escapeHtml(input.bannerSubtitle);
   const preheader = escapeHtml(input.preheader ?? "");
-  const supportEmail = escapeHtml(EMAIL_SUPPORT_ADDRESS);
-  const phoneDisplay = escapeHtml(SITE_CONTACT_PHONE_DISPLAY);
-  const phoneTel = escapeHtml(SITE_CONTACT_PHONE_TEL);
+  const footer = resolveFooterContact(input.footerContact);
+  const supportEmail = escapeHtml(footer.supportEmail);
+  const phoneDisplay = escapeHtml(footer.phoneDisplay);
+  const phoneTel = escapeHtml(footer.phoneTel);
 
   const year = new Date().getFullYear();
   const helpHeading =
@@ -42,6 +59,7 @@ export function wrapBrandedEmail(input: {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no" />
     <title>${title}</title>
   </head>
   <body style="margin:0;background:#f3f4f6;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#0f172a;">

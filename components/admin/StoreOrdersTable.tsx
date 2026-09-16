@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label, RequiredMark } from "@/components/ui/label";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 import { ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME } from "@/lib/order-details-dialog";
 import {
@@ -1383,8 +1384,13 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                               key={`${item.product_name}-${index}`}
                               className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
                             >
-                              <td className="px-4 py-2.5 font-medium">
-                                {item.product_name}
+                              <td className="px-4 py-2.5">
+                                <OrderLineProductLabel
+                                  name={item.product_name}
+                                  sku={item.product_sku}
+                                  skuLabel={t("storefront.productDetail.skuLabel")}
+                                  nameClassName="font-medium"
+                                />
                               </td>
                               <td className="px-4 py-2.5 tabular-nums">
                                 {item.quantity}

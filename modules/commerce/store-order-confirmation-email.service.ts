@@ -8,6 +8,7 @@ import {
   stripeSessionCustomerEmail,
 } from "@/lib/email/order-confirmation-locale";
 import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmationEmail";
+import { mapOrderEmailLineItems } from "@/lib/email/map-order-email-line-items.server";
 import {
   shippingAddressLinesFromDb,
   shippingAddressLinesFromStripeSession,
@@ -42,6 +43,8 @@ type ConfirmationEmailOrderRow = {
   store_order_items:
     | Array<{
         product_name: string | null;
+        product_sku: string | null;
+        product_id: string;
         quantity: number | null;
         unit_price: string | number | null;
         total_price: string | number | null;
@@ -180,9 +183,9 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
   const appUrl = getAppBaseUrl();
 
   const orderSelectWithEmail =
-    "id, order_number, customer_name, customer_email, user_id, status, locale, confirmation_email_sent_at, confirmation_email_locale, inventory_status, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+    "id, order_number, customer_name, customer_email, user_id, status, locale, confirmation_email_sent_at, confirmation_email_locale, inventory_status, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_id, product_name, product_sku, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
   const orderSelectBase =
-    "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
+    "id, order_number, customer_name, customer_email, user_id, status, locale, stripe_session_id, created_at, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, store_order_items ( product_id, product_name, product_sku, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, address_line, address_line_2, city, state, postal_code, country )";
 
   let order: ConfirmationEmailOrderRow | null = null;
   let error: { message?: string; code?: string } | null = null;
@@ -316,14 +319,11 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
   }
 
   const itemsRaw = order.store_order_items ?? [];
-  const items: OrderConfirmationLineItem[] = (
-    Array.isArray(itemsRaw) ? itemsRaw : []
-  ).map((row) => ({
-    productName: String(row.product_name ?? "").trim(),
-    quantity: Number(row.quantity ?? 0),
-    unitPrice: parseMoney(row.unit_price),
-    totalPrice: parseMoney(row.total_price),
-  }));
+  const items: OrderConfirmationLineItem[] = await mapOrderEmailLineItems(
+    supabase,
+    Array.isArray(itemsRaw) ? itemsRaw : [],
+    { appUrl, fallbackProductName: "Producto" },
+  );
 
   if (items.length === 0) {
     console.warn("[ORDER_CONFIRMATION_EMAIL]", {

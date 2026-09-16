@@ -1,3 +1,4 @@
+import { getBrandedEmailFooterContact } from "@/lib/email/branded-email-contact.server";
 import { resolveEmailFrom } from "@/lib/email/email-brand";
 import {
   renderCustomerInventoryConflictEmailSubject,
@@ -21,6 +22,7 @@ export async function sendCustomerInventoryConflictEmail(
   }
 
   const from = resolveEmailFrom();
+  const footerContact = await getBrandedEmailFooterContact();
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -32,7 +34,10 @@ export async function sendCustomerInventoryConflictEmail(
       from,
       to: [to.trim().toLowerCase()],
       subject: renderCustomerInventoryConflictEmailSubject(input),
-      html: renderCustomerInventoryConflictEmailTemplate(input),
+      html: renderCustomerInventoryConflictEmailTemplate({
+        ...input,
+        footerContact,
+      }),
     }),
   });
 

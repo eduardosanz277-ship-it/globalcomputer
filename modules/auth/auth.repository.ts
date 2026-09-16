@@ -1,5 +1,6 @@
 import type { Locale } from "@/components/i18n/translations";
 import { sendLoginOtpEmail } from "@/lib/email/sendLoginOtpEmail";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { translate } from "@/lib/i18n/get-translation";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
@@ -54,10 +55,14 @@ function isPostgresUniqueViolation(err: unknown): boolean {
 
 const OTP_COOLDOWN_SECONDS = 60;
 
-function loginOtpAuthTemplateData(locale: Locale) {
+async function loginOtpAuthTemplateData(locale: Locale) {
+  const contact = await getPublicSiteContact();
   return {
     locale,
     year: String(new Date().getFullYear()),
+    support_email: contact.email,
+    support_phone: contact.phoneDisplay,
+    support_phone_tel: contact.phoneTel,
   };
 }
 
@@ -154,10 +159,11 @@ async function generateLoginEmailOtp(
   locale: Locale,
 ): Promise<{ token: string; userId: string | null }> {
   const admin = createSupabaseAdminClient();
+  const templateData = await loginOtpAuthTemplateData(locale);
   const first = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: { data: loginOtpAuthTemplateData(locale) },
+    options: { data: templateData },
   });
 
   if (!first.error) {
@@ -166,7 +172,6 @@ async function generateLoginEmailOtp(
       throw new Error("No se pudo generar el código");
     }
     const user = first.data.user;
-    const templateData = loginOtpAuthTemplateData(locale);
     if (
       user?.id &&
       (user.user_metadata?.locale !== templateData.locale ||
@@ -186,7 +191,7 @@ async function generateLoginEmailOtp(
   const created = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
-    user_metadata: { ...loginOtpAuthTemplateData(locale), role: "CLIENT" },
+    user_metadata: { ...(await loginOtpAuthTemplateData(locale)), role: "CLIENT" },
   });
   if (created.error) {
     const mapped = mapAuthAdminDuplicateEmail(created.error);
@@ -198,7 +203,7 @@ async function generateLoginEmailOtp(
   const second = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: { data: loginOtpAuthTemplateData(locale) },
+    options: { data: templateData },
   });
   const token = second.data.properties?.email_otp?.trim();
   if (second.error || !token) {
@@ -263,7 +268,7 @@ export async function repoSignInWithOtp(email: string, locale: Locale) {
       email: normalizedEmail,
       options: {
         shouldCreateUser: true,
-        data: loginOtpAuthTemplateData(locale),
+        data: await loginOtpAuthTemplateData(locale),
       },
     });
     if (error) throw error;

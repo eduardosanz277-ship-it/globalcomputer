@@ -3,6 +3,7 @@
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
 import type { GuestOrderLookupResult } from "@/modules/commerce/store-order-guest-lookup.service";
@@ -121,9 +122,12 @@ export function GuestOrderDetailsPanel({ order }: Props) {
                   key={`${item.productName}-${index}`}
                   className="space-y-1.5 px-3.5 py-3"
                 >
-                  <p className="break-words text-sm font-medium leading-snug text-foreground">
-                    {item.productName}
-                  </p>
+                  <OrderLineProductLabel
+                    name={item.productName}
+                    sku={item.productSku}
+                    skuLabel={t("storefront.productDetail.skuLabel")}
+                    nameClassName="text-sm font-medium leading-snug text-foreground"
+                  />
                   <div className="flex items-baseline justify-between gap-3 text-sm">
                     <span className="tabular-nums text-muted-foreground">
                       {item.quantity} × {formatMoney(item.unitPrice)}
@@ -159,8 +163,12 @@ export function GuestOrderDetailsPanel({ order }: Props) {
                       key={`${item.productName}-${index}`}
                       className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
                     >
-                      <td className="max-w-[18rem] break-words px-4 py-2.5 font-medium">
-                        {item.productName}
+                      <td className="max-w-[18rem] px-4 py-2.5 font-medium">
+                        <OrderLineProductLabel
+                          name={item.productName}
+                          sku={item.productSku}
+                          skuLabel={t("storefront.productDetail.skuLabel")}
+                        />
                       </td>
                       <td className="px-4 py-2.5 tabular-nums">
                         {item.quantity}

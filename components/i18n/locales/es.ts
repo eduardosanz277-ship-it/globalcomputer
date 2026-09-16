@@ -60,6 +60,14 @@ export const es = {
       adminPortalRequired:
         "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
     },
+    form: {
+      errors: {
+        emailRequired: "El correo electrónico es obligatorio",
+        emailInvalid: "Introduce un correo válido",
+        codeRequired: "El código es obligatorio",
+        codeFormat: "El código debe tener exactamente 6 dígitos",
+      },
+    },
     loading: "Cargando",
   },
   adminLogin: {

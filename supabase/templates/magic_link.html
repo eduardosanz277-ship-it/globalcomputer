@@ -1,6 +1,9 @@
 {{ $locale := "" }}
 {{ $year := "" }}
-{{ if .Data }}{{ $locale = index .Data "locale" }}{{ $year = index .Data "year" }}{{ end }}
+{{ $supportEmail := "globalcomputer1024@gmail.com" }}
+{{ $supportPhone := "786-395-1076" }}
+{{ $supportPhoneTel := "+17863951076" }}
+{{ if .Data }}{{ $locale = index .Data "locale" }}{{ $year = index .Data "year" }}{{ if index .Data "support_email" }}{{ $supportEmail = index .Data "support_email" }}{{ end }}{{ if index .Data "support_phone" }}{{ $supportPhone = index .Data "support_phone" }}{{ end }}{{ if index .Data "support_phone_tel" }}{{ $supportPhoneTel = index .Data "support_phone_tel" }}{{ end }}{{ end }}
 {{ if eq $locale "en" }}
 <!DOCTYPE html>
 <html lang="en">
@@ -37,10 +40,10 @@
               <td align="center" bgcolor="#0f172a" style="padding:24px 40px;background:#0f172a;border-top:1px solid #1e293b;text-align:center;">
                 <p style="margin:0;color:#e2e8f0;font-size:12px;font-weight:600;line-height:1.5;">Need help?</p>
                 <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
-                  Write to us at <a href="mailto:soporte@globalcomputer.com" style="color:#38bdf8;text-decoration:none;">soporte@globalcomputer.com</a>
+                  Write to us at <a href="mailto:{{ $supportEmail }}" style="color:#38bdf8;text-decoration:none;">{{ $supportEmail }}</a>
                 </p>
                 <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
-                  Call us at <a href="tel:+17863951076" style="color:#38bdf8;text-decoration:none;">786-395-1076</a>
+                  Call us at <a href="tel:{{ $supportPhoneTel }}" style="color:#38bdf8;text-decoration:none;">{{ $supportPhone }}</a>
                 </p>
                 <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© {{ $year }} Global Computers USA</p>
               </td>
@@ -87,10 +90,10 @@
               <td align="center" bgcolor="#0f172a" style="padding:24px 40px;background:#0f172a;border-top:1px solid #1e293b;text-align:center;">
                 <p style="margin:0;color:#e2e8f0;font-size:12px;font-weight:600;line-height:1.5;">¿Necesitas ayuda?</p>
                 <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
-                  Escríbenos a <a href="mailto:soporte@globalcomputer.com" style="color:#38bdf8;text-decoration:none;">soporte@globalcomputer.com</a>
+                  Escríbenos a <a href="mailto:{{ $supportEmail }}" style="color:#38bdf8;text-decoration:none;">{{ $supportEmail }}</a>
                 </p>
                 <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;">
-                  Llámanos al <a href="tel:+17863951076" style="color:#38bdf8;text-decoration:none;">786-395-1076</a>
+                  Llámanos al <a href="tel:{{ $supportPhoneTel }}" style="color:#38bdf8;text-decoration:none;">{{ $supportPhone }}</a>
                 </p>
                 <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">© {{ $year }} Global Computers USA</p>
               </td>

@@ -631,6 +631,7 @@ export async function createSiteOrder(
     store_order_id: order.id,
     product_id: line.product.id,
     product_name: line.product.name,
+    product_sku: line.product.sku?.trim() || null,
     quantity: line.qty,
     unit_price: Number(line.unitPrice.toFixed(2)),
     total_price: Number(line.totalPrice.toFixed(2)),
@@ -813,6 +814,7 @@ export async function createManualQuoteOrder(
       store_order_id: order.id,
       product_id: line.product.id,
       product_name: storefrontProductDisplayName(line.product, locale),
+      product_sku: line.product.sku?.trim() || null,
       quantity: line.qty,
       unit_price: Number(line.unitPrice.toFixed(2)),
       total_price: Number(line.totalPrice.toFixed(2)),
@@ -991,6 +993,7 @@ async function ensureStoreOrderForCheckoutSession(
   type LineRow = {
     product_id: string;
     product_name: string;
+    product_sku: string | null;
     quantity: number;
     unit_price: number;
     total_price: number;
@@ -1022,6 +1025,7 @@ async function ensureStoreOrderForCheckoutSession(
     itemRows.push({
       product_id: productId,
       product_name: productName,
+      product_sku: null,
       quantity: qty,
       unit_price: unitPrice,
       total_price: totalPrice,
@@ -1032,6 +1036,18 @@ async function ensureStoreOrderForCheckoutSession(
     throw new Error(
       `[store-orders] no hay líneas válidas para la sesión ${sessionId} (falta metadata product_id en Checkout).`,
     );
+  }
+
+  const skuByProductId = Object.fromEntries(
+    (
+      await getStorefrontProductsByIds([
+        ...new Set(itemRows.map((row) => row.product_id)),
+      ])
+    ).map((product) => [product.id, product.sku?.trim() || ""]),
+  );
+  for (const row of itemRows) {
+    const sku = skuByProductId[row.product_id];
+    row.product_sku = sku || null;
   }
 
   const customerEmail =
@@ -1124,6 +1140,7 @@ async function ensureStoreOrderForCheckoutSession(
       store_order_id: orderId,
       product_id: r.product_id,
       product_name: r.product_name,
+      product_sku: r.product_sku,
       quantity: r.quantity,
       unit_price: r.unit_price,
       total_price: r.total_price,

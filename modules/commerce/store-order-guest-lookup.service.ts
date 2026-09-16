@@ -18,6 +18,7 @@ export type GuestOrderLookupResult = {
   statusHistory: StoreOrderStatusHistoryRow[];
   items: Array<{
     productName: string;
+    productSku: string | null;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -48,7 +49,7 @@ export async function lookupStoreOrderByNumberAndEmail(
   const { data: order, error } = await supabase
     .from("store_orders")
     .select(
-      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, created_at, customer_email, store_order_items ( product_name, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
+      "id, order_number, status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, created_at, customer_email, store_order_items ( product_name, product_sku, quantity, unit_price, total_price ), store_order_shipping_addresses ( recipient_name, recipient_phone, recipient_email, address_line, address_line_2, city, state, postal_code, country )",
     )
     .eq("order_number", orderNumber)
     .maybeSingle();
@@ -102,6 +103,7 @@ export async function lookupStoreOrderByNumberAndEmail(
         order.store_order_items as
           | Array<{
               product_name: string;
+              product_sku: string | null;
               quantity: number;
               unit_price: string | number;
               total_price: string | number;
@@ -110,6 +112,7 @@ export async function lookupStoreOrderByNumberAndEmail(
           | undefined
       )?.map((item) => ({
         productName: String(item.product_name),
+        productSku: item.product_sku?.trim() || null,
         quantity: Number(item.quantity) || 0,
         unitPrice: Number(item.unit_price) || 0,
         totalPrice: Number(item.total_price) || 0,

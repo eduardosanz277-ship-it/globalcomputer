@@ -1,13 +1,14 @@
 import type { Locale } from "@/components/i18n/translations";
 import { escapeHtml } from "@/lib/email/escapeHtml";
 import { EMAIL_BRAND_NAME } from "@/lib/email/email-brand";
-import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
+import { wrapBrandedEmail, type BrandedEmailFooterContact } from "@/lib/email/templates/brandedEmailShell";
 
 export type LoginOtpTemplateInput = {
   locale: Locale;
   email: string;
   token: string;
   name?: string | null;
+  footerContact?: BrandedEmailFooterContact;
 };
 
 function copy(locale: Locale) {
@@ -66,5 +67,6 @@ export function renderLoginOtpEmailTemplate(
     bannerSubtitle: t.bannerSubtitle,
     preheader: t.preheader,
     bodyHtml,
+    footerContact: input.footerContact,
   });
 }

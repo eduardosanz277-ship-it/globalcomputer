@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 
 import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
 import {
@@ -29,8 +29,8 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { markLoginSuccessToast } from "@/lib/login-success-toast";
 import { Loader2 } from "lucide-react";
 import {
-  emailOtpCodeSchema,
-  emailOtpRequestSchema,
+  createEmailOtpCodeSchema,
+  createEmailOtpRequestSchema,
   type EmailOtpCodeSchema,
   type EmailOtpRequestSchema,
 } from "@/modules/auth/auth.schema";
@@ -61,7 +61,7 @@ function LoginPageContent() {
     if (!code) return null;
     const key = loginErrorKeys[code];
     return key ? t(key) : t("login.errors.default");
-  }, [searchParams, t]);
+  }, [searchParams, t, locale]);
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [emailForCode, setEmailForCode] = useState("");
@@ -70,15 +70,49 @@ function LoginPageContent() {
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [isFetchingCooldown, setIsFetchingCooldown] = useState(false);
 
+  const emailResolver = useCallback<Resolver<EmailOtpRequestSchema>>(
+    async (values, context, options) => {
+      const schema = createEmailOtpRequestSchema({
+        emailRequired: t("login.form.errors.emailRequired"),
+        emailInvalid: t("login.form.errors.emailInvalid"),
+      });
+      return zodResolver(schema)(values, context, options);
+    },
+    [t, locale],
+  );
+
+  const codeResolver = useCallback<Resolver<EmailOtpCodeSchema>>(
+    async (values, context, options) => {
+      const schema = createEmailOtpCodeSchema({
+        codeRequired: t("login.form.errors.codeRequired"),
+        codeFormat: t("login.form.errors.codeFormat"),
+      });
+      return zodResolver(schema)(values, context, options);
+    },
+    [t, locale],
+  );
+
   const emailForm = useForm<EmailOtpRequestSchema>({
-    resolver: zodResolver(emailOtpRequestSchema),
+    resolver: emailResolver,
     defaultValues: { email: "" },
   });
 
   const codeForm = useForm<EmailOtpCodeSchema>({
-    resolver: zodResolver(emailOtpCodeSchema),
+    resolver: codeResolver,
     defaultValues: { code: "" },
   });
+
+  useEffect(() => {
+    if (emailForm.formState.isSubmitted) {
+      void emailForm.trigger();
+    }
+  }, [locale, emailForm]);
+
+  useEffect(() => {
+    if (codeForm.formState.isSubmitted) {
+      void codeForm.trigger();
+    }
+  }, [locale, codeForm]);
 
   const watchedEmail = emailForm.watch("email") ?? "";
 

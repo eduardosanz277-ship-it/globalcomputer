@@ -1,5 +1,5 @@
 import type { Locale } from "@/components/i18n/translations";
-import { escapeHtml } from "@/lib/email/escapeHtml";
+import { escapeHtml, renderSkuValueForEmailHtml } from "@/lib/email/escapeHtml";
 import { EMAIL_BRAND_NAME } from "@/lib/email/email-brand";
 import type { InventoryConflictItem } from "@/modules/commerce/inventory.service";
 
@@ -68,7 +68,10 @@ function formatConflictRows(conflicts: InventoryConflictItem[]): string {
         ? escapeHtml(c.product_name)
         : `<span style="font-family:monospace;font-size:11px;color:#6b7280;">${escapeHtml(c.product_id)}</span>`;
       const displaySku = c.product_sku
-        ? `<span style="font-family:monospace;font-size:12px;color:#374151;">${escapeHtml(c.product_sku)}</span>`
+        ? renderSkuValueForEmailHtml(c.product_sku, {
+            color: "#374151",
+            fontSize: "12px",
+          })
         : `<span style="color:#9ca3af;font-size:11px;">—</span>`;
       return `
       <tr>

@@ -1,11 +1,38 @@
-import { escapeHtml } from "@/lib/email/escapeHtml";
+import { escapeHtml, renderSkuValueForEmailHtml } from "@/lib/email/escapeHtml";
 
 export type OrderEmailLineItem = {
   productName: string;
+  productSku?: string | null;
+  /** Enlace solo al nombre; el SKU va fuera del `<a>`. */
+  productUrl?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
 };
+
+export function renderOrderEmailProductName(
+  name: string,
+  fallbackProduct: string,
+  productUrl?: string | null,
+): string {
+  const label = escapeHtml(name.trim() || fallbackProduct);
+  const url = productUrl?.trim();
+  if (url) {
+    return `<a href="${escapeHtml(url)}" style="display:inline-block;font-size:14px;font-weight:600;color:#0f172a;text-decoration:underline;line-height:1.4;">${label}</a>`;
+  }
+  return `<div style="font-size:14px;font-weight:600;color:#0f172a;line-height:1.4;">${label}</div>`;
+}
+
+/** SKU siempre como texto plano (nunca dentro de un enlace). */
+export function renderOrderEmailSkuLine(sku: string): string {
+  const skuValue = renderSkuValueForEmailHtml(sku, {
+    color: "#6b7280",
+    fontSize: "12px",
+  });
+  return `<div x-apple-data-detectors="false" style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;text-decoration:none !important;mso-line-height-rule:exactly;">
+    <span x-apple-data-detectors="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#6b7280 !important;font-size:12px;text-decoration:none !important;">SKU: </span>${skuValue}
+  </div>`;
+}
 
 export function formatOrderEmailUsd(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -35,13 +62,19 @@ function renderItemsTable(
 ): string {
   const rows = items
     .map((item) => {
-      const name = escapeHtml(item.productName.trim() || fallbackProduct);
+      const nameBlock = renderOrderEmailProductName(
+        item.productName,
+        fallbackProduct,
+        item.productUrl,
+      );
+      const sku = item.productSku?.trim();
+      const skuLine = sku ? renderOrderEmailSkuLine(sku) : "";
       const qty = String(item.quantity);
       const unit = formatOrderEmailUsd(item.unitPrice);
       const total = formatOrderEmailUsd(item.totalPrice);
       return `<tr>
         <td style="padding:14px 0;border-bottom:1px solid #eef2f7;vertical-align:top;">
-          <div style="font-size:14px;font-weight:600;color:#0f172a;line-height:1.4;">${name}</div>
+          ${nameBlock}${skuLine}
           <div style="font-size:12px;color:#6b7280;margin-top:4px;">${escapeHtml(qtyLabel)}: ${qty} · ${escapeHtml(unit)}</div>
         </td>
         <td style="padding:14px 0;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right;font-size:14px;font-weight:600;color:#0f172a;">${escapeHtml(total)}</td>

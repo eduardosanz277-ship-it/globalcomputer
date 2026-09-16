@@ -40,6 +40,7 @@ import {
   orderStatusStyles,
 } from "./order-utils";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
+import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 
 type Props = {
@@ -464,8 +465,13 @@ export function OrdersSection({ orders }: Props) {
                             key={`${item.productName}-${index}`}
                             className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
                           >
-                            <td className="px-4 py-2.5 font-medium">
-                              {item.productName}
+                            <td className="px-4 py-2.5">
+                              <OrderLineProductLabel
+                                name={item.productName}
+                                sku={item.productSku}
+                                skuLabel={t("storefront.productDetail.skuLabel")}
+                                nameClassName="font-medium"
+                              />
                             </td>
                             <td className="px-4 py-2.5 tabular-nums">
                               {item.quantity}

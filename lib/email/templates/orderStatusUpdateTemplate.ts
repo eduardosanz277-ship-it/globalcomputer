@@ -1,6 +1,6 @@
 import type { EmailLocale } from "@/lib/email/order-confirmation-locale";
 import { EMAIL_BRAND_NAME } from "@/lib/email/email-brand";
-import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
+import { wrapBrandedEmail, type BrandedEmailFooterContact } from "@/lib/email/templates/brandedEmailShell";
 import {
   renderOrderTransactionalEmailBody,
   type OrderEmailBodyCopy,
@@ -28,6 +28,7 @@ export type OrderStatusUpdateTemplateInput = {
   shippingAddressLines: string[];
   orderLookupUrl: string;
   profileOrdersUrl?: string | null;
+  footerContact?: BrandedEmailFooterContact;
 };
 
 type StatusCopy = OrderEmailBodyCopy & {
@@ -238,5 +239,6 @@ export function renderOrderStatusUpdateEmailTemplate(
       orderLookupUrl: input.orderLookupUrl,
       profileOrdersUrl: input.profileOrdersUrl,
     }),
+    footerContact: input.footerContact,
   });
 }

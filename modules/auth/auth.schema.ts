@@ -23,6 +23,24 @@ export const emailOtpRequestSchema = z.object({
   email: emailRequired,
 });
 
+export type EmailOtpFormMessages = {
+  emailRequired: string;
+  emailInvalid: string;
+  codeRequired: string;
+  codeFormat: string;
+};
+
+export function createEmailOtpRequestSchema(
+  messages: Pick<EmailOtpFormMessages, "emailRequired" | "emailInvalid">,
+) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, messages.emailRequired)
+      .email(messages.emailInvalid),
+  });
+}
+
 /** Paso 2: verificar código recibido por email (el email va en estado aparte). */
 export const emailOtpCodeSchema = z.object({
   code: z
@@ -31,6 +49,18 @@ export const emailOtpCodeSchema = z.object({
     .min(1, "El código es obligatorio")
     .regex(/^\d{6}$/, "El código debe tener exactamente 6 dígitos"),
 });
+
+export function createEmailOtpCodeSchema(
+  messages: Pick<EmailOtpFormMessages, "codeRequired" | "codeFormat">,
+) {
+  return z.object({
+    code: z
+      .string()
+      .trim()
+      .min(1, messages.codeRequired)
+      .regex(/^\d{6}$/, messages.codeFormat),
+  });
+}
 
 /** Verificación interna (email + código). */
 export const emailOtpVerifySchema = z.object({

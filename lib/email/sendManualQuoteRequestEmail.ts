@@ -1,3 +1,4 @@
+import { getBrandedEmailFooterContact } from "@/lib/email/branded-email-contact.server";
 import { resolveEmailFrom } from "@/lib/email/email-brand";
 import {
   renderManualQuoteRequestEmailSubject,
@@ -23,6 +24,8 @@ export async function sendManualQuoteRequestEmail(
     return { sent: false };
   }
 
+  const footerContact = await getBrandedEmailFooterContact();
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -33,7 +36,7 @@ export async function sendManualQuoteRequestEmail(
       from,
       to: [to.trim().toLowerCase()],
       subject: renderManualQuoteRequestEmailSubject(input),
-      html: renderManualQuoteRequestEmailTemplate(input),
+      html: renderManualQuoteRequestEmailTemplate({ ...input, footerContact }),
     }),
   });
 

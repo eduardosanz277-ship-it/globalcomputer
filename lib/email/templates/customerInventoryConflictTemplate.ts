@@ -1,7 +1,7 @@
 import type { Locale } from "@/components/i18n/translations";
 import { escapeHtml } from "@/lib/email/escapeHtml";
 import { EMAIL_BRAND_NAME } from "@/lib/email/email-brand";
-import { wrapBrandedEmail } from "@/lib/email/templates/brandedEmailShell";
+import { wrapBrandedEmail, type BrandedEmailFooterContact } from "@/lib/email/templates/brandedEmailShell";
 
 export type CustomerInventoryConflictTemplateInput = {
   locale: Locale;
@@ -9,6 +9,7 @@ export type CustomerInventoryConflictTemplateInput = {
   orderNumber: string;
   totalAmount: string;
   orderLookupUrl: string;
+  footerContact?: BrandedEmailFooterContact;
 };
 
 function copy(locale: Locale) {
@@ -92,5 +93,6 @@ export function renderCustomerInventoryConflictEmailTemplate(
     bannerSubtitle: t.bannerSubtitle,
     preheader: t.preheader(input.orderNumber),
     bodyHtml,
+    footerContact: input.footerContact,
   });
 }
