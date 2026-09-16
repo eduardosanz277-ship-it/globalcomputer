@@ -35,7 +35,7 @@ export function useServerAction<TArgs extends any[], TResult>(
         options.formatError?.(error) ??
         formatClientError(error, t, { errorMessage: options.errorMessage });
       toast.error(message);
-      throw error;
+      throw new Error(message);
     } finally {
       options.onSettled?.();
     }
