@@ -12,6 +12,7 @@ import type { BrandType } from "@/modules/admin/brand-types/brand-types.types";
 import type { Brand } from "@/modules/admin/brands/brands.types";
 import { createBrandTypeAction, updateBrandTypeAction } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -81,7 +82,7 @@ export function BrandTypeFormDialog({
   }, [brands, brandType, locale]);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createBrandTypeAction,
+    bindAdminAction(createBrandTypeAction, locale),
     {
       successMessage: t("admin.brandTypes.toast.created"),
       onSuccess: () => {
@@ -92,7 +93,7 @@ export function BrandTypeFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateBrandTypeAction,
+    bindAdminAction(updateBrandTypeAction, locale),
     {
       successMessage: t("admin.brandTypes.toast.updated"),
       onSuccess: () => {

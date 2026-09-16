@@ -1,17 +1,16 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import { APP_CONFIG_KEYS, type AppConfigSettings } from "./app-config.types";
 import {
   repoGetAppConfigByKeys,
   repoUpsertAppConfigEntries,
 } from "./app-config.repository";
 import { appConfigFormSchema, type AppConfigFormValues } from "./app-config.schema";
-
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
 
 function mapRowsToSettings(
   rows: { key: string; value: unknown }[]
@@ -58,9 +57,12 @@ function mapRowsToSettings(
   };
 }
 
-export async function getAppConfigSettingsService(): Promise<AppConfigSettings> {
+export async function getAppConfigSettingsService(
+  localeInput?: unknown,
+): Promise<AppConfigSettings> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const rows = await repoGetAppConfigByKeys([
     ...APP_CONFIG_KEYS,
     // Legado (migración 20250317150000): copiar a low_stock_notifications_enabled
@@ -69,20 +71,31 @@ export async function getAppConfigSettingsService(): Promise<AppConfigSettings> 
   return mapRowsToSettings(rows);
 }
 
-export async function updateAppConfigSettingsService(input: AppConfigFormValues) {
+export async function updateAppConfigSettingsService(
+  input: AppConfigFormValues,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  const parsed = appConfigFormSchema.parse(input);
-  await repoUpsertAppConfigEntries([
-    { key: "support_email", value: parsed.supportEmail },
-    { key: "support_phone", value: parsed.supportPhone },
-    { key: "support_address", value: parsed.supportAddress },
-    {
-      key: "low_stock_notifications_enabled",
-      value: parsed.lowStockNotificationsEnabled,
-    },
-    { key: "low_stock_threshold", value: parsed.lowStockThreshold },
-    { key: "offer_amount", value: parsed.offerAmount },
-    { key: "offer_percentage", value: parsed.offerPercentage },
-  ]);
+  ensureAdminAccess(current?.role, locale);
+  const parsed = appConfigFormSchema.safeParse(input);
+  if (!parsed.success) {
+    throw adminInvalidDataError(locale, parsed.error.issues[0]?.message);
+  }
+  try {
+    await repoUpsertAppConfigEntries([
+      { key: "support_email", value: parsed.data.supportEmail },
+      { key: "support_phone", value: parsed.data.supportPhone },
+      { key: "support_address", value: parsed.data.supportAddress },
+      {
+        key: "low_stock_notifications_enabled",
+        value: parsed.data.lowStockNotificationsEnabled,
+      },
+      { key: "low_stock_threshold", value: parsed.data.lowStockThreshold },
+      { key: "offer_amount", value: parsed.data.offerAmount },
+      { key: "offer_percentage", value: parsed.data.offerPercentage },
+    ]);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "settings", "saveFailed");
+  }
 }

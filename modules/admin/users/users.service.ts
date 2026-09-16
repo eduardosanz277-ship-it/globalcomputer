@@ -6,6 +6,12 @@ import type { AdminUserDetail } from "./users.types";
 import { sendBusinessApprovalEmail } from "@/lib/email/sendBusinessApprovalEmail";
 import { sendBusinessRejectionEmail } from "@/lib/email/sendBusinessRejectionEmail";
 import {
+  ensureAdminAccess,
+  resolveAdminLocale,
+  userAdminError,
+  userAdminErrorWithDetail,
+} from "@/modules/admin/admin-errors";
+import {
   repoApproveBusinessRegistration,
   repoRejectBusinessRegistration,
   repoGetAllUsers,
@@ -13,27 +19,35 @@ import {
   repoDeleteAuthUser,
 } from "./users.repository";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-export async function getAllUsersService() {
+export async function getAllUsersService(localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoGetAllUsers();
 }
 
-export async function updateUserRoleService(userId: string, role: UserRole) {
+export async function updateUserRoleService(
+  userId: string,
+  role: UserRole,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoUpdateUserRole(userId, role);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoUpdateUserRole(userId, role);
+  } catch {
+    throw userAdminError(locale, "updateRoleFailed");
+  }
 }
 
-export async function approveBusinessRegistrationService(userId: string) {
+export async function approveBusinessRegistrationService(
+  userId: string,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin
@@ -43,13 +57,17 @@ export async function approveBusinessRegistrationService(userId: string) {
     .maybeSingle();
 
   if (!profile || profile.role !== "BUSINESS") {
-    throw new Error("Solo se pueden aprobar cuentas de tipo empresa.");
+    throw userAdminError(locale, "approveBusinessOnly");
   }
   if (profile.business_registration_status === "approved") {
     return { alreadyApproved: true as const };
   }
 
-  await repoApproveBusinessRegistration(userId);
+  try {
+    await repoApproveBusinessRegistration(userId);
+  } catch {
+    throw userAdminError(locale, "approveFailed");
+  }
 
   const { data: authData } = await admin.auth.admin.getUserById(userId);
   const email = authData?.user?.email;
@@ -64,18 +82,14 @@ export async function approveBusinessRegistrationService(userId: string) {
         recipientLocale,
       );
       if (!sent) {
-        throw new Error(
-          "Falta RESEND_API_KEY; no se envió el correo de aviso."
-        );
+        throw userAdminError(locale, "missingResendKey");
       }
     } catch (e) {
       const detail =
         e instanceof Error
           ? e.message
-          : "Error al contactar con el servicio de correo.";
-      throw new Error(
-        `La cuenta quedó aprobada en el sistema, pero el correo no se pudo enviar: ${detail}`
-      );
+          : userAdminError(locale, "emailServiceFailed").message;
+      throw userAdminErrorWithDetail(locale, "approveEmailFailed", detail);
     }
   }
 
@@ -83,9 +97,13 @@ export async function approveBusinessRegistrationService(userId: string) {
 }
 
 /** Marca la solicitud como rechazada (pendiente, sin estado o aprobada). */
-export async function rejectBusinessRegistrationService(userId: string) {
+export async function rejectBusinessRegistrationService(
+  userId: string,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin
@@ -95,13 +113,17 @@ export async function rejectBusinessRegistrationService(userId: string) {
     .maybeSingle();
 
   if (!profile || profile.role !== "BUSINESS") {
-    throw new Error("Solo se pueden rechazar solicitudes de tipo empresa.");
+    throw userAdminError(locale, "rejectBusinessOnly");
   }
   if (profile.business_registration_status === "rejected") {
-    throw new Error("Esta solicitud ya está rechazada.");
+    throw userAdminError(locale, "alreadyRejected");
   }
 
-  await repoRejectBusinessRegistration(userId);
+  try {
+    await repoRejectBusinessRegistration(userId);
+  } catch {
+    throw userAdminError(locale, "rejectFailed");
+  }
 
   const { data: authData } = await admin.auth.admin.getUserById(userId);
   const email = authData?.user?.email;
@@ -112,32 +134,29 @@ export async function rejectBusinessRegistrationService(userId: string) {
       );
       const { sent } = await sendBusinessRejectionEmail(email, recipientLocale);
       if (!sent) {
-        throw new Error(
-          "Falta RESEND_API_KEY; no se envió el correo de aviso.",
-        );
+        throw userAdminError(locale, "missingResendKey");
       }
     } catch (e) {
       const detail =
         e instanceof Error
           ? e.message
-          : "Error al contactar con el servicio de correo.";
-      throw new Error(
-        `La solicitud quedó rechazada en el sistema, pero el correo no se pudo enviar: ${detail}`,
-      );
+          : userAdminError(locale, "emailServiceFailed").message;
+      throw userAdminErrorWithDetail(locale, "rejectEmailFailed", detail);
     }
   }
 
   return { success: true as const };
 }
 
-export async function deleteUserService(userId: string) {
+export async function deleteUserService(userId: string, localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   if (!current) {
-    throw new Error("No autenticado");
+    throw userAdminError(locale, "notAuthenticated");
   }
   if (current.id === userId) {
-    throw new Error("No puedes eliminar tu propio usuario");
+    throw userAdminError(locale, "cannotDeleteSelf");
   }
 
   const admin = createSupabaseAdminClient();
@@ -148,24 +167,30 @@ export async function deleteUserService(userId: string) {
     .maybeSingle();
 
   if (profile?.role === "ADMIN") {
-    throw new Error("No se puede eliminar un usuario administrador");
+    throw userAdminError(locale, "cannotDeleteAdmin");
   }
 
-  await repoDeleteAuthUser(userId);
+  try {
+    await repoDeleteAuthUser(userId);
+  } catch {
+    throw userAdminError(locale, "deleteFailed");
+  }
 }
 
 export async function getUserDetailService(
-  userId: string
+  userId: string,
+  localeInput?: unknown,
 ): Promise<AdminUserDetail> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   const admin = createSupabaseAdminClient();
   const { data: authData, error: authErr } =
     await admin.auth.admin.getUserById(userId);
 
   if (authErr || !authData?.user) {
-    throw new Error("Usuario no encontrado");
+    throw userAdminError(locale, "notFound");
   }
 
   const user = authData.user;
@@ -208,4 +233,3 @@ export async function getUserDetailService(
     emailConfirmedAt: user.email_confirmed_at ?? null,
   };
 }
-

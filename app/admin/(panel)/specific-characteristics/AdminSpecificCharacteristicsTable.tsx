@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteSpecificCharacteristicAction } from "./actions";
 import { SpecificCharacteristicFormDialog } from "./SpecificCharacteristicFormDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -78,7 +79,7 @@ function RowActions({
   const localizedGeneralName =
     locale === "en" ? (row.generalNameEn ?? row.generalName) : row.generalName;
   const { executeAsync, isPending } = useServerAction(
-    deleteSpecificCharacteristicAction,
+    bindAdminAction(deleteSpecificCharacteristicAction, locale),
     {
       successMessage: t("admin.specificCharacteristics.toast.archived"),
       errorMessage: t("admin.specificCharacteristics.toast.error"),

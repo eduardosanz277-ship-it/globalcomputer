@@ -1,5 +1,9 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoDeleteProductReviewAdmin,
   repoListProductReviewsAdmin,
@@ -7,31 +11,40 @@ import {
 } from "./product-reviews.repository";
 import type { AdminProductReview } from "./product-reviews.types";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-export async function listProductReviewsAdminService(): Promise<
-  AdminProductReview[]
-> {
+export async function listProductReviewsAdminService(
+  localeInput?: unknown,
+): Promise<AdminProductReview[]> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListProductReviewsAdmin();
 }
 
 export async function updateProductReviewActiveAdminService(
   id: string,
   active: boolean,
+  localeInput?: unknown,
 ): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoUpdateProductReviewActiveAdmin(id, active);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoUpdateProductReviewActiveAdmin(id, active);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "productReviews", "toggleFailed");
+  }
 }
 
-export async function deleteProductReviewAdminService(id: string): Promise<void> {
+export async function deleteProductReviewAdminService(
+  id: string,
+  localeInput?: unknown,
+): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoDeleteProductReviewAdmin(id);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoDeleteProductReviewAdmin(id);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "productReviews", "deleteFailed");
+  }
 }

@@ -1,6 +1,14 @@
 "use server";
 
 import {
+  adminInvalidDataError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
+import {
+  runServerAction,
+  type ServerActionResult,
+} from "@/lib/errors/run-server-action";
+import {
   createShippingRateAdminService,
   deleteShippingRateAdminService,
   setShippingRateActiveAdminService,
@@ -12,49 +20,110 @@ import {
   shippingSettingsFormSchema,
 } from "./shipping.schema";
 import type {
+  ShippingRate,
   ShippingRateInput,
+  ShippingSettings,
   ShippingSettingsInput,
 } from "./shipping.types";
 
 export async function updateShippingSettingsAdminAction(
   raw: ShippingSettingsInput,
-) {
-  const parsed = shippingSettingsFormSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
-  }
-  return updateShippingSettingsAdminService(parsed.data);
+  locale?: string,
+): Promise<ServerActionResult<ShippingSettings>> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.shippingSettings.saveFailed",
+    async () => {
+      const parsed = shippingSettingsFormSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw adminInvalidDataError(
+          resolvedLocale,
+          parsed.error.issues[0]?.message,
+        );
+      }
+      return updateShippingSettingsAdminService(parsed.data, resolvedLocale);
+    },
+  );
 }
 
-export async function createShippingRateAdminAction(raw: ShippingRateInput) {
-  const parsed = shippingRateFormSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
-  }
-  return createShippingRateAdminService(parsed.data);
+export async function createShippingRateAdminAction(
+  raw: ShippingRateInput,
+  locale?: string,
+): Promise<ServerActionResult<ShippingRate>> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.shippingRates.createFailed",
+    async () => {
+      const parsed = shippingRateFormSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw adminInvalidDataError(
+          resolvedLocale,
+          parsed.error.issues[0]?.message,
+        );
+      }
+      return createShippingRateAdminService(parsed.data, resolvedLocale);
+    },
+  );
 }
 
 export async function updateShippingRateAdminAction(
   id: string,
   raw: ShippingRateInput,
-) {
-  if (!id?.trim()) throw new Error("Identificador inválido");
-  const parsed = shippingRateFormSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos");
-  }
-  return updateShippingRateAdminService(id, parsed.data);
+  locale?: string,
+): Promise<ServerActionResult<ShippingRate>> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.shippingRates.updateFailed",
+    async () => {
+      if (!id?.trim()) {
+        throw adminInvalidDataError(resolvedLocale);
+      }
+      const parsed = shippingRateFormSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw adminInvalidDataError(
+          resolvedLocale,
+          parsed.error.issues[0]?.message,
+        );
+      }
+      return updateShippingRateAdminService(id, parsed.data, resolvedLocale);
+    },
+  );
 }
 
-export async function deleteShippingRateAdminAction(id: string) {
-  if (!id?.trim()) throw new Error("Identificador inválido");
-  await deleteShippingRateAdminService(id);
+export async function deleteShippingRateAdminAction(
+  id: string,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.shippingRates.deleteFailed",
+    async () => {
+      if (!id?.trim()) {
+        throw adminInvalidDataError(resolvedLocale);
+      }
+      await deleteShippingRateAdminService(id, resolvedLocale);
+    },
+  );
 }
 
 export async function setShippingRateActiveAdminAction(
   id: string,
   active: boolean,
-) {
-  if (!id?.trim()) throw new Error("Identificador inválido");
-  return setShippingRateActiveAdminService(id, active);
+  locale?: string,
+): Promise<ServerActionResult<ShippingRate>> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.shippingRates.toggleFailed",
+    async () => {
+      if (!id?.trim()) {
+        throw adminInvalidDataError(resolvedLocale);
+      }
+      return setShippingRateActiveAdminService(id, active, resolvedLocale);
+    },
+  );
 }

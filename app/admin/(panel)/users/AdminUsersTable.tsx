@@ -22,6 +22,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { rejectBusinessRegistrationAction, deleteUserAction } from "./actions";
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import type { UserRole } from "@/modules/auth/auth.types";
@@ -107,7 +108,7 @@ function UsersRowActionsMenu({
   onViewDetail: () => void;
   onDeleteSuccess: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -119,7 +120,7 @@ function UsersRowActionsMenu({
   } | null>(null);
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
-    useServerAction(rejectBusinessRegistrationAction, {
+    useServerAction(bindAdminAction(rejectBusinessRegistrationAction, locale), {
       successMessage: t("admin.users.toast.rejected"),
       errorMessage: t("admin.users.toast.rejectError"),
       onSuccess: () => {
@@ -130,7 +131,7 @@ function UsersRowActionsMenu({
     });
 
   const { executeAsync: deleteUserAsync, isPending: deletingUser } =
-    useServerAction(deleteUserAction, {
+    useServerAction(bindAdminAction(deleteUserAction, locale), {
       successMessage: t("admin.users.toast.deleted"),
       errorMessage: t("admin.users.toast.deleteError"),
       onSuccess: () => {

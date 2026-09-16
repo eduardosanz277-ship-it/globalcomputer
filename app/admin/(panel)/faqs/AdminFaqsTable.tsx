@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteFaqAdminAction } from "./actions";
 import { FaqFormDialog } from "./FaqFormDialog";
 import { AdminEditDeleteRowMenu } from "@/components/admin/admin-edit-delete-row-menu";
@@ -63,7 +64,10 @@ function RowActions({
   t: (key: string) => string;
 }) {
   const router = useRouter();
-  const { executeAsync, isPending } = useServerAction(deleteFaqAdminAction, {
+  const { locale } = useI18n();
+  const { executeAsync, isPending } = useServerAction(
+    bindAdminAction(deleteFaqAdminAction, locale),
+    {
     successMessage: t("admin.faqs.toast.deleted"),
     errorMessage: t("admin.faqs.toast.deleteError"),
     onSuccess: () => {

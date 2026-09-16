@@ -14,6 +14,7 @@ import {
   updateCategoryAdminAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
   const errors = form.formState.errors;
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createCategoryAdminAction,
+    bindAdminAction(createCategoryAdminAction, locale),
     {
       successMessage: t("admin.categories.toast.created"),
       onSuccess: () => {
@@ -56,7 +57,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateCategoryAdminAction,
+    bindAdminAction(updateCategoryAdminAction, locale),
     {
       successMessage: t("admin.categories.toast.updated"),
       onSuccess: () => {

@@ -720,6 +720,134 @@ export const es = {
     common: {
       actionEdit: "Editar",
     },
+    errors: {
+      common: {
+        accessDenied: "Acceso restringido a administradores",
+        invalidData: "Datos inválidos",
+      },
+      categories: {
+        createFailed: "No se pudo crear la categoría",
+        updateFailed: "No se pudo actualizar la categoría",
+        archiveFailed: "No se pudo archivar la categoría",
+        duplicateName: "Ya existe una categoría activa con ese nombre.",
+        foreignKey:
+          "No se puede completar la operación: hay productos u otras filas vinculadas a esta categoría.",
+      },
+      subcategories: {
+        createFailed: "No se pudo crear la subcategoría",
+        updateFailed: "No se pudo actualizar la subcategoría",
+        archiveFailed: "No se pudo archivar la subcategoría",
+        duplicateName:
+          "Ya existe una subcategoría activa con ese nombre en la categoría seleccionada.",
+        foreignKey:
+          "No se puede completar la operación: hay productos u otras filas vinculadas a esta subcategoría.",
+      },
+      brands: {
+        createFailed: "No se pudo crear la marca",
+        updateFailed: "No se pudo actualizar la marca",
+        deleteFailed: "No se pudo eliminar la marca",
+        duplicateName: "Ya existe una marca con ese nombre.",
+        foreignKey:
+          "No se puede eliminar: existen productos u otros registros vinculados a esta marca.",
+      },
+      brandTypes: {
+        createFailed: "No se pudo crear el tipo",
+        updateFailed: "No se pudo actualizar el tipo",
+        deleteFailed: "No se pudo eliminar el tipo",
+        duplicateName:
+          "Ya existe un tipo con ese nombre para la marca seleccionada.",
+        foreignKey:
+          "No se puede eliminar: existen productos u otros registros vinculados a este tipo.",
+      },
+      generalCharacteristics: {
+        createFailed: "No se pudo crear la característica",
+        updateFailed: "No se pudo actualizar la característica",
+        deleteFailed: "No se pudo eliminar la característica",
+        duplicateName: "Ya existe una característica general con ese nombre.",
+        foreignKey:
+          "No se puede eliminar: existen productos u otros registros vinculados a esta característica.",
+      },
+      specificCharacteristics: {
+        createFailed: "No se pudo crear la característica específica",
+        updateFailed: "No se pudo actualizar la característica específica",
+        deleteFailed: "No se pudo eliminar la característica específica",
+        duplicateName:
+          "Ya existe una característica específica con ese nombre para la característica general seleccionada.",
+        foreignKey:
+          "No se puede eliminar: existen productos u otros registros vinculados a esta característica específica.",
+      },
+      faqs: {
+        createFailed: "No se pudo crear la pregunta frecuente",
+        updateFailed: "No se pudo actualizar la pregunta frecuente",
+        deleteFailed: "No se pudo eliminar la pregunta frecuente",
+        duplicateName: "Ya existe una FAQ con el mismo contenido.",
+      },
+      products: {
+        createFailed: "No se pudo crear el producto",
+        updateFailed: "No se pudo actualizar el producto",
+        deleteFailed: "No se pudo eliminar el producto",
+        duplicateSku: "Ya existe un producto con ese SKU.",
+        duplicateData: "Ya existe un producto con esa combinación de datos.",
+        foreignKey:
+          "No se puede guardar o eliminar el producto por relaciones vinculadas (marca, tipo, imágenes o características). Comprueba que el tipo por marca corresponda a la marca seleccionada.",
+        missingRequired: "Faltan datos obligatorios para guardar el producto.",
+        validationFailed:
+          "Los datos no cumplen las reglas de validación en la base de datos.",
+        permissionDenied: "No tienes permiso para realizar esta operación.",
+      },
+      services: {
+        createFailed: "No se pudo crear el servicio",
+        updateFailed: "No se pudo actualizar el servicio",
+        deleteFailed: "No se pudo eliminar el servicio",
+        foreignKey:
+          "No se puede eliminar: existen imágenes u otros registros vinculados a este servicio.",
+        duplicatePrimary:
+          "Conflicto al guardar las imágenes (imagen principal). Si persiste, recarga e inténtalo de nuevo.",
+      },
+      shippingSettings: {
+        saveFailed: "No se pudo guardar la configuración de envío",
+      },
+      shippingRates: {
+        createFailed: "No se pudo crear la tarifa de envío",
+        updateFailed: "No se pudo actualizar la tarifa de envío",
+        deleteFailed: "No se pudo eliminar la tarifa de envío",
+        toggleFailed: "No se pudo cambiar el estado de la tarifa",
+        overlap: "El rango se solapa con la tarifa {min} – {max}",
+      },
+      settings: {
+        saveFailed: "No se pudo guardar la configuración",
+      },
+      users: {
+        approveBusinessOnly: "Solo se pueden aprobar cuentas de tipo empresa.",
+        rejectBusinessOnly: "Solo se pueden rechazar solicitudes de tipo empresa.",
+        alreadyRejected: "Esta solicitud ya está rechazada.",
+        notAuthenticated: "No autenticado",
+        cannotDeleteSelf: "No puedes eliminar tu propio usuario",
+        cannotDeleteAdmin: "No se puede eliminar un usuario administrador",
+        notFound: "Usuario no encontrado",
+        updateRoleFailed: "No se pudo actualizar el rol del usuario",
+        deleteFailed: "No se pudo eliminar el usuario",
+        approveFailed: "No se pudo aprobar la solicitud",
+        rejectFailed: "No se pudo rechazar la solicitud",
+        missingResendKey: "Falta RESEND_API_KEY; no se envió el correo de aviso.",
+        approveEmailFailed:
+          "La cuenta quedó aprobada en el sistema, pero el correo no se pudo enviar: {detail}",
+        rejectEmailFailed:
+          "La solicitud quedó rechazada en el sistema, pero el correo no se pudo enviar: {detail}",
+        emailServiceFailed: "Error al contactar con el servicio de correo.",
+      },
+      contacts: {
+        markReadFailed: "No se pudo marcar el mensaje como leído",
+      },
+      siteReviews: {
+        toggleFailed: "No se pudo actualizar la reseña del sitio",
+        deleteFailed: "No se pudo eliminar la reseña del sitio",
+      },
+      productReviews: {
+        toggleFailed: "No se pudo actualizar la reseña del producto",
+        deleteFailed: "No se pudo eliminar la reseña del producto",
+      },
+    },
     products: {
       title: "Productos",
       description:

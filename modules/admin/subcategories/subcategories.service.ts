@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import { subcategoryFormSchema } from "./subcategories.schema";
 import {
   repoCreateSubcategoryAdmin,
@@ -13,74 +18,62 @@ import type {
 } from "./subcategories.types";
 import { slugify } from "@/lib/slugify";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/duplicate key|23505|unique constraint/i.test(msg)) {
-    return new Error(
-      "Ya existe una subcategoría activa con ese nombre en la categoría seleccionada.",
-    );
-  }
-  if (/foreign key|23503|violates/i.test(msg)) {
-    return new Error(
-      "No se puede completar la operación: hay productos u otras filas vinculadas a esta subcategoría.",
-    );
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
-
 export async function getAllSubcategoriesAdminService() {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListAllSubcategoriesAdmin();
 }
 
 export async function createSubcategoryAdminService(
   payload: SubcategoryAdminInsert,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = subcategoryFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     return await repoCreateSubcategoryAdmin({ ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear la subcategoría");
+    throw mapAdminEntityDbError(e, locale, "subcategories", "createFailed");
   }
 }
 
 export async function updateSubcategoryAdminService(
   id: string,
   payload: SubcategoryAdminUpdate,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = subcategoryFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     await repoUpdateSubcategoryAdmin(id, { ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar la subcategoría");
+    throw mapAdminEntityDbError(e, locale, "subcategories", "updateFailed");
   }
 }
 
-export async function softDeleteSubcategoryAdminService(id: string) {
+export async function softDeleteSubcategoryAdminService(
+  id: string,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     await repoSoftDeleteSubcategoryAdmin(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo archivar la subcategoría");
+    throw mapAdminEntityDbError(e, locale, "subcategories", "archiveFailed");
   }
 }

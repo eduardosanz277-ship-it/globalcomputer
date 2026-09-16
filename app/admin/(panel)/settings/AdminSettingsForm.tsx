@@ -18,6 +18,7 @@ import { Label, RequiredMark } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { updateAppConfigAction } from "@/modules/admin/app-config/app-config.actions";
 import {
   createAppConfigFormSchema,
@@ -65,7 +66,9 @@ export function AdminSettingsForm({ initial }: Props) {
 
   const lowStockAlertsOn = form.watch("lowStockNotificationsEnabled");
 
-  const { execute, isPending } = useServerAction(updateAppConfigAction, {
+  const { execute, isPending } = useServerAction(
+    bindAdminAction(updateAppConfigAction, locale),
+    {
     successMessage: t("admin.settings.toast.saved"),
   });
 

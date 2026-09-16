@@ -10,6 +10,7 @@ import { Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteServiceAction } from "./actions";
 import { ServiceFormDialog } from "./ServiceFormDialog";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
@@ -19,6 +20,7 @@ import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ServiceProfileCard } from "@/components/dashboard/service-profile-card";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import type { Locale } from "@/components/i18n/translations";
 import {
   Tooltip,
   TooltipContent,
@@ -79,18 +81,21 @@ function RowActions({
   t,
 }: {
   row: Service;
-  locale: string;
+  locale: Locale;
   onEdit: () => void;
   t: (key: string) => string;
 }) {
   const router = useRouter();
-  const { executeAsync, isPending } = useServerAction(deleteServiceAction, {
-    successMessage: t("admin.services.toast.deleted"),
-    errorMessage: t("admin.services.toast.deleteError"),
-    onSuccess: () => {
-      router.refresh();
+  const { executeAsync, isPending } = useServerAction(
+    bindAdminAction(deleteServiceAction, locale),
+    {
+      successMessage: t("admin.services.toast.deleted"),
+      errorMessage: t("admin.services.toast.deleteError"),
+      onSuccess: () => {
+        router.refresh();
+      },
     },
-  });
+  );
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({

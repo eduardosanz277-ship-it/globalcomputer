@@ -15,6 +15,7 @@ import {
   updateSubcategoryAdminAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,7 @@ export function SubcategoryFormDialog({
   }, [categories, locale, subcategory]);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createSubcategoryAdminAction,
+    bindAdminAction(createSubcategoryAdminAction, locale),
     {
       successMessage: t("admin.subcategories.toast.created"),
       onSuccess: () => {
@@ -97,7 +98,7 @@ export function SubcategoryFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateSubcategoryAdminAction,
+    bindAdminAction(updateSubcategoryAdminAction, locale),
     {
       successMessage: t("admin.subcategories.toast.updated"),
       onSuccess: () => {

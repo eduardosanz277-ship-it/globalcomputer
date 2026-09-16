@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { adminServiceLikeInputClassName } from "@/components/admin/admin-form-classes";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { updateShippingSettingsAdminAction } from "@/modules/shipping/shipping.actions";
 import {
   shippingSettingsFormSchema,
@@ -40,7 +41,7 @@ type WaitUnitOption = {
 };
 
 export function ShippingGeneralForm({ initial }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const form = useForm<ShippingSettingsFormValues>({
     resolver: zodResolver(shippingSettingsFormSchema),
     defaultValues: {
@@ -79,7 +80,7 @@ export function ShippingGeneralForm({ initial }: Props) {
   );
 
   const { execute, isPending } = useServerAction(
-    updateShippingSettingsAdminAction,
+    bindAdminAction(updateShippingSettingsAdminAction, locale),
     {
       successMessage: t("admin.shipping.general.toast.saved"),
     },

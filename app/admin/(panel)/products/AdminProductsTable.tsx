@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteProductAction } from "./actions";
 import { ProductFormDialog } from "./ProductFormDialog";
 import { ProductDetailDrawer } from "./ProductDetailDrawer";
@@ -189,7 +190,7 @@ export function AdminProductsTable({
   const [editing, setEditing] = useState<Product | null>(null);
   const [viewing, setViewing] = useState<Product | null>(null);
   const { executeAsync: executeDeleteAsync, isPending: isDeleting } =
-    useServerAction(deleteProductAction, {
+    useServerAction(bindAdminAction(deleteProductAction, locale), {
       successMessage: t("admin.products.toast.deleted"),
       errorMessage: t("admin.products.toast.deleteError"),
       onSuccess: () => {

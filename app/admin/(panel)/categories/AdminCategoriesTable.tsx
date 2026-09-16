@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import type { CategoryAdmin } from "@/modules/admin/categories/categories.types";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
@@ -73,7 +74,7 @@ function RowActions({
   const localizedRowName =
     locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
-    softDeleteCategoryAdminAction,
+    bindAdminAction(softDeleteCategoryAdminAction, locale),
     {
       successMessage: t("admin.categories.toast.archived"),
       errorMessage: t("admin.categories.toast.error"),

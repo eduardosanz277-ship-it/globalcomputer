@@ -12,17 +12,47 @@ import type {
   ProductInsert,
   ProductUpdate,
 } from "@/modules/admin/products/products.types";
+import {
+  runServerAction,
+  type ServerActionResult,
+} from "@/lib/errors/run-server-action";
+import { resolveAdminLocale } from "@/modules/admin/admin-errors";
 
-export async function createProductAction(values: ProductInsert) {
-  await createProductService(values);
+export async function createProductAction(
+  values: ProductInsert,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.products.createFailed",
+    () => createProductService(values, undefined, 0, undefined, null, undefined, resolvedLocale),
+  );
 }
 
-export async function updateProductAction(id: string, values: ProductUpdate) {
-  await updateProductService(id, values);
+export async function updateProductAction(
+  id: string,
+  values: ProductUpdate,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.products.updateFailed",
+    () => updateProductService(id, values, undefined, 0, undefined, undefined, undefined, null, undefined, resolvedLocale),
+  );
 }
 
-export async function deleteProductAction(id: string) {
-  await deleteProductService(id);
+export async function deleteProductAction(
+  id: string,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.products.deleteFailed",
+    () => deleteProductService(id, resolvedLocale),
+  );
 }
 
 export async function createProductWithImageAction(
@@ -32,14 +62,22 @@ export async function createProductWithImageAction(
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
-) {
-  await createProductService(
-    values,
-    imageFiles,
-    primaryImageIndex ?? 0,
-    characteristicValues,
-    manualPdfFile,
-    accessories,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.products.createFailed",
+    () =>
+      createProductService(
+        values,
+        imageFiles,
+        primaryImageIndex ?? 0,
+        characteristicValues,
+        manualPdfFile,
+        accessories,
+        resolvedLocale,
+      ),
   );
 }
 
@@ -53,16 +91,24 @@ export async function updateProductWithImageAction(
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
-) {
-  await updateProductService(
-    id,
-    values,
-    imageFiles,
-    primaryImageIndex ?? 0,
-    updatedExistingImages,
-    removedImageIds,
-    characteristicValues,
-    manualPdfFile,
-    accessories,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.products.updateFailed",
+    () =>
+      updateProductService(
+        id,
+        values,
+        imageFiles,
+        primaryImageIndex ?? 0,
+        updatedExistingImages,
+        removedImageIds,
+        characteristicValues,
+        manualPdfFile,
+        accessories,
+        resolvedLocale,
+      ),
   );
 }

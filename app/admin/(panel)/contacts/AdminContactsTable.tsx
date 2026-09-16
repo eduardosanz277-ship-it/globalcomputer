@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { appToolbarSelectStyles } from "@/components/ui/react-select-app-styles";
 import { cn } from "@/utils/cn";
 
@@ -95,7 +96,7 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
   const openedQueryMessageIdRef = useRef<string | null>(null);
 
   const { executeAsync: executeMarkRead } = useServerAction(
-    markContactMessageReadAdminAction,
+    bindAdminAction(markContactMessageReadAdminAction, locale),
     {
       errorMessage: t("admin.contacts.toast.markReadError"),
     },

@@ -18,6 +18,7 @@ import { FilterX, Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteGeneralCharacteristicAction } from "./actions";
 import { GeneralCharacteristicFormDialog } from "./GeneralCharacteristicFormDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -68,7 +69,7 @@ function RowActions({
   const localizedRowName =
     locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
-    deleteGeneralCharacteristicAction,
+    bindAdminAction(deleteGeneralCharacteristicAction, locale),
     {
       successMessage: t("admin.generalCharacteristics.toast.archived"),
       errorMessage: t("admin.generalCharacteristics.toast.error"),

@@ -11,6 +11,7 @@ import {
 import type { FaqAdmin } from "@/modules/admin/faqs/faqs.types";
 import { createFaqAdminAction, updateFaqAdminAction } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
   const { register } = form;
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createFaqAdminAction,
+    bindAdminAction(createFaqAdminAction, locale),
     {
       successMessage: t("admin.faqs.toast.created"),
       onSuccess: () => {
@@ -71,7 +72,7 @@ export function FaqFormDialog({ open, onOpenChange, faq }: Props) {
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateFaqAdminAction,
+    bindAdminAction(updateFaqAdminAction, locale),
     {
       successMessage: t("admin.faqs.toast.updated"),
       onSuccess: () => {

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { formatUsd } from "@/components/store/store-cart-format";
 import { cn } from "@/utils/cn";
 import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
@@ -55,9 +56,9 @@ function ShippingRateRowActions({
   onEdit: () => void;
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { executeAsync, isPending } = useServerAction(
-    deleteShippingRateAdminAction,
+    bindAdminAction(deleteShippingRateAdminAction, locale),
     {
       successMessage: t("admin.shipping.rates.toast.deleted"),
       errorMessage: t("admin.shipping.rates.toast.deleteError"),
@@ -109,7 +110,7 @@ export function AdminShippingRatesTable({
   } | null>(null);
 
   const { executeAsync: executeToggle } = useServerAction(
-    setShippingRateActiveAdminAction,
+    bindAdminAction(setShippingRateActiveAdminAction, locale),
     {
       errorMessage: t("admin.shipping.rates.toast.updateError"),
     },

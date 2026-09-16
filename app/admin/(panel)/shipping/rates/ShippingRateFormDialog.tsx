@@ -15,6 +15,7 @@ import {
   updateShippingRateAdminAction,
 } from "@/modules/shipping/shipping.actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export function ShippingRateFormDialog({
   rate,
 }: Props) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const form = useForm<ShippingRateFormValues>({
     resolver: zodResolver(shippingRateFormSchema),
     defaultValues: emptyValues(),
@@ -71,7 +72,7 @@ export function ShippingRateFormDialog({
   const [rangeLive, setRangeLive] = useState(false);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createShippingRateAdminAction,
+    bindAdminAction(createShippingRateAdminAction, locale),
     {
       successMessage: t("admin.shipping.rates.toast.created"),
       onSuccess: () => {
@@ -82,7 +83,7 @@ export function ShippingRateFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateShippingRateAdminAction,
+    bindAdminAction(updateShippingRateAdminAction, locale),
     {
       successMessage: t("admin.shipping.rates.toast.updated"),
       onSuccess: () => {

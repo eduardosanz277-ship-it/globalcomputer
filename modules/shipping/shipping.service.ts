@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+  shippingRateOverlapError,
+} from "@/modules/admin/admin-errors";
 import { calculateShipping } from "./shipping.calculator";
 import { findOverlappingRate } from "./shipping.calculator";
 import {
@@ -23,33 +28,39 @@ import type {
   ShippingSettingsInput,
 } from "./shipping.types";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
 export async function getShippingSettingsService(): Promise<ShippingSettings> {
   return repoGetShippingSettings();
 }
 
-export async function getShippingSettingsAdminService(): Promise<ShippingSettings> {
+export async function getShippingSettingsAdminService(
+  localeInput?: unknown,
+): Promise<ShippingSettings> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoGetShippingSettings();
 }
 
 export async function updateShippingSettingsAdminService(
   input: ShippingSettingsInput,
+  localeInput?: unknown,
 ): Promise<ShippingSettings> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  return repoUpdateShippingSettings(input);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    return await repoUpdateShippingSettings(input);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "shippingSettings", "saveFailed");
+  }
 }
 
-export async function listShippingRatesAdminService(): Promise<ShippingRate[]> {
+export async function listShippingRatesAdminService(
+  localeInput?: unknown,
+): Promise<ShippingRate[]> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListShippingRates();
 }
 
@@ -59,48 +70,78 @@ export async function listActiveShippingRatesService(): Promise<ShippingRate[]> 
 
 export async function createShippingRateAdminService(
   input: ShippingRateInput,
+  localeInput?: unknown,
 ): Promise<ShippingRate> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const existing = await repoListShippingRates();
   const overlap = findOverlappingRate(input, existing);
   if (overlap) {
-    throw new Error(
-      `El rango se solapa con la tarifa ${overlap.minAmount} – ${overlap.maxAmount}`,
+    throw shippingRateOverlapError(
+      locale,
+      overlap.minAmount,
+      overlap.maxAmount,
     );
   }
-  return repoCreateShippingRate(input);
+  try {
+    return await repoCreateShippingRate(input);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "shippingRates", "createFailed");
+  }
 }
 
 export async function updateShippingRateAdminService(
   id: string,
   input: ShippingRateInput,
+  localeInput?: unknown,
 ): Promise<ShippingRate> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const existing = await repoListShippingRates();
   const overlap = findOverlappingRate(input, existing, id);
   if (overlap) {
-    throw new Error(
-      `El rango se solapa con la tarifa ${overlap.minAmount} – ${overlap.maxAmount}`,
+    throw shippingRateOverlapError(
+      locale,
+      overlap.minAmount,
+      overlap.maxAmount,
     );
   }
-  return repoUpdateShippingRate(id, input);
+  try {
+    return await repoUpdateShippingRate(id, input);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "shippingRates", "updateFailed");
+  }
 }
 
-export async function deleteShippingRateAdminService(id: string): Promise<void> {
+export async function deleteShippingRateAdminService(
+  id: string,
+  localeInput?: unknown,
+): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoDeleteShippingRate(id);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoDeleteShippingRate(id);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "shippingRates", "deleteFailed");
+  }
 }
 
 export async function setShippingRateActiveAdminService(
   id: string,
   active: boolean,
+  localeInput?: unknown,
 ): Promise<ShippingRate> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  return repoSetShippingRateActive(id, active);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    return await repoSetShippingRateActive(id, active);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "shippingRates", "toggleFailed");
+  }
 }
 
 export async function quoteShippingService(input: {

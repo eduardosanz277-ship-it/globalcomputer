@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import { categoryFormSchema } from "./categories.schema";
 import {
   repoCreateCategoryAdmin,
@@ -17,30 +22,12 @@ import type {
 } from "./categories.types";
 import { slugify } from "@/lib/slugify";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/duplicate key|23505|unique constraint/i.test(msg)) {
-    return new Error("Ya existe una categoría activa con ese nombre.");
-  }
-  if (/foreign key|23503|violates/i.test(msg)) {
-    return new Error(
-      "No se puede completar la operación: hay productos u otras filas vinculadas a esta categoría.",
-    );
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
-
 export async function getCatalogCategoriesForAdminService(): Promise<
   [AdminCategory[], AdminSubcategory[]]
 > {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return Promise.all([
     repoListCategoriesForAdmin(),
     repoListSubcategoriesForProductForm(),
@@ -48,50 +35,61 @@ export async function getCatalogCategoriesForAdminService(): Promise<
 }
 
 export async function getAllCategoriesAdminService() {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListAllCategoriesAdmin();
 }
 
-export async function createCategoryAdminService(payload: CategoryAdminInsert) {
+export async function createCategoryAdminService(
+  payload: CategoryAdminInsert,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = categoryFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     return await repoCreateCategoryAdmin({ ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear la categoría");
+    throw mapAdminEntityDbError(e, locale, "categories", "createFailed");
   }
 }
 
 export async function updateCategoryAdminService(
   id: string,
   payload: CategoryAdminUpdate,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = categoryFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     await repoUpdateCategoryAdmin(id, { ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar la categoría");
+    throw mapAdminEntityDbError(e, locale, "categories", "updateFailed");
   }
 }
 
-export async function softDeleteCategoryAdminService(id: string) {
+export async function softDeleteCategoryAdminService(
+  id: string,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     await repoSoftDeleteCategoryAdmin(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo archivar la categoría");
+    throw mapAdminEntityDbError(e, locale, "categories", "archiveFailed");
   }
 }

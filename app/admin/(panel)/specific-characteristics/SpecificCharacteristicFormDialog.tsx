@@ -15,6 +15,7 @@ import {
   updateSpecificCharacteristicAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,7 @@ export function SpecificCharacteristicFormDialog({
   }, [generalCharacteristics, locale, specificCharacteristic]);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createSpecificCharacteristicAction,
+    bindAdminAction(createSpecificCharacteristicAction, locale),
     {
       successMessage: t("admin.specificCharacteristics.toast.created"),
       onSuccess: () => {
@@ -97,7 +98,7 @@ export function SpecificCharacteristicFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateSpecificCharacteristicAction,
+    bindAdminAction(updateSpecificCharacteristicAction, locale),
     {
       successMessage: t("admin.specificCharacteristics.toast.updated"),
       onSuccess: () => {

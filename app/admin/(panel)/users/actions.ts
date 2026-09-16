@@ -8,23 +8,70 @@ import {
   deleteUserService,
   getUserDetailService,
 } from "@/modules/admin/users/users.service";
+import {
+  runServerAction,
+  type ServerActionResult,
+} from "@/lib/errors/run-server-action";
+import { resolveAdminLocale } from "@/modules/admin/admin-errors";
+import type { AdminUserDetail } from "@/modules/admin/users/users.types";
 
-export async function approveBusinessRegistrationAction(userId: string) {
-  await approveBusinessRegistrationService(userId);
+export async function approveBusinessRegistrationAction(
+  userId: string,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.users.approveFailed",
+    () => approveBusinessRegistrationService(userId, resolvedLocale),
+  );
 }
 
-export async function rejectBusinessRegistrationAction(userId: string) {
-  await rejectBusinessRegistrationService(userId);
+export async function rejectBusinessRegistrationAction(
+  userId: string,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.users.rejectFailed",
+    () => rejectBusinessRegistrationService(userId, resolvedLocale),
+  );
 }
 
-export async function updateUserRoleAction(userId: string, role: UserRole) {
-  await updateUserRoleService(userId, role);
+export async function updateUserRoleAction(
+  userId: string,
+  role: UserRole,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.users.updateRoleFailed",
+    () => updateUserRoleService(userId, role, resolvedLocale),
+  );
 }
 
-export async function deleteUserAction(userId: string) {
-  await deleteUserService(userId);
+export async function deleteUserAction(
+  userId: string,
+  locale?: string,
+): Promise<ServerActionResult> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.users.deleteFailed",
+    () => deleteUserService(userId, resolvedLocale),
+  );
 }
 
-export async function getUserDetailAction(userId: string) {
-  return getUserDetailService(userId);
+export async function getUserDetailAction(
+  userId: string,
+  locale?: string,
+): Promise<ServerActionResult<AdminUserDetail>> {
+  const resolvedLocale = await resolveAdminLocale(locale);
+  return runServerAction(
+    resolvedLocale,
+    "admin.errors.users.notFound",
+    () => getUserDetailService(userId, resolvedLocale),
+  );
 }

@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/utils/cn";
 
@@ -355,7 +356,7 @@ export function UserDetailDrawer({
   onBusinessRegistrationStatusChange,
   onUserRemoved,
 }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const open = userId !== null;
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
@@ -363,7 +364,7 @@ export function UserDetailDrawer({
   const [error, setError] = useState<string | null>(null);
 
   const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
-    useServerAction(approveBusinessRegistrationAction, {
+    useServerAction(bindAdminAction(approveBusinessRegistrationAction, locale), {
       successMessage: t("admin.userDetail.toast.approved"),
       errorMessage: t("admin.userDetail.toast.approveError"),
       onSuccess: () => {
@@ -382,7 +383,7 @@ export function UserDetailDrawer({
     });
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
-    useServerAction(rejectBusinessRegistrationAction, {
+    useServerAction(bindAdminAction(rejectBusinessRegistrationAction, locale), {
       successMessage: t("admin.userDetail.toast.rejected"),
       errorMessage: t("admin.userDetail.toast.rejectError"),
       onSuccess: () => {
@@ -400,7 +401,7 @@ export function UserDetailDrawer({
     });
 
   const { executeAsync: deleteUserAsync, isPending: deletingUser } =
-    useServerAction(deleteUserAction, {
+    useServerAction(bindAdminAction(deleteUserAction, locale), {
       successMessage: t("admin.businessSubscriptions.toast.deleted"),
       errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
       onSuccess: () => {
@@ -424,9 +425,14 @@ export function UserDetailDrawer({
     setError(null);
     setDetail(null);
 
-    getUserDetailAction(userId)
-      .then((data) => {
-        if (!cancelled) setDetail(data);
+    getUserDetailAction(userId, locale)
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          setError(res.message);
+          return;
+        }
+        setDetail(res.data ?? null);
       })
       .catch(() => {
         if (!cancelled) setError(t("admin.userDetail.error.loadUser"));
@@ -438,7 +444,7 @@ export function UserDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [userId, t]);
+  }, [userId, t, locale]);
 
   const handleRejectClick = async () => {
     if (!userId || !detail) return;

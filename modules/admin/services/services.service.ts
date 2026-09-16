@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapServiceAdminDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoCreateService,
   repoDeleteServiceImagesByIds,
@@ -26,27 +31,6 @@ import type {
 import { serviceFormSchema } from "./services.schema";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { slugify } from "@/lib/slugify";
-
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/foreign key|23503|violates/i.test(msg)) {
-    return new Error(
-      "No se puede eliminar: existen imágenes u otros registros vinculados a este servicio."
-    );
-  }
-  if (/23505|unique constraint|duplicate key/i.test(msg)) {
-    return new Error(
-      "Conflicto al guardar las imágenes (imagen principal). Si persiste, recarga e inténtalo de nuevo."
-    );
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
 
 const SERVICE_IMAGES_BUCKET = "global_bucket";
 
@@ -203,9 +187,10 @@ async function syncServiceBanners(
   }
 }
 
-export async function getAllServicesService() {
+export async function getAllServicesService(localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListServices();
 }
 
@@ -214,12 +199,14 @@ export async function createServiceService(
   imageFiles?: File[],
   primaryImageIndex = 0,
   bannerFiles?: ServiceBannerFiles,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = serviceFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     const slug = slugify(parsed.data.name);
@@ -235,7 +222,7 @@ export async function createServiceService(
     await syncServiceBanners(created.id, bannerFiles);
     return created;
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear el servicio");
+    throw mapServiceAdminDbError(e, locale, "createFailed");
   }
 }
 
@@ -248,12 +235,14 @@ export async function updateServiceService(
   removedImageIds?: string[],
   bannerFiles?: ServiceBannerFiles,
   bannerRemovals?: ServiceBannerRemovals,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = serviceFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     const slug = slugify(parsed.data.name);
@@ -287,13 +276,14 @@ export async function updateServiceService(
 
     await syncServiceBanners(id, bannerFiles, bannerRemovals);
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar el servicio");
+    throw mapServiceAdminDbError(e, locale, "updateFailed");
   }
 }
 
-export async function deleteServiceService(id: string) {
+export async function deleteServiceService(id: string, localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     const service = await repoGetServiceById(id);
     await repoDeleteService(id);
@@ -312,6 +302,6 @@ export async function deleteServiceService(id: string) {
       );
     }
   } catch (e) {
-    throw mapDbError(e, "No se pudo eliminar el servicio");
+    throw mapServiceAdminDbError(e, locale, "deleteFailed");
   }
 }

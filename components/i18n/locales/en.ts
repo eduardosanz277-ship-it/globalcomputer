@@ -709,6 +709,133 @@ export const en = {
     common: {
       actionEdit: "Edit",
     },
+    errors: {
+      common: {
+        accessDenied: "Access restricted to administrators",
+        invalidData: "Invalid data",
+      },
+      categories: {
+        createFailed: "Unable to create category",
+        updateFailed: "Unable to update category",
+        archiveFailed: "Unable to archive category",
+        duplicateName: "An active category with that name already exists.",
+        foreignKey:
+          "Unable to complete the operation: products or other records are linked to this category.",
+      },
+      subcategories: {
+        createFailed: "Unable to create subcategory",
+        updateFailed: "Unable to update subcategory",
+        archiveFailed: "Unable to archive subcategory",
+        duplicateName:
+          "An active subcategory with that name already exists in the selected category.",
+        foreignKey:
+          "Unable to complete the operation: products or other records are linked to this subcategory.",
+      },
+      brands: {
+        createFailed: "Unable to create brand",
+        updateFailed: "Unable to update brand",
+        deleteFailed: "Unable to delete brand",
+        duplicateName: "A brand with that name already exists.",
+        foreignKey:
+          "Unable to delete: products or other records are linked to this brand.",
+      },
+      brandTypes: {
+        createFailed: "Unable to create type",
+        updateFailed: "Unable to update type",
+        deleteFailed: "Unable to delete type",
+        duplicateName:
+          "A type with that name already exists for the selected brand.",
+        foreignKey:
+          "Unable to delete: products or other records are linked to this type.",
+      },
+      generalCharacteristics: {
+        createFailed: "Unable to create characteristic",
+        updateFailed: "Unable to update characteristic",
+        deleteFailed: "Unable to delete characteristic",
+        duplicateName: "A general characteristic with that name already exists.",
+        foreignKey:
+          "Unable to delete: products or other records are linked to this characteristic.",
+      },
+      specificCharacteristics: {
+        createFailed: "Unable to create specific characteristic",
+        updateFailed: "Unable to update specific characteristic",
+        deleteFailed: "Unable to delete specific characteristic",
+        duplicateName:
+          "A specific characteristic with that name already exists for the selected general characteristic.",
+        foreignKey:
+          "Unable to delete: products or other records are linked to this specific characteristic.",
+      },
+      faqs: {
+        createFailed: "Unable to create FAQ",
+        updateFailed: "Unable to update FAQ",
+        deleteFailed: "Unable to delete FAQ",
+        duplicateName: "An FAQ with the same content already exists.",
+      },
+      products: {
+        createFailed: "Unable to create product",
+        updateFailed: "Unable to update product",
+        deleteFailed: "Unable to delete product",
+        duplicateSku: "A product with that SKU already exists.",
+        duplicateData: "A product with that data combination already exists.",
+        foreignKey:
+          "Unable to save or delete the product because of linked relations (brand, type, images, or characteristics). Make sure the brand type matches the selected brand.",
+        missingRequired: "Required data is missing to save the product.",
+        validationFailed: "The data does not meet the database validation rules.",
+        permissionDenied: "You do not have permission to perform this action.",
+      },
+      services: {
+        createFailed: "Unable to create service",
+        updateFailed: "Unable to update service",
+        deleteFailed: "Unable to delete service",
+        foreignKey:
+          "Unable to delete: images or other records are linked to this service.",
+        duplicatePrimary:
+          "Conflict while saving images (primary image). If it persists, reload and try again.",
+      },
+      shippingSettings: {
+        saveFailed: "Unable to save shipping settings",
+      },
+      shippingRates: {
+        createFailed: "Unable to create shipping rate",
+        updateFailed: "Unable to update shipping rate",
+        deleteFailed: "Unable to delete shipping rate",
+        toggleFailed: "Unable to change the rate status",
+        overlap: "The range overlaps with rate {min} – {max}",
+      },
+      settings: {
+        saveFailed: "Unable to save settings",
+      },
+      users: {
+        approveBusinessOnly: "Only business accounts can be approved.",
+        rejectBusinessOnly: "Only business applications can be rejected.",
+        alreadyRejected: "This application is already rejected.",
+        notAuthenticated: "Not authenticated",
+        cannotDeleteSelf: "You cannot delete your own user",
+        cannotDeleteAdmin: "An administrator user cannot be deleted",
+        notFound: "User not found",
+        updateRoleFailed: "Unable to update user role",
+        deleteFailed: "Unable to delete user",
+        approveFailed: "Unable to approve the application",
+        rejectFailed: "Unable to reject the application",
+        missingResendKey: "RESEND_API_KEY is missing; notification email was not sent.",
+        approveEmailFailed:
+          "The account was approved in the system, but the email could not be sent: {detail}",
+        rejectEmailFailed:
+          "The application was rejected in the system, but the email could not be sent: {detail}",
+        emailServiceFailed: "Error contacting the email service.",
+      },
+      contacts: {
+        markReadFailed: "Unable to mark the message as read",
+      },
+      siteReviews: {
+        toggleFailed: "Unable to update the site review",
+        deleteFailed: "Unable to delete the site review",
+      },
+      productReviews: {
+        toggleFailed: "Unable to update the product review",
+        deleteFailed: "Unable to delete the product review",
+      },
+    },
     products: {
       title: "Products",
       description:

@@ -45,16 +45,18 @@ export function AdminNotificationsBell() {
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     try {
-      const next = await getContactNotificationsAdminAction();
+      const res = await getContactNotificationsAdminAction(locale);
       if (requestId !== requestIdRef.current) return;
-      setPayload(next);
+      if (res.ok && res.data) {
+        setPayload(res.data);
+      }
     } catch {
       if (requestId !== requestIdRef.current) return;
       // Mantener el último valor conocido; no romper el header.
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void refresh();

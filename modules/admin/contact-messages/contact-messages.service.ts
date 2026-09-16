@@ -1,5 +1,9 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoGetContactNotificationsAdmin,
   repoListContactMessagesAdmin,
@@ -10,28 +14,31 @@ import type {
   ContactNotificationsPayload,
 } from "./contact-messages.types";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
 export async function listContactMessagesAdminService(): Promise<
   ContactMessageAdmin[]
 > {
   return repoListContactMessagesAdmin();
 }
 
-export async function getContactNotificationsAdminService(): Promise<ContactNotificationsPayload> {
+export async function getContactNotificationsAdminService(
+  localeInput?: unknown,
+): Promise<ContactNotificationsPayload> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoGetContactNotificationsAdmin(8);
 }
 
 export async function markContactMessageReadAdminService(
   id: string,
+  localeInput?: unknown,
 ): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoMarkContactMessageReadAdmin(id);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoMarkContactMessageReadAdmin(id);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "contacts", "markReadFailed");
+  }
 }

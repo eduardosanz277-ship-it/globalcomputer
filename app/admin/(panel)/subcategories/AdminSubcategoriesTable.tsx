@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { softDeleteSubcategoryAdminAction } from "./actions";
 import { SubcategoryFormDialog } from "./SubcategoryFormDialog";
 import { cn } from "@/utils/cn";
@@ -81,7 +82,7 @@ function RowActions({
   const localizedRowName =
     locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const { executeAsync, isPending } = useServerAction(
-    softDeleteSubcategoryAdminAction,
+    bindAdminAction(softDeleteSubcategoryAdminAction, locale),
     {
       successMessage: t("admin.subcategories.toast.archived"),
       errorMessage: t("admin.subcategories.toast.error"),

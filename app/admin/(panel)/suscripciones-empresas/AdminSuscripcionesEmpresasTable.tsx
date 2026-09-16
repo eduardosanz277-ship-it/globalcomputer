@@ -15,6 +15,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useNavBadges } from "@/components/admin/AdminNavBadgesContext";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import type { AdminBusinessProfileRow } from "@/modules/admin/business-profiles/business-profiles.types";
 import type { BusinessRegistrationStatus } from "@/modules/auth/auth.types";
 import type { Column, ColumnDef, Row } from "@tanstack/react-table";
@@ -268,7 +269,7 @@ function SuscripcionesRowActionsMenu({
   ) => void;
   onUserRemoved?: (userId: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -280,7 +281,7 @@ function SuscripcionesRowActionsMenu({
   } | null>(null);
 
   const { executeAsync: approveBusinessAsync, isPending: approvingBusiness } =
-    useServerAction(approveBusinessRegistrationAction, {
+    useServerAction(bindAdminAction(approveBusinessRegistrationAction, locale), {
       successMessage: t("admin.businessSubscriptions.toast.approved"),
       errorMessage: t("admin.businessSubscriptions.toast.approveError"),
       onSuccess: () => {
@@ -294,7 +295,7 @@ function SuscripcionesRowActionsMenu({
     });
 
   const { executeAsync: rejectBusinessAsync, isPending: rejectingBusiness } =
-    useServerAction(rejectBusinessRegistrationAction, {
+    useServerAction(bindAdminAction(rejectBusinessRegistrationAction, locale), {
       successMessage: t("admin.businessSubscriptions.toast.rejected"),
       errorMessage: t("admin.businessSubscriptions.toast.rejectError"),
       onSuccess: () => {
@@ -308,7 +309,7 @@ function SuscripcionesRowActionsMenu({
     });
 
   const { executeAsync: deleteUserAsync, isPending: deletingUser } =
-    useServerAction(deleteUserAction, {
+    useServerAction(bindAdminAction(deleteUserAction, locale), {
       successMessage: t("admin.businessSubscriptions.toast.deleted"),
       errorMessage: t("admin.businessSubscriptions.toast.deleteError"),
       onSuccess: () => {

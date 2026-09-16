@@ -8,6 +8,7 @@ import {
   updateServiceWithImageAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Button } from "@/components/ui/button";
 import { ButtonPending } from "@/components/ui/button-pending";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
@@ -28,10 +29,10 @@ const SERVICE_FORM_ID = "service-form-dialog";
 
 export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createServiceWithImageAction,
+    bindAdminAction(createServiceWithImageAction, locale),
     {
       successMessage: t("admin.services.toast.created"),
       errorMessage: t("admin.services.toast.createError"),
@@ -43,7 +44,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateServiceWithImageAction,
+    bindAdminAction(updateServiceWithImageAction, locale),
     {
       successMessage: t("admin.services.toast.updated"),
       errorMessage: t("admin.services.toast.updateError"),

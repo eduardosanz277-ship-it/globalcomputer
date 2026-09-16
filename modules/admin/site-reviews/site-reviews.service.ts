@@ -1,5 +1,9 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoDeleteSiteReviewAdmin,
   repoListSiteReviewsAdmin,
@@ -7,29 +11,40 @@ import {
 } from "./site-reviews.repository";
 import type { AdminSiteReview } from "./site-reviews.types";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-export async function listSiteReviewsAdminService(): Promise<AdminSiteReview[]> {
+export async function listSiteReviewsAdminService(
+  localeInput?: unknown,
+): Promise<AdminSiteReview[]> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListSiteReviewsAdmin();
 }
 
 export async function updateSiteReviewActiveAdminService(
   id: string,
   active: boolean,
+  localeInput?: unknown,
 ): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoUpdateSiteReviewActiveAdmin(id, active);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoUpdateSiteReviewActiveAdmin(id, active);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "siteReviews", "toggleFailed");
+  }
 }
 
-export async function deleteSiteReviewAdminService(id: string): Promise<void> {
+export async function deleteSiteReviewAdminService(
+  id: string,
+  localeInput?: unknown,
+): Promise<void> {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
-  await repoDeleteSiteReviewAdmin(id);
+  ensureAdminAccess(current?.role, locale);
+  try {
+    await repoDeleteSiteReviewAdmin(id);
+  } catch (e) {
+    throw mapAdminEntityDbError(e, locale, "siteReviews", "deleteFailed");
+  }
 }

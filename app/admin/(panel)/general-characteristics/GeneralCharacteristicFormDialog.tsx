@@ -14,6 +14,7 @@ import {
   updateGeneralCharacteristicAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSwitchField } from "@/components/ui/form-fields";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function GeneralCharacteristicFormDialog({
   const errors = form.formState.errors;
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createGeneralCharacteristicAction,
+    bindAdminAction(createGeneralCharacteristicAction, locale),
     {
       successMessage: t("admin.generalCharacteristics.toast.created"),
       onSuccess: () => {
@@ -64,7 +65,7 @@ export function GeneralCharacteristicFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateGeneralCharacteristicAction,
+    bindAdminAction(updateGeneralCharacteristicAction, locale),
     {
       successMessage: t("admin.generalCharacteristics.toast.updated"),
       onSuccess: () => {

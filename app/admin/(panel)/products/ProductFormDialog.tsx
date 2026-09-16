@@ -26,6 +26,7 @@ import {
   updateProductWithImageAction,
 } from "./actions";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { Form, FormField } from "@/components/ui/form";
 import { FormSelectField, FormSwitchField } from "@/components/ui/form-fields";
 import { appSelectStyles } from "@/components/ui/react-select-app-styles";
@@ -143,7 +144,7 @@ export function ProductFormDialog({
   const [manualPdfFile, setManualPdfFile] = useState<File | null>(null);
 
   const { execute: executeCreate, isPending: isCreating } = useServerAction(
-    createProductWithImageAction,
+    bindAdminAction(createProductWithImageAction, locale),
     {
       successMessage: t("admin.products.toast.created"),
       onSuccess: () => {
@@ -154,7 +155,7 @@ export function ProductFormDialog({
   );
 
   const { execute: executeUpdate, isPending: isUpdating } = useServerAction(
-    updateProductWithImageAction,
+    bindAdminAction(updateProductWithImageAction, locale),
     {
       successMessage: t("admin.products.toast.updated"),
       onSuccess: () => {

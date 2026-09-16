@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import {
   deleteProductReviewAdminAction,
   updateProductReviewActiveAdminAction,
@@ -73,7 +74,7 @@ function ProductReviewRowActions({
   const { t, locale } = useI18n();
   const productLabel = localizedProductName(review, locale);
   const { executeAsync, isPending } = useServerAction(
-    deleteProductReviewAdminAction,
+    bindAdminAction(deleteProductReviewAdminAction, locale),
     {
       successMessage: t("admin.reviews.products.toast.deleted"),
       errorMessage: t("admin.reviews.products.toast.deleteError"),
@@ -137,7 +138,7 @@ export function AdminProductReviewsTable({
   );
 
   const { executeAsync: executeUpdateActive } = useServerAction(
-    updateProductReviewActiveAdminAction,
+    bindAdminAction(updateProductReviewActiveAdminAction, locale),
     {
       errorMessage: t("admin.reviews.products.toast.updateError"),
     },

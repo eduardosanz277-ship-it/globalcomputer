@@ -1,5 +1,10 @@
 ﻿import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoCreateSpecificCharacteristic,
   repoDeleteSpecificCharacteristic,
@@ -13,74 +18,77 @@ import type {
 import { specificCharacteristicFormSchema } from "./specific-characteristics.schema";
 import { slugify } from "@/lib/slugify";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/duplicate key|23505|unique constraint/i.test(msg)) {
-    return new Error(
-      "Ya existe una característica específica con ese nombre para la característica general seleccionada."
-    );
-  }
-  if (/foreign key|23503|violates/i.test(msg)) {
-    return new Error(
-      "No se puede eliminar: existen productos u otros registros vinculados a esta característica específica."
-    );
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
-
 export async function getAllSpecificCharacteristicsService() {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListSpecificCharacteristics();
 }
 
 export async function createSpecificCharacteristicService(
-  payload: SpecificCharacteristicInsert
+  payload: SpecificCharacteristicInsert,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = specificCharacteristicFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     const slug = slugify(parsed.data.name);
     return await repoCreateSpecificCharacteristic({ ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear la característica específica");
+    throw mapAdminEntityDbError(
+      e,
+      locale,
+      "specificCharacteristics",
+      "createFailed",
+    );
   }
 }
 
 export async function updateSpecificCharacteristicService(
   id: string,
-  payload: SpecificCharacteristicUpdate
+  payload: SpecificCharacteristicUpdate,
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = specificCharacteristicFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     const slug = slugify(parsed.data.name);
     await repoUpdateSpecificCharacteristic(id, { ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar la característica específica");
+    throw mapAdminEntityDbError(
+      e,
+      locale,
+      "specificCharacteristics",
+      "updateFailed",
+    );
   }
 }
 
-export async function deleteSpecificCharacteristicService(id: string) {
+export async function deleteSpecificCharacteristicService(
+  id: string,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     await repoDeleteSpecificCharacteristic(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo eliminar la característica específica");
+    throw mapAdminEntityDbError(
+      e,
+      locale,
+      "specificCharacteristics",
+      "deleteFailed",
+    );
   }
 }

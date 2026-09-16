@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import { faqFormSchema } from "./faqs.schema";
 import {
   repoCreateFaqAdmin,
@@ -9,60 +14,57 @@ import {
 } from "./faqs.repository";
 import type { FaqAdminInsert, FaqAdminUpdate } from "./faqs.types";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/23505|unique constraint|duplicate key/i.test(msg)) {
-    return new Error("Ya existe una FAQ con el mismo contenido.");
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
-
 export async function getAllFaqsAdminService() {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListAllFaqsAdmin();
 }
 
-export async function createFaqAdminService(payload: FaqAdminInsert) {
+export async function createFaqAdminService(
+  payload: FaqAdminInsert,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = faqFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     return await repoCreateFaqAdmin(parsed.data);
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear la pregunta frecuente");
+    throw mapAdminEntityDbError(e, locale, "faqs", "createFailed");
   }
 }
 
-export async function updateFaqAdminService(id: string, payload: FaqAdminUpdate) {
+export async function updateFaqAdminService(
+  id: string,
+  payload: FaqAdminUpdate,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = faqFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   try {
     await repoUpdateFaqAdmin(id, parsed.data);
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar la pregunta frecuente");
+    throw mapAdminEntityDbError(e, locale, "faqs", "updateFailed");
   }
 }
 
-export async function deleteFaqAdminService(id: string) {
+export async function deleteFaqAdminService(id: string, localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     await repoDeleteFaqAdmin(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo eliminar la pregunta frecuente");
+    throw mapAdminEntityDbError(e, locale, "faqs", "deleteFailed");
   }
 }

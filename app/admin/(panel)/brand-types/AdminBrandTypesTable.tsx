@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteBrandTypeAction } from "./actions";
 import { BrandTypeFormDialog } from "./BrandTypeFormDialog";
 import { cn } from "@/utils/cn";
@@ -72,7 +73,9 @@ function RowActions({ row, onEdit }: { row: BrandType; onEdit: () => void }) {
     locale === "en" ? (row.nameEn ?? row.name) : row.name;
   const localizedBrandName =
     locale === "en" ? (row.brandNameEn ?? row.brandName) : row.brandName;
-  const { executeAsync, isPending } = useServerAction(deleteBrandTypeAction, {
+  const { executeAsync, isPending } = useServerAction(
+    bindAdminAction(deleteBrandTypeAction, locale),
+    {
     successMessage: t("admin.brandTypes.toast.archived"),
     errorMessage: t("admin.brandTypes.toast.error"),
     onSuccess: () => {

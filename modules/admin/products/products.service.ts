@@ -1,6 +1,11 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapProductAdminDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import { repoGetSubcategoryCategoryId } from "@/modules/admin/subcategories/subcategories.repository";
 import {
   repoCreateProduct,
@@ -35,12 +40,6 @@ import type {
 import { slugify } from "@/lib/slugify";
 import { sendLowStockAlertEmail } from "@/lib/email/sendLowStockAlertEmail";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
 async function assertProductPlacementConsistent(data: ProductFormValues) {
   const sub = data.placementSubcategoryId?.trim();
   if (!sub) return;
@@ -50,66 +49,6 @@ async function assertProductPlacementConsistent(data: ProductFormValues) {
       "La subcategoría no corresponde a la categoría elegida.",
     );
   }
-}
-
-/** PostgREST/Supabase suele devolver `{ message, code, details }` sin ser `instanceof Error`. */
-function getSupabaseErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (err && typeof err === "object" && "message" in err) {
-    const m = (err as { message?: unknown }).message;
-    if (typeof m === "string" && m.length > 0) return m;
-  }
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-}
-
-function getPostgresErrorCode(err: unknown): string | undefined {
-  if (err && typeof err === "object" && "code" in err) {
-    const c = (err as { code?: unknown }).code;
-    if (typeof c === "string" && c.length > 0) return c;
-  }
-  return undefined;
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = getSupabaseErrorMessage(err);
-  const code = getPostgresErrorCode(err);
-
-  if (
-    code === "23505" ||
-    /duplicate key|23505|unique constraint/i.test(msg)
-  ) {
-    if (/sku/i.test(msg)) {
-      return new Error("Ya existe un producto con ese SKU.");
-    }
-    return new Error("Ya existe un producto con esa combinación de datos.");
-  }
-  if (
-    code === "23503" ||
-    /foreign key|23503|violates foreign key/i.test(msg)
-  ) {
-    return new Error(
-      "No se puede guardar o eliminar el producto por relaciones vinculadas (marca, tipo, imágenes o características). Comprueba que el tipo por marca corresponda a la marca seleccionada.",
-    );
-  }
-  if (code === "23502" || /null value|not null/i.test(msg)) {
-    return new Error("Faltan datos obligatorios para guardar el producto.");
-  }
-  if (code === "23514" || /check constraint/i.test(msg)) {
-    return new Error(
-      "Los datos no cumplen las reglas de validación en la base de datos.",
-    );
-  }
-  if (code === "42501" || /permission denied|row-level security|RLS/i.test(msg)) {
-    return new Error("No tienes permiso para realizar esta operación.");
-  }
-
-  const detail =
-    msg && !/^\[object Object\]$/.test(msg) ? `: ${msg}` : "";
-  return new Error(`${fallback}${detail}`);
 }
 
 /**
@@ -364,9 +303,10 @@ function parseAccessories(
   return parsed;
 }
 
-export async function getAllProductsService() {
+export async function getAllProductsService(localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListProducts();
 }
 
@@ -377,13 +317,15 @@ export async function createProductService(
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   const parsed = productFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
 
   await assertProductPlacementConsistent(parsed.data);
@@ -435,7 +377,7 @@ export async function createProductService(
 
     return created;
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear el producto");
+    throw mapProductAdminDbError(e, locale, "createFailed");
   }
 }
 
@@ -449,13 +391,15 @@ export async function updateProductService(
   characteristicValues?: ProductCharacteristicValueInput[],
   manualPdfFile?: File | null,
   accessories?: ProductAccessoryInput[],
+  localeInput?: unknown,
 ) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   const parsed = productFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
 
   await assertProductPlacementConsistent(parsed.data);
@@ -518,17 +462,18 @@ export async function updateProductService(
     });
 
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar el producto");
+    throw mapProductAdminDbError(e, locale, "updateFailed");
   }
 }
 
-export async function deleteProductService(id: string) {
+export async function deleteProductService(id: string, localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
 
   try {
     await repoDeleteProduct(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo eliminar el producto");
+    throw mapProductAdminDbError(e, locale, "deleteFailed");
   }
 }

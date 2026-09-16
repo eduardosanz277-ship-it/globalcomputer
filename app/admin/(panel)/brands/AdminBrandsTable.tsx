@@ -18,6 +18,7 @@ import { FilterX, Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import { deleteBrandAction } from "./actions";
 import { BrandFormDialog } from "./BrandFormDialog";
 import { BrandProfileCard } from "@/components/dashboard/brand-profile-card";
@@ -61,13 +62,16 @@ function RowActions({ brand, onEdit }: { brand: Brand; onEdit: () => void }) {
   const { t, locale } = useI18n();
   const localizedBrandName =
     locale === "en" ? (brand.nameEn ?? brand.name) : brand.name;
-  const { executeAsync, isPending } = useServerAction(deleteBrandAction, {
-    successMessage: t("admin.brands.toast.archived"),
-    errorMessage: t("admin.brands.toast.error"),
-    onSuccess: () => {
-      router.refresh();
+  const { executeAsync, isPending } = useServerAction(
+    bindAdminAction(deleteBrandAction, locale),
+    {
+      successMessage: t("admin.brands.toast.archived"),
+      errorMessage: t("admin.brands.toast.error"),
+      onSuccess: () => {
+        router.refresh();
+      },
     },
-  });
+  );
 
   const handleDelete = async () => {
     await swalSaasConfirmAsync({

@@ -1,5 +1,10 @@
 import { getCurrentUserStrictService } from "@/modules/auth/auth.service";
-import type { UserRole } from "@/modules/auth/auth.types";
+import {
+  adminInvalidDataError,
+  ensureAdminAccess,
+  mapAdminEntityDbError,
+  resolveAdminLocale,
+} from "@/modules/admin/admin-errors";
 import {
   repoCreateBrand,
   repoDeleteBrand,
@@ -10,67 +15,59 @@ import type { BrandInsert, BrandUpdate } from "./brands.types";
 import { brandFormSchema } from "./brands.schema";
 import { slugify } from "@/lib/slugify";
 
-function ensureAdmin(role?: UserRole) {
-  if (role !== "ADMIN") {
-    throw new Error("Acceso restringido a administradores");
-  }
-}
-
-function mapDbError(err: unknown, fallback: string): Error {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/duplicate key|23505|unique constraint/i.test(msg)) {
-    return new Error("Ya existe una marca con ese nombre.");
-  }
-  if (/foreign key|23503|violates/i.test(msg)) {
-    return new Error(
-      "No se puede eliminar: existen productos u otros registros vinculados a esta marca."
-    );
-  }
-  return err instanceof Error ? err : new Error(fallback);
-}
-
 export async function getAllBrandsService() {
+  const locale = await resolveAdminLocale();
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   return repoListBrands();
 }
 
-export async function createBrandService(payload: BrandInsert) {
+export async function createBrandService(
+  payload: BrandInsert,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = brandFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     return await repoCreateBrand({ ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo crear la marca");
+    throw mapAdminEntityDbError(e, locale, "brands", "createFailed");
   }
 }
 
-export async function updateBrandService(id: string, payload: BrandUpdate) {
+export async function updateBrandService(
+  id: string,
+  payload: BrandUpdate,
+  localeInput?: unknown,
+) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   const parsed = brandFormSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message ?? "Datos inválidos");
+    throw adminInvalidDataError(locale, parsed.error.errors[0]?.message);
   }
   const slug = slugify(parsed.data.name);
   try {
     await repoUpdateBrand(id, { ...parsed.data, slug });
   } catch (e) {
-    throw mapDbError(e, "No se pudo actualizar la marca");
+    throw mapAdminEntityDbError(e, locale, "brands", "updateFailed");
   }
 }
 
-export async function deleteBrandService(id: string) {
+export async function deleteBrandService(id: string, localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
-  ensureAdmin(current?.role);
+  ensureAdminAccess(current?.role, locale);
   try {
     await repoDeleteBrand(id);
   } catch (e) {
-    throw mapDbError(e, "No se pudo eliminar la marca");
+    throw mapAdminEntityDbError(e, locale, "brands", "deleteFailed");
   }
 }

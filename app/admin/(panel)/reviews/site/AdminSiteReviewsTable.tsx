@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
 import { useServerAction } from "@/hooks/use-server-action";
+import { bindAdminAction } from "@/lib/admin/bind-admin-action";
 import {
   deleteSiteReviewAdminAction,
   updateSiteReviewActiveAdminAction,
@@ -66,9 +67,9 @@ function SiteReviewRowActions({
   onDeleted: (id: string) => void;
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { executeAsync, isPending } = useServerAction(
-    deleteSiteReviewAdminAction,
+    bindAdminAction(deleteSiteReviewAdminAction, locale),
     {
       successMessage: t("admin.reviews.site.toast.deleted"),
       errorMessage: t("admin.reviews.site.toast.deleteError"),
@@ -131,7 +132,7 @@ export function AdminSiteReviewsTable({
   );
 
   const { executeAsync: executeUpdateActive } = useServerAction(
-    updateSiteReviewActiveAdminAction,
+    bindAdminAction(updateSiteReviewActiveAdminAction, locale),
     {
       errorMessage: t("admin.reviews.site.toast.updateError"),
     },
