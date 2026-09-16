@@ -5,11 +5,23 @@ import {
 
 export type ClientErrorTranslate = (key: string) => string;
 
+/** Mensaje genérico que Next.js devuelve en prod cuando una Server Action/RSC lanza en el servidor. */
+export function isNextJsSanitizedErrorMessage(message: string): boolean {
+  const trimmed = message.trim().toLowerCase();
+  if (!trimmed) return false;
+  return (
+    trimmed.includes("an error occurred in the server components render") ||
+    trimmed.includes("omitted in production builds to avoid leaking sensitive details") ||
+    trimmed.includes("digest property is included on this error instance")
+  );
+}
+
 /** Mensajes técnicos que no deben mostrarse al usuario. */
 export function isTechnicalErrorMessage(message: string): boolean {
   const trimmed = message.trim();
   if (!trimmed) return false;
   if (trimmed === "[object Object]") return true;
+  if (isNextJsSanitizedErrorMessage(trimmed)) return true;
   return isNetworkActionError(new Error(trimmed));
 }
 
