@@ -1359,8 +1359,32 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                     {t("admin.orders.items.empty")}
                   </p>
                 ) : (
-                  <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
-                    <div className="overflow-x-auto">
+                  <div className="min-w-0 overflow-hidden rounded-xl border border-primary/25 bg-primary/[0.03] shadow-sm">
+                    <ul className="divide-y divide-primary/15 sm:hidden">
+                      {orderItems.map((item, index) => (
+                        <li
+                          key={`${item.product_name}-${index}`}
+                          className="space-y-1.5 px-3.5 py-3"
+                        >
+                          <OrderLineProductLabel
+                            name={item.product_name}
+                            sku={item.product_sku}
+                            skuLabel={t("storefront.productDetail.skuLabel")}
+                            nameClassName="text-sm font-medium leading-snug text-foreground"
+                          />
+                          <div className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="tabular-nums text-muted-foreground">
+                              {item.quantity} ×{" "}
+                              {formatUsd(Number(item.unit_price ?? "0"))}
+                            </span>
+                            <span className="shrink-0 font-semibold tabular-nums text-foreground">
+                              {formatUsd(Number(item.total_price ?? "0"))}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="hidden overflow-x-auto sm:block">
                       <table className="w-full text-left text-sm">
                         <thead className="bg-primary/[0.1] text-xs uppercase tracking-wide text-foreground/80">
                           <tr>
@@ -1384,21 +1408,20 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                               key={`${item.product_name}-${index}`}
                               className="border-t border-primary/15 transition hover:bg-primary/[0.07]"
                             >
-                              <td className="px-4 py-2.5">
+                              <td className="max-w-[18rem] px-4 py-2.5 font-medium">
                                 <OrderLineProductLabel
                                   name={item.product_name}
                                   sku={item.product_sku}
                                   skuLabel={t("storefront.productDetail.skuLabel")}
-                                  nameClassName="font-medium"
                                 />
                               </td>
                               <td className="px-4 py-2.5 tabular-nums">
                                 {item.quantity}
                               </td>
-                              <td className="px-4 py-2.5 tabular-nums">
+                              <td className="whitespace-nowrap px-4 py-2.5 tabular-nums">
                                 {formatUsd(Number(item.unit_price ?? "0"))}
                               </td>
-                              <td className="px-4 py-2.5 font-semibold tabular-nums text-foreground">
+                              <td className="whitespace-nowrap px-4 py-2.5 font-semibold tabular-nums text-foreground">
                                 {formatUsd(Number(item.total_price ?? "0"))}
                               </td>
                             </tr>
