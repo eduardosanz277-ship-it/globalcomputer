@@ -153,6 +153,11 @@ function CartLineRow({
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">
+            {displayBrand ? (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {displayBrand}
+              </p>
+            ) : null}
             <Link
               href={`/products/${product.slug}`}
               onClick={onProductNavigate}
@@ -160,9 +165,14 @@ function CartLineRow({
             >
               {displayName}
             </Link>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {displayBrand}
-            </p>
+            {product.sku.trim() ? (
+              <p className="mt-1 text-left text-[11px] leading-tight">
+                <span className="text-muted-foreground/80">
+                  {t("storefront.productDetail.skuLabel")}{" "}
+                </span>
+                <span className="text-muted-foreground">{product.sku.trim()}</span>
+              </p>
+            ) : null}
           </div>
           <Button
             type="button"
