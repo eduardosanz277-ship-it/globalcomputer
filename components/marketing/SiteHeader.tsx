@@ -427,6 +427,7 @@ export function SiteHeader({ user }: Props) {
   const [suppressDesktopNavHover, setSuppressDesktopNavHover] = useState(false);
   const accountRefMobile = useRef<HTMLDivElement>(null);
   const accountRefDesktop = useRef<HTMLDivElement>(null);
+  const siteHeaderRef = useRef<HTMLElement>(null);
   /** Limpia listeners/timeout de `armDesktopNavStripSuppress` al volver a armar o al desmontar. */
   const suppressNavStripCleanupRef = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -682,9 +683,34 @@ export function SiteHeader({ user }: Props) {
     };
   }, [mobileNavOpen]);
 
+  useEffect(() => {
+    const header = siteHeaderRef.current;
+    if (!header) return;
+
+    const syncSiteHeaderHeight = () => {
+      document.documentElement.style.setProperty(
+        "--site-header-height",
+        `${header.offsetHeight}px`,
+      );
+    };
+
+    syncSiteHeaderHeight();
+    const observer = new ResizeObserver(syncSiteHeaderHeight);
+    observer.observe(header);
+    window.addEventListener("resize", syncSiteHeaderHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncSiteHeaderHeight);
+    };
+  }, []);
+
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/90 shadow-sm shadow-primary/[0.03] backdrop-blur-md">
+      <header
+        ref={siteHeaderRef}
+        className="sticky top-0 z-50 border-b border-border/40 bg-background/90 shadow-sm shadow-primary/[0.03] backdrop-blur-md"
+      >
         <div
           className={cn(
             "lg:hidden",

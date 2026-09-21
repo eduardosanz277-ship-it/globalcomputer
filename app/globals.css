@@ -11,6 +11,8 @@
   --app-scrollbar-track: transparent;
   --app-scrollbar-thumb: rgba(42, 44, 48, 0.22);
   --app-scrollbar-thumb-hover: rgba(53, 127, 210, 0.5);
+  /** Altura del header sticky; SiteHeader la actualiza en runtime. */
+  --site-header-height: 8rem;
 }
 
 .dark {
