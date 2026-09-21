@@ -657,8 +657,13 @@ export function StorefrontProductCatalog({
   };
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mt-2">
+      <div
+        className={cn(
+          "sticky z-40 -mx-4 mb-2 flex flex-col gap-3 bg-background px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:px-6 lg:-mx-8 lg:px-8 lg:py-4",
+          "top-[var(--site-header-height)]",
+        )}
+      >
         <div
           className={cn(
             "flex flex-wrap items-center",
