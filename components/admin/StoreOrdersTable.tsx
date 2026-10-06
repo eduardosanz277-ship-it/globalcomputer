@@ -40,6 +40,7 @@ import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
 import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
+import { historyWithPendingStatus } from "@/components/orders/historyWithPendingStatus";
 import { ORDER_DETAILS_DIALOG_CONTENT_CLASSNAME } from "@/lib/order-details-dialog";
 import {
   mapStoreOrderShippingAddressRow,
@@ -316,6 +317,23 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   );
   const [confirmingShipping, setConfirmingShipping] = useState(false);
 
+  const reloadDetailStatusHistory = useCallback(async (orderId: string) => {
+    try {
+      const res = await fetch("/api/admin/store-orders/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) return;
+      setOrderStatusHistory(
+        Array.isArray(payload?.statusHistory) ? payload.statusHistory : [],
+      );
+    } catch {
+      /* El historial actual se mantiene si recargar falla. */
+    }
+  }, []);
+
   useEffect(() => {
     setRows(orders);
   }, [orders]);
@@ -380,6 +398,21 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
               : row,
           ),
         );
+        setDetailOrder((prev) =>
+          prev?.id === orderId
+            ? {
+                ...prev,
+                status: payload?.order?.status ?? nextStatus,
+                amount_shipping:
+                  payload?.order?.amount_shipping ?? prev.amount_shipping,
+                total_amount:
+                  payload?.order?.total_amount ?? prev.total_amount,
+              }
+            : prev,
+        );
+        if (itemsDialogOpen && detailOrder?.id === orderId) {
+          await reloadDetailStatusHistory(orderId);
+        }
         toast.success(t("admin.orders.toast.statusUpdated"));
       } catch (error) {
         toast.error(
@@ -398,7 +431,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         );
       }
     },
-    [t],
+    [t, itemsDialogOpen, detailOrder?.id, reloadDetailStatusHistory],
   );
 
   const requestStatusChange = useCallback(
@@ -631,20 +664,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           ? { ...prev, status: "cancelled" as const, inventory_status: null }
           : prev,
       );
-      setOrderStatusHistory((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          status: "cancelled",
-          previousStatus: detailOrder.status,
-          changedByName: null,
-          note:
-            locale === "en"
-              ? "Refund issued due to inventory conflict."
-              : "Reembolso emitido por conflicto de inventario.",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      await reloadDetailStatusHistory(detailOrder.id);
     } catch {
       setConflictActionMsg({
         type: "error",
@@ -653,7 +673,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     } finally {
       setConflictAction(null);
     }
-  }, [detailOrder, locale, t]);
+  }, [detailOrder, t, reloadDetailStatusHistory]);
 
   const handleConflictReprocess = useCallback(async () => {
     if (!detailOrder) return;
@@ -688,7 +708,12 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       setRows((prev) => {
         const updated = prev.map((row) =>
           row.id === detailOrder.id
-            ? { ...row, inventory_status: "processed" as const }
+            ? {
+                ...row,
+                inventory_status: "processed" as const,
+                status:
+                  row.status === "pending" ? ("confirmed" as const) : row.status,
+              }
             : row,
         );
         const remainingConflicts = updated.filter(
@@ -698,11 +723,16 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
         return updated;
       });
       setDetailOrder((prev) =>
-        prev ? { ...prev, inventory_status: "processed" as const } : prev,
+        prev
+          ? {
+              ...prev,
+              inventory_status: "processed" as const,
+              status:
+                prev.status === "pending" ? ("confirmed" as const) : prev.status,
+            }
+          : prev,
       );
-      // No se agrega entrada de historial: el estado del pedido no cambia.
-      // El reproceso es una corrección administrativa del inventario; la fecha
-      // y entrada "Confirmado" original permanecen intactas.
+      await reloadDetailStatusHistory(detailOrder.id);
     } catch {
       setConflictActionMsg({
         type: "error",
@@ -711,7 +741,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     } finally {
       setConflictAction(null);
     }
-  }, [detailOrder, locale, t]);
+  }, [detailOrder, t, reloadDetailStatusHistory]);
 
   const conflictCount = useMemo(
     () => rows.filter((r) => r.inventory_status === "conflict").length,
@@ -1459,7 +1489,10 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                 ) : null}
 
                 <OrderStatusHistoryTimeline
-                  entries={orderStatusHistory}
+                  entries={historyWithPendingStatus(orderStatusHistory, {
+                    createdAt: detailOrder.created_at,
+                    currentStatus: detailOrder.status,
+                  })}
                   statusLabels={statusLabels}
                   statusBadgeClass={orderStatusBadgeClass}
                 />

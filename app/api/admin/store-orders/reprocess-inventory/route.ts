@@ -53,10 +53,24 @@ export async function POST(req: Request) {
     });
 
     if (result.status === "success") {
-      // Audit record (Punto 6)
+      let nextStatus = order.status;
+
+      if (order.status === "pending") {
+        const { data: promoted } = await supabase
+          .from("store_orders")
+          .update({ status: "confirmed" })
+          .eq("id", orderId)
+          .eq("status", "pending")
+          .select("id")
+          .maybeSingle();
+        if (promoted?.id) {
+          nextStatus = "confirmed";
+        }
+      }
+
       await recordStoreOrderStatusChange({
         orderId,
-        status: order.status as never,
+        status: nextStatus as never,
         previousStatus: order.status as never,
         changedBy: admin.id,
         note: "Inventory manually reprocessed by the admin after resolving stock conflict.",
@@ -70,7 +84,7 @@ export async function POST(req: Request) {
         console.error("[reprocess] error enviando email de confirmación", emailErr);
       }
 
-      return NextResponse.json({ ok: true, status: "success" });
+      return NextResponse.json({ ok: true, status: "success", orderStatus: nextStatus });
     }
 
     if (result.status === "conflict") {
