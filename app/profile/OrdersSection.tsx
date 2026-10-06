@@ -42,6 +42,7 @@ import {
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
 import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
+import { historyWithPendingStatus } from "@/components/orders/historyWithPendingStatus";
 
 type Props = {
   orders: CuentaOrder[];
@@ -545,7 +546,13 @@ export function OrdersSection({ orders }: Props) {
                 ) : null}
 
                 <OrderStatusHistoryTimeline
-                  entries={detailOrder.statusHistory}
+                  entries={historyWithPendingStatus(detailOrder.statusHistory, {
+                    createdAt:
+                      detailOrder.createdAt ??
+                      detailOrder.statusHistory[0]?.createdAt ??
+                      "",
+                    currentStatus: detailOrder.status as SiteOrderStatus,
+                  })}
                   statusLabels={statusLabels}
                   statusBadgeClass={statusPillClass}
                   showActor={false}

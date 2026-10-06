@@ -5,6 +5,7 @@ import { formatUsd } from "@/components/store/store-cart-format";
 import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRecipientSection";
 import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
+import { historyWithPendingStatus } from "@/components/orders/historyWithPendingStatus";
 import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
 import type { GuestOrderLookupResult } from "@/modules/commerce/store-order-guest-lookup.service";
 import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
@@ -212,7 +213,10 @@ export function GuestOrderDetailsPanel({ order }: Props) {
         ) : null}
 
         <OrderStatusHistoryTimeline
-          entries={order.statusHistory}
+          entries={historyWithPendingStatus(order.statusHistory, {
+            createdAt: order.createdAt,
+            currentStatus: order.status,
+          })}
           statusLabels={statusLabels}
           statusBadgeClass={statusPillClass}
           showActor={false}
