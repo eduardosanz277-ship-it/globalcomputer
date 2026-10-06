@@ -6,22 +6,25 @@ import {
 } from "@/lib/email/templates/adminInventoryConflictTemplate";
 import { resolveAppLocale } from "@/lib/i18n/parse-locale";
 import type { Locale } from "@/components/i18n/translations";
+import { getPublicSiteContact } from "@/lib/site-contact.server";
 
 /**
- * Notifica al admin cuando un pedido confirmado por Stripe
- * no puede descontarse del inventario por falta de stock.
+ * Notifica al correo de Ajustes (`support_email` en `/admin/settings`)
+ * cuando un pedido no puede descontarse del inventario por falta de stock.
  *
- * Requiere RESEND_API_KEY y ADMIN_EMAIL.
- * El idioma del correo se controla con ADMIN_LOCALE (por defecto "es").
+ * Requiere RESEND_API_KEY. El idioma se controla con ADMIN_LOCALE (por defecto "es").
  */
 export async function sendAdminInventoryConflictEmail(
   input: Omit<AdminInventoryConflictTemplateInput, "locale">,
 ): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const contact = await getPublicSiteContact();
+  const toEmail = contact.email.trim();
 
-  if (!apiKey || !adminEmail) {
-    console.warn("[email] admin conflict alert: RESEND_API_KEY o ADMIN_EMAIL no configurado.");
+  if (!apiKey || !toEmail) {
+    console.warn(
+      "[email] admin conflict alert: RESEND_API_KEY no configurado o falta el email de Ajustes.",
+    );
     return { sent: false };
   }
 
@@ -38,7 +41,7 @@ export async function sendAdminInventoryConflictEmail(
     },
     body: JSON.stringify({
       from,
-      to: [adminEmail],
+      to: [toEmail.toLowerCase()],
       subject: renderAdminInventoryConflictEmailSubject(fullInput),
       html: renderAdminInventoryConflictEmail(fullInput),
     }),
