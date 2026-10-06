@@ -163,6 +163,18 @@ async function maybeSendPaidStripeOrderConfirmation(input: {
     return;
   }
 
+  const { data: afterInventory } = await input.supabase
+    .from("store_orders")
+    .select("status")
+    .eq("id", input.orderId)
+    .maybeSingle();
+  await promotePendingOrderToConfirmed({
+    supabase: input.supabase,
+    orderId: input.orderId,
+    previousStatus: (afterInventory?.status as SiteOrderStatus | undefined) ?? null,
+    note: "stripe_checkout",
+  });
+
   try {
     await maybeSendStoreOrderConfirmationEmail({
       orderId: input.orderId,
@@ -187,6 +199,15 @@ async function promotePendingOrderToConfirmed(input: {
     return false;
   }
 
+  const { data: current } = await input.supabase
+    .from("store_orders")
+    .select("id, inventory_status")
+    .eq("id", input.orderId)
+    .maybeSingle();
+  if (current?.inventory_status === "conflict") {
+    return false;
+  }
+
   const { data: promoted, error } = await input.supabase
     .from("store_orders")
     .update({ status: "confirmed" })
@@ -200,10 +221,24 @@ async function promotePendingOrderToConfirmed(input: {
   }
   if (!promoted?.id) return false;
 
+  // El pending interno de Stripe no forma parte del historial visible:
+  // un pago con stock empieza en Confirmado.
+  const { error: historyCleanupError } = await input.supabase
+    .from("store_order_status_history")
+    .delete()
+    .eq("store_order_id", input.orderId)
+    .eq("status", "pending");
+  if (historyCleanupError) {
+    console.warn(
+      "[store-orders] no se pudo limpiar pending del historial Stripe",
+      historyCleanupError,
+    );
+  }
+
   await recordStoreOrderStatusChange({
     orderId: input.orderId,
     status: "confirmed",
-    previousStatus: input.previousStatus,
+    previousStatus: null,
     note: input.note,
     supabase: input.supabase,
   });
@@ -618,14 +653,6 @@ export async function createSiteOrder(
   if (orderError || !order) {
     throw new SiteOrderError("No se pudo registrar el pedido.", 500);
   }
-
-  await recordStoreOrderStatusChange({
-    orderId: order.id,
-    status: "confirmed",
-    previousStatus: null,
-    note: "checkout",
-    supabase,
-  });
 
   const orderItems = normalizedItems.map((line) => ({
     store_order_id: order.id,
@@ -1127,13 +1154,6 @@ async function ensureStoreOrderForCheckoutSession(
   }
 
   const orderId = inserted.id;
-  await recordStoreOrderStatusChange({
-    orderId,
-    status: "confirmed",
-    previousStatus: null,
-    note: "stripe_checkout",
-    supabase,
-  });
 
   const { error: itemsErr } = await supabase.from("store_order_items").insert(
     itemRows.map((r) => ({
@@ -1253,15 +1273,6 @@ export async function syncOrderWithStripeSession(
       throw upErr;
     }
 
-    if (session.payment_status === "paid") {
-      await promotePendingOrderToConfirmed({
-        supabase,
-        orderId: order.id,
-        previousStatus,
-        note: "stripe_webhook",
-      });
-    }
-
     await saveStoreOrderShippingFromStripe(supabase, order.id, session);
 
     const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(
@@ -1306,6 +1317,13 @@ export async function syncOrderWithStripeSession(
       });
       return;
     }
+
+    await promotePendingOrderToConfirmed({
+      supabase,
+      orderId: order.id,
+      previousStatus,
+      note: "stripe_webhook",
+    });
 
     // status === 'success' | 'already_processed' — inventory is good.
     // maybeSendStoreOrderConfirmationEmail verifies inventory_status internally
