@@ -208,15 +208,12 @@ export async function repoUpdateStoreOrderStatus(
     const inventoryResult = await processOrderInventory(orderId, adminSupabase);
 
     if (inventoryResult.status === "conflict") {
-      // Admin confirmed the order but at least one item has insufficient stock.
-      // The order status is already 'confirmed'; mark the conflict so the admin
-      // can review and resolve it. Do NOT send the confirmation email.
       console.warn(
-        "[INVENTORY] conflict en confirmación manual de pedido - requiere atención",
+        "[INVENTORY] conflict en confirmación manual de pedido - queda pending",
         { orderId, conflicts: inventoryResult.conflicts },
       );
       return {
-        status,
+        status: "pending",
         amount_shipping: String(shipping),
         total_amount: String(totalAmount),
       };

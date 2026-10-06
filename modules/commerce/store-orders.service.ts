@@ -134,8 +134,7 @@ async function maybeSendPaidStripeOrderConfirmation(input: {
     );
 
     if (inventoryResult.status === "conflict") {
-      // Stripe confirmed payment but at least one item has insufficient stock.
-      // Do NOT send confirmation email; order needs admin review.
+      // Pago cobrado, pero no hay stock: el pedido queda pending para revisión.
       console.warn("[INVENTORY] conflict en ruta createSiteOrder - pedido requiere atención", {
         orderId: input.orderId,
         conflicts: inventoryResult.conflicts,
@@ -595,7 +594,7 @@ export async function createSiteOrder(
       customer_name: customerName,
       customer_email: customerEmail,
       stripe_session_id: payload.stripeSessionId ?? null,
-      status: "confirmed",
+      status: "pending",
       locale,
       total_amount: finalTotal,
       amount_subtotal: Number(totalAmount.toFixed(2)),
@@ -1110,7 +1109,7 @@ async function ensureStoreOrderForCheckoutSession(
     customer_name: customerName,
     customer_email: customerEmail,
     stripe_session_id: full.id,
-    status: "confirmed" as SiteOrderStatus,
+    status: "pending" as SiteOrderStatus,
     locale,
     total_amount: centsToMoney(full.amount_total),
     amount_subtotal: centsToMoney(full.amount_subtotal),
@@ -1175,7 +1174,7 @@ async function ensureStoreOrderForCheckoutSession(
 
   return {
     id: orderId,
-    status: "confirmed",
+    status: (inserted.status as SiteOrderStatus) ?? "pending",
     locale,
     customer_email: customerEmail,
   };
@@ -1307,9 +1306,7 @@ export async function syncOrderWithStripeSession(
     }
 
     if (inventoryResult.status === "conflict") {
-      // Stripe confirmed payment but we cannot fulfill the order.
-      // Do NOT send a confirmation email. The order is marked 'conflict'
-      // in store_orders.inventory_status so an admin can review it.
+      // El pedido queda pending (no confirmed) hasta que el admin resuelva el stock.
       console.warn("[INVENTORY] conflict - pedido requiere atención administrativa", {
         orderId: order.id,
         sessionId: session.id,

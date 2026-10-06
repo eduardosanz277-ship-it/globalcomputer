@@ -38,6 +38,61 @@ export type ProcessOrderInventoryOptions = {
   notifyAdminOnConflict?: boolean;
 };
 
+type HistoryRow = {
+  id: string;
+  status: string | null;
+  previous_status: string | null;
+  created_at: string;
+};
+
+/**
+ * Un conflicto no debe dejar Confirmado en el historial.
+ * Se conserva una sola fila Pendiente.
+ */
+async function collapseHistoryToSinglePending(
+  db: ReturnType<typeof createSupabaseAdminClient>,
+  orderId: string,
+): Promise<void> {
+  const { data: rows, error } = await db
+    .from("store_order_status_history")
+    .select("id, status, previous_status, created_at")
+    .eq("store_order_id", orderId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const list = (rows ?? []) as HistoryRow[];
+  const keep =
+    list.find((row) => row.status === "pending" && !row.previous_status) ??
+    list.find((row) => row.status === "pending");
+
+  const idsToDelete = list
+    .filter((row) => row.id !== keep?.id)
+    .map((row) => row.id);
+
+  if (idsToDelete.length > 0) {
+    const { error: deleteError } = await db
+      .from("store_order_status_history")
+      .delete()
+      .in("id", idsToDelete);
+    if (deleteError) throw deleteError;
+  }
+
+  if (!keep) {
+    const { error: insertError } = await db
+      .from("store_order_status_history")
+      .insert({
+        store_order_id: orderId,
+        status: "pending",
+        previous_status: null,
+        note: "inventory_conflict",
+      });
+    if (insertError) throw insertError;
+  }
+}
+
 // -------------------------------------------------------
 // Core function
 // -------------------------------------------------------
@@ -102,6 +157,15 @@ export async function processOrderInventory(
         available: c.available,
       })),
     });
+
+    try {
+      await collapseHistoryToSinglePending(db, orderId);
+    } catch (historyError) {
+      console.error("[INVENTORY] no se pudo dejar el historial solo en pending", {
+        orderId,
+        error: historyError instanceof Error ? historyError.message : historyError,
+      });
+    }
 
     // Awaited inside try/catch so the email is guaranteed to be attempted
     // before the calling function returns (critical in serverless environments
