@@ -710,6 +710,33 @@ export async function listAllFeaturedStorefrontProducts(): Promise<
   return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
 }
 
+export function isStorefrontOfferProduct(product: {
+  discount_client_pct: number;
+  discount_business_pct: number;
+}): boolean {
+  return product.discount_client_pct > 0 || product.discount_business_pct > 0;
+}
+
+/**
+ * Productos activos con descuento de cliente o empresa (bloque Ofertas del home).
+ * Orden: nombre, igual que el catálogo general.
+ */
+export async function listAllOfferStorefrontProducts(): Promise<
+  StorefrontProduct[]
+> {
+  const supabase = await getCatalogSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .or("discount_client_pct.gt.0,discount_business_pct.gt.0")
+    .order("name");
+
+  if (error) assertRemoteOk(error);
+  if (!data) return [];
+  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+}
+
 export async function listProductsByBrandId(
   brandId: string,
 ): Promise<StorefrontProduct[]> {
