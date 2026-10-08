@@ -3,7 +3,7 @@
  */
 
 const PRODUCT_DETAIL_SLUG_RE =
-  /^\/products\/(?!featured$)[^/]+\/?$/;
+  /^\/products\/(?!(?:featured|offers)$)[^/]+\/?$/;
 
 const PRODUCT_NAV_STACK_KEY = "gc:storefront-product-nav";
 
@@ -36,7 +36,13 @@ export function normalizeStorefrontFromPath(
 export function isStorefrontListingPath(pathname: string): boolean {
   const path = normalizeStorefrontFromPath(pathname);
   if (!path) return false;
-  if (path === "/products" || path === "/products/featured") return true;
+  if (
+    path === "/products" ||
+    path === "/products/featured" ||
+    path === "/products/offers"
+  ) {
+    return true;
+  }
   if (path.startsWith("/catalog/")) return true;
   if (path.startsWith("/brands/") && path !== "/brands") return true;
   if (path === "/security-system" || path.startsWith("/security-system/")) {

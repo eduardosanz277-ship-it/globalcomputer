@@ -21,6 +21,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import {
+  isStorefrontOfferProduct,
   listAllActiveStorefrontProducts,
   listFeaturedStorefrontProducts,
 } from "@/modules/catalog/storefront-products.service";
@@ -124,10 +125,7 @@ export default async function HomePage() {
   }
   const servicesData = servicesResult.data;
   const priceTier = resolveStorefrontPriceTier(user?.role);
-  const discountedProducts = products.filter(
-    (p) => p.discount_client_pct > 0 || p.discount_business_pct > 0,
-  );
-  const offerProducts = discountedProducts.slice(0, 4);
+  const offerProducts = products.filter(isStorefrontOfferProduct).slice(0, 4);
   const brands = nav?.brands ?? [];
   const brandIdsWithProducts = new Set(
     products.filter((p) => p.brand_id).map((p) => p.brand_id),
@@ -428,7 +426,7 @@ export default async function HomePage() {
             />
             {offerProducts.length > 0 ? (
               <Link
-                href="/products"
+                href="/products/offers"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "shrink-0 rounded-full border-white bg-card px-5 font-semibold text-foreground hover:border-white hover:bg-[#1a2540] hover:text-white",
