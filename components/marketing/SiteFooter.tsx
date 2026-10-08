@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Clock,
   Facebook,
@@ -12,9 +13,36 @@ import {
   Phone,
 } from "lucide-react";
 import { type PublicSiteContact, siteContactMapsUrl } from "@/lib/site";
+import {
+  parseHomeSectionId,
+  smoothScrollToHomeSection,
+} from "@/lib/home-section-scroll";
+import type { MouseEvent } from "react";
+
+const HOME_SECTION_LINKS = [
+  { href: "/#destacados", labelKey: "footer.featured" },
+  { href: "/#servicios", labelKey: "footer.services" },
+  { href: "/#ofertas", labelKey: "footer.offers" },
+  { href: "/#marcas", labelKey: "footer.brands" },
+] as const;
 
 export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
   const { t } = useI18n();
+  const pathname = usePathname();
+
+  const handleHomeSectionClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    const sectionId = parseHomeSectionId(href);
+    if (!sectionId || pathname !== "/") return;
+    event.preventDefault();
+    const nextUrl = `/${href.slice(href.indexOf("#"))}`;
+    if (window.location.hash !== `#${sectionId}`) {
+      window.history.pushState(null, "", nextUrl);
+    }
+    smoothScrollToHomeSection(sectionId);
+  };
 
   return (
     <footer
@@ -32,38 +60,17 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
               {t("footer.company")}
             </p>
             <ul className="mt-4 space-y-3 text-sm">
-              <li>
-                <Link
-                  href="/#destacados"
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  {t("footer.featured")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#servicios"
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  {t("footer.services")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#ofertas"
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  {t("footer.offers")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#marcas"
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  {t("footer.brands")}
-                </Link>
-              </li>
+              {HOME_SECTION_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-zinc-400 transition hover:text-white"
+                    onClick={(event) => handleHomeSectionClick(event, item.href)}
+                  >
+                    {t(item.labelKey)}
+                  </Link>
+                </li>
+              ))}
               <li>
                 <Link
                   href="/leave-review"
