@@ -505,11 +505,18 @@ export async function createSiteOrder(
         extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
       await saveStoreOrderShippingFromStripe(supabase, existing.id, session);
-      await maybeSendPaidStripeOrderConfirmation({
-        orderId: existing.id,
-        session,
-        supabase,
-      });
+      try {
+        await maybeSendPaidStripeOrderConfirmation({
+          orderId: existing.id,
+          session,
+          supabase,
+        });
+      } catch (err) {
+        console.error("[store-orders] post-sync confirmación falló", {
+          orderId: existing.id,
+          error: err instanceof Error ? err.message : "unknown",
+        });
+      }
       return mapSiteOrderRow({ ...existing, status: nextStatus });
     }
   }
@@ -640,11 +647,18 @@ export async function createSiteOrder(
         extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
       await saveStoreOrderShippingFromStripe(supabase, dup.id, session);
-      await maybeSendPaidStripeOrderConfirmation({
-        orderId: dup.id,
-        session,
-        supabase,
-      });
+      try {
+        await maybeSendPaidStripeOrderConfirmation({
+          orderId: dup.id,
+          session,
+          supabase,
+        });
+      } catch (err) {
+        console.error("[store-orders] post-sync confirmación falló", {
+          orderId: dup.id,
+          error: err instanceof Error ? err.message : "unknown",
+        });
+      }
       return mapSiteOrderRow({ ...dup, status: nextStatus });
     }
   }
@@ -671,11 +685,18 @@ export async function createSiteOrder(
   }
 
   await saveStoreOrderShippingFromStripe(supabase, order.id, session);
-  await maybeSendPaidStripeOrderConfirmation({
-    orderId: order.id,
-    session,
-    supabase,
-  });
+  try {
+    await maybeSendPaidStripeOrderConfirmation({
+      orderId: order.id,
+      session,
+      supabase,
+    });
+  } catch (err) {
+    console.error("[store-orders] post-create confirmación falló", {
+      orderId: order.id,
+      error: err instanceof Error ? err.message : "unknown",
+    });
+  }
 
   return mapSiteOrderRow(order);
 }
@@ -1321,13 +1342,20 @@ export async function syncOrderWithStripeSession(
       note: "stripe_webhook",
     });
 
-    // status === 'success' | 'already_processed' — inventory is good.
-    // maybeSendStoreOrderConfirmationEmail verifies inventory_status internally
-    // before sending; the claim mechanism prevents duplicate sends.
-    await maybeSendStoreOrderConfirmationEmail({
-      orderId: order.id,
-      session,
-      supabase,
-    });
+    // El pedido ya está persistido; un fallo de correo no debe devolver 5xx
+    // a Stripe ni bloquear el registro del pago en BD.
+    try {
+      await maybeSendStoreOrderConfirmationEmail({
+        orderId: order.id,
+        session,
+        supabase,
+      });
+    } catch (err) {
+      console.error("[ORDER_CONFIRMATION_EMAIL] envío tras webhook falló", {
+        orderId: order.id,
+        sessionId: session.id,
+        error: err instanceof Error ? err.message : "unknown",
+      });
+    }
   }
 }

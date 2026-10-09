@@ -179,6 +179,24 @@ export async function maybeSendStoreOrderConfirmationEmail(input: {
   session?: Stripe.Checkout.Session;
   supabase?: SupabaseAdmin;
 }): Promise<{ sent: boolean }> {
+  try {
+    return await maybeSendStoreOrderConfirmationEmailInner(input);
+  } catch (err) {
+    console.error("[ORDER_CONFIRMATION_EMAIL]", {
+      orderId: input.orderId,
+      status: "failed_unexpected",
+      error: err instanceof Error ? err.message : "unknown",
+    });
+    return { sent: false };
+  }
+}
+
+async function maybeSendStoreOrderConfirmationEmailInner(input: {
+  orderId: string;
+  locale?: "es" | "en" | string | null;
+  session?: Stripe.Checkout.Session;
+  supabase?: SupabaseAdmin;
+}): Promise<{ sent: boolean }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
   const appUrl = getAppBaseUrl();
 
