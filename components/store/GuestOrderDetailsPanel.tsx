@@ -7,6 +7,7 @@ import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 import { historyWithPendingStatus } from "@/components/orders/historyWithPendingStatus";
 import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
+import { orderLineTotalWithoutTax } from "@/lib/order-line-total";
 import type { GuestOrderLookupResult } from "@/modules/commerce/store-order-guest-lookup.service";
 import type { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import { cn } from "@/utils/cn";
@@ -134,7 +135,7 @@ export function GuestOrderDetailsPanel({ order }: Props) {
                       {item.quantity} × {formatMoney(item.unitPrice)}
                     </span>
                     <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                      {formatMoney(item.totalPrice)}
+                      {formatMoney(orderLineTotalWithoutTax(item))}
                     </span>
                   </div>
                 </li>
@@ -178,7 +179,7 @@ export function GuestOrderDetailsPanel({ order }: Props) {
                         {formatMoney(item.unitPrice)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 font-semibold tabular-nums text-foreground">
-                        {formatMoney(item.totalPrice)}
+                        {formatMoney(orderLineTotalWithoutTax(item))}
                       </td>
                     </tr>
                   ))}

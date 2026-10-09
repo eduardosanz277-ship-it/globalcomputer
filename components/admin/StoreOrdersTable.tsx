@@ -67,6 +67,7 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { formatStoreOrderDateTime } from "@/lib/store-order-datetime";
+import { orderLineTotalWithoutTax } from "@/lib/order-line-total";
 import { STORE_ORDERS_STATUS_FILTER_WIDE_CH } from "@/lib/store-orders-status-filter-width";
 
 const STATUS_OPTIONS: SiteOrderStatus[] = [
@@ -178,6 +179,7 @@ function orderDisplayTotal(order: AdminStoreOrderRow): number {
   }
   return Number(order.stripe_amount_total ?? "0");
 }
+
 
 function statusOptionsForOrder(
   order: Pick<AdminStoreOrderRow, "shipping_method" | "status">,
@@ -1408,7 +1410,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                               {formatUsd(Number(item.unit_price ?? "0"))}
                             </span>
                             <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                              {formatUsd(Number(item.total_price ?? "0"))}
+                              {formatUsd(orderLineTotalWithoutTax(item))}
                             </span>
                           </div>
                         </li>
@@ -1452,7 +1454,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
                                 {formatUsd(Number(item.unit_price ?? "0"))}
                               </td>
                               <td className="whitespace-nowrap px-4 py-2.5 font-semibold tabular-nums text-foreground">
-                                {formatUsd(Number(item.total_price ?? "0"))}
+                                {formatUsd(orderLineTotalWithoutTax(item))}
                               </td>
                             </tr>
                           ))}

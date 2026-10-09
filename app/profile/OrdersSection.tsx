@@ -43,6 +43,7 @@ import { OrderDetailsRecipientSection } from "@/components/orders/OrderDetailsRe
 import { OrderLineProductLabel } from "@/components/orders/OrderLineProductLabel";
 import { OrderStatusHistoryTimeline } from "@/components/orders/OrderStatusHistoryTimeline";
 import { historyWithPendingStatus } from "@/components/orders/historyWithPendingStatus";
+import { orderLineTotalWithoutTax } from "@/lib/order-line-total";
 
 type Props = {
   orders: CuentaOrder[];
@@ -460,7 +461,7 @@ export function OrdersSection({ orders }: Props) {
                             {formatOrderCurrency(item.unitPrice, localeTag)}
                           </span>
                           <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                            {formatOrderCurrency(item.totalPrice, localeTag)}
+                            {formatOrderCurrency(orderLineTotalWithoutTax(item), localeTag)}
                           </span>
                         </div>
                       </li>
@@ -504,7 +505,7 @@ export function OrdersSection({ orders }: Props) {
                               {formatOrderCurrency(item.unitPrice, localeTag)}
                             </td>
                             <td className="whitespace-nowrap px-4 py-2.5 font-semibold tabular-nums text-foreground">
-                              {formatOrderCurrency(item.totalPrice, localeTag)}
+                              {formatOrderCurrency(orderLineTotalWithoutTax(item), localeTag)}
                             </td>
                           </tr>
                         ))}
