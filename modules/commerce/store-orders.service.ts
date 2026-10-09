@@ -497,6 +497,7 @@ export async function createSiteOrder(
       if (stripeName && (!existing.customer_name || existing.customer_name === "Cliente")) {
         extra.customer_name = stripeName;
       }
+      Object.assign(extra, moneyPatchFromCheckoutSession(session));
 
       const nextStatus = await persistStripeCheckoutConfirmedStatus({
         supabase,
@@ -517,7 +518,11 @@ export async function createSiteOrder(
           error: err instanceof Error ? err.message : "unknown",
         });
       }
-      return mapSiteOrderRow({ ...existing, status: nextStatus });
+      return mapSiteOrderRow({
+        ...existing,
+        ...moneyPatchFromCheckoutSession(session),
+        status: nextStatus,
+      });
     }
   }
 
@@ -594,6 +599,8 @@ export async function createSiteOrder(
     user?.email?.trim().toLowerCase() ||
     PLACEHOLDER_CUSTOMER_EMAIL;
 
+  const stripeMoney = session ? moneyFromCheckoutSession(session) : null;
+
   const { data: order, error: orderError } = await supabase
     .from("store_orders")
     .insert({
@@ -603,17 +610,19 @@ export async function createSiteOrder(
       stripe_session_id: payload.stripeSessionId ?? null,
       status: "pending",
       locale,
-      total_amount: finalTotal,
-      amount_subtotal: Number(totalAmount.toFixed(2)),
-      amount_tax: 0,
-      amount_shipping: shippingTotal,
+      total_amount: stripeMoney?.amount_total ?? finalTotal,
+      amount_subtotal:
+        stripeMoney?.amount_subtotal ?? Number(totalAmount.toFixed(2)),
+      amount_tax: stripeMoney?.amount_tax ?? 0,
+      amount_shipping: stripeMoney?.amount_shipping ?? shippingTotal,
       amount_discount: pricing.amount_discount,
       amount_shipping_base: pricing.amount_shipping_base,
       amount_shipping_surcharge: pricing.amount_shipping_surcharge,
       shipping_method: pricing.shipping_method,
-      stripe_amount_total: finalTotal,
-      stripe_payment_status: session?.payment_status ?? null,
-      stripe_payment_intent: null,
+      stripe_amount_total: stripeMoney?.amount_total ?? finalTotal,
+      stripe_payment_status:
+        stripeMoney?.stripe_payment_status ?? session?.payment_status ?? null,
+      stripe_payment_intent: stripeMoney?.stripe_payment_intent ?? null,
     })
     .select(SITE_ORDER_SELECT)
     .maybeSingle();
@@ -640,6 +649,7 @@ export async function createSiteOrder(
       if (stripeEmail && stripeEmail !== existingEmail) {
         extra.customer_email = stripeEmail;
       }
+      Object.assign(extra, moneyPatchFromCheckoutSession(session));
       const nextStatus = await persistStripeCheckoutConfirmedStatus({
         supabase,
         orderId: dup.id,
@@ -659,7 +669,11 @@ export async function createSiteOrder(
           error: err instanceof Error ? err.message : "unknown",
         });
       }
-      return mapSiteOrderRow({ ...dup, status: nextStatus });
+      return mapSiteOrderRow({
+        ...dup,
+        ...moneyPatchFromCheckoutSession(session),
+        status: nextStatus,
+      });
     }
   }
 
@@ -987,8 +1001,72 @@ function normalizeManualShippingAddress(
 }
 
 function centsToMoney(cents?: number | null): number {
-  if (!cents || !Number.isFinite(cents)) return 0;
+  if (cents == null || !Number.isFinite(cents)) return 0;
   return Number((cents / 100).toFixed(2));
+}
+
+type CheckoutSessionMoneyFields = {
+  amount_subtotal: number;
+  amount_tax: number;
+  amount_shipping: number;
+  amount_total: number;
+  stripe_payment_status: string | null;
+  stripe_payment_intent: string | null;
+};
+
+/** Importes de Checkout (Stripe Tax incluido en amount_tax / amount_total). */
+function moneyFromCheckoutSession(
+  session: Stripe.Checkout.Session,
+): CheckoutSessionMoneyFields {
+  const paymentIntent =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent && typeof session.payment_intent === "object"
+        ? session.payment_intent.id
+        : null;
+
+  return {
+    amount_subtotal: centsToMoney(session.amount_subtotal),
+    amount_tax: centsToMoney(session.total_details?.amount_tax),
+    amount_shipping: centsToMoney(session.total_details?.amount_shipping),
+    amount_total: centsToMoney(session.amount_total),
+    stripe_payment_status: session.payment_status ?? null,
+    stripe_payment_intent: paymentIntent,
+  };
+}
+
+function moneyPatchFromCheckoutSession(
+  session: Stripe.Checkout.Session | null | undefined,
+): Record<string, unknown> {
+  if (!session) return {};
+  const money = moneyFromCheckoutSession(session);
+  return {
+    amount_subtotal: money.amount_subtotal,
+    amount_tax: money.amount_tax,
+    amount_shipping: money.amount_shipping,
+    total_amount: money.amount_total,
+    stripe_amount_total: money.amount_total,
+    stripe_payment_status: money.stripe_payment_status,
+    stripe_payment_intent: money.stripe_payment_intent,
+  };
+}
+
+/**
+ * El evento de webhook a menudo trae `total_details` incompleto (tax en 0/null).
+ * Siempre re-leemos la sesión para persistir tax/total reales de Stripe.
+ */
+async function retrieveCheckoutSessionForAmounts(
+  session: Stripe.Checkout.Session,
+): Promise<Stripe.Checkout.Session> {
+  try {
+    return await getStripeServer().checkout.sessions.retrieve(session.id);
+  } catch (err) {
+    console.warn("[store-orders] no se pudo re-leer sesión Stripe para importes", {
+      sessionId: session.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return session;
+  }
 }
 
 function productIdFromStripeLineItem(line: Stripe.LineItem): string | null {
@@ -1213,10 +1291,12 @@ export async function syncOrderWithStripeSession(
   eventType: string,
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
+  const fullSession = await retrieveCheckoutSessionForAmounts(session);
+
   const existing = await supabase
     .from("store_orders")
     .select("id, status, locale, customer_email")
-    .eq("stripe_session_id", session.id)
+    .eq("stripe_session_id", fullSession.id)
     .maybeSingle();
 
   const order: StripeWebhookOrderRow = existing.data?.id
@@ -1226,7 +1306,7 @@ export async function syncOrderWithStripeSession(
         locale: existing.data.locale ?? null,
         customer_email: existing.data.customer_email ?? null,
       }
-    : await ensureStoreOrderForCheckoutSession(session.id, supabase);
+    : await ensureStoreOrderForCheckoutSession(fullSession.id, supabase);
 
   const { data: seenEvent } = await supabase
     .from("store_order_webhook_events")
@@ -1235,71 +1315,72 @@ export async function syncOrderWithStripeSession(
     .eq("stripe_event_id", eventId)
     .maybeSingle();
 
-  const pricing = breakdownFromStripeMetadata(session.metadata);
+  const pricing = breakdownFromStripeMetadata(fullSession.metadata);
   const previousStatus = (order.status as SiteOrderStatus | undefined) ?? null;
+  const money = moneyFromCheckoutSession(fullSession);
 
   const checkoutLocale = recognizedEmailLocale(
-    session.metadata?.locale ?? session.metadata?.app_locale,
+    fullSession.metadata?.locale ?? fullSession.metadata?.app_locale,
   );
   const localePatch = localePatchForExistingOrder(
     order.locale,
     checkoutLocale,
   );
-  const stripeEmail = stripeSessionCustomerEmail(session);
+  const stripeEmail = stripeSessionCustomerEmail(fullSession);
   const existingEmail = String(order.customer_email ?? "")
     .trim()
     .toLowerCase();
   console.info("[store-orders] webhook syncOrderWithStripeSession", {
-    sessionId: session.id,
-    paymentStatus: session.payment_status,
-    metadataLocale: session.metadata?.locale ?? null,
-    sessionLocale: session.locale ?? null,
+    sessionId: fullSession.id,
+    paymentStatus: fullSession.payment_status,
+    amountTax: money.amount_tax,
+    amountTotal: money.amount_total,
+    metadataLocale: fullSession.metadata?.locale ?? null,
+    sessionLocale: fullSession.locale ?? null,
     orderLocale: order.locale ?? null,
     localePatch: localePatch ?? null,
     previousStatus,
     duplicateEvent: Boolean(seenEvent?.id),
   });
 
+  // Importes siempre desde la sesión re-leída (también en reintentos), para
+  // corregir pedidos creados con amount_tax=0 antes de tener el tax de Stripe.
+  const updates: Record<string, unknown> = {
+    amount_subtotal: money.amount_subtotal,
+    amount_tax: money.amount_tax,
+    amount_shipping: money.amount_shipping,
+    total_amount: money.amount_total,
+    amount_discount: pricing.amount_discount,
+    amount_shipping_base: pricing.amount_shipping_base,
+    amount_shipping_surcharge: pricing.amount_shipping_surcharge,
+    shipping_method: pricing.shipping_method,
+    stripe_amount_total: money.amount_total,
+    stripe_payment_status: money.stripe_payment_status,
+    stripe_payment_intent: money.stripe_payment_intent,
+    ...(localePatch ? { locale: localePatch } : {}),
+    ...(stripeEmail && stripeEmail !== existingEmail
+      ? { customer_email: stripeEmail }
+      : {}),
+  };
+
+  const { error: upErr } = await supabase
+    .from("store_orders")
+    .update(updates)
+    .eq("id", order.id);
+  if (upErr) {
+    console.error("[store-orders] actualizar tras webhook", upErr);
+    throw upErr;
+  }
+
   if (!seenEvent?.id) {
-    const updates: Record<string, unknown> = {
-      amount_subtotal: centsToMoney(session.amount_subtotal),
-      amount_tax: centsToMoney(session.total_details?.amount_tax),
-      amount_shipping: centsToMoney(session.total_details?.amount_shipping),
-      amount_discount: pricing.amount_discount,
-      amount_shipping_base: pricing.amount_shipping_base,
-      amount_shipping_surcharge: pricing.amount_shipping_surcharge,
-      shipping_method: pricing.shipping_method,
-      stripe_amount_total: centsToMoney(session.amount_total),
-      stripe_payment_status: session.payment_status ?? null,
-      stripe_payment_intent:
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : session.payment_intent && typeof session.payment_intent === "object"
-            ? session.payment_intent.id
-            : null,
-      ...(localePatch ? { locale: localePatch } : {}),
-      ...(stripeEmail && stripeEmail !== existingEmail
-        ? { customer_email: stripeEmail }
-        : {}),
-    };
-
-    const { error: upErr } = await supabase
-      .from("store_orders")
-      .update(updates)
-      .eq("id", order.id);
-    if (upErr) {
-      console.error("[store-orders] actualizar tras webhook", upErr);
-      throw upErr;
-    }
-
-    await saveStoreOrderShippingFromStripe(supabase, order.id, session);
+    await saveStoreOrderShippingFromStripe(supabase, order.id, fullSession);
 
     const { error: evErr } = await supabase.from("store_order_webhook_events").upsert(
       {
         store_order_id: order.id,
         stripe_event_id: eventId,
         event_type: eventType,
-        payload: session as unknown as Record<string, unknown>,
+        payload: fullSession as unknown as Record<string, unknown>,
       },
       { onConflict: "store_order_id,stripe_event_id" },
     );
@@ -1313,7 +1394,7 @@ export async function syncOrderWithStripeSession(
   // seenEvent block so that Stripe retries (for the same event or different
   // events of the same session) can re-attempt them if a transient error
   // previously prevented their completion. Both operations are idempotent.
-  if (session.payment_status === "paid") {
+  if (fullSession.payment_status === "paid") {
     const inventoryResult = await processOrderInventory(order.id, supabase);
 
     if (inventoryResult.status === "error") {
@@ -1329,7 +1410,7 @@ export async function syncOrderWithStripeSession(
       // El pedido queda pending (no confirmed) hasta que el admin resuelva el stock.
       console.warn("[INVENTORY] conflict - pedido requiere atención administrativa", {
         orderId: order.id,
-        sessionId: session.id,
+        sessionId: fullSession.id,
         conflicts: inventoryResult.conflicts,
       });
       return;
@@ -1347,13 +1428,13 @@ export async function syncOrderWithStripeSession(
     try {
       await maybeSendStoreOrderConfirmationEmail({
         orderId: order.id,
-        session,
+        session: fullSession,
         supabase,
       });
     } catch (err) {
       console.error("[ORDER_CONFIRMATION_EMAIL] envío tras webhook falló", {
         orderId: order.id,
-        sessionId: session.id,
+        sessionId: fullSession.id,
         error: err instanceof Error ? err.message : "unknown",
       });
     }
