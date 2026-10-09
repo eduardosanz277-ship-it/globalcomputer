@@ -1034,10 +1034,9 @@ async function ensureStoreOrderForCheckoutSession(
     }
     const qty = line.quantity ?? 1;
     const subCents = line.amount_subtotal ?? 0;
-    const totalCents = line.amount_total ?? subCents;
     const unitPrice =
       qty > 0 ? Number((subCents / qty / 100).toFixed(2)) : 0;
-    const totalPrice = Number((totalCents / 100).toFixed(2));
+    const totalPrice = Number((subCents / 100).toFixed(2));
     const priceProduct = line.price?.product;
     const nameFromProduct =
       typeof priceProduct === "object" &&
