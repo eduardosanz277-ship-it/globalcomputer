@@ -183,7 +183,7 @@ export function BusinessProfileCard({
             <p className="text-sm text-muted-foreground">
               {t("admin.businessSubscriptions.table.ein")}
             </p>
-            <p className="text-xs font-mono leading-snug text-foreground">
+            <p className="text-sm font-mono leading-snug text-foreground">
               {employerIdentificationNumber?.trim()
                 ? employerIdentificationNumber
                 : "—"}

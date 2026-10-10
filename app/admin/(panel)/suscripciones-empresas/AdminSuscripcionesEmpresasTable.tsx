@@ -239,13 +239,14 @@ function SortableHeader({
 }
 
 const MENU_MIN_WIDTH_PX = 208; // 13rem
-const BUSINESS_COLUMN_CLASS =
-  "min-w-[16rem] max-w-[min(29rem,42vw)] md:max-w-[min(24rem,36vw)]";
-const PHONE_COLUMN_CLASS = "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem]";
-const EIN_COLUMN_CLASS = "w-[10rem] min-w-[10rem] max-w-[10rem]";
+const BUSINESS_COLUMN_CLASS = "min-w-0 overflow-hidden";
+const PHONE_COLUMN_CLASS =
+  "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem] overflow-hidden";
+const EIN_COLUMN_CLASS = "w-[10rem] min-w-[10rem] max-w-[10rem] overflow-hidden";
 const APPROVAL_COLUMN_CLASS = "w-[11.5rem] min-w-[11.5rem] max-w-[11.5rem]";
 const CREATED_AT_COLUMN_CLASS = "w-[12.75rem] min-w-[12.75rem] max-w-[12.75rem]";
 const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
+const SUBSCRIPTIONS_TABLE_MIN_WIDTH_CLASS = "min-w-[72rem]";
 
 interface Props {
   rows: AdminBusinessProfileRow[];
@@ -743,7 +744,7 @@ export function AdminSuscripcionesEmpresasTable({
         cell: ({ row }) => {
           const v = row.original.employerIdentificationNumber?.trim();
           if (!v) return <AdminTableEmptyEmDash />;
-          return <span className="font-mono text-xs whitespace-nowrap">{v}</span>;
+          return <span className="font-mono text-sm whitespace-nowrap">{v}</span>;
         },
       },
       {
@@ -939,7 +940,7 @@ export function AdminSuscripcionesEmpresasTable({
         searchPlaceholder={t(
           "admin.businessSubscriptions.filters.searchPlaceholder",
         )}
-        tableClassName="table-fixed"
+        tableClassName={`table-fixed ${SUBSCRIPTIONS_TABLE_MIN_WIDTH_CLASS}`}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-4"
         paginationButtonVariant="ghost"
