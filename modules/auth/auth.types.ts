@@ -20,7 +20,7 @@ export interface RegisterBusinessPayload {
   phone?: string;
   email: string;
   employerIdentificationNumber: string;
-  /** Locale de la UI al registrarse; se usa en el correo de aprobación. */
+  /** Locale de la UI al registrarse; se usa en los correos de solicitud y aprobación. */
   locale?: Locale;
 }
 

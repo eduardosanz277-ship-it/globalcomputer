@@ -1,3 +1,5 @@
+import { sendAdminBusinessPendingRequestEmail } from "@/lib/email/sendAdminBusinessPendingRequestEmail";
+import { sendBusinessPendingRequestEmail } from "@/lib/email/sendBusinessPendingRequestEmail";
 import { REGISTER_BUSINESS_ERROR } from "./auth.errors";
 import {
   emailOtpRequestSchema,
@@ -313,6 +315,27 @@ export async function registerBusinessService(
     });
   } catch (error: unknown) {
     throw mapRegisterBusinessError(error, locale);
+  }
+
+  try {
+    await sendBusinessPendingRequestEmail(
+      parsed.data.email,
+      parsed.data.businessName,
+      locale,
+    );
+  } catch (error: unknown) {
+    console.error("[register-business] correo al solicitante", error);
+  }
+
+  try {
+    await sendAdminBusinessPendingRequestEmail({
+      businessName: parsed.data.businessName,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      employerIdentificationNumber: parsed.data.employerIdentificationNumber,
+    });
+  } catch (error: unknown) {
+    console.error("[register-business] correo al admin", error);
   }
 
   return { success: true };
