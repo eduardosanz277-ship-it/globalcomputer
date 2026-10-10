@@ -102,6 +102,7 @@ export const es = {
     fields: {
       businessName: "Nombre del negocio",
       phone: "Teléfono",
+      phonePlaceholder: "786-395-1076",
       email: "Correo electrónico",
       ein: "Número de identificación fiscal del empleador (EIN)",
       einPlaceholder: "p. ej. 12-3456789",
@@ -129,6 +130,7 @@ export const es = {
       network:
         "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
       generic: "No se pudo completar el registro.",
+      phoneInvalid: "El teléfono de Estados Unidos debe tener 10 dígitos",
     },
   },
   language: {

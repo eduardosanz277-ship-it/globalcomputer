@@ -15,7 +15,8 @@ import {
 import { Form } from "@/components/ui/form";
 import { useServerAction } from "@/hooks/use-server-action";
 import {
-  registerBusinessSchema,
+  US_PHONE_DIGIT_COUNT,
+  createRegisterBusinessSchema,
   type RegisterBusinessFormInput,
 } from "@/modules/auth/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +31,12 @@ export default function RegisterEmpresaPage() {
   const { locale, t, supportedLocales, setLocale } = useI18n();
 
   const form = useForm<RegisterBusinessFormInput>({
-    resolver: zodResolver(registerBusinessSchema),
+    resolver: (values, context, options) =>
+      zodResolver(
+        createRegisterBusinessSchema({
+          phoneInvalid: t("registerBusiness.errors.phoneInvalid"),
+        }),
+      )(values, context, options),
     defaultValues: {
       businessName: "",
       phone: "",
