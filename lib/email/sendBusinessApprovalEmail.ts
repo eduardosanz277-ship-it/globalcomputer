@@ -79,9 +79,19 @@ export async function sendBusinessApprovalEmail(
     <p style="margin:0 0 24px 0;font-size:15px;line-height:1.65;color:#4b5563;">
       ${escapeHtml(t.loginHint(brand))}
     </p>
-    <div style="text-align:center;">
-      <a href="${escapeHtml(`${appUrl}/login`)}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">${escapeHtml(t.cta)}</a>
-    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center" style="text-align:center;">
+          <table role="presentation" cellspacing="0" cellpadding="0" align="center" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#357fd2" style="border-radius:8px;background:#357fd2;background-color:#357fd2;">
+                <a href="${escapeHtml(`${appUrl}/login`)}" style="display:inline-block;background:#357fd2;background-color:#357fd2;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;line-height:1;padding:14px 24px;border-radius:8px;">${escapeHtml(t.cta)}</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `;
 
   const footerContact = await getBrandedEmailFooterContact();
