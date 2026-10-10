@@ -101,7 +101,10 @@ export default function RegisterEmpresaPage() {
             name="phone"
             label={t("registerBusiness.fields.phone")}
             type="tel"
+            inputMode="tel"
             autoComplete="tel"
+            maxDigits={US_PHONE_DIGIT_COUNT}
+            placeholder={t("registerBusiness.fields.phonePlaceholder")}
             error={errors.phone?.message}
           />
           <AuthField
