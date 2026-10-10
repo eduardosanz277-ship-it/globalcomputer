@@ -76,16 +76,56 @@ export const registerSchema = loginSchema.extend({
     .min(2, "Nombre demasiado corto"),
 });
 
+const US_PHONE_TOO_LONG = "Teléfono demasiado largo";
+const US_PHONE_INVALID_ES =
+  "El teléfono de Estados Unidos debe tener 10 dígitos";
+
+export const US_PHONE_DIGIT_COUNT = 10;
+
+export function countPhoneDigits(value: string): number {
+  return value.replace(/\D+/g, "").length;
+}
+
+/** Conserva el formato escrito y descarta dígitos por encima del máximo. */
+export function limitUsPhoneDigits(
+  value: string,
+  maxDigits = US_PHONE_DIGIT_COUNT,
+): string {
+  let seen = 0;
+  let out = "";
+  for (const ch of value) {
+    if (ch >= "0" && ch <= "9") {
+      if (seen >= maxDigits) continue;
+      seen += 1;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/** NANP: exactamente 10 dígitos. Ignora espacios y símbolos. */
+export function isValidUsPhoneNumber(value: string): boolean {
+  return countPhoneDigits(value) === US_PHONE_DIGIT_COUNT;
+}
+
+function registerBusinessPhoneSchema(invalidMessage: string) {
+  return z
+    .string()
+    .max(40, US_PHONE_TOO_LONG)
+    .refine((s) => {
+      const trimmed = s.trim();
+      return trimmed.length === 0 || isValidUsPhoneNumber(trimmed);
+    }, invalidMessage)
+    .transform((s) => {
+      const trimmed = s.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    });
+}
+
 /** Registro como empresa: sin contraseña (usuario creado vía Admin API; login por OTP cuando esté aprobado). */
 export const registerBusinessSchema = z.object({
   businessName: z.string().trim().min(2, "El nombre del negocio es obligatorio"),
-  phone: z
-    .string()
-    .max(40, "Teléfono demasiado largo")
-    .transform((s) => {
-      const t = s.trim();
-      return t.length > 0 ? t : undefined;
-    }),
+  phone: registerBusinessPhoneSchema(US_PHONE_INVALID_ES),
   email: emailRequired,
   employerIdentificationNumber: z
     .string()
@@ -93,6 +133,18 @@ export const registerBusinessSchema = z.object({
     .min(1, "El EIN es obligatorio")
     .max(32, "Valor demasiado largo"),
 });
+
+export function createRegisterBusinessSchema(messages: {
+  phoneInvalid: string;
+}) {
+  return z.object({
+    businessName: registerBusinessSchema.shape.businessName,
+    phone: registerBusinessPhoneSchema(messages.phoneInvalid),
+    email: registerBusinessSchema.shape.email,
+    employerIdentificationNumber:
+      registerBusinessSchema.shape.employerIdentificationNumber,
+  });
+}
 
 export type LoginSchema = z.infer<typeof loginSchema>;
 export type EmailOtpRequestSchema = z.infer<typeof emailOtpRequestSchema>;
