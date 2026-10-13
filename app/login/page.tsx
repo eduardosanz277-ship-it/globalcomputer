@@ -451,6 +451,7 @@ function LoginPageContent() {
                 {t("login.links.businessLink")}
               </Link>
             </AuthInlineLinkRow>
+            {/* Acceso admin solo por URL directa: /admin/login
             <AuthInlineLinkRow>
               <span>{t("login.links.adminPrompt")}</span>
               <Link
@@ -460,6 +461,7 @@ function LoginPageContent() {
                 {t("login.links.adminLink")}
               </Link>
             </AuthInlineLinkRow>
+            */}
           </AuthFooterLinks>
         ) : null}
       </AuthCard>
