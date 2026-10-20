@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export type CreateContactMessagePayload = {
   name: string;
@@ -9,12 +9,12 @@ export type CreateContactMessagePayload = {
 };
 
 /**
- * Inserta un mensaje desde el formulario público (RLS: solo INSERT para anon).
+ * Inserta un mensaje desde el formulario público (solo service role).
  */
 export async function createContactMessage(
   payload: CreateContactMessagePayload,
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("contact_messages").insert({
     name: payload.name.trim(),
     email: payload.email.trim(),
