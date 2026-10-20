@@ -121,6 +121,9 @@ export const es = {
       error: "No se pudo completar el registro",
     },
     errors: {
+      einRequired: "El EIN es obligatorio",
+      einDigits: "El EIN debe contener exactamente 9 dígitos",
+      einPrefix: "El prefijo del EIN no es válido",
       duplicateEmail: "Ya existe una cuenta asociada a este correo electrónico.",
       duplicateEin:
         "Ya existe una cuenta registrada con este EIN (Número de Identificación del Empleador).",

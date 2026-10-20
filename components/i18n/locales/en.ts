@@ -117,6 +117,9 @@ export const en = {
       error: "Registration could not be completed",
     },
     errors: {
+      einRequired: "EIN is required",
+      einDigits: "EIN must contain exactly 9 digits",
+      einPrefix: "The EIN prefix is not valid",
       duplicateEmail: "An account is already associated with this email address.",
       duplicateEin:
         "An account is already registered with this EIN (Employer Identification Number).",

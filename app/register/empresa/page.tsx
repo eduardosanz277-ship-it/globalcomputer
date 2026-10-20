@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
 
@@ -34,7 +35,19 @@ export default function RegisterEmpresaPage() {
     resolver: (values, context, options) =>
       zodResolver(
         createRegisterBusinessSchema({
+          businessNameRequired: t("contactPage.errors.nameRequired"),
+          businessNameMin: t("contactPage.errors.nameMin"),
+          businessNameMax: t("contactPage.errors.nameMax"),
+          businessNameChars: t("contactPage.errors.nameChars"),
+          emailRequired: t("contactPage.errors.emailRequired"),
+          emailInvalid: t("contactPage.errors.emailInvalid"),
+          emailMax: t("contactPage.errors.emailMax"),
+          phoneChars: t("contactPage.errors.phoneChars"),
           phoneInvalid: t("registerBusiness.errors.phoneInvalid"),
+          phoneMax: t("contactPage.errors.phoneMax"),
+          einRequired: t("registerBusiness.errors.einRequired"),
+          einDigits: t("registerBusiness.errors.einDigits"),
+          einPrefix: t("registerBusiness.errors.einPrefix"),
         }),
       )(values, context, options),
     defaultValues: {
@@ -59,6 +72,15 @@ export default function RegisterEmpresaPage() {
   );
 
   const errors = form.formState.errors;
+
+  // Si hay errores visibles y el usuario cambia de idioma,
+  // se vuelven a validar para que los mensajes salgan en el locale actual.
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      void form.trigger();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   return (
     <AuthLayout>
@@ -102,6 +124,7 @@ export default function RegisterEmpresaPage() {
             label={t("registerBusiness.fields.phone")}
             type="tel"
             inputMode="tel"
+            required
             autoComplete="tel"
             maxDigits={US_PHONE_DIGIT_COUNT}
             placeholder={t("registerBusiness.fields.phonePlaceholder")}
@@ -119,7 +142,10 @@ export default function RegisterEmpresaPage() {
             name="employerIdentificationNumber"
             label={t("registerBusiness.fields.ein")}
             required
+            inputMode="numeric"
             autoComplete="off"
+            maxDigits={9}
+            maxLength={11}
             placeholder={t("registerBusiness.fields.einPlaceholder")}
             error={errors.employerIdentificationNumber?.message}
           />
