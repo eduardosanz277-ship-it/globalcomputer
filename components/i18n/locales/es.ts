@@ -313,12 +313,39 @@ export const es = {
     subjectPlaceholder: "¿En qué podemos ayudarte?",
     messageLabel: "Mensaje",
     messagePlaceholder:
-      "Cuentanos lo que necesitas: tipo de proyecto, ubicacion y horario de preferencia.",
+      "Cuéntanos lo que necesitas: tipo de proyecto, ubicación y horario de preferencia.",
     sending: "Enviando mensaje",
     send: "Enviar mensaje",
+    errors: {
+      nameRequired: "El nombre es obligatorio",
+      nameMin: "El nombre debe tener al menos 2 caracteres",
+      nameMax: "Máximo 100 caracteres",
+      nameChars:
+        "El nombre solo puede incluir letras, espacios, guiones y apóstrofes (sin números ni símbolos especiales).",
+      emailRequired: "El correo es obligatorio",
+      emailInvalid: "Introduce un correo válido",
+      emailMax: "Máximo 160 caracteres",
+      phoneRequired: "El teléfono es obligatorio",
+      phoneChars:
+        "El teléfono solo puede incluir dígitos, espacios, paréntesis, signo + y guiones.",
+      phoneInvalid: "El teléfono de Estados Unidos debe tener 10 dígitos",
+      phoneMax: "Máximo 40 caracteres",
+      subjectRequired: "El asunto es obligatorio",
+      subjectMin: "El asunto debe tener al menos 5 caracteres",
+      subjectMax: "Máximo 100 caracteres",
+      subjectChars:
+        "El asunto solo puede incluir letras, números, espacios y signos de puntuación básicos.",
+      messageRequired: "El mensaje es obligatorio",
+      messageMin: "El mensaje debe tener al menos 10 caracteres",
+      messageMax: "Máximo 2000 caracteres",
+      messageChars:
+        "El mensaje no puede incluir los caracteres < o > ni fragmentos de código.",
+      messageLinks: "El mensaje no puede incluir tantos enlaces",
+      rateLimit: "Has enviado demasiados mensajes. Espera un momento e inténtalo de nuevo.",
+    },
     mapLoading: "Cargando mapa",
-    mapVisit: "Visitenos en nuestra ubicacion en Miami, FL.",
-    mapZoomHint: "Usa ctrl + rueda del raton para acercar el mapa",
+    mapVisit: "Visítanos en nuestra ubicación en Miami, FL.",
+    mapZoomHint: "Usa Ctrl + rueda del ratón para acercar el mapa",
     mapOpenGoogle: "Ver en Google Maps",
   },
   storefront: {

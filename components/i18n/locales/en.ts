@@ -312,6 +312,33 @@ export const en = {
       "Tell us what you need: project type, location, and preferred schedule.",
     sending: "Sending message",
     send: "Send message",
+    errors: {
+      nameRequired: "Name is required",
+      nameMin: "Name must be at least 2 characters",
+      nameMax: "Maximum 100 characters",
+      nameChars:
+        "Name can only include letters, spaces, hyphens, and apostrophes (no numbers or special symbols).",
+      emailRequired: "Email is required",
+      emailInvalid: "Enter a valid email",
+      emailMax: "Maximum 160 characters",
+      phoneRequired: "Phone is required",
+      phoneChars:
+        "Phone can only include digits, spaces, parentheses, plus sign (+) and hyphens.",
+      phoneInvalid: "US phone numbers must have 10 digits",
+      phoneMax: "Maximum 40 characters",
+      subjectRequired: "Subject is required",
+      subjectMin: "Subject must be at least 5 characters",
+      subjectMax: "Maximum 100 characters",
+      subjectChars:
+        "Subject can only include letters, numbers, spaces, and basic punctuation.",
+      messageRequired: "Message is required",
+      messageMin: "Message must be at least 10 characters",
+      messageMax: "Maximum 2000 characters",
+      messageChars:
+        "Message cannot include the characters < or > or code fragments.",
+      messageLinks: "The message cannot include that many links",
+      rateLimit: "You have sent too many messages. Please wait a moment and try again.",
+    },
     mapLoading: "Loading map",
     mapVisit: "Visit us at our location in Miami, FL.",
     mapZoomHint: "Use ctrl + mouse wheel to zoom the map",
