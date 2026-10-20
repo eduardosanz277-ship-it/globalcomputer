@@ -6,6 +6,7 @@ import { createContactMessage } from "./contact-messages.service";
  */
 export async function createContactRequest(
   data: ContactRequestFormValues,
+  options?: { isSpam?: boolean; spamReason?: string },
 ): Promise<void> {
   await createContactMessage({
     name: data.name,
@@ -13,5 +14,7 @@ export async function createContactRequest(
     phone: data.phone,
     subject: data.subject,
     message: data.message,
+    isSpam: options?.isSpam ?? false,
+    spamReason: options?.spamReason ?? null,
   });
 }

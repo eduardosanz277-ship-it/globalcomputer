@@ -42,13 +42,19 @@ export async function POST(req: Request) {
   const locale = await getServerLocale();
 
   try {
-    if (isContactHoneypotFilled(parsed.data[CONTACT_HONEYPOT_FIELD])) {
+    const honeypotFilled = isContactHoneypotFilled(
+      parsed.data[CONTACT_HONEYPOT_FIELD],
+    );
+    if (honeypotFilled) {
       console.warn(
-        "[contact] honeypot filled; continuing to save message for manual review.",
+        "[contact] honeypot filled; marking message as possible spam but keeping it for review.",
       );
     }
     await enforceContactRequestRateLimit(req, parsed.data.email);
-    await createContactRequest(parsed.data);
+    await createContactRequest(parsed.data, {
+      isSpam: honeypotFilled,
+      spamReason: honeypotFilled ? "honeypot" : undefined,
+    });
     await recordContactRequestSubmission(req, parsed.data.email);
     return NextResponse.json(
       { message: "Mensaje enviado correctamente" },
