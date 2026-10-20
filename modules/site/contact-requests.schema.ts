@@ -8,7 +8,8 @@ const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MESSAGE_URLS = 2;
 
-export const CONTACT_HONEYPOT_FIELD = "website";
+// Campo honeypot oculto. Usamos un nombre poco común para reducir autofill.
+export const CONTACT_HONEYPOT_FIELD = "extra_info";
 
 export type ContactRequestFormMessages = {
   nameRequired: string;

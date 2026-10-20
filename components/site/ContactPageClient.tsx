@@ -244,7 +244,7 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
           <Form form={form} onSubmit={onSubmit} className="mt-5 space-y-4">
             <div className="sr-only" aria-hidden="true">
               <input
-                id="contact-website"
+                id="contact-extra-info"
                 type="text"
                 tabIndex={-1}
                 autoComplete="off"
