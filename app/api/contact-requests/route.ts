@@ -41,14 +41,12 @@ export async function POST(req: Request) {
 
   const locale = await getServerLocale();
 
-  if (isContactHoneypotFilled(parsed.data[CONTACT_HONEYPOT_FIELD])) {
-    return NextResponse.json(
-      { message: "Mensaje enviado correctamente" },
-      { status: 201 },
-    );
-  }
-
   try {
+    if (isContactHoneypotFilled(parsed.data[CONTACT_HONEYPOT_FIELD])) {
+      console.warn(
+        "[contact] honeypot filled; continuing to save message for manual review.",
+      );
+    }
     await enforceContactRequestRateLimit(req, parsed.data.email);
     await createContactRequest(parsed.data);
     await recordContactRequestSubmission(req, parsed.data.email);
