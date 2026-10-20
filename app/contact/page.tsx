@@ -20,7 +20,7 @@ export default async function ContactPage({ searchParams }: Props) {
   const contact = await getPublicSiteContact();
 
   return (
-    <main className="min-h-[60vh] bg-gradient-to-b from-muted/30 via-background to-background">
+    <main className="min-h-[60vh] bg-gradient-to-b from-muted/30 via-background to-background overflow-x-hidden">
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 md:pt-6 md:pb-4 lg:px-8">
           <MarketingBreadcrumb
@@ -36,13 +36,13 @@ export default async function ContactPage({ searchParams }: Props) {
               title={<LocalizedText es="Contáctanos" en="Contact us" />}
               description={
                 <LocalizedText
-                  es="Nuestro equipo te ayuda con asesoria, instalacion y soporte tecnico para sistemas de seguridad."
+                  es="Nuestro equipo te ayuda con asesoría, instalación y soporte técnico para sistemas de seguridad."
                   en="Our team helps you with advisory, installation, and technical support for security systems."
                 />
               }
               className="max-w-none"
               titleClassName={`${inter.className} text-[28px] font-bold tracking-[0.006em] text-foreground sm:text-[32px]`}
-              descriptionClassName={`${inter.className} mt-1 max-w-none whitespace-nowrap text-[15px] font-normal text-muted-foreground sm:text-base`}
+              descriptionClassName={`${inter.className} mt-1 max-w-none text-[15px] font-normal text-muted-foreground sm:text-base`}
             />
           </div>
         </div>
