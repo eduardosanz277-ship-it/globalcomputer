@@ -7,6 +7,7 @@ import {
   useFormContext,
   UseFormReturn,
 } from "react-hook-form";
+import { limitUsPhoneDigits } from "@/modules/auth/auth.schema";
 import { cn } from "@/utils/cn";
 import { Label, RequiredMark } from "./label";
 import { Input } from "./input";
@@ -54,6 +55,8 @@ interface FormFieldProps
    * Por defecto la etiqueta va encima del input.
    */
   layout?: "stack" | "inline";
+  /** Si se indica, no se pueden escribir más dígitos que este máximo. */
+  maxDigits?: number;
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
@@ -65,14 +68,17 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       type = "text",
       required: fieldRequired,
       layout = "stack",
+      maxDigits,
       className,
+      onChange,
       ...props
     },
     ref
   ) => {
     const { register } = useFormContext();
     const registration = register(name);
-    const { ref: registrationRef, ...rest } = registration;
+    const { ref: registrationRef, onChange: registerOnChange, ...rest } =
+      registration;
     const hasError = Boolean(error);
 
     const inputEl = (
@@ -81,6 +87,16 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
         type={type}
         {...props}
         {...rest}
+        onChange={(event) => {
+          if (typeof maxDigits === "number") {
+            event.target.value = limitUsPhoneDigits(
+              event.target.value,
+              maxDigits,
+            );
+          }
+          void registerOnChange(event);
+          onChange?.(event);
+        }}
         aria-invalid={hasError ? true : undefined}
         aria-required={fieldRequired ? true : undefined}
         className={cn(
