@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,9 @@ import {
 import type { PublicSiteContact } from "@/lib/site";
 import { siteContactMapsUrl } from "@/lib/site";
 import {
-  contactRequestFormSchema,
+  CONTACT_HONEYPOT_FIELD,
+  US_PHONE_DIGIT_COUNT,
+  createContactRequestFormSchema,
   type ContactRequestFormValues,
 } from "@/modules/site/contact-requests.schema";
 import { Form, FormField } from "@/components/ui/form";
@@ -50,15 +52,40 @@ type Props = {
 };
 
 export function ContactPageClient({ contact, initialSubject = "" }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const form = useForm<ContactRequestFormValues>({
-    resolver: zodResolver(contactRequestFormSchema),
+    resolver: (values, context, options) =>
+      zodResolver(
+        createContactRequestFormSchema({
+          nameRequired: t("contactPage.errors.nameRequired"),
+          nameMin: t("contactPage.errors.nameMin"),
+          nameMax: t("contactPage.errors.nameMax"),
+          nameChars: t("contactPage.errors.nameChars"),
+          emailRequired: t("contactPage.errors.emailRequired"),
+          emailInvalid: t("contactPage.errors.emailInvalid"),
+          emailMax: t("contactPage.errors.emailMax"),
+          phoneRequired: t("contactPage.errors.phoneRequired"),
+          phoneChars: t("contactPage.errors.phoneChars"),
+          phoneInvalid: t("contactPage.errors.phoneInvalid"),
+          phoneMax: t("contactPage.errors.phoneMax"),
+          subjectRequired: t("contactPage.errors.subjectRequired"),
+          subjectMin: t("contactPage.errors.subjectMin"),
+          subjectMax: t("contactPage.errors.subjectMax"),
+          subjectChars: t("contactPage.errors.subjectChars"),
+          messageRequired: t("contactPage.errors.messageRequired"),
+          messageMin: t("contactPage.errors.messageMin"),
+          messageMax: t("contactPage.errors.messageMax"),
+          messageChars: t("contactPage.errors.messageChars"),
+          messageLinks: t("contactPage.errors.messageLinks"),
+        }),
+      )(values, context, options),
     defaultValues: {
       name: "",
       email: "",
       phone: "",
       subject: initialSubject,
       message: "",
+      [CONTACT_HONEYPOT_FIELD]: "",
     },
     mode: "onSubmit",
   });
@@ -68,6 +95,14 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
     formState: { errors, isSubmitting },
     reset,
   } = form;
+  // Si hay errores visibles y el usuario cambia de idioma,
+  // se vuelven a validar para que los mensajes salgan en el locale actual.
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      void form.trigger();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   const cards = useMemo(
     () => [
@@ -123,6 +158,9 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
       if (!response.ok) {
         if (response.status === 503 || data.code === "NETWORK") {
           throw new TypeError("Failed to fetch");
+        }
+        if (response.status === 429 || data.code === "RATE_LIMIT") {
+          throw new Error(t("contactPage.errors.rateLimit"));
         }
         throw new Error(data.error ?? "request_failed");
       }
@@ -204,6 +242,15 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
           </div>
 
           <Form form={form} onSubmit={onSubmit} className="mt-5 space-y-4">
+            <div className="sr-only" aria-hidden="true">
+              <input
+                id="contact-website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                {...register(CONTACT_HONEYPOT_FIELD)}
+              />
+            </div>
             <FormField
               name="name"
                 label={t("contactPage.nameLabel")}
@@ -230,10 +277,13 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
               <FormField
                 name="phone"
                 label={t("contactPage.phoneLabel")}
+                type="tel"
+                inputMode="tel"
                 required
                 disabled={isSubmitting}
                 error={errors.phone?.message}
                 autoComplete="tel"
+                maxDigits={US_PHONE_DIGIT_COUNT}
                 className={INPUT_CLASS}
                 placeholder={t("contactPage.phonePlaceholder")}
               />
@@ -246,6 +296,7 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
               disabled={isSubmitting}
               error={errors.subject?.message}
               autoComplete="off"
+              maxLength={100}
               className={INPUT_CLASS}
               placeholder={t("contactPage.subjectPlaceholder")}
             />
@@ -258,6 +309,7 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
               <textarea
                 id="contact-message"
                 placeholder={t("contactPage.messagePlaceholder")}
+                maxLength={2000}
                 disabled={isSubmitting}
                 aria-invalid={errors.message ? true : undefined}
                 aria-describedby={
