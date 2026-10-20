@@ -10,7 +10,7 @@ export async function createContactRequest(
   await createContactMessage({
     name: data.name,
     email: data.email,
-    phone: data.phone.trim() ? data.phone.trim() : null,
+    phone: data.phone,
     subject: data.subject,
     message: data.message,
   });
