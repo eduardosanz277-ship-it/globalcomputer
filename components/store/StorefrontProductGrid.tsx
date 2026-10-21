@@ -5,7 +5,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 
 
 export function StorefrontProductGrid({

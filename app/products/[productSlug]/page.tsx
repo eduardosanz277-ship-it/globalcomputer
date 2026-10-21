@@ -22,7 +22,7 @@ import { listAccessoryStorefrontProducts } from "@/modules/catalog/storefront-pr
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";

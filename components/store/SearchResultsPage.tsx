@@ -5,7 +5,7 @@ import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCa
 import type { Locale } from "@/components/i18n/translations";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontCatalogPageData } from "@/modules/catalog/storefront-catalog.shared";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 
 
 type Props = {

@@ -28,18 +28,20 @@ export function AppLogo({ className, priority, variant = "default" }: AppLogoPro
     );
   }
 
+  // width/height con la proporción real del archivo (254x320) para reservar el hueco
+  // correcto; se muestra a <=76px de alto (~60px de ancho).
   return (
     <Image
       src={APP_LOGO_PATH}
       alt={SITE_BRAND_NAME}
-      width={360}
-      height={90}
+      width={254}
+      height={320}
       className={cn(
         "h-14 w-auto max-h-[3.5rem] object-contain object-left sm:h-[4.25rem] sm:max-h-[4.5rem]",
         className,
       )}
       priority={priority}
-      sizes="(max-width: 640px) 240px, 360px"
+      sizes="64px"
     />
   );
 }

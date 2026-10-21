@@ -7,7 +7,7 @@ import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 
 export const dynamic = "force-dynamic";
 

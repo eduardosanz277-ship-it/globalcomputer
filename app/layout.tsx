@@ -41,10 +41,11 @@ export const metadata: Metadata = {
     template: "%s | Global Computers USA",
   },
   description: "Cámaras de Seguridad, Software y Tecnología",
+  // Iconos pequeños dedicados: el navegador descarga el favicon en cada visita.
   icons: {
-    icon: "/logos/logo.png",
-    shortcut: "/logos/logo.png",
-    apple: "/logos/logo.png",
+    icon: "/logos/favicon-48.png",
+    shortcut: "/logos/favicon-48.png",
+    apple: "/logos/apple-touch-icon.png",
   },
 };
 

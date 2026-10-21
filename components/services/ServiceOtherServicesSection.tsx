@@ -3,7 +3,7 @@ import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
 import { resolvePrimaryServiceImage } from "@/components/marketing/service-card-shared";
 import type { StorefrontServiceCard } from "@/modules/catalog/storefront-services.service";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 
 
 export function ServiceOtherServicesSection({

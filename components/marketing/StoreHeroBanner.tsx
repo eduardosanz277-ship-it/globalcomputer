@@ -230,8 +230,10 @@ export function StoreHeroBanner({
                     transformOrigin: "top right",
                   }}
                 >
-                  {/* Sin onCycleStart aquí: solo la instancia de desktop dispara el texto rotativo. */}
-                  <HeroAjaxPulseVisual />
+                  {/* Solo anima la instancia visible (ver HeroAjaxPulseVisual), así que cada una mueve el texto rotativo en su breakpoint. */}
+                  <HeroAjaxPulseVisual
+                    onCycleStart={() => labelTriggerRef.current?.()}
+                  />
                 </div>
               </div>
 
@@ -283,8 +285,10 @@ export function StoreHeroBanner({
             transformOrigin: "top right",
           }}
         >
-          {/* Sin onCycleStart aquí tampoco, por la misma razón que en mobile. */}
-          <HeroAjaxPulseVisual />
+          {/* Igual que en mobile: dispara el texto rotativo solo mientras es la instancia visible. */}
+          <HeroAjaxPulseVisual
+            onCycleStart={() => labelTriggerRef.current?.()}
+          />
         </div>
       </div>
 

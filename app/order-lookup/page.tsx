@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import type { Metadata } from "next";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";

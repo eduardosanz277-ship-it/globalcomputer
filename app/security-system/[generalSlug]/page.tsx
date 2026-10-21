@@ -11,7 +11,7 @@ import { getCharacteristicGeneralBySlugOrId } from "@/modules/catalog/storefront
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";

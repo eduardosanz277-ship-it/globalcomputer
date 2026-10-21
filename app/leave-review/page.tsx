@@ -1,4 +1,4 @@
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { LeaveReviewPageClient } from "@/components/site/LeaveReviewPageClient";

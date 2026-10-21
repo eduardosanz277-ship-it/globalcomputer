@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";

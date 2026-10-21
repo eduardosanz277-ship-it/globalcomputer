@@ -260,10 +260,28 @@ export function HeroAjaxPulseVisual({
     onCycleStartRef.current = onCycleStart;
   }, [onCycleStart]);
 
+  /**
+   * El banner monta una instancia por breakpoint (móvil/tablet/escritorio) y oculta las
+   * demás con CSS: solo anima la que está en pantalla (una oculta con `display: none`
+   * nunca intersecta), y se pausa al salir del viewport.
+   */
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [isOnScreen, setIsOnScreen] = useState(false);
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsOnScreen(entry.isIntersecting);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion || !isOnScreen) return;
 
     let timeoutId: number;
+    let cancelled = false;
 
     const runTransition = async () => {
       onCycleStartRef.current?.();
@@ -296,18 +314,24 @@ export function HeroAjaxPulseVisual({
     };
 
     const scheduleCycle = () => {
+      // Un ciclo en curso termina su transición, pero no programa otro si ya se pausó.
+      if (cancelled) return;
       timeoutId = window.setTimeout(() => {
         void runTransition().then(scheduleCycle);
       }, HOLD_MS);
     };
 
     scheduleCycle();
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, isOnScreen]);
 
   return (
     <div
+      ref={rootRef}
       className={className}
       style={{ position: "relative", height: "100%", width: "auto", aspectRatio: "917.2 / 668" }}
       aria-hidden

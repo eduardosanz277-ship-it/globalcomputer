@@ -14,7 +14,7 @@ import {
 import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";

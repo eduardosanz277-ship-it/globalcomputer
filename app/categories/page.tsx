@@ -5,7 +5,7 @@ import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getStorefrontCategoriesWithSubcategories } from "@/modules/catalog/storefront-categories.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {

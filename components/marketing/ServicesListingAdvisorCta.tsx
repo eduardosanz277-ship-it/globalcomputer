@@ -1,7 +1,7 @@
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { PhoneCall } from "lucide-react";
 import Link from "next/link";
 

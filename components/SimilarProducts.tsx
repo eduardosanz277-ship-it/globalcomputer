@@ -6,7 +6,7 @@ import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import {
   useCallback,
   useEffect,
@@ -352,7 +352,10 @@ export function SimilarProducts({
           ref={scrollRef}
           className={cn(
             /* pb-5: espacio dentro del scrollport para hover:shadow-md sin recorte por overflow-x-auto */
-            "similar-products-scroll flex gap-4 overflow-x-auto overflow-y-visible scroll-smooth pt-1 pb-5 [-webkit-overflow-scrolling:touch]",
+            // Sin `scroll-smooth`: los reajustes al montar (scrollLeft = 0, re-snap) serían
+            // scrolls animados en el compositor, que Chrome trata como scroll del usuario y
+            // anulan la medición de LCP. Flechas y barra piden `behavior: "smooth"` explícito.
+            "similar-products-scroll flex gap-4 overflow-x-auto overflow-y-visible pt-1 pb-5 [-webkit-overflow-scrolling:touch]",
             !measured && [
               "before:block before:h-px before:w-4 before:shrink-0 before:content-['']",
               "after:block after:h-px after:w-4 after:shrink-0 after:content-['']",
@@ -411,7 +414,10 @@ export function SimilarProducts({
             const pct = (e.clientX - rect.left) / rect.width;
             if (scrollRef.current) {
               const { scrollWidth, clientWidth } = scrollRef.current;
-              scrollRef.current.scrollLeft = pct * (scrollWidth - clientWidth);
+              scrollRef.current.scrollTo({
+                left: pct * (scrollWidth - clientWidth),
+                behavior: "smooth",
+              });
             }
           }}
         >

@@ -6,7 +6,7 @@ import { ServiceGallery } from "@/components/services/ServiceGallery";
 import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
 import { ServiceOtherServicesSection } from "@/components/services/ServiceOtherServicesSection";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { notFound, redirect } from "next/navigation";
 import {
   getServiceBySlugOrId,

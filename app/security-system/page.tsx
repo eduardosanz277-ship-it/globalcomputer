@@ -1,4 +1,4 @@
-import { inter } from "@/lib/fonts";
+import { inter } from "@/lib/fonts/inter";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
