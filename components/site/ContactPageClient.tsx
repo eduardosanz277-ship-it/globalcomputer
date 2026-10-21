@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatClientError } from "@/lib/errors/format-client-error";
 import { toast } from "react-toastify";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { TurnstileFit } from "@/components/site/TurnstileFit";
 import {
   Clock3,
   Loader2,
@@ -51,8 +53,12 @@ type Props = {
   initialSubject?: string;
 };
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
 export function ContactPageClient({ contact, initialSubject = "" }: Props) {
   const { t, locale } = useI18n();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const form = useForm<ContactRequestFormValues>({
     resolver: (values, context, options) =>
       zodResolver(
@@ -139,10 +145,14 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
   );
 
   const onSubmit = async (values: ContactRequestFormValues) => {
+    if (!turnstileToken) {
+      toast.error(t("contactPage.errors.turnstileFailed"));
+      return;
+    }
     try {
       const response = await fetch("/api/contact-requests", {
         method: "POST",
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, cf_turnstile_response: turnstileToken }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -156,16 +166,24 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
       };
 
       if (!response.ok) {
+        // Rotar el widget para obtener un token fresco en el siguiente intento
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
         if (response.status === 503 || data.code === "NETWORK") {
           throw new TypeError("Failed to fetch");
         }
         if (response.status === 429 || data.code === "RATE_LIMIT") {
           throw new Error(t("contactPage.errors.rateLimit"));
         }
+        if (data.code === "TURNSTILE") {
+          throw new Error(t("contactPage.errors.turnstileFailed"));
+        }
         throw new Error(data.error ?? "request_failed");
       }
 
       reset();
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       toast.success(t("contactPage.toastSent"));
     } catch (error) {
       toast.error(
@@ -179,11 +197,11 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[45fr_55fr] lg:items-start">
-        <section className="space-y-5">
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card p-5 shadow-soft sm:p-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-              <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-              {t("contactPage.supportBadge")}
+        <section className="min-w-0 space-y-5">
+          <div className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card p-4 shadow-soft sm:p-6">
+            <div className="flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-primary w-fit">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="min-w-0 break-words">{t("contactPage.supportBadge")}</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
               {t("contactPage.supportDescription")}
@@ -194,11 +212,11 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
             {cards.map(({ id, title, value, href, icon: Icon }) => (
               <article
                 key={id}
-                className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:p-6"
+                className="rounded-2xl border border-border/60 bg-card p-3 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:p-5"
               >
-                <div className="flex items-start gap-4">
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-                    <Icon className="h-6 w-6" aria-hidden />
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 sm:h-12 sm:w-12">
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
                   </span>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-sm">
@@ -231,7 +249,7 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
+        <section className="min-w-0 rounded-2xl border border-border/70 bg-card p-4 shadow-soft sm:p-6">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold tracking-tight text-foreground">
               {t("contactPage.formTitle")}
@@ -333,10 +351,23 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
               ) : null}
             </div>
 
+            <TurnstileFit
+              ref={turnstileRef}
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+              options={{
+                theme: "light",
+                language: locale === "es" ? "es" : "en",
+                size: "flexible",
+              }}
+            />
+
             <Button
               type="submit"
               className="h-11 w-full rounded-xl font-semibold sm:w-auto sm:px-8"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !turnstileToken}
               aria-busy={isSubmitting}
             >
               {isSubmitting ? (

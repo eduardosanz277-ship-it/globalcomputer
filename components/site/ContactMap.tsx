@@ -27,12 +27,8 @@ export function ContactMap({
 }: ContactMapProps) {
   const { t } = useI18n();
   return (
-    <section className="relative isolate space-y-4 py-5 sm:py-10 overflow-x-hidden">
-      <div
-        className="pointer-events-none absolute inset-y-0 inset-x-0 -z-10 bg-muted/80"
-        aria-hidden
-      />
-      <p className="flex items-center justify-center gap-2 text-center text-sm font-semibold text-foreground sm:text-base">
+    <section className="relative isolate space-y-4 py-5 sm:py-10 overflow-hidden">
+      <p className="flex items-start justify-center gap-2 text-center text-sm font-semibold text-foreground sm:items-center sm:text-base">
         <MapPinned className="h-5 w-5 shrink-0 text-primary" aria-hidden />
         {t("contactPage.mapVisit")}
       </p>

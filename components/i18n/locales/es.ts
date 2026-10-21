@@ -59,6 +59,8 @@ export const es = {
         "Tu solicitud de empresa no fue aprobada. Contacta con soporte si necesitas más información.",
       adminPortalRequired:
         "Las cuentas de administrador deben iniciar sesión en Acceso administrativo.",
+      turnstileFailed:
+        "No se pudo verificar que eres humano. Recarga la página e inténtalo de nuevo.",
     },
     form: {
       errors: {
@@ -134,6 +136,8 @@ export const es = {
         "No se pudo conectar con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.",
       generic: "No se pudo completar el registro.",
       phoneInvalid: "El teléfono de Estados Unidos debe tener 10 dígitos",
+      turnstileFailed:
+        "No se pudo verificar que eres humano. Recarga la página e inténtalo de nuevo.",
     },
   },
   language: {
@@ -345,6 +349,7 @@ export const es = {
         "El mensaje no puede incluir los caracteres < o > ni fragmentos de código.",
       messageLinks: "El mensaje no puede incluir tantos enlaces",
       rateLimit: "Has enviado demasiados mensajes. Espera un momento e inténtalo de nuevo.",
+      turnstileFailed: "No se pudo verificar que eres humano. Recarga la página e inténtalo de nuevo.",
     },
     mapLoading: "Cargando mapa",
     mapVisit: "Visítanos en nuestra ubicación en Miami, FL.",

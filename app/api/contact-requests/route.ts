@@ -4,6 +4,7 @@ import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import { isSameOriginFormRequest } from "@/lib/http/same-origin";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { translate } from "@/lib/i18n/get-translation";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import {
   CONTACT_HONEYPOT_FIELD,
   contactRequestFormSchema,
@@ -40,6 +41,26 @@ export async function POST(req: Request) {
   }
 
   const locale = await getServerLocale();
+
+  // Verificación Cloudflare Turnstile
+  const turnstileToken =
+    typeof (payload as Record<string, unknown>)?.cf_turnstile_response === "string"
+      ? ((payload as Record<string, unknown>).cf_turnstile_response as string)
+      : null;
+  const remoteIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    undefined;
+  const turnstile = await verifyTurnstileToken(turnstileToken, remoteIp);
+  if (!turnstile.success) {
+    return NextResponse.json(
+      {
+        error: translate(locale, "contactPage.errors.turnstileFailed"),
+        code: "TURNSTILE" as const,
+      },
+      { status: 400 },
+    );
+  }
 
   try {
     const honeypotFilled = isContactHoneypotFilled(

@@ -23,13 +23,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LANGUAGE_LABEL_KEY, type Locale } from "@/components/i18n/translations";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { TurnstileFit } from "@/components/site/TurnstileFit";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 export default function RegisterEmpresaPage() {
   const router = useRouter();
   const { locale, t, supportedLocales, setLocale } = useI18n();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const form = useForm<RegisterBusinessFormInput>({
     resolver: (values, context, options) =>
@@ -60,8 +66,12 @@ export default function RegisterEmpresaPage() {
 
   const { execute, isPending } = useServerAction(
     async (values: RegisterBusinessFormInput) => {
-      const res = await registerBusinessAction(values, locale);
-      if (!res.ok) throw new Error(res.message);
+      const res = await registerBusinessAction(values, locale, turnstileToken ?? undefined);
+      if (!res.ok) {
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
+        throw new Error(res.message);
+      }
       return res;
     },
     {
@@ -85,7 +95,7 @@ export default function RegisterEmpresaPage() {
   return (
     <AuthLayout>
       <AuthBrandHeader />
-      <AuthCard>
+      <AuthCard className="px-4 sm:px-8">
         <div className="mb-4 flex justify-end gap-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
           {supportedLocales.map((lang: Locale) => {
             const isActive = lang === locale;
@@ -149,10 +159,24 @@ export default function RegisterEmpresaPage() {
             placeholder={t("registerBusiness.fields.einPlaceholder")}
             error={errors.employerIdentificationNumber?.message}
           />
+          <TurnstileFit
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+            options={{
+              theme: "light",
+              language: locale === "es" ? "es" : "en",
+              size: "flexible",
+            }}
+          />
+
           <AuthPrimaryButton
             type="submit"
             pending={isPending}
             pendingLabel={t("registerBusiness.buttons.pending")}
+            disabled={isPending || !turnstileToken}
           >
             {t("registerBusiness.buttons.submit")}
           </AuthPrimaryButton>

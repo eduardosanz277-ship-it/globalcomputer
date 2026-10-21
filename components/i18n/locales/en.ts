@@ -55,6 +55,8 @@ export const en = {
         "Your business application was rejected. Contact support for more details.",
       adminPortalRequired:
         "Admin accounts must log in via the admin access page.",
+      turnstileFailed:
+        "We could not verify you are human. Please reload the page and try again.",
     },
     form: {
       errors: {
@@ -130,6 +132,8 @@ export const en = {
         "Could not connect to the server. Check your Internet connection and try again.",
       generic: "Registration could not be completed.",
       phoneInvalid: "US phone numbers must have 10 digits",
+      turnstileFailed:
+        "We could not verify you are human. Please reload the page and try again.",
     },
   },
   language: {
@@ -341,6 +345,7 @@ export const en = {
         "Message cannot include the characters < or > or code fragments.",
       messageLinks: "The message cannot include that many links",
       rateLimit: "You have sent too many messages. Please wait a moment and try again.",
+      turnstileFailed: "We could not verify you are human. Please reload the page and try again.",
     },
     mapLoading: "Loading map",
     mapVisit: "Visit us at our location in Miami, FL.",

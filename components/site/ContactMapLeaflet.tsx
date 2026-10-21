@@ -93,7 +93,7 @@ export default function ContactMapLeaflet({
   return (
     <div
       ref={containerRef}
-      className="relative z-0 h-80 w-full cursor-grab active:cursor-grabbing md:h-[26rem] lg:h-[30rem]"
+      className="relative z-0 h-80 w-full overflow-hidden cursor-grab active:cursor-grabbing md:h-[26rem] lg:h-[30rem]"
     />
   );
 }

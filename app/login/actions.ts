@@ -3,6 +3,8 @@
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { recognizedAppLocale } from "@/lib/i18n/parse-locale";
 import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
+import { translate } from "@/lib/i18n/get-translation";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import {
   sendLoginOtpService,
   verifyLoginOtpService,
@@ -10,15 +12,27 @@ import {
 
 export type SendLoginOtpResult =
   | { ok: true }
-  | { ok: false; message: string };
+  | { ok: false; message: string; code?: string };
 
 /** Devuelve `{ ok: false, message }` en lugar de lanzar, para no responder 500 en errores esperados (p. ej. límite de envío de email). */
 export async function sendLoginOtpAction(
   email: string,
   locale?: string,
+  turnstileToken?: string,
 ): Promise<SendLoginOtpResult> {
   const resolvedLocale =
     recognizedAppLocale(locale) ?? (await getServerLocale());
+
+  // Verificar Turnstile antes de enviar el OTP
+  const turnstile = await verifyTurnstileToken(turnstileToken);
+  if (!turnstile.success) {
+    return {
+      ok: false,
+      message: translate(resolvedLocale, "login.errors.turnstileFailed"),
+      code: "TURNSTILE",
+    };
+  }
+
   try {
     await sendLoginOtpService(email, resolvedLocale);
     return { ok: true };

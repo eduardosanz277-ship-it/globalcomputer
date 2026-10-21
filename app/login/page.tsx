@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 
 import { sendLoginOtpAction, verifyLoginOtpAction } from "@/app/login/actions";
@@ -28,6 +28,10 @@ import { Label } from "@/components/ui/label";
 import { useServerAction } from "@/hooks/use-server-action";
 import { markLoginSuccessToast } from "@/lib/login-success-toast";
 import { Loader2 } from "lucide-react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { TurnstileFit } from "@/components/site/TurnstileFit";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 import {
   createEmailOtpCodeSchema,
   createEmailOtpRequestSchema,
@@ -67,6 +71,8 @@ function LoginPageContent() {
   const [emailForCode, setEmailForCode] = useState("");
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [blockedUntil, setBlockedUntil] = useState<Date | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [isFetchingCooldown, setIsFetchingCooldown] = useState(false);
 
@@ -142,8 +148,12 @@ function LoginPageContent() {
 
   const { execute: sendOtp, isPending: sending } = useServerAction(
     async (email: string) => {
-      const res = await sendLoginOtpAction(email, locale);
-      if (!res.ok) throw new Error(res.message);
+      const res = await sendLoginOtpAction(email, locale, turnstileToken ?? undefined);
+      if (!res.ok) {
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
+        throw new Error(res.message);
+      }
       return res;
     },
     {
@@ -157,6 +167,9 @@ function LoginPageContent() {
         setIsEditingEmail(false);
         setStep("code");
         setBlockedUntil(new Date(Date.now() + OTP_COOLDOWN_MS));
+        // No se necesita el token en el paso 2, se rota para limpieza
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
       },
     },
   );
@@ -286,7 +299,7 @@ function LoginPageContent() {
   return (
     <AuthLayout>
       <AuthBrandHeader />
-      <AuthCard>
+      <AuthCard className="px-4 sm:px-8">
         <div className="mb-4 flex justify-end gap-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
           {supportedLocales.map((lang: Locale) => {
             const isActive = lang === locale;
@@ -336,11 +349,23 @@ function LoginPageContent() {
               required
               error={emailErrors.email?.message}
             />
+            <TurnstileFit
+              ref={turnstileRef}
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+              options={{
+                theme: "light",
+                language: locale === "es" ? "es" : "en",
+                size: "flexible",
+              }}
+            />
             <AuthPrimaryButton
               type="submit"
               pending={sending}
               pendingLabel={t("login.buttons.sending")}
-              disabled={sending}
+              disabled={sending || !turnstileToken}
             >
               {t("login.buttons.continue")}
             </AuthPrimaryButton>
