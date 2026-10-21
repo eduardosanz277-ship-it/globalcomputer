@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import type { AdminTablePage, AdminTableQuery } from "@/lib/admin/server-table";
 import type {
+  AdminProductAccessoryOption,
   ExistingProductImageOutput,
   Product,
   ProductAccessory,
@@ -373,15 +375,86 @@ function placementToDbColumns(payload: ProductInsert): {
   return { category_id: payload.placementCategoryId, subcategory_id: null };
 }
 
-export async function repoListProducts(): Promise<Product[]> {
+export type AdminProductsPageQuery = AdminTableQuery & {
+  brandId: string | null;
+  brandTypeId: string | null;
+  active: "active" | "inactive" | null;
+  stock: "inStock" | "lowStock" | "outOfStock" | null;
+  /** Idioma del admin: el orden por nombre/marca usa el nombre localizado. */
+  locale: string;
+};
+
+/**
+ * Página del listado de productos del admin: búsqueda, filtros, orden y paginación
+ * en SQL (`admin_products_page`); solo se cargan con detalle los productos visibles.
+ */
+export async function repoListProductsPage(
+  query: AdminProductsPageQuery,
+): Promise<AdminTablePage<Product>> {
+  const supabase = createSupabaseAdminClient();
+  const { data: pageData, error: pageError } = await supabase.rpc(
+    "admin_products_page",
+    {
+      p_search: query.q || null,
+      p_brand_id: query.brandId,
+      p_brand_type_id: query.brandTypeId,
+      p_active: query.active,
+      p_stock: query.stock,
+      p_locale: query.locale,
+      p_sort: query.sort?.id ?? null,
+      p_desc: query.sort?.desc ?? false,
+      p_page: query.pageIndex,
+      p_page_size: query.pageSize,
+    },
+  );
+  if (pageError) throw pageError;
+
+  const page = (pageData ?? {}) as { ids?: unknown; row_count?: unknown; page?: unknown };
+  const ids = Array.isArray(page.ids) ? page.ids.map(String) : [];
+  let rows: Product[] = [];
+  if (ids.length > 0) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .in("id", ids);
+    if (error) throw error;
+    const byId = new Map((data as ProductRow[]).map((row) => [row.id, mapRow(row)]));
+    rows = ids.flatMap((id) => {
+      const product = byId.get(id);
+      return product ? [product] : [];
+    });
+  }
+
+  return {
+    rows,
+    rowCount: Number(page.row_count ?? 0),
+    pageIndex: Number(page.page ?? 0),
+  };
+}
+
+/**
+ * Todos los productos con los campos mínimos para el selector de accesorios del
+ * formulario (filtra por categoría «de tipo accesorio», busca por nombre/SKU).
+ */
+export async function repoListProductAccessoryOptions(): Promise<
+  AdminProductAccessoryOption[]
+> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SELECT)
+    .select("id, name, name_en, sku, category_id, subcategory_id")
     .order("name", { ascending: true });
 
   if (error) throw error;
-  return (data as ProductRow[]).map(mapRow);
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    nameEn: row.name_en ?? null,
+    sku: String(row.sku ?? ""),
+    // Misma convención que `catalogPlacementFromRow`: subcategoría o categoría directa.
+    categoryId: row.subcategory_id ? null : (row.category_id ?? null),
+    subcategoryId: row.subcategory_id ?? null,
+  }));
 }
 
 export async function repoGetProductStockSnapshot(id: string): Promise<{

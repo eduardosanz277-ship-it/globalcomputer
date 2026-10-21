@@ -27,6 +27,12 @@ export type ProductAccessory = {
   sortOrder: number;
 };
 
+/** Candidato del selector de accesorios del formulario (campos mínimos de `Product`). */
+export type AdminProductAccessoryOption = Pick<
+  Product,
+  "id" | "name" | "nameEn" | "sku" | "categoryId" | "subcategoryId"
+>;
+
 /** Producto (tabla `products`). */
 export type Product = {
   id: string;

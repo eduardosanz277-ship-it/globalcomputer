@@ -1,59 +1,70 @@
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { AdminUser } from "./users.types";
 import type { UserRole } from "@/modules/auth/auth.types";
+import type { AdminTablePage, AdminTableQuery } from "@/lib/admin/server-table";
 
-export async function repoGetAllUsers(): Promise<AdminUser[]> {
+export type AdminUsersPageQuery = AdminTableQuery & {
+  role: "CLIENT" | "BUSINESS" | null;
+};
+
+type AdminUsersPageRow = {
+  id: string;
+  full_name: string | null;
+  role: string | null;
+  created_at: string | null;
+  business_registration_status: string | null;
+  email: string | null;
+  last_sign_in_at: string | null;
+};
+
+/**
+ * Página del listado de usuarios: clientes completos y empresas con registro aprobado.
+ * Búsqueda, filtro de rol, orden y paginación en SQL (`admin_users_page`), que también
+ * aporta email y último acceso desde `auth.users` sin recorrer toda la Admin API.
+ */
+export async function repoListUsersPage(
+  query: AdminUsersPageQuery,
+): Promise<AdminTablePage<AdminUser>> {
   const admin = createSupabaseAdminClient();
-
-  /** Clientes completos; comercios solo con registro aprobado (no admin ni empresas pendientes). */
-  const { data, error } = await admin
-    .from("profiles")
-    .select("id, full_name, role, created_at, business_registration_status")
-    .or(
-      "role.eq.CLIENT,and(role.eq.BUSINESS,business_registration_status.eq.approved)"
-    )
-    .order("created_at", { ascending: false });
+  const { data, error } = await admin.rpc("admin_users_page", {
+    p_search: query.q || null,
+    p_role: query.role,
+    p_sort: query.sort?.id ?? null,
+    p_desc: query.sort?.desc ?? false,
+    p_page: query.pageIndex,
+    p_page_size: query.pageSize,
+  });
 
   if (error) {
     throw error;
   }
 
-  const lastSignInById = new Map<string, string | null>();
-  const emailById = new Map<string, string | null>();
-  let page = 1;
-  const perPage = 1000;
-  const maxPages = 50;
+  const result = (data ?? {}) as {
+    rows?: AdminUsersPageRow[];
+    row_count?: number;
+    page?: number;
+  };
 
-  while (page <= maxPages) {
-    const { data: listData, error: listErr } =
-      await admin.auth.admin.listUsers({ page, perPage });
-    if (listErr) throw listErr;
-
-    const users = listData?.users ?? [];
-    for (const u of users) {
-      lastSignInById.set(u.id, u.last_sign_in_at ?? null);
-      emailById.set(u.id, u.email ?? null);
-    }
-    if (users.length < perPage) break;
-    page += 1;
-  }
-
-  return (data ?? []).map((row: any) => {
-    const brs = row.business_registration_status;
-    const businessRegistrationStatus =
-      brs === "pending" || brs === "approved" || brs === "rejected"
-        ? brs
-        : null;
-    return {
-      id: row.id as string,
-      email: emailById.get(row.id as string) ?? null,
-      fullName: row.full_name ?? null,
-      role: (row.role as UserRole) ?? "CLIENT",
-      businessRegistrationStatus,
-      createdAt: row.created_at,
-      lastSignInAt: lastSignInById.get(row.id as string) ?? null,
-    };
-  });
+  return {
+    rows: (result.rows ?? []).map((row) => {
+      const brs = row.business_registration_status;
+      const businessRegistrationStatus =
+        brs === "pending" || brs === "approved" || brs === "rejected"
+          ? brs
+          : null;
+      return {
+        id: row.id,
+        email: row.email ?? null,
+        fullName: row.full_name ?? null,
+        role: (row.role as UserRole) ?? "CLIENT",
+        businessRegistrationStatus,
+        createdAt: row.created_at,
+        lastSignInAt: row.last_sign_in_at ?? null,
+      };
+    }),
+    rowCount: Number(result.row_count ?? 0),
+    pageIndex: Number(result.page ?? 0),
+  };
 }
 
 export async function repoUpdateUserRole(userId: string, role: UserRole) {

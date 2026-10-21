@@ -11,6 +11,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { AdminUser } from "@/modules/admin/users/users.types";
+import type { AdminTablePage } from "@/lib/admin/server-table";
+import { useServerDataTable } from "@/hooks/use-server-data-table";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { swalSaasConfirmAsync } from "@/utils/swal-saas";
@@ -43,7 +45,8 @@ const ACTIONS_COLUMN_CLASS = "w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem]";
 type RoleFilter = (typeof ROLE_FILTER_VALUES)[number];
 
 interface Props {
-  users: AdminUser[];
+  /** Página resuelta en servidor (búsqueda, rol, orden y paginación en la URL). */
+  page: AdminTablePage<AdminUser>;
   isLoading?: boolean;
 }
 
@@ -307,10 +310,21 @@ function UsersRowActionsMenu({
   );
 }
 
-export function AdminUsersTable({ users, isLoading = false }: Props) {
+export function AdminUsersTable({ page, isLoading = false }: Props) {
   const { t, locale } = useI18n();
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const { server, params, setParams } = useServerDataTable({
+    rowCount: page.rowCount,
+    pageIndex: page.pageIndex,
+    filterKeys: ["role"],
+  });
+  const roleParam = params.get("role");
+  const roleFilter: RoleFilter =
+    roleParam === "CLIENT" || roleParam === "BUSINESS" ? roleParam : "all";
+  const setRoleFilter = useCallback(
+    (value: RoleFilter) => setParams({ role: value === "all" ? null : value }),
+    [setParams],
+  );
   const roleFilterOptions = useMemo(
     () =>
       [
@@ -321,18 +335,13 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
     [t],
   );
 
-  const filteredUsers = useMemo(() => {
-    if (roleFilter === "all") return users;
-    return users.filter((u) => u.role === (roleFilter as UserRole));
-  }, [users, roleFilter]);
-
   const filterValue =
     roleFilterOptions.find((o) => o.value === roleFilter) ??
     roleFilterOptions[0];
 
   const clearRoleFilter = useCallback(() => {
     setRoleFilter("all");
-  }, []);
+  }, [setRoleFilter]);
 
   /*
    * Botón "Nuevo" en la barra (acceso a /admin/suscripciones-empresas) — oculto temporalmente.
@@ -512,7 +521,8 @@ export function AdminUsersTable({ users, isLoading = false }: Props) {
     <div className="space-y-4">
       <DataTable
         columns={columns}
-        data={filteredUsers}
+        data={page.rows}
+        server={server}
         isLoading={isLoading}
         enableSorting
         searchPlaceholder={t("admin.users.filters.searchPlaceholder")}

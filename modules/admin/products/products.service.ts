@@ -15,7 +15,9 @@ import {
   repoGetProductStockSnapshot,
   repoInsertProductImages,
   repoListProductImageUrlsByIds,
-  repoListProducts,
+  repoListProductAccessoryOptions,
+  repoListProductsPage,
+  type AdminProductsPageQuery,
   repoReplaceProductAccessories,
   repoReplaceProductCharacteristicValues,
   repoUpsertLowStockAlertAt,
@@ -303,11 +305,21 @@ function parseAccessories(
   return parsed;
 }
 
-export async function getAllProductsService(localeInput?: unknown) {
+export async function getProductsPageService(
+  query: Omit<AdminProductsPageQuery, "locale">,
+  localeInput?: unknown,
+) {
   const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
   ensureAdminAccess(current?.role, locale);
-  return repoListProducts();
+  return repoListProductsPage({ ...query, locale });
+}
+
+export async function getProductAccessoryOptionsService(localeInput?: unknown) {
+  const locale = await resolveAdminLocale(localeInput);
+  const current = await getCurrentUserStrictService();
+  ensureAdminAccess(current?.role, locale);
+  return repoListProductAccessoryOptions();
 }
 
 export async function createProductService(

@@ -6,6 +6,7 @@ import { recordStoreOrderStatusChange } from "@/modules/commerce/store-order-sta
 import type { StoreOrderStatusHistoryRow } from "@/modules/commerce/store-order-status-history";
 import { processOrderInventory } from "@/modules/commerce/inventory.service";
 import { SiteOrderStatus } from "./store-orders.service";
+import type { AdminTablePage, AdminTableQuery } from "@/lib/admin/server-table";
 
 export type { StoreOrderStatusHistoryRow };
 
@@ -51,34 +52,79 @@ export type AdminStoreOrderShippingAddressRow = {
   country: string;
 };
 
-export type StoreOrdersQueryOptions = {
-  limit?: number;
-  status?: SiteOrderStatus;
+export type AdminStoreOrdersPageQuery = AdminTableQuery & {
+  status: SiteOrderStatus | null;
+  shippingMethod: "automatic" | "manual" | null;
+  conflictOnly: boolean;
 };
 
-export async function repoListAdminStoreOrders({
-  limit = 50,
-  status,
-}: StoreOrdersQueryOptions = {}): Promise<AdminStoreOrderRow[]> {
+export type AdminStoreOrdersPage = AdminTablePage<AdminStoreOrderRow> & {
+  /** Pedidos con conflicto de inventario en total (aviso superior), sin filtros. */
+  conflictCount: number;
+};
+
+function formatOrdersQueryError(error: { message: string; code?: string }): Error {
+  return new Error(
+    [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
+  );
+}
+
+/**
+ * Página del listado de pedidos del admin: búsqueda, filtros, orden y paginación en SQL
+ * (`admin_store_orders_page`, con la RLS de la sesión) y después las filas de la página.
+ */
+export async function repoListAdminStoreOrdersPage(
+  query: AdminStoreOrdersPageQuery,
+): Promise<AdminStoreOrdersPage> {
   const supabase = await createSupabaseServerClient();
-  let query = supabase
+  const { data: pageData, error: pageError } = await supabase.rpc(
+    "admin_store_orders_page",
+    {
+      p_search: query.q || null,
+      p_status: query.status,
+      p_shipping_method: query.shippingMethod,
+      p_conflict_only: query.conflictOnly,
+      p_sort: query.sort?.id ?? null,
+      p_desc: query.sort?.desc ?? false,
+      p_page: query.pageIndex,
+      p_page_size: query.pageSize,
+    },
+  );
+  if (pageError) throw formatOrdersQueryError(pageError);
+
+  const page = (pageData ?? {}) as {
+    ids?: unknown;
+    row_count?: unknown;
+    page?: unknown;
+    conflict_count?: unknown;
+  };
+  const ids = Array.isArray(page.ids) ? page.ids.map(String) : [];
+  const rows = ids.length > 0 ? await repoListAdminStoreOrdersByIds(ids) : [];
+  const byId = new Map(rows.map((row) => [row.id, row]));
+
+  return {
+    rows: ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [row] : [];
+    }),
+    rowCount: Number(page.row_count ?? 0),
+    pageIndex: Number(page.page ?? 0),
+    conflictCount: Number(page.conflict_count ?? 0),
+  };
+}
+
+async function repoListAdminStoreOrdersByIds(
+  ids: string[],
+): Promise<AdminStoreOrderRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
     .from("store_orders")
     .select(
       "id, order_number, customer_name, customer_email, status, inventory_status, total_amount, amount_subtotal, amount_tax, amount_shipping, amount_discount, amount_shipping_base, amount_shipping_surcharge, shipping_method, stripe_amount_total, stripe_payment_status, stripe_session_id, locale, created_at",
     )
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .in("id", ids);
 
-  if (status) {
-    query = query.eq("status", status);
-  }
-
-  const { data, error } = await query;
-  if (error) {
-    throw new Error(
-      [error.message, error.code ? `(${error.code})` : ""].filter(Boolean).join(" "),
-    );
-  }
+  if (error) throw formatOrdersQueryError(error);
   return (
     data?.map((row) => ({
       id: String(row.id),

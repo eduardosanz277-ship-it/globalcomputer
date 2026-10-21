@@ -7,7 +7,12 @@ import type {
   AdminCategory,
   AdminSubcategory,
 } from "@/modules/admin/categories/categories.types";
-import type { Product } from "@/modules/admin/products/products.types";
+import type {
+  AdminProductAccessoryOption,
+  Product,
+} from "@/modules/admin/products/products.types";
+import type { AdminTablePage } from "@/lib/admin/server-table";
+import { useServerDataTable } from "@/hooks/use-server-data-table";
 import type { SpecificCharacteristic } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Image from "next/image";
@@ -39,7 +44,10 @@ import { ProductProfileCard } from "@/components/dashboard/product-profile-card"
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
-  products: Product[];
+  /** Página resuelta en servidor (búsqueda, filtros, orden y paginación en la URL). */
+  page: AdminTablePage<Product>;
+  /** Candidatos ligeros para el selector de accesorios del formulario. */
+  accessoryOptions: AdminProductAccessoryOption[];
   brands: Brand[];
   brandTypes: BrandType[];
   specificCharacteristics: SpecificCharacteristic[];
@@ -166,7 +174,8 @@ function RowActions({
 }
 
 export function AdminProductsTable({
-  products,
+  page,
+  accessoryOptions,
   brands,
   brandTypes,
   specificCharacteristics,
@@ -176,11 +185,30 @@ export function AdminProductsTable({
 }: Props) {
   const { t, locale } = useI18n();
   const router = useRouter();
-  const [globalFilter, setGlobalFilter] = useState<string>("");
-  const [brandFilter, setBrandFilter] = useState<string>("all");
-  const [brandTypeFilter, setBrandTypeFilter] = useState<string>("all");
-  const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [stockFilter, setStockFilter] = useState<string>("all");
+  /** Búsqueda, filtros, orden y página viven en la URL; el servidor devuelve la página. */
+  const { server, params, setParams } = useServerDataTable({
+    rowCount: page.rowCount,
+    pageIndex: page.pageIndex,
+    filterKeys: ["brand", "type", "active", "stock"],
+  });
+  const globalFilter = server.globalFilter;
+  const setGlobalFilter = server.onGlobalFilterChange;
+  const brandFilter = params.get("brand") || "all";
+  const brandTypeFilter = params.get("type") || "all";
+  const activeFilter = params.get("active") || "all";
+  const stockFilter = params.get("stock") || "all";
+  const applyFilters = useCallback(
+    (next: { brand: string; type: string; active: string; stock: string }) => {
+      const value = (v: string) => (v === "all" ? null : v);
+      setParams({
+        brand: value(next.brand),
+        type: value(next.type),
+        active: value(next.active),
+        stock: value(next.stock),
+      });
+    },
+    [setParams],
+  );
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [draftBrand, setDraftBrand] = useState<string>("all");
   const [draftBrandType, setDraftBrandType] = useState<string>("all");
@@ -221,23 +249,6 @@ export function AdminProductsTable({
     ],
     [brands, t],
   );
-
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesBrand = brandFilter === "all" || p.brandId === brandFilter;
-      const matchesBrandType =
-        brandTypeFilter === "all" || p.brandTypeId === brandTypeFilter;
-      const matchesActive =
-        activeFilter === "all" ||
-        (activeFilter === "active" ? p.active : !p.active);
-      const matchesStock =
-        stockFilter === "all" ||
-        (stockFilter === "outOfStock" && p.stock <= 0) ||
-        (stockFilter === "lowStock" && p.stock > 0 && p.stock <= 10) ||
-        (stockFilter === "inStock" && p.stock > 10);
-      return matchesBrand && matchesBrandType && matchesActive && matchesStock;
-    });
-  }, [products, brandFilter, brandTypeFilter, activeFilter, stockFilter]);
 
   const brandFilterValue =
     brandFilterOptions.find((o) => o.value === brandFilter) ??
@@ -336,19 +347,25 @@ export function AdminProductsTable({
   };
 
   const handleApplyModalFilters = () => {
-    setBrandFilter(draftBrand);
-    setBrandTypeFilter(draftBrandType);
-    setActiveFilter(draftActive);
-    setStockFilter(draftStock);
+    applyFilters({
+      brand: draftBrand,
+      type: draftBrandType,
+      active: draftActive,
+      stock: draftStock,
+    });
     setFiltersModalOpen(false);
   };
 
   const clearToolbarFilters = useCallback(() => {
-    setBrandFilter("all");
-    setBrandTypeFilter("all");
-    setActiveFilter("all");
-    setStockFilter("all");
-  }, []);
+    applyFilters({ brand: "all", type: "all", active: "all", stock: "all" });
+  }, [applyFilters]);
+
+  const currentFilters = {
+    brand: brandFilter,
+    type: brandTypeFilter,
+    active: activeFilter,
+    stock: stockFilter,
+  };
 
   const renderMobileRow = useCallback((row: Row<Product>) => {
     const p = row.original;
@@ -698,8 +715,7 @@ export function AdminProductsTable({
               value={brandFilterValue}
               onChange={(opt) => {
                 if (opt) {
-                  setBrandFilter(opt.value);
-                  setBrandTypeFilter("all");
+                  applyFilters({ ...currentFilters, brand: opt.value, type: "all" });
                 }
               }}
               styles={appToolbarSelectStyles}
@@ -723,7 +739,7 @@ export function AdminProductsTable({
               options={brandTypeFilterOptions}
               value={brandTypeFilterValue}
               onChange={(opt) => {
-                if (opt) setBrandTypeFilter(opt.value);
+                if (opt) applyFilters({ ...currentFilters, type: opt.value });
               }}
               styles={appToolbarSelectStyles}
               className="w-full min-w-0"
@@ -739,7 +755,7 @@ export function AdminProductsTable({
               options={activeFilterOptions}
               value={activeFilterValue}
               onChange={(opt) => {
-                if (opt) setActiveFilter(opt.value);
+                if (opt) applyFilters({ ...currentFilters, active: opt.value });
               }}
               styles={appToolbarSelectStyles}
               className="w-full"
@@ -755,7 +771,7 @@ export function AdminProductsTable({
               options={stockFilterOptions}
               value={stockFilterValue}
               onChange={(opt) => {
-                if (opt) setStockFilter(opt.value);
+                if (opt) applyFilters({ ...currentFilters, stock: opt.value });
               }}
               styles={appToolbarSelectStyles}
               className="w-full"
@@ -941,12 +957,11 @@ export function AdminProductsTable({
 
       <DataTable
         columns={columns}
-        data={filteredProducts}
+        data={page.rows}
+        server={server}
         isLoading={isLoading}
         enableSorting
         hideToolbar
-        externalGlobalFilter={globalFilter}
-        onExternalGlobalFilterChange={setGlobalFilter}
         tableClassName={`table-fixed ${PRODUCTS_TABLE_MIN_WIDTH_CLASS}`}
         tableHeadCellClassName="!font-medium"
         tableBodyCellClassName="py-2.5"
@@ -965,7 +980,7 @@ export function AdminProductsTable({
           if (!open) setEditing(null);
         }}
         product={editing}
-        products={products}
+        products={accessoryOptions}
         brands={brands}
         brandTypes={brandTypes}
         specificCharacteristics={specificCharacteristics}

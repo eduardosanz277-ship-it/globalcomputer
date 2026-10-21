@@ -46,11 +46,13 @@ import {
   mapStoreOrderShippingAddressRow,
   type OrderShippingRecipient,
 } from "@/lib/order-shipping-recipient";
-import {
+import type {
   AdminStoreOrderItemRow,
   AdminStoreOrderRow,
-  type StoreOrderStatusHistoryRow,
+  AdminStoreOrdersPage,
+  StoreOrderStatusHistoryRow,
 } from "@/modules/commerce/store-orders.admin.service";
+import { useServerDataTable } from "@/hooks/use-server-data-table";
 import { SiteOrderStatus } from "@/modules/commerce/store-orders.service";
 import { translations } from "@/components/i18n/translations";
 import { useNavBadges } from "@/components/admin/AdminNavBadgesContext";
@@ -221,7 +223,8 @@ function orderRowClassName(row: AdminStoreOrderRow): string {
   return cn(base, "shadow-[inset_2px_0_0_rgba(16,185,129,0.35)]");
 }
 
-export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
+export function StoreOrdersTable({ page }: { page: AdminStoreOrdersPage }) {
+  const orders = page.rows;
   const { t, locale } = useI18n();
   const { decrementBadge } = useNavBadges();
   const statusLabels = useMemo<Record<SiteOrderStatus, string>>(
@@ -300,10 +303,29 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     StoreOrderStatusHistoryRow[]
   >([]);
   const [itemsError, setItemsError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
-  const [shippingMethodFilter, setShippingMethodFilter] =
-    useState<ShippingMethodFilterValue>("all");
-  const [conflictFilter, setConflictFilter] = useState(false);
+  /** Filtros, búsqueda, orden y página viven en la URL; el servidor devuelve la página. */
+  const { server, params, setParams } = useServerDataTable({
+    rowCount: page.rowCount,
+    pageIndex: page.pageIndex,
+    filterKeys: ["status", "shipping", "conflict"],
+  });
+  const statusParam = params.get("status");
+  const statusFilter: StatusFilterValue =
+    statusParam && (STATUS_OPTIONS as string[]).includes(statusParam)
+      ? (statusParam as SiteOrderStatus)
+      : "all";
+  const shippingParam = params.get("shipping");
+  const shippingMethodFilter: ShippingMethodFilterValue =
+    shippingParam === "automatic" || shippingParam === "manual"
+      ? shippingParam
+      : "all";
+  const conflictFilter = params.get("conflict") === "1";
+  const setStatusFilter = (value: StatusFilterValue) =>
+    setParams({ status: value === "all" ? null : value });
+  const setShippingMethodFilter = (value: ShippingMethodFilterValue) =>
+    setParams({ shipping: value === "all" ? null : value });
+  const toggleConflictFilter = () =>
+    setParams({ conflict: conflictFilter ? null : "1" });
   const [conflictAction, setConflictAction] = useState<
     "refund" | "reprocess" | null
   >(null);
@@ -655,10 +677,6 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
             ? { ...row, status: "cancelled" as const, inventory_status: null }
             : row,
         );
-        const remainingConflicts = updated.filter(
-          (r) => r.inventory_status === "conflict",
-        ).length;
-        if (remainingConflicts === 0) setConflictFilter(false);
         return updated;
       });
       setDetailOrder((prev) =>
@@ -718,10 +736,6 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
               }
             : row,
         );
-        const remainingConflicts = updated.filter(
-          (r) => r.inventory_status === "conflict",
-        ).length;
-        if (remainingConflicts === 0) setConflictFilter(false);
         return updated;
       });
       setDetailOrder((prev) =>
@@ -745,10 +759,21 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
     }
   }, [detailOrder, t, reloadDetailStatusHistory]);
 
-  const conflictCount = useMemo(
-    () => rows.filter((r) => r.inventory_status === "conflict").length,
-    [rows],
-  );
+  /**
+   * Total de conflictos de todos los pedidos (servidor) ajustado con los que se
+   * resuelven en esta página sin recargar.
+   */
+  const conflictCount = useMemo(() => {
+    const isConflict = (r: AdminStoreOrderRow) => r.inventory_status === "conflict";
+    const initialOnPage = orders.filter(isConflict).length;
+    const currentOnPage = rows.filter(isConflict).length;
+    return Math.max(0, page.conflictCount - initialOnPage + currentOnPage);
+  }, [orders, rows, page.conflictCount]);
+
+  // Resuelto el último conflicto, el filtro «solo conflictos» deja de tener sentido.
+  useEffect(() => {
+    if (conflictFilter && conflictCount === 0) setParams({ conflict: null });
+  }, [conflictFilter, conflictCount, setParams]);
 
   // Sync the sidebar badge whenever the local conflictCount changes.
   // Using a ref to track the previous value avoids calling decrementBadge
@@ -794,10 +819,8 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
   const filtersAreDefault =
     statusFilter === "all" && shippingMethodFilter === "all" && !conflictFilter;
   const clearFilters = useCallback(() => {
-    setStatusFilter("all");
-    setShippingMethodFilter("all");
-    setConflictFilter(false);
-  }, []);
+    setParams({ status: null, shipping: null, conflict: null });
+  }, [setParams]);
 
   const columns = useMemo<ColumnDef<AdminStoreOrderRow>[]>(
     () => [
@@ -1291,7 +1314,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
           </div>
           <button
             type="button"
-            onClick={() => setConflictFilter((v) => !v)}
+            onClick={toggleConflictFilter}
             className={cn(
               "self-start min-w-[9rem] shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ml-8 lg:ml-0 lg:self-auto",
               conflictFilter
@@ -1308,6 +1331,7 @@ export function StoreOrdersTable({ orders }: { orders: AdminStoreOrderRow[] }) {
       <DataTable
         columns={columns}
         data={filteredRows}
+        server={server}
         enableSorting
         searchPlaceholder={t("admin.orders.filters.searchPlaceholder")}
         tableClassName={`table-fixed ${ORDERS_TABLE_MIN_WIDTH_CLASS}`}

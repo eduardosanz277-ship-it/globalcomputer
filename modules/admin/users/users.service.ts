@@ -14,16 +14,20 @@ import {
 import {
   repoApproveBusinessRegistration,
   repoRejectBusinessRegistration,
-  repoGetAllUsers,
+  repoListUsersPage,
   repoUpdateUserRole,
   repoDeleteAuthUser,
+  type AdminUsersPageQuery,
 } from "./users.repository";
 
-export async function getAllUsersService(localeInput?: unknown) {
+export async function getUsersPageService(
+  query: AdminUsersPageQuery,
+  localeInput?: unknown,
+) {
   const locale = await resolveAdminLocale(localeInput);
   const current = await getCurrentUserStrictService();
   ensureAdminAccess(current?.role, locale);
-  return repoGetAllUsers();
+  return repoListUsersPage(query);
 }
 
 export async function updateUserRoleService(

@@ -72,9 +72,33 @@ function cellAlignClasses(meta: DataTableColumnMeta | undefined) {
   return "text-left";
 }
 
+/**
+ * Paginación, orden y búsqueda resueltos en servidor: `data` es solo la página actual
+ * y el estado lo controla el padre (normalmente desde la URL).
+ */
+export type DataTableServerMode = {
+  pageIndex: number;
+  pageSize: number;
+  /** Total de filas que cumplen búsqueda y filtros. */
+  rowCount: number;
+  sorting: SortingState;
+  /** Texto del buscador (el padre decide cuándo consultar). */
+  globalFilter: string;
+  /** Hay búsqueda o filtros activos (empty state «sin coincidencias» en vez de «sin datos»). */
+  hasActiveFilters: boolean;
+  /** Petición en curso: atenúa el cuerpo de la tabla. */
+  isPending?: boolean;
+  onPageIndexChange: (pageIndex: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  onSortingChange: (sorting: SortingState) => void;
+  onGlobalFilterChange: (value: string) => void;
+};
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Activa el modo servidor (ver `DataTableServerMode`). */
+  server?: DataTableServerMode;
   className?: string;
   /** Opciones de filas por página (ej. [5, 10, 25, 50]) */
   pageSizeOptions?: number[];
@@ -164,6 +188,7 @@ const globalFilterFn: FilterFn<any> = (row, _columnId, filterValue) => {
 export function DataTable<TData, TValue>({
   columns,
   data,
+  server,
   className,
   pageSizeOptions = [5, 10, 20, 50],
   defaultPageSize = 10,
@@ -194,19 +219,52 @@ export function DataTable<TData, TValue>({
   const { t } = useI18n();
   const pageSizeSelectId = useId();
   const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
-  const globalFilter =
-    externalGlobalFilter !== undefined
+  const globalFilter = server
+    ? server.globalFilter
+    : externalGlobalFilter !== undefined
       ? externalGlobalFilter
       : internalGlobalFilter;
   const setGlobalFilter = (value: string) => {
+    if (server) {
+      server.onGlobalFilterChange(value);
+      return;
+    }
     if (externalGlobalFilter === undefined) setInternalGlobalFilter(value);
     onExternalGlobalFilterChange?.(value);
   };
-  const [sorting, setSorting] = useState<SortingState>(defaultSorting);
-  const [pagination, setPagination] = useState({
+  const [internalSorting, setInternalSorting] =
+    useState<SortingState>(defaultSorting);
+  const [internalPagination, setInternalPagination] = useState({
     pageIndex: 0,
     pageSize: defaultPageSize,
   });
+  const sorting = server ? server.sorting : internalSorting;
+  const pagination = server
+    ? { pageIndex: server.pageIndex, pageSize: server.pageSize }
+    : internalPagination;
+
+  const setSorting = (updater: SetStateAction<SortingState>) => {
+    if (server) {
+      const next = typeof updater === "function" ? updater(server.sorting) : updater;
+      server.onSortingChange(next);
+      return;
+    }
+    setInternalSorting(updater);
+    setInternalPagination((p) => ({ ...p, pageIndex: 0 }));
+  };
+
+  const setPagination = (
+    updater: SetStateAction<{ pageIndex: number; pageSize: number }>,
+  ) => {
+    if (server) {
+      const current = { pageIndex: server.pageIndex, pageSize: server.pageSize };
+      const next = typeof updater === "function" ? updater(current) : updater;
+      if (next.pageSize !== current.pageSize) server.onPageSizeChange(next.pageSize);
+      else if (next.pageIndex !== current.pageIndex) server.onPageIndexChange(next.pageIndex);
+      return;
+    }
+    setInternalPagination(updater);
+  };
 
   const mergedPageSizeOptions = useMemo(() => {
     return [...new Set([...pageSizeOptions, defaultPageSize])].sort(
@@ -239,22 +297,27 @@ export function DataTable<TData, TValue>({
     },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    ...(enableSorting
-      ? {
-          onSortingChange: (updater: SetStateAction<SortingState>) => {
-            setSorting(updater);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          },
-        }
-      : {}),
+    ...(enableSorting ? { onSortingChange: setSorting } : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
     getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn,
+    ...(server
+      ? {
+          manualPagination: true,
+          manualSorting: true,
+          manualFiltering: true,
+          rowCount: server.rowCount,
+        }
+      : {}),
   });
 
-  const filteredCount = table.getFilteredRowModel().rows.length;
+  const filteredCount = server
+    ? server.rowCount
+    : table.getFilteredRowModel().rows.length;
+  /** Sin filas en origen (no-data) frente a filtro sin coincidencias (no-match). */
+  const hasNoSourceData = server ? !server.hasActiveFilters : data.length === 0;
   const pageCount = table.getPageCount();
   const totalPages = pageCount || 1;
   const { pageIndex, pageSize } = pagination;
@@ -423,10 +486,11 @@ export function DataTable<TData, TValue>({
       <div
         className={cn(
           "min-w-0 overflow-hidden rounded-xl border border-border bg-card",
+          server?.isPending && "pointer-events-none opacity-60 transition-opacity",
         )}
         role="region"
         aria-label="Resultados de la tabla"
-        aria-busy={isLoading}
+        aria-busy={isLoading || Boolean(server?.isPending)}
       >
         {/* Vista tabla: desktop / tablet (scroll horizontal si el área es estrecha) */}
         <div className="hidden min-w-0 overflow-x-auto overscroll-x-contain md:block">
@@ -531,12 +595,12 @@ export function DataTable<TData, TValue>({
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-0">
                     <EmptyState
-                      variant={data.length === 0 ? "no-data" : "no-match"}
+                      variant={hasNoSourceData ? "no-data" : "no-match"}
                       title={
-                        data.length === 0 ? emptyTitle : emptyNoMatchTitle
+                        hasNoSourceData ? emptyTitle : emptyNoMatchTitle
                       }
                       description={
-                        data.length === 0 ? emptyDescription : undefined
+                        hasNoSourceData ? emptyDescription : undefined
                       }
                     />
                   </td>
@@ -681,10 +745,10 @@ export function DataTable<TData, TValue>({
           ) : (
             <div className="px-4 py-0">
               <EmptyState
-                variant={data.length === 0 ? "no-data" : "no-match"}
-                title={data.length === 0 ? emptyTitle : emptyNoMatchTitle}
+                variant={hasNoSourceData ? "no-data" : "no-match"}
+                title={hasNoSourceData ? emptyTitle : emptyNoMatchTitle}
                 description={
-                  data.length === 0 ? emptyDescription : undefined
+                  hasNoSourceData ? emptyDescription : undefined
                 }
               />
             </div>

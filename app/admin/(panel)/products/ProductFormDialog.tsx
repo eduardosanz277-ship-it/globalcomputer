@@ -17,6 +17,7 @@ import {
   type ProductFormValues,
 } from "@/modules/admin/products/products.schema";
 import type {
+  AdminProductAccessoryOption,
   Product,
   ProductAccessoryInput,
   ProductCharacteristicValueInput,
@@ -83,7 +84,8 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product | null;
-  products: Product[];
+  /** Candidatos ligeros para el selector de accesorios. */
+  products: AdminProductAccessoryOption[];
   brands: Brand[];
   brandTypes: BrandType[];
   specificCharacteristics: SpecificCharacteristic[];
@@ -414,7 +416,7 @@ export function ProductFormDialog({
   }, [subcategories]);
 
   /** Categoría o subcategoría del producto (placement) que se usa para filtrar el picker de accesorios. */
-  const accessoryPlacementId = (p: Product): string | null =>
+  const accessoryPlacementId = (p: AdminProductAccessoryOption): string | null =>
     p.subcategoryId ?? p.categoryId;
 
   /** Productos elegibles como accesorio: su categoría (directa o vía subcategoría) está marcada como «de tipo accesorio». */
@@ -653,8 +655,8 @@ function ProductFormBody({
   toggleCharacteristic: (specificId: string) => void;
   removeCharacteristic: (specificId: string) => void;
   updateCharacteristicValue: (specificId: string, value: string) => void;
-  accessoryCandidates: Product[];
-  accessoryPlacementId: (p: Product) => string | null;
+  accessoryCandidates: AdminProductAccessoryOption[];
+  accessoryPlacementId: (p: AdminProductAccessoryOption) => string | null;
   accessoryPlacementOptions: Array<{ value: string; label: string }>;
   accessories: Array<{ accessoryProductId: string }>;
   toggleAccessory: (accessoryProductId: string) => void;
@@ -821,7 +823,7 @@ function ProductFormBody({
     [accessories],
   );
 
-  const localizedProductLabel = (p: Product): string =>
+  const localizedProductLabel = (p: AdminProductAccessoryOption): string =>
     locale === "en" ? p.nameEn?.trim() || p.name : p.name;
 
   const visibleAccessoryCandidates = useMemo(() => {
