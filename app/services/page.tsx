@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
@@ -12,11 +12,6 @@ import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
 import { assertRemoteOk } from "@/lib/errors/rsc-network-error";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export default async function ServicesPage() {
   const supabase = await getCatalogSupabase();

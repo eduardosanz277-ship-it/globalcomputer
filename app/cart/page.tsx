@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
@@ -22,11 +22,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export default async function CarritoPage() {
   const user = await getCurrentUserService();

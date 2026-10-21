@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
@@ -9,11 +9,6 @@ import { getNavigationData } from "@/modules/navigation/navigation.service";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();

@@ -6,18 +6,13 @@ import { ServiceGallery } from "@/components/services/ServiceGallery";
 import { ServiceHeroBanner } from "@/components/services/ServiceHeroBanner";
 import { ServiceOtherServicesSection } from "@/components/services/ServiceOtherServicesSection";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { notFound, redirect } from "next/navigation";
 import {
   getServiceBySlugOrId,
   listStorefrontServiceCards,
 } from "@/modules/catalog/storefront-services.service";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   params: { serviceSlug: string };

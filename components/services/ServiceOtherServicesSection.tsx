@@ -3,13 +3,8 @@ import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { ServiceCardLink } from "@/components/marketing/ServiceCardLink";
 import { resolvePrimaryServiceImage } from "@/components/marketing/service-card-shared";
 import type { StorefrontServiceCard } from "@/modules/catalog/storefront-services.service";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export function ServiceOtherServicesSection({
   services,

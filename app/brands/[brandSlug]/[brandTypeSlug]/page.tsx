@@ -14,16 +14,11 @@ import {
 } from "@/modules/catalog/storefront-products.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   params: { brandSlug: string; brandTypeSlug: string };

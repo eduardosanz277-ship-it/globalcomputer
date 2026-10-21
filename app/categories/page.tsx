@@ -5,7 +5,7 @@ import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getStorefrontCategoriesWithSubcategories } from "@/modules/catalog/storefront-categories.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,11 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export default async function CategoriasPage() {
   const locale = await getServerLocale();

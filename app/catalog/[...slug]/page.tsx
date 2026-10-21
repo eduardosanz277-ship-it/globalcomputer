@@ -14,7 +14,7 @@ import {
 import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +26,6 @@ type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 async function slugSegments(
   params: Promise<PageParams> | PageParams,

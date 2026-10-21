@@ -5,13 +5,8 @@ import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCa
 import type { Locale } from "@/components/i18n/translations";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontCatalogPageData } from "@/modules/catalog/storefront-catalog.shared";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   catalog: StorefrontCatalogPageData;

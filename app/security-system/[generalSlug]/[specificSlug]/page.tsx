@@ -14,7 +14,7 @@ import {
 } from "@/modules/catalog/storefront-security.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +24,6 @@ type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { generalSlug, specificSlug } = await Promise.resolve(params);

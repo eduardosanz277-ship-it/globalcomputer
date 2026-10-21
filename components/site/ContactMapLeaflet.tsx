@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
+// Solo con el mapa (carga dinámica en contacto), no en la CSS global de todo el sitio.
+import "leaflet/dist/leaflet.css";
 
 type ContactMapLeafletProps = {
   center: [number, number];

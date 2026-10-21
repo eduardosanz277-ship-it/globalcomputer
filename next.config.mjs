@@ -20,6 +20,8 @@ const nextConfig = {
     },
   },
   images: {
+    // AVIF primero (≈20–30 % menos que WebP); el navegador sin soporte recibe WebP.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",

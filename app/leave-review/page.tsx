@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { LeaveReviewPageClient } from "@/components/site/LeaveReviewPageClient";
@@ -7,11 +7,6 @@ import {
   listSiteReviewsForLeaveReviewPage,
 } from "@/modules/site/leave-review-data.service";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export const revalidate = 0;
 

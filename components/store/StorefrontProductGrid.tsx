@@ -5,13 +5,8 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export function StorefrontProductGrid({
   products,

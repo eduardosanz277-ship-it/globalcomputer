@@ -22,7 +22,7 @@ import { listAccessoryStorefrontProducts } from "@/modules/catalog/storefront-pr
 import { listSimilarStorefrontProducts } from "@/modules/catalog/storefront-similar-products.service";
 import { listProductReviewsByProductId } from "@/modules/site/leave-review-data.service";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,6 @@ export const dynamic = "force-dynamic";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   params: Promise<{ productSlug: string }> | { productSlug: string };

@@ -6,7 +6,7 @@ import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 import { cn } from "@/utils/cn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import {
   useCallback,
   useEffect,
@@ -18,11 +18,6 @@ import {
   type KeyboardEvent,
 } from "react";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 /**
  * Mismas clases base que los btns del visor ampliado (Dialog).

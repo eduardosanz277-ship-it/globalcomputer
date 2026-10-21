@@ -7,7 +7,7 @@ import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
 import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +27,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

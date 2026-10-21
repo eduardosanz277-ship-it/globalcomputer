@@ -171,7 +171,7 @@ export function StorefrontProductCard({
                   ? "group-hover/card:scale-100"
                   : "group-hover/card:scale-[1.04]",
               )}
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              sizes="(min-width: 1280px) 320px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             />
           ) : (
             <div

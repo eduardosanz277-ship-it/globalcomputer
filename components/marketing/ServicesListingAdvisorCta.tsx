@@ -1,15 +1,10 @@
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/utils/cn";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { PhoneCall } from "lucide-react";
 import Link from "next/link";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export function ServicesListingAdvisorCta({
   phoneDisplay,

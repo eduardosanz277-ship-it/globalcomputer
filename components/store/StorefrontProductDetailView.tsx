@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -65,11 +65,6 @@ import { formatDateDdMmYyyyHhMm } from "@/utils/formatDateTime";
 import { formatRelativeLastAccess } from "@/utils/formatRelativeLastAccess";
 import { ProductDescriptionViewer } from "@/components/ProductDescriptionViewer";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 function formatUsd(price: number): string {
   return new Intl.NumberFormat("en-US", {

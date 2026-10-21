@@ -1,15 +1,10 @@
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { ContactPageClient } from "@/components/site/ContactPageClient";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Props = {
   searchParams: Promise<{ subject?: string }>;

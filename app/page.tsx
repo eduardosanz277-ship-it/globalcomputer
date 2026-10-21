@@ -570,7 +570,7 @@ export default async function HomePage() {
                         src={brand.imageUrl}
                         alt={`Equipo / Product of ${brand.name}`}
                         fill
-                        sizes="(min-width: 1024px) 31vw, (min-width: 640px) 48vw, 100vw"
+                        sizes="(min-width: 1280px) 200px, (min-width: 1024px) 16vw, (min-width: 640px) 32vw, 50vw"
                         className="object-cover transition duration-500 group-hover:scale-105"
                       />
                     ) : (

@@ -1,7 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import "./globals.css";
-import "sweetalert2/dist/sweetalert2.min.css";
 import { Inter, Outfit, Roboto } from "next/font/google";
 import { ScrollToTopOnPathname } from "@/components/ScrollToTopOnPathname";
 import { AppLoadingListener } from "@/components/AppLoadingListener";

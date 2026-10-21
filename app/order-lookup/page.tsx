@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import type { Metadata } from "next";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb";
@@ -8,11 +8,6 @@ import { OrderLookupClient } from "@/components/store/OrderLookupClient";
 import { translate } from "@/lib/i18n/get-translation";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
