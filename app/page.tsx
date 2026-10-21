@@ -19,11 +19,10 @@ import { throwRemoteError } from "@/lib/errors/rsc-network-error";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-product.shared";
 import {
-  isStorefrontOfferProduct,
-  listAllActiveStorefrontProducts,
   listFeaturedStorefrontProducts,
+  listOfferStorefrontProducts,
+  listStorefrontBrandShowcase,
 } from "@/modules/catalog/storefront-products.service";
 import { listStorefrontServiceHeroSlides } from "@/modules/catalog/storefront-services.service";
 import { getNavigationData } from "@/modules/navigation/navigation.service";
@@ -92,7 +91,8 @@ export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
   const [
     servicesResult,
-    products,
+    offerProducts,
+    brandShowcase,
     featuredProducts,
     user,
     nav,
@@ -109,7 +109,8 @@ export default async function HomePage() {
         "id, name, name_en, slug, short_description, short_description_en, service_images(id, url, is_primary, sort_order)",
       )
       .limit(6),
-    listAllActiveStorefrontProducts(),
+    listOfferStorefrontProducts(4),
+    listStorefrontBrandShowcase(),
     listFeaturedStorefrontProducts(8),
     getCurrentUserService(),
     getNavigationData(),
@@ -125,15 +126,10 @@ export default async function HomePage() {
   }
   const servicesData = servicesResult.data;
   const priceTier = resolveStorefrontPriceTier(user?.role);
-  const offerProducts = products.filter(isStorefrontOfferProduct).slice(0, 4);
   const brands = nav?.brands ?? [];
-  const brandIdsWithProducts = new Set(
-    products.filter((p) => p.brand_id).map((p) => p.brand_id),
-  );
+  const brandIdsWithProducts = new Set(brandShowcase.map((b) => b.brandId));
   const brandImageById = new Map(
-    products
-      .filter((p) => p.brand_id)
-      .map((p) => [p.brand_id, storefrontPrimaryImageUrl(p)]),
+    brandShowcase.map((b) => [b.brandId, b.imageUrl]),
   );
   const featuredBrands = brands
     .filter((brand) => brandIdsWithProducts.has(brand.id))

@@ -10,7 +10,7 @@ import type {
   SubcategoryAdminUpdate,
 } from "@/modules/admin/subcategories/subcategories.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -20,7 +20,7 @@ export async function createSubcategoryAdminAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.subcategories.createFailed",
     () => createSubcategoryAdminService(values, resolvedLocale),
@@ -33,7 +33,7 @@ export async function updateSubcategoryAdminAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.subcategories.updateFailed",
     () => updateSubcategoryAdminService(id, values, resolvedLocale),
@@ -45,7 +45,7 @@ export async function softDeleteSubcategoryAdminAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.subcategories.archiveFailed",
     () => softDeleteSubcategoryAdminService(id, resolvedLocale),

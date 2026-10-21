@@ -10,7 +10,7 @@ import type {
   BrandTypeUpdate,
 } from "@/modules/admin/brand-types/brand-types.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -20,7 +20,7 @@ export async function createBrandTypeAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.brandTypes.createFailed",
     () => createBrandTypeService(values, resolvedLocale),
@@ -33,7 +33,7 @@ export async function updateBrandTypeAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.brandTypes.updateFailed",
     () => updateBrandTypeService(id, values, resolvedLocale),
@@ -45,7 +45,7 @@ export async function deleteBrandTypeAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.brandTypes.deleteFailed",
     () => deleteBrandTypeService(id, resolvedLocale),

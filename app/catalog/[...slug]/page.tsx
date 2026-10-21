@@ -11,10 +11,7 @@ import {
   getStorefrontCategoryBySlug,
   getStorefrontSubcategoryInCategoryBySlug,
 } from "@/modules/catalog/storefront-categories.service";
-import {
-  listProductsByCategoryId,
-  listProductsBySubcategoryId,
-} from "@/modules/catalog/storefront-products.service";
+import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -26,6 +23,7 @@ type PageParams = { slug: string[] };
 
 type Props = {
   params: Promise<PageParams> | PageParams;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const inter = Inter({
@@ -94,18 +92,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: locale === "en" ? "Catalog" : "Catálogo" };
 }
 
-export default async function CatalogoSlugPage({ params }: Props) {
+export default async function CatalogoSlugPage({ params, searchParams }: Props) {
   const segments = await slugSegments(params);
+  const resolvedSearchParams = (await searchParams) ?? {};
   if (segments.length === 1) {
     const categorySlug = segments[0];
     const category = await getStorefrontCategoryBySlug(categorySlug);
     if (!category) notFound();
 
-    const [products, user] = await Promise.all([
-      listProductsByCategoryId(category.id),
+    const [user, locale] = await Promise.all([
       getCurrentUserService(),
+      getServerLocale(),
     ]);
     const priceTier = resolveStorefrontPriceTier(user?.role);
+    const catalog = await loadStorefrontCatalogPage(
+      { kind: "category", categoryId: category.id },
+      resolvedSearchParams,
+      priceTier,
+      locale,
+    );
 
     return (
       <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -149,7 +154,7 @@ export default async function CatalogoSlugPage({ params }: Props) {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-          <StorefrontProductCatalog products={products} priceTier={priceTier} />
+          <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
         </div>
       </main>
     );
@@ -170,11 +175,17 @@ export default async function CatalogoSlugPage({ params }: Props) {
     );
     if (!subcategory) notFound();
 
-    const [products, user] = await Promise.all([
-      listProductsBySubcategoryId(subcategory.id),
+    const [user, locale] = await Promise.all([
       getCurrentUserService(),
+      getServerLocale(),
     ]);
     const priceTier = resolveStorefrontPriceTier(user?.role);
+    const catalog = await loadStorefrontCatalogPage(
+      { kind: "subcategory", subcategoryId: subcategory.id },
+      resolvedSearchParams,
+      priceTier,
+      locale,
+    );
 
     return (
       <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -230,7 +241,7 @@ export default async function CatalogoSlugPage({ params }: Props) {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-          <StorefrontProductCatalog products={products} priceTier={priceTier} />
+          <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
         </div>
       </main>
     );

@@ -13,7 +13,7 @@ import type {
   ServiceUpdate,
 } from "@/modules/admin/services/services.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -23,7 +23,7 @@ export async function createServiceAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.services.createFailed",
     () => createServiceService(values, undefined, 0, undefined, resolvedLocale),
@@ -36,7 +36,7 @@ export async function updateServiceAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.services.updateFailed",
     () => updateServiceService(id, values, undefined, 0, undefined, undefined, undefined, undefined, resolvedLocale),
@@ -48,7 +48,7 @@ export async function deleteServiceAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.services.deleteFailed",
     () => deleteServiceService(id, resolvedLocale),
@@ -63,7 +63,7 @@ export async function createServiceWithImageAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.services.createFailed",
     () =>
@@ -89,7 +89,7 @@ export async function updateServiceWithImageAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.services.updateFailed",
     () =>

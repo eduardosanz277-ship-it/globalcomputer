@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import { throwRemoteError } from "@/lib/errors/rsc-network-error";
-import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { getCatalogSupabase, withCatalogCache } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
 import {
   NavigationBrand,
@@ -16,10 +16,11 @@ const normalizeSlug = (name: string, slug: string | null | undefined) =>
   slug && slug.trim() ? slug : slugify(name);
 
 /**
- * Una sola ejecución por petición: evita duplicar consultas cuando varios
+ * Una sola ejecución por petición (`cache`): evita duplicar consultas cuando varios
  * componentes del mismo render llaman (p. ej. `page.tsx` + `StoreHero`).
+ * Además se comparte entre peticiones (`withCatalogCache`): se pide en casi todas las páginas.
  */
-export const getNavigationData = cache(async (): Promise<NavigationData> => {
+export const getNavigationData = cache(withCatalogCache("navigation-data", async (): Promise<NavigationData> => {
   const supabase = await getCatalogSupabase();
 
   const [
@@ -204,4 +205,4 @@ export const getNavigationData = cache(async (): Promise<NavigationData> => {
     services,
     catalogCategories: Array.from(categoriesMap.values()),
   };
-});
+}));

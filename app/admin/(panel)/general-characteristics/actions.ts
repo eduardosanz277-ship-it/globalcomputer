@@ -10,7 +10,7 @@ import type {
   GeneralCharacteristicUpdate,
 } from "@/modules/admin/general-characteristics/general-characteristics.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -20,7 +20,7 @@ export async function createGeneralCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.generalCharacteristics.createFailed",
     () => createGeneralCharacteristicService(values, resolvedLocale),
@@ -33,7 +33,7 @@ export async function updateGeneralCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.generalCharacteristics.updateFailed",
     () => updateGeneralCharacteristicService(id, values, resolvedLocale),
@@ -45,7 +45,7 @@ export async function deleteGeneralCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.generalCharacteristics.deleteFailed",
     () => deleteGeneralCharacteristicService(id, resolvedLocale),

@@ -7,7 +7,7 @@ import {
 } from "@/modules/admin/brands/brands.service";
 import type { BrandInsert, BrandUpdate } from "@/modules/admin/brands/brands.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -17,7 +17,7 @@ export async function createBrandAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(resolvedLocale, "admin.errors.brands.createFailed", () =>
+  return runCatalogServerAction(resolvedLocale, "admin.errors.brands.createFailed", () =>
     createBrandService(values, resolvedLocale),
   );
 }
@@ -28,7 +28,7 @@ export async function updateBrandAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(resolvedLocale, "admin.errors.brands.updateFailed", () =>
+  return runCatalogServerAction(resolvedLocale, "admin.errors.brands.updateFailed", () =>
     updateBrandService(id, values, resolvedLocale),
   );
 }
@@ -38,7 +38,7 @@ export async function deleteBrandAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(resolvedLocale, "admin.errors.brands.deleteFailed", () =>
+  return runCatalogServerAction(resolvedLocale, "admin.errors.brands.deleteFailed", () =>
     deleteBrandService(id, resolvedLocale),
   );
 }

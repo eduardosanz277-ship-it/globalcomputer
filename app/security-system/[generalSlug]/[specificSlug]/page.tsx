@@ -7,10 +7,10 @@ import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCa
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
+import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import {
   getCharacteristicGeneralBySlugOrId,
   getCharacteristicSpecificBySlugOrId,
-  listProductsByGeneralAndSpecific,
 } from "@/modules/catalog/storefront-security.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
@@ -21,6 +21,7 @@ export const dynamic = "force-dynamic";
 
 type Props = {
   params: { generalSlug: string; specificSlug: string };
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const inter = Inter({
@@ -61,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SecuritySpecificPage({ params }: Props) {
+export default async function SecuritySpecificPage({ params, searchParams }: Props) {
   const { generalSlug, specificSlug } = await Promise.resolve(params);
   const generalResolved = await getCharacteristicGeneralBySlugOrId(generalSlug);
   if (!generalResolved) return notFound();
@@ -79,11 +80,18 @@ export default async function SecuritySpecificPage({ params }: Props) {
     redirect(`/security-system/${general.slug}/${specific.slug}`);
   }
 
-  const [products, user] = await Promise.all([
-    listProductsByGeneralAndSpecific(general.id, specific.id),
+  const [resolvedSearchParams, user, locale] = await Promise.all([
+    searchParams,
     getCurrentUserService(),
+    getServerLocale(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
+  const catalog = await loadStorefrontCatalogPage(
+    { kind: "specific", specificId: specific.id },
+    resolvedSearchParams ?? {},
+    priceTier,
+    locale,
+  );
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -138,7 +146,7 @@ export default async function SecuritySpecificPage({ params }: Props) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-        <StorefrontProductCatalog products={products} priceTier={priceTier} />
+        <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
       </div>
     </main>
   );

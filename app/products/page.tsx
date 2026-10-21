@@ -3,7 +3,7 @@ import { SearchResultsPage } from "@/components/store/SearchResultsPage";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { listAllActiveStorefrontProducts } from "@/modules/catalog/storefront-products.service";
+import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 
 export const dynamic = "force-dynamic";
 
@@ -35,16 +35,21 @@ function firstSearchParam(value: string | string[] | undefined): string {
 export default async function ProductosPage({ searchParams }: ProductsPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   const query = firstSearchParam(resolvedSearchParams.q).trim();
-  const [products, user, locale] = await Promise.all([
-    listAllActiveStorefrontProducts(),
+  const [user, locale] = await Promise.all([
     getCurrentUserService(),
     getServerLocale(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
+  const catalog = await loadStorefrontCatalogPage(
+    { kind: "all" },
+    resolvedSearchParams,
+    priceTier,
+    locale,
+  );
 
   return (
     <SearchResultsPage
-      products={products}
+      catalog={catalog}
       priceTier={priceTier}
       query={query}
       locale={locale}

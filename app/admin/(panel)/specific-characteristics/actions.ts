@@ -10,7 +10,7 @@ import type {
   SpecificCharacteristicUpdate,
 } from "@/modules/admin/specific-characteristics/specific-characteristics.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -20,7 +20,7 @@ export async function createSpecificCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.specificCharacteristics.createFailed",
     () => createSpecificCharacteristicService(values, resolvedLocale),
@@ -33,7 +33,7 @@ export async function updateSpecificCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.specificCharacteristics.updateFailed",
     () => updateSpecificCharacteristicService(id, values, resolvedLocale),
@@ -45,7 +45,7 @@ export async function deleteSpecificCharacteristicAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.specificCharacteristics.deleteFailed",
     () => deleteSpecificCharacteristicService(id, resolvedLocale),

@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import { listAllFeaturedStorefrontProducts } from "@/modules/catalog/storefront-products.service";
+import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
@@ -33,12 +33,23 @@ const inter = Inter({
   display: "swap",
 });
 
-export default async function ProductosDestacadosPage() {
-  const [products, user] = await Promise.all([
-    listAllFeaturedStorefrontProducts(),
+type Props = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function ProductosDestacadosPage({ searchParams }: Props) {
+  const [resolvedSearchParams, user, locale] = await Promise.all([
+    searchParams,
     getCurrentUserService(),
+    getServerLocale(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
+  const catalog = await loadStorefrontCatalogPage(
+    { kind: "featured" },
+    resolvedSearchParams ?? {},
+    priceTier,
+    locale,
+  );
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -69,7 +80,7 @@ export default async function ProductosDestacadosPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-        <StorefrontProductCatalog products={products} priceTier={priceTier} />
+        <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
       </div>
     </main>
   );

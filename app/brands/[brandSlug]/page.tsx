@@ -7,10 +7,8 @@ import { StorefrontTieredDocumentTitle } from "@/components/store/StorefrontTier
 import { getServerLocale } from "@/lib/i18n/server-locale";
 import { resolveStorefrontPriceTier } from "@/lib/storefront-pricing";
 import { getCurrentUserService } from "@/modules/auth/auth.service";
-import {
-  getBrandBySlug,
-  listProductsByBrandId,
-} from "@/modules/catalog/storefront-products.service";
+import { loadStorefrontCatalogPage } from "@/modules/catalog/storefront-catalog.service";
+import { getBrandBySlug } from "@/modules/catalog/storefront-products.service";
 import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -26,6 +24,7 @@ const inter = Inter({
 
 type Props = {
   params: { brandSlug: string };
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -55,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BrandPage({ params }: Props) {
+export default async function BrandPage({ params, searchParams }: Props) {
   const { brandSlug } = await Promise.resolve(params);
   const brand = await getBrandBySlug(brandSlug);
   if (!brand) notFound();
@@ -63,11 +62,18 @@ export default async function BrandPage({ params }: Props) {
     redirect(`/brands/${brand.slug}`);
   }
 
-  const [products, user] = await Promise.all([
-    listProductsByBrandId(brand.id),
+  const [resolvedSearchParams, user, locale] = await Promise.all([
+    searchParams,
     getCurrentUserService(),
+    getServerLocale(),
   ]);
   const priceTier = resolveStorefrontPriceTier(user?.role);
+  const catalog = await loadStorefrontCatalogPage(
+    { kind: "brand", brandId: brand.id },
+    resolvedSearchParams ?? {},
+    priceTier,
+    locale,
+  );
 
   return (
     <main className="min-h-[60vh] bg-gradient-to-b from-muted/25 to-background">
@@ -111,7 +117,7 @@ export default async function BrandPage({ params }: Props) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-        <StorefrontProductCatalog products={products} priceTier={priceTier} />
+        <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
       </div>
     </main>
   );

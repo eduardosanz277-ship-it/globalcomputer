@@ -1,13 +1,13 @@
 import { getNavigationData } from "@/modules/navigation/navigation.service";
-import {
-  listAllActiveStorefrontProducts,
-  storefrontPrimaryImageUrl,
-} from "@/modules/catalog/storefront-products.service";
+import { storefrontPrimaryImageUrl } from "@/modules/catalog/storefront-products.service";
+import { getStorefrontProductsInOrder } from "@/modules/catalog/storefront-catalog.service";
 import {
   storefrontLocalizedText,
   storefrontProductDisplayName,
 } from "@/modules/catalog/storefront-product.shared";
 import type { Locale } from "@/components/i18n/translations";
+import { assertRemoteOk } from "@/lib/errors/rsc-network-error";
+import { getCatalogSupabase, withCatalogCache } from "@/lib/supabaseCatalogClient";
 
 export type SearchSuggestionProduct = {
   id: string;
@@ -62,6 +62,25 @@ function scoreSuggestion(query: string, values: Array<string | null | undefined>
   return best;
 }
 
+/**
+ * Productos sugeridos: la puntuación (misma que `scoreSuggestion`) y el corte a
+ * `PRODUCT_LIMIT` se hacen en SQL; solo se cargan los productos devueltos.
+ */
+const listSuggestedProducts = withCatalogCache(
+  "storefront-search-suggest",
+  async (query: string, locale: Locale) => {
+    const supabase = await getCatalogSupabase();
+    const { data, error } = await supabase.rpc("storefront_search_suggest", {
+      p_query: query,
+      p_locale: locale,
+      p_limit: PRODUCT_LIMIT,
+    });
+    if (error) assertRemoteOk(error);
+    const ids = Array.isArray(data) ? (data as unknown[]).map(String) : [];
+    return getStorefrontProductsInOrder(ids);
+  },
+);
+
 export async function getCatalogSearchSuggestions(
   rawQuery: string,
   locale: Locale,
@@ -72,67 +91,26 @@ export async function getCatalogSearchSuggestions(
   }
 
   const [products, navigation] = await Promise.all([
-    listAllActiveStorefrontProducts(),
+    listSuggestedProducts(query, locale),
     getNavigationData(),
   ]);
 
-  const productMatches = products
-    .map((product) => {
-      const localizedName = storefrontProductDisplayName(product, locale);
-      const localizedBrand = storefrontLocalizedText(
-        locale,
-        product.brand_name,
-        product.brand_name_en,
-      );
-      const localizedCategory = product.category_name
-        ? storefrontLocalizedText(
-            locale,
-            product.category_name,
-            product.category_name_en,
-          )
-        : null;
-      const characteristicTerms = product.characteristic_specifics.flatMap(
-        (item) => [
-          item.name,
-          item.name_en,
-          item.general_name,
-          item.general_name_en,
-          item.value,
-        ],
-      );
-      const score = scoreSuggestion(query, [
-        localizedName,
-        product.name,
-        product.name_en,
-        product.sku,
-        product.slug,
-        localizedBrand,
-        product.brand_name,
-        product.brand_name_en,
-        localizedCategory,
-        product.category_name,
-        product.category_name_en,
-        ...characteristicTerms,
-      ]);
-      return { product, localizedName, localizedBrand, localizedCategory, score };
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || a.localizedName.localeCompare(b.localizedName))
-    .slice(0, PRODUCT_LIMIT)
-    .map(({ product, localizedName, localizedBrand, localizedCategory }) => ({
-      id: product.id,
-      title: localizedName,
-      sku: product.sku,
-      brand: localizedBrand,
-      category: localizedCategory,
-      url: `/products/${product.slug}`,
-      imageUrl: storefrontPrimaryImageUrl(product),
-      price: product.price_client,
-      priceBusiness: product.price_business,
-      stock: product.stock,
-      discountBusinessPct: product.discount_business_pct,
-      discountClientPct: product.discount_client_pct,
-    }));
+  const productMatches = products.map((product) => ({
+    id: product.id,
+    title: storefrontProductDisplayName(product, locale),
+    sku: product.sku,
+    brand: storefrontLocalizedText(locale, product.brand_name, product.brand_name_en),
+    category: product.category_name
+      ? storefrontLocalizedText(locale, product.category_name, product.category_name_en)
+      : null,
+    url: `/products/${product.slug}`,
+    imageUrl: storefrontPrimaryImageUrl(product),
+    price: product.price_client,
+    priceBusiness: product.price_business,
+    stock: product.stock,
+    discountBusinessPct: product.discount_business_pct,
+    discountClientPct: product.discount_client_pct,
+  }));
 
   const brandMatches = navigation.brands
     .map((brand) => {

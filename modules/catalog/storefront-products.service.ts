@@ -1,5 +1,5 @@
 import { assertRemoteOk, failOnNetworkError } from "@/lib/errors/rsc-network-error";
-import { getCatalogSupabase } from "@/lib/supabaseCatalogClient";
+import { getCatalogSupabase, withCatalogCache } from "@/lib/supabaseCatalogClient";
 import { slugify } from "@/lib/slugify";
 import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
 
@@ -652,193 +652,66 @@ export async function listBrandTypesForBrand(
     });
 }
 
-/** Todos los productos activos del catálogo público (tienda). */
-export async function listAllActiveStorefrontProducts(): Promise<
-  StorefrontProduct[]
-> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true)
-    .order("name");
-
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
 /**
  * Productos activos marcados como destacados (`featured`), para bloques como el home.
  * Orden: actualización reciente primero.
  */
-export async function listFeaturedStorefrontProducts(
-  limit: number,
-): Promise<StorefrontProduct[]> {
-  const cap = Math.min(Math.max(1, Math.floor(limit)), 8);
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true)
-    .eq("featured", true)
-    .order("updated_at", { ascending: false })
-    .limit(cap);
+export const listFeaturedStorefrontProducts = withCatalogCache(
+  "storefront-featured-products",
+  async (limit: number): Promise<StorefrontProduct[]> => {
+    const cap = Math.min(Math.max(1, Math.floor(limit)), 8);
+    const supabase = await getCatalogSupabase();
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("active", true)
+      .eq("featured", true)
+      .order("updated_at", { ascending: false })
+      .limit(cap);
 
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
-/**
- * Todos los productos activos marcados como destacados (`featured`).
- * Orden: actualización reciente primero.
- */
-export async function listAllFeaturedStorefrontProducts(): Promise<
-  StorefrontProduct[]
-> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true)
-    .eq("featured", true)
-    .order("updated_at", { ascending: false });
-
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
-export function isStorefrontOfferProduct(product: {
-  discount_client_pct: number;
-  discount_business_pct: number;
-}): boolean {
-  return product.discount_client_pct > 0 || product.discount_business_pct > 0;
-}
+    if (error) assertRemoteOk(error);
+    if (!data) return [];
+    return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+  },
+);
 
 /**
- * Productos activos con descuento de cliente o empresa (bloque Ofertas del home).
+ * Primeros productos activos con descuento de cliente o empresa (bloque Ofertas del home).
  * Orden: nombre, igual que el catálogo general.
  */
-export async function listAllOfferStorefrontProducts(): Promise<
-  StorefrontProduct[]
-> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true)
-    .or("discount_client_pct.gt.0,discount_business_pct.gt.0")
-    .order("name");
+export const listOfferStorefrontProducts = withCatalogCache(
+  "storefront-offer-products",
+  async (limit: number): Promise<StorefrontProduct[]> => {
+    const supabase = await getCatalogSupabase();
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("active", true)
+      .or("discount_client_pct.gt.0,discount_business_pct.gt.0")
+      .order("name")
+      .limit(Math.max(1, Math.floor(limit)));
 
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
-export async function listProductsByBrandId(
-  brandId: string,
-): Promise<StorefrontProduct[]> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("brand_id", brandId)
-    .eq("active", true)
-    .order("name");
-
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
-export async function listProductsByBrandAndType(
-  brandId: string,
-  brandTypeId: string,
-): Promise<StorefrontProduct[]> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("brand_id", brandId)
-    .eq("brand_type_id", brandTypeId)
-    .eq("active", true)
-    .order("name");
-
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
+    if (error) assertRemoteOk(error);
+    if (!data) return [];
+    return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
+  },
+);
 
 /**
- * Productos clasificados en la categoría: `category_id` directo o `subcategory_id`
- * cuya subcategoría pertenece a esta categoría (exclusivo XOR en DB).
+ * Marcas con productos activos y la imagen de su último producto por nombre
+ * (bloque de marcas del home), sin cargar el catálogo completo.
  */
-export async function listProductsByCategoryId(
-  categoryId: string,
-): Promise<StorefrontProduct[]> {
-  const supabase = await getCatalogSupabase();
-  const { data: subs, error: subErr } = await supabase
-    .from("subcategories")
-    .select("id")
-    .eq("category_id", categoryId)
-    .is("deleted_at", null);
-
-  if (subErr) {
-    failOnNetworkError(subErr);
-    console.warn(
-      "[storefront] listProductsByCategoryId subcategories",
-      subErr.message,
+export const listStorefrontBrandShowcase = withCatalogCache(
+  "storefront-brand-showcase",
+  async (): Promise<{ brandId: string; imageUrl: string | null }[]> => {
+    const supabase = await getCatalogSupabase();
+    const { data, error } = await supabase.rpc("storefront_brand_showcase");
+    if (error) assertRemoteOk(error);
+    return ((data ?? []) as { brand_id: string; image_url: string | null }[]).map(
+      (row) => ({ brandId: String(row.brand_id), imageUrl: row.image_url ?? null }),
     );
-  }
-
-  const subIds = (subs ?? []).map((s) => s.id as string);
-
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true);
-
-  if (subIds.length > 0) {
-    const inList = subIds.join(",");
-    query = query.or(
-      `category_id.eq.${categoryId},subcategory_id.in.(${inList})`,
-    );
-  } else {
-    query = query.eq("category_id", categoryId);
-  }
-
-  const { data, error } = await query.order("name");
-
-  if (error) {
-    assertRemoteOk(error);
-    console.warn(
-      "[storefront] listProductsByCategoryId",
-      categoryId,
-      error.message,
-    );
-    return [];
-  }
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
-
-export async function listProductsBySubcategoryId(
-  subcategoryId: string,
-): Promise<StorefrontProduct[]> {
-  const supabase = await getCatalogSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("subcategory_id", subcategoryId)
-    .eq("active", true)
-    .order("name");
-
-  if (error) assertRemoteOk(error);
-  if (!data) return [];
-  return data.map((row) => mapStorefrontProductRow(row as Record<string, unknown>));
-}
+  },
+);
 
 /** Productos de vitrina por ids (p. ej. carrito). Omite ids inexistentes o inactivos. */
 export async function getStorefrontProductsByIds(

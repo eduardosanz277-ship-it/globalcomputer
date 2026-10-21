@@ -1,6 +1,16 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,17 +28,19 @@ import {
   appToolbarSelectStyles,
 } from "@/components/ui/react-select-app-styles";
 import { SlideOver, SlideOverFooter } from "@/components/ui/slide-over";
+import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
+import { storefrontLocalizedText } from "@/modules/catalog/storefront-product.shared";
 import {
-  activeDiscountPercent,
-  resolveStorefrontBasePrice,
-  resolveStorefrontUnitPrice,
-  type StorefrontPriceTier,
-} from "@/lib/storefront-pricing";
-import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
-import {
-  storefrontLocalizedText,
-  storefrontProductDisplayName,
-} from "@/modules/catalog/storefront-product.shared";
+  STOREFRONT_CATALOG_DEFAULT_PAGE_SIZE,
+  STOREFRONT_CATALOG_DEFAULT_QUERY,
+  STOREFRONT_CATALOG_PAGE_SIZE_OPTIONS,
+  writeStorefrontCatalogQuery,
+  type StorefrontCatalogPageData,
+  type StorefrontCatalogQuery,
+  type StorefrontCatalogSort,
+  type StorefrontCatalogStockFilter,
+} from "@/modules/catalog/storefront-catalog.shared";
+import type { Locale } from "@/components/i18n/translations";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   adminServiceLikeInputClassName,
@@ -39,16 +51,10 @@ import { cn } from "@/utils/cn";
 import { StorefrontProductGrid } from "./StorefrontProductGrid";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
-const DEFAULT_PAGE_SIZE = 20;
-
-function normalizeSearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
+const PAGE_SIZE_OPTIONS = STOREFRONT_CATALOG_PAGE_SIZE_OPTIONS;
+const DEFAULT_PAGE_SIZE = STOREFRONT_CATALOG_DEFAULT_PAGE_SIZE;
+/** Espera tras teclear un precio antes de pedir la nueva p\u00e1gina al servidor. */
+const PRICE_DEBOUNCE_MS = 400;
 
 /** react-select dentro del SlideOver: menú por encima del área scroll (mismo criterio que `FormSelectField` con portal). */
 const catalogSlideOverSelectStyles: typeof appSelectStyles = {
@@ -65,15 +71,8 @@ const catalogSlideOverSelectStyles: typeof appSelectStyles = {
 
 type PageSizeOption = { value: number; label: string };
 
-type StockFilterKey = "in_stock" | "low" | "out";
-type SortKey =
-  | "relevance"
-  | "price_asc"
-  | "price_desc"
-  | "name_asc"
-  | "name_desc"
-  | "date_desc"
-  | "date_asc";
+type StockFilterKey = StorefrontCatalogStockFilter;
+type SortKey = StorefrontCatalogSort;
 type SortOption = { value: SortKey; label: string };
 type FilterSectionKey =
   | "category"
@@ -92,16 +91,10 @@ const DEFAULT_EXPANDED_FILTER_SECTIONS: Record<FilterSectionKey, boolean> = {
   offers: false,
 };
 
-function salePrice(p: StorefrontProduct, tier: StorefrontPriceTier): number {
-  return resolveStorefrontUnitPrice(p, tier);
-}
-
-function hasDiscount(p: StorefrontProduct, tier: StorefrontPriceTier): boolean {
-  const pct = activeDiscountPercent(p, tier);
-  return (
-    pct > 0 &&
-    resolveStorefrontUnitPrice(p, tier) < resolveStorefrontBasePrice(p, tier)
-  );
+function toggleInList<T>(list: T[], value: T): T[] {
+  return list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value];
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -156,16 +149,19 @@ function FilterPanelSection({
 }
 
 type Props = {
-  products: StorefrontProduct[];
+  /** Página ya filtrada, ordenada y paginada en servidor (`loadStorefrontCatalogPage`). */
+  catalog: StorefrontCatalogPageData;
   priceTier: StorefrontPriceTier;
-  initialSearch?: string;
 };
 
-export function StorefrontProductCatalog({
-  products,
-  priceTier,
-  initialSearch = "",
-}: Props) {
+export function StorefrontProductCatalog({ catalog, priceTier }: Props) {
+  const {
+    products,
+    facets,
+    filteredCount,
+    query,
+    locale: dataLocale,
+  } = catalog;
   const { locale, t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -190,36 +186,92 @@ export function StorefrontProductCatalog({
     8;
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [search, setSearch] = useState(initialSearch);
-  const [brandIds, setBrandIds] = useState<Record<string, boolean>>({});
-  const [categoryIds, setCategoryIds] = useState<Record<string, boolean>>({});
-  const [specificIds, setSpecificIds] = useState<Record<string, boolean>>({});
-  const [priceMin, setPriceMin] = useState("");
-  const [priceMax, setPriceMax] = useState("");
-  const [stockFilters, setStockFilters] = useState<
-    Partial<Record<StockFilterKey, boolean>>
-  >({});
-  const [discountOnly, setDiscountOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortKey>("relevance");
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [expandedSections, setExpandedSections] = useState<
     Record<FilterSectionKey, boolean>
   >(DEFAULT_EXPANDED_FILTER_SECTIONS);
   const pageSizeSelectId = useId();
 
+  /**
+   * La URL es la fuente de verdad; `current` refleja al instante el cambio
+   * solicitado mientras el servidor devuelve la nueva página.
+   */
+  const [isNavigating, startNavigation] = useTransition();
+  const [current, setOptimisticQuery] = useOptimistic(query);
+
+  const navigate = useCallback(
+    (next: StorefrontCatalogQuery) => {
+      const qs = writeStorefrontCatalogQuery(
+        next,
+        new URLSearchParams(searchParams.toString()),
+      ).toString();
+      startNavigation(() => {
+        setOptimisticQuery(next);
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams, setOptimisticQuery],
+  );
+
+  /** Cambiar cualquier filtro u orden vuelve a la primera página (como antes). */
+  const updateFilters = (patch: Partial<StorefrontCatalogQuery>) => {
+    navigate({ ...current, ...patch, page: 0 });
+  };
+
+  /** Texto de precio mientras se escribe; `null` = sin edición pendiente (se usa la URL). */
+  const [priceDraft, setPriceDraft] = useState<{ min: string; max: string } | null>(
+    null,
+  );
+  const priceMin = priceDraft?.min ?? current.priceMin;
+  const priceMax = priceDraft?.max ?? current.priceMax;
+
   useEffect(() => {
-    setSearch(initialSearch);
-  }, [initialSearch]);
+    if (!priceDraft) return;
+    const timer = window.setTimeout(() => {
+      setPriceDraft(null);
+      if (
+        priceDraft.min !== current.priceMin ||
+        priceDraft.max !== current.priceMax
+      ) {
+        navigate({
+          ...current,
+          priceMin: priceDraft.min,
+          priceMax: priceDraft.max,
+          page: 0,
+        });
+      }
+    }, PRICE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [priceDraft, current, navigate]);
+
+  const setPriceMin = (value: string) =>
+    setPriceDraft({ min: value, max: priceMax });
+  const setPriceMax = (value: string) =>
+    setPriceDraft({ min: priceMin, max: value });
+
+  /**
+   * El cambio de idioma no recarga los Server Components: si la búsqueda o el orden
+   * por nombre dependen del idioma, se pide de nuevo la página una sola vez.
+   */
+  const refreshedLocaleRef = useRef<Locale | null>(null);
+  useEffect(() => {
+    if (locale === dataLocale) return;
+    const dependsOnLocale =
+      current.q !== "" ||
+      current.sort === "name_asc" ||
+      current.sort === "name_desc";
+    if (!dependsOnLocale || refreshedLocaleRef.current === locale) return;
+    refreshedLocaleRef.current = locale;
+    startNavigation(() => router.refresh());
+  }, [locale, dataLocale, current.q, current.sort, router]);
 
   const sectionHasActiveSelection = (key: FilterSectionKey): boolean => {
-    if (key === "category") return Object.values(categoryIds).some(Boolean);
-    if (key === "brand") return Object.values(brandIds).some(Boolean);
+    if (key === "category") return current.categoryIds.length > 0;
+    if (key === "brand") return current.brandIds.length > 0;
     if (key === "price")
       return priceMin.trim() !== "" || priceMax.trim() !== "";
-    if (key === "specific") return Object.values(specificIds).some(Boolean);
-    if (key === "stock") return Object.values(stockFilters).some(Boolean);
-    return discountOnly;
+    if (key === "specific") return current.specificIds.length > 0;
+    if (key === "stock") return current.stock.length > 0;
+    return current.discountOnly;
   };
 
   const currentActiveSectionMap = (): Record<FilterSectionKey, boolean> => ({
@@ -244,72 +296,61 @@ export function StorefrontProductCatalog({
     }));
   }, [
     panelOpen,
-    categoryIds,
-    brandIds,
+    current.categoryIds,
+    current.brandIds,
     priceMin,
     priceMax,
-    specificIds,
-    stockFilters,
-    discountOnly,
+    current.specificIds,
+    current.stock,
+    current.discountOnly,
   ]);
 
   const brandOptions = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of products) {
-      if (!m.has(p.brand_id)) {
-        m.set(
-          p.brand_id,
-          storefrontLocalizedText(locale, p.brand_name, p.brand_name_en),
-        );
-      }
-    }
-    return Array.from(m.entries())
-      .map(([id, name]) => ({ id, name }))
+    return facets.brands
+      .map((b) => ({
+        id: b.id,
+        name: storefrontLocalizedText(locale, b.name, b.name_en),
+      }))
       .sort((a, b) => a.name.localeCompare(b.name, collatorLocale));
-  }, [products, locale, collatorLocale]);
+  }, [facets.brands, locale, collatorLocale]);
 
   const categoryOptions = useMemo(() => {
-    const m = new Map<string, string>();
     const fallback = t("storefront.catalog.categoryFallback");
-    for (const p of products) {
-      if (p.category_id == null) continue;
-      const label = storefrontLocalizedText(
-        locale,
-        p.category_name?.trim() || fallback,
-        p.category_name_en,
-      );
-      if (!m.has(p.category_id)) m.set(p.category_id, label);
-    }
-    return Array.from(m.entries())
-      .map(([id, name]) => ({ id, name }))
+    return facets.categories
+      .map((c) => ({
+        id: c.id,
+        name: storefrontLocalizedText(
+          locale,
+          c.name?.trim() || fallback,
+          c.name_en,
+        ),
+      }))
       .sort((a, b) => a.name.localeCompare(b.name, collatorLocale));
-  }, [products, locale, collatorLocale, t]);
+  }, [facets.categories, locale, collatorLocale, t]);
 
   const specificOptionsByGeneral = useMemo(() => {
     const generals = new Map<
       string,
       { id: string; name: string; specifics: Map<string, string> }
     >();
-    for (const p of products) {
-      for (const s of p.characteristic_specifics) {
-        if (!generals.has(s.general_id)) {
-          generals.set(s.general_id, {
-            id: s.general_id,
-            name: storefrontLocalizedText(
-              locale,
-              s.general_name,
-              s.general_name_en,
-            ),
-            specifics: new Map(),
-          });
-        }
-        const g = generals.get(s.general_id)!;
-        if (!g.specifics.has(s.id)) {
-          g.specifics.set(
-            s.id,
-            storefrontLocalizedText(locale, s.name, s.name_en),
-          );
-        }
+    for (const s of facets.specifics) {
+      if (!generals.has(s.general_id)) {
+        generals.set(s.general_id, {
+          id: s.general_id,
+          name: storefrontLocalizedText(
+            locale,
+            s.general_name,
+            s.general_name_en,
+          ),
+          specifics: new Map(),
+        });
+      }
+      const g = generals.get(s.general_id)!;
+      if (!g.specifics.has(s.id)) {
+        g.specifics.set(
+          s.id,
+          storefrontLocalizedText(locale, s.name, s.name_en),
+        );
       }
     }
     return Array.from(generals.values())
@@ -324,20 +365,14 @@ export function StorefrontProductCatalog({
       .sort((a, b) =>
         a.generalName.localeCompare(b.generalName, collatorLocale),
       );
-  }, [products, locale, collatorLocale]);
+  }, [facets.specifics, locale, collatorLocale]);
 
   const priceBounds = useMemo(() => {
-    let min = Infinity;
-    let max = -Infinity;
-    for (const p of products) {
-      const s = salePrice(p, priceTier);
-      if (s < min) min = s;
-      if (s > max) max = s;
-    }
-    if (!Number.isFinite(min) || !Number.isFinite(max))
-      return { min: 0, max: 0 };
-    return { min, max };
-  }, [products, priceTier]);
+    const range =
+      priceTier === "business" ? facets.priceBusiness : facets.priceClient;
+    if (range.min == null || range.max == null) return { min: 0, max: 0 };
+    return { min: range.min, max: range.max };
+  }, [facets.priceBusiness, facets.priceClient, priceTier]);
 
   const sliderMinBound = Math.floor(priceBounds.min);
   const sliderMaxBound = Math.ceil(priceBounds.max);
@@ -359,201 +394,12 @@ export function StorefrontProductCatalog({
   const sliderEndPercent =
     ((sliderMaxValue - sliderMinBound) / sliderSpan) * 100;
 
-  const filtered = useMemo(() => {
-    const q = normalizeSearchText(search);
-    const selectedBrands = Object.entries(brandIds)
-      .filter(([, v]) => v)
-      .map(([id]) => id);
-    const hasBrandFilter = selectedBrands.length > 0;
+  /** Productos del listado sin filtros (antes `products.length`). */
+  const totalProducts = facets.total;
+  const pageSize = current.pageSize;
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize) || 1);
+  const safePageIndex = Math.min(current.page, Math.max(0, totalPages - 1));
 
-    const selectedCategories = Object.entries(categoryIds)
-      .filter(([, v]) => v)
-      .map(([id]) => id);
-    const hasCategoryFilter = selectedCategories.length > 0;
-
-    const selectedSpecificIds = Object.entries(specificIds)
-      .filter(([, v]) => v)
-      .map(([id]) => id);
-    const hasSpecificFilter = selectedSpecificIds.length > 0;
-
-    const minN = priceMin.trim() === "" ? null : Number(priceMin);
-    const maxN = priceMax.trim() === "" ? null : Number(priceMax);
-    const minOk = minN !== null && Number.isFinite(minN);
-    const maxOk = maxN !== null && Number.isFinite(maxN);
-
-    const selectedStockFilters = (
-      Object.keys(stockFilters) as StockFilterKey[]
-    ).filter((key) => Boolean(stockFilters[key]));
-    const hasStockFilter = selectedStockFilters.length > 0;
-
-    let list = products.filter((p) => {
-      if (q) {
-        const productHaystack = normalizeSearchText(
-          [
-          storefrontProductDisplayName(p, locale),
-          p.name,
-          p.name_en,
-          p.sku,
-          p.slug,
-          storefrontLocalizedText(locale, p.brand_name, p.brand_name_en),
-          p.brand_name,
-          p.brand_name_en,
-          p.category_name
-            ? storefrontLocalizedText(locale, p.category_name, p.category_name_en)
-            : null,
-          p.category_name,
-          p.category_name_en,
-          ...p.characteristic_specifics.flatMap((s) => [
-            storefrontLocalizedText(locale, s.name, s.name_en),
-            s.name,
-            s.name_en,
-            storefrontLocalizedText(locale, s.general_name, s.general_name_en),
-            s.general_name,
-            s.general_name_en,
-            s.value,
-          ]),
-        ]
-          .filter(Boolean)
-          .join(" "),
-        );
-        if (!productHaystack.includes(q)) return false;
-      }
-      if (hasBrandFilter && !selectedBrands.includes(p.brand_id)) return false;
-
-      if (hasCategoryFilter) {
-        if (
-          p.category_id == null ||
-          !selectedCategories.includes(p.category_id)
-        ) {
-          return false;
-        }
-      }
-
-      if (hasSpecificFilter) {
-        const productSpecificIds = new Set(
-          p.characteristic_specifics.map((s) => s.id),
-        );
-        if (!selectedSpecificIds.some((id) => productSpecificIds.has(id))) {
-          return false;
-        }
-      }
-
-      const sale = salePrice(p, priceTier);
-      if (minOk && sale < minN) return false;
-      if (maxOk && sale > maxN) return false;
-
-      if (discountOnly && !hasDiscount(p, priceTier)) return false;
-
-      if (hasStockFilter) {
-        const matchesInStock = p.stock > 0;
-        const matchesLow = p.stock > 0 && p.stock <= 5;
-        const matchesOut = p.stock === 0;
-        const matchesSelected = selectedStockFilters.some((key) => {
-          if (key === "in_stock") return matchesInStock;
-          if (key === "low") return matchesLow;
-          return matchesOut;
-        });
-        if (!matchesSelected) return false;
-      }
-
-      return true;
-    });
-
-    const sorted = [...list];
-    switch (sortBy) {
-      case "price_asc":
-        sorted.sort(
-          (a, b) => salePrice(a, priceTier) - salePrice(b, priceTier),
-        );
-        break;
-      case "price_desc":
-        sorted.sort(
-          (a, b) => salePrice(b, priceTier) - salePrice(a, priceTier),
-        );
-        break;
-      case "name_asc":
-        sorted.sort((a, b) =>
-          storefrontProductDisplayName(a, locale).localeCompare(
-            storefrontProductDisplayName(b, locale),
-            collatorLocale,
-          ),
-        );
-        break;
-      case "name_desc":
-        sorted.sort((a, b) =>
-          storefrontProductDisplayName(b, locale).localeCompare(
-            storefrontProductDisplayName(a, locale),
-            collatorLocale,
-          ),
-        );
-        break;
-      case "date_desc":
-        sorted.sort((a, b) => {
-          const ta = new Date(a.updated_at).getTime();
-          const tb = new Date(b.updated_at).getTime();
-          return (Number.isNaN(tb) ? 0 : tb) - (Number.isNaN(ta) ? 0 : ta);
-        });
-        break;
-      case "date_asc":
-        sorted.sort((a, b) => {
-          const ta = new Date(a.updated_at).getTime();
-          const tb = new Date(b.updated_at).getTime();
-          return (Number.isNaN(ta) ? 0 : ta) - (Number.isNaN(tb) ? 0 : tb);
-        });
-        break;
-      default:
-        break;
-    }
-    return sorted;
-  }, [
-    products,
-    priceTier,
-    search,
-    brandIds,
-    categoryIds,
-    specificIds,
-    priceMin,
-    priceMax,
-    stockFilters,
-    discountOnly,
-    sortBy,
-    locale,
-    collatorLocale,
-  ]);
-
-  const filterResetKey = useMemo(
-    () =>
-      `${search}|${priceMin}|${priceMax}|${discountOnly}|${sortBy}|${JSON.stringify(brandIds)}|${JSON.stringify(categoryIds)}|${JSON.stringify(specificIds)}|${JSON.stringify(stockFilters)}`,
-    [
-      search,
-      priceMin,
-      priceMax,
-      discountOnly,
-      sortBy,
-      brandIds,
-      categoryIds,
-      specificIds,
-      stockFilters,
-    ],
-  );
-
-  useEffect(() => {
-    setPageIndex(0);
-  }, [filterResetKey]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize) || 1);
-
-  useEffect(() => {
-    setPageIndex((i) => Math.min(i, Math.max(0, totalPages - 1)));
-  }, [filtered.length, pageSize, totalPages]);
-
-  const safePageIndex = Math.min(pageIndex, Math.max(0, totalPages - 1));
-  const paginatedProducts = useMemo(() => {
-    const start = safePageIndex * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, safePageIndex, pageSize]);
-
-  const filteredCount = filtered.length;
   const startRow = filteredCount === 0 ? 0 : safePageIndex * pageSize + 1;
   const endRow = Math.min((safePageIndex + 1) * pageSize, filteredCount);
 
@@ -582,57 +428,37 @@ export function StorefrontProductCatalog({
   const canPrev = safePageIndex > 0;
   const canNext = safePageIndex < totalPages - 1;
 
+  const goToPage = (pageIndex: number) => {
+    navigate({ ...current, page: pageIndex });
+  };
+
   const activeFilterCount = useMemo(() => {
     let n = 0;
-    if (search.trim()) n += 1;
-    if (Object.values(brandIds).some(Boolean)) n += 1;
-    if (Object.values(categoryIds).some(Boolean)) n += 1;
-    if (Object.values(specificIds).some(Boolean)) n += 1;
+    if (current.q.trim()) n += 1;
+    if (current.brandIds.length > 0) n += 1;
+    if (current.categoryIds.length > 0) n += 1;
+    if (current.specificIds.length > 0) n += 1;
     if (priceMin.trim() || priceMax.trim()) n += 1;
-    if (Object.values(stockFilters).some(Boolean)) n += 1;
-    if (discountOnly) n += 1;
+    if (current.stock.length > 0) n += 1;
+    if (current.discountOnly) n += 1;
     return n;
-  }, [
-    search,
-    brandIds,
-    categoryIds,
-    specificIds,
-    priceMin,
-    priceMax,
-    stockFilters,
-    discountOnly,
-  ]);
+  }, [current, priceMin, priceMax]);
 
   const clearFilters = () => {
-    setSearch("");
-    setBrandIds({});
-    setCategoryIds({});
-    setSpecificIds({});
-    setPriceMin("");
-    setPriceMax("");
-    setStockFilters({});
-    setDiscountOnly(false);
-    setSortBy("relevance");
-    if (searchParams.has("q")) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("q");
-      const nextQuery = params.toString();
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
-        scroll: false,
-      });
-    }
+    setPriceDraft(null);
+    navigate({ ...STOREFRONT_CATALOG_DEFAULT_QUERY, pageSize: current.pageSize });
   };
 
   const toggleBrand = (id: string) => {
-    setBrandIds((prev) => ({ ...prev, [id]: !prev[id] }));
+    updateFilters({ brandIds: toggleInList(current.brandIds, id) });
   };
 
   const toggleCategory = (id: string) => {
-    setCategoryIds((prev) => ({ ...prev, [id]: !prev[id] }));
+    updateFilters({ categoryIds: toggleInList(current.categoryIds, id) });
   };
 
   const toggleSpecificCharacteristic = (id: string) => {
-    setSpecificIds((prev) => ({ ...prev, [id]: !prev[id] }));
+    updateFilters({ specificIds: toggleInList(current.specificIds, id) });
   };
 
   const toggleFilterSection = (key: FilterSectionKey) => {
@@ -643,7 +469,7 @@ export function StorefrontProductCatalog({
   };
 
   const toggleStockFilter = (key: StockFilterKey) => {
-    setStockFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+    updateFilters({ stock: toggleInList(current.stock, key) });
   };
 
   const handleMinSliderChange = (next: number) => {
@@ -712,8 +538,8 @@ export function StorefrontProductCatalog({
           </div>
           <p className="text-sm font-medium text-muted-foreground">
             {activeFilterCount > 0
-              ? `${filtered.length} ${t("storefront.catalog.countSeparator")} ${products.length} ${products.length === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`
-              : `${products.length} ${products.length === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`}
+              ? `${filteredCount} ${t("storefront.catalog.countSeparator")} ${totalProducts} ${totalProducts === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`
+              : `${totalProducts} ${totalProducts === 1 ? t("storefront.catalog.productOne") : t("storefront.catalog.productMany")}`}
           </p>
         </div>
 
@@ -734,11 +560,11 @@ export function StorefrontProductCatalog({
               styles={appSelectStyles}
               options={sortOptions}
               value={
-                sortOptions.find((option) => option.value === sortBy) ??
+                sortOptions.find((option) => option.value === current.sort) ??
                 sortOptions[0]
               }
               onChange={(option) => {
-                if (option) setSortBy(option.value);
+                if (option) updateFilters({ sort: option.value });
               }}
               isClearable={false}
               isSearchable={false}
@@ -804,11 +630,11 @@ export function StorefrontProductCatalog({
                 styles={catalogSlideOverSelectStyles}
                 options={sortOptions}
                 value={
-                  sortOptions.find((option) => option.value === sortBy) ??
+                  sortOptions.find((option) => option.value === current.sort) ??
                   sortOptions[0]
                 }
                 onChange={(option) => {
-                  if (option) setSortBy(option.value);
+                  if (option) updateFilters({ sort: option.value });
                 }}
                 isClearable={false}
                 isSearchable={false}
@@ -835,7 +661,7 @@ export function StorefrontProductCatalog({
                     <label className="flex cursor-pointer items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={Boolean(categoryIds[id])}
+                        checked={current.categoryIds.includes(id)}
                         onChange={() => toggleCategory(id)}
                         className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                       />
@@ -882,11 +708,11 @@ export function StorefrontProductCatalog({
                   styles={appSelectStyles}
                   options={sortOptions}
                   value={
-                    sortOptions.find((option) => option.value === sortBy) ??
+                    sortOptions.find((option) => option.value === current.sort) ??
                     sortOptions[0]
                   }
                   onChange={(option) => {
-                    if (option) setSortBy(option.value);
+                    if (option) updateFilters({ sort: option.value });
                   }}
                   isClearable={false}
                   isSearchable={false}
@@ -912,7 +738,7 @@ export function StorefrontProductCatalog({
                     <label className="flex cursor-pointer items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={Boolean(brandIds[id])}
+                        checked={current.brandIds.includes(id)}
                         onChange={() => toggleBrand(id)}
                         className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                       />
@@ -1052,7 +878,7 @@ export function StorefrontProductCatalog({
                           <label className="flex cursor-pointer items-start gap-3">
                             <input
                               type="checkbox"
-                              checked={Boolean(specificIds[id])}
+                              checked={current.specificIds.includes(id)}
                               onChange={() => toggleSpecificCharacteristic(id)}
                               className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                             />
@@ -1081,7 +907,7 @@ export function StorefrontProductCatalog({
                 <label className="flex cursor-pointer items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={Boolean(stockFilters.in_stock)}
+                    checked={current.stock.includes("in_stock")}
                     onChange={() => toggleStockFilter("in_stock")}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
@@ -1094,7 +920,7 @@ export function StorefrontProductCatalog({
                 <label className="flex cursor-pointer items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={Boolean(stockFilters.low)}
+                    checked={current.stock.includes("low")}
                     onChange={() => toggleStockFilter("low")}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
@@ -1107,7 +933,7 @@ export function StorefrontProductCatalog({
                 <label className="flex cursor-pointer items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={Boolean(stockFilters.out)}
+                    checked={current.stock.includes("out")}
                     onChange={() => toggleStockFilter("out")}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                   />
@@ -1134,8 +960,8 @@ export function StorefrontProductCatalog({
                 <input
                   id="filter-discount"
                   type="checkbox"
-                  checked={discountOnly}
-                  onChange={(e) => setDiscountOnly(e.target.checked)}
+                  checked={current.discountOnly}
+                  onChange={(e) => updateFilters({ discountOnly: e.target.checked })}
                   className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
                 />
                 <span className="min-w-0">
@@ -1152,7 +978,7 @@ export function StorefrontProductCatalog({
         </div>
       </SlideOver>
 
-      {filtered.length === 0 && products.length > 0 ? (
+      {filteredCount === 0 && totalProducts > 0 ? (
         <p className="rounded-2xl border border-dashed border-border/60 bg-muted/70 px-6 py-12 text-center text-sm text-muted-foreground">
           {t("storefront.catalog.emptyFiltered")}{" "}
           <button
@@ -1165,10 +991,15 @@ export function StorefrontProductCatalog({
         </p>
       ) : (
         <>
-          <StorefrontProductGrid
-            products={paginatedProducts}
-            priceTier={priceTier}
-          />
+          <div
+            aria-busy={isNavigating}
+            className={cn(
+              "transition-opacity",
+              isNavigating && "pointer-events-none opacity-60",
+            )}
+          >
+            <StorefrontProductGrid products={products} priceTier={priceTier} />
+          </div>
           {filteredCount > 0 ? (
             <nav
               className={cn("mt-8 border-t border-border/80 pt-4")}
@@ -1231,8 +1062,7 @@ export function StorefrontProductCatalog({
                       menuPlacement="top"
                       onChange={(opt) => {
                         if (opt) {
-                          setPageSize(opt.value);
-                          setPageIndex(0);
+                          navigate({ ...current, pageSize: opt.value, page: 0 });
                         }
                       }}
                       styles={appToolbarSelectStyles}
@@ -1250,7 +1080,7 @@ export function StorefrontProductCatalog({
                       variant="outline"
                       size="icon"
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => setPageIndex(0)}
+                      onClick={() => goToPage(0)}
                       disabled={!canPrev}
                       aria-label={t("storefront.catalog.firstPageAria")}
                       title={t("storefront.catalog.firstPageTitle")}
@@ -1262,7 +1092,7 @@ export function StorefrontProductCatalog({
                       variant="outline"
                       size="icon"
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                      onClick={() => goToPage(Math.max(0, safePageIndex - 1))}
                       disabled={!canPrev}
                       aria-label={t("storefront.catalog.prevPageAria")}
                       title={t("storefront.catalog.prevPageTitle")}
@@ -1275,7 +1105,7 @@ export function StorefrontProductCatalog({
                       size="icon"
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={() =>
-                        setPageIndex((i) => Math.min(totalPages - 1, i + 1))
+                        goToPage(Math.min(totalPages - 1, safePageIndex + 1))
                       }
                       disabled={!canNext}
                       aria-label={t("storefront.catalog.nextPageAria")}
@@ -1288,7 +1118,7 @@ export function StorefrontProductCatalog({
                       variant="outline"
                       size="icon"
                       className="min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => setPageIndex(Math.max(0, totalPages - 1))}
+                      onClick={() => goToPage(Math.max(0, totalPages - 1))}
                       disabled={!canNext}
                       aria-label={t("storefront.catalog.lastPageAria")}
                       title={t("storefront.catalog.lastPageTitle")}

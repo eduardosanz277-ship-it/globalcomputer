@@ -4,7 +4,7 @@ import { MarketingBreadcrumb } from "@/components/marketing/MarketingBreadcrumb"
 import { StorefrontProductCatalog } from "@/components/store/StorefrontProductCatalog";
 import type { Locale } from "@/components/i18n/translations";
 import type { StorefrontPriceTier } from "@/lib/storefront-pricing";
-import type { StorefrontProduct } from "@/modules/catalog/storefront-product.shared";
+import type { StorefrontCatalogPageData } from "@/modules/catalog/storefront-catalog.shared";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
@@ -14,13 +14,13 @@ const inter = Inter({
 });
 
 type Props = {
-  products: StorefrontProduct[];
+  catalog: StorefrontCatalogPageData;
   priceTier: StorefrontPriceTier;
   query: string;
   locale: Locale;
 };
 
-export function SearchResultsPage({ products, priceTier, query, locale }: Props) {
+export function SearchResultsPage({ catalog, priceTier, query, locale }: Props) {
   const title =
     query && locale === "en"
       ? `Search results for "${query}"`
@@ -53,11 +53,7 @@ export function SearchResultsPage({ products, priceTier, query, locale }: Props)
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
-        <StorefrontProductCatalog
-          products={products}
-          priceTier={priceTier}
-          initialSearch={query}
-        />
+        <StorefrontProductCatalog catalog={catalog} priceTier={priceTier} />
       </div>
     </main>
   );

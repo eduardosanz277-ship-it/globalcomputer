@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { sendAdminBusinessPendingRequestEmail } from "@/lib/email/sendAdminBusinessPendingRequestEmail";
 import { sendBusinessPendingRequestEmail } from "@/lib/email/sendBusinessPendingRequestEmail";
 import { REGISTER_BUSINESS_ERROR } from "./auth.errors";
@@ -369,8 +370,14 @@ function mapRegisterBusinessError(error: unknown, locale: Locale): Error {
   }
 }
 
+/**
+ * Una sola validación de sesión por render RSC (p. ej. `layout.tsx` + `page.tsx`).
+ * Fuera de Server Components (route handlers, server actions) `cache` no memoiza.
+ */
+const getSessionUserPerRender = cache(() => repoGetSessionUser());
+
 export async function getCurrentUserService() {
-  return repoGetSessionUser();
+  return getSessionUserPerRender();
 }
 
 /** Para mutaciones y guards: un fallo de red se propaga en vez de parecer "sin permisos". */

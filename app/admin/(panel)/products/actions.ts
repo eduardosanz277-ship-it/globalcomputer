@@ -13,7 +13,7 @@ import type {
   ProductUpdate,
 } from "@/modules/admin/products/products.types";
 import {
-  runServerAction,
+  runCatalogServerAction,
   type ServerActionResult,
 } from "@/lib/errors/run-server-action";
 import { resolveAdminLocale } from "@/modules/admin/admin-errors";
@@ -23,7 +23,7 @@ export async function createProductAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.products.createFailed",
     () => createProductService(values, undefined, 0, undefined, null, undefined, resolvedLocale),
@@ -36,7 +36,7 @@ export async function updateProductAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.products.updateFailed",
     () => updateProductService(id, values, undefined, 0, undefined, undefined, undefined, null, undefined, resolvedLocale),
@@ -48,7 +48,7 @@ export async function deleteProductAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.products.deleteFailed",
     () => deleteProductService(id, resolvedLocale),
@@ -65,7 +65,7 @@ export async function createProductWithImageAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.products.createFailed",
     () =>
@@ -94,7 +94,7 @@ export async function updateProductWithImageAction(
   locale?: string,
 ): Promise<ServerActionResult> {
   const resolvedLocale = await resolveAdminLocale(locale);
-  return runServerAction(
+  return runCatalogServerAction(
     resolvedLocale,
     "admin.errors.products.updateFailed",
     () =>
