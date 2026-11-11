@@ -210,10 +210,10 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
             {t("footer.rightsReserved")} {t("footer.createdBy")}
           </p>
           <div className="flex flex-wrap justify-center gap-6">
-            <Link href="#" className="transition hover:text-zinc-300">
+            <Link href="/privacy" className="transition hover:text-zinc-300">
               {t("footer.privacy")}
             </Link>
-            <Link href="#" className="transition hover:text-zinc-300">
+            <Link href="/terms" className="transition hover:text-zinc-300">
               {t("footer.terms")}
             </Link>
           </div>

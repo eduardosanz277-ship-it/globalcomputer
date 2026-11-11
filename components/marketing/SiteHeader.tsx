@@ -40,7 +40,9 @@ import {
   MapPin,
   Menu,
   Package,
+  ScrollText,
   Shield,
+  ShieldCheck,
   ShoppingCart,
   Tags,
   UserRound,
@@ -1952,6 +1954,42 @@ export function SiteHeader({ user }: Props) {
                                 </Link>
                               </>
                             )}
+
+                            {/* Legal links */}
+                            <div className="mt-1 border-t border-border/60 pb-2 pt-2">
+                              <Link
+                                href="/privacy"
+                                onClick={() => setMobileNavOpen(false)}
+                                className={cn(
+                                  landingInsetClass,
+                                  "flex items-center gap-2 rounded-lg py-2 transition hover:bg-muted",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                <ShieldCheck
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                {t("footer.privacy")}
+                              </Link>
+                              <Link
+                                href="/terms"
+                                onClick={() => setMobileNavOpen(false)}
+                                className={cn(
+                                  landingInsetClass,
+                                  "flex items-center gap-2 rounded-lg py-2 transition hover:bg-muted",
+                                  navPrimaryLabelClass,
+                                )}
+                              >
+                                <ScrollText
+                                  className={mobileNavRootIconClass}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                {t("footer.terms")}
+                              </Link>
+                            </div>
                           </div>
                         ) : panel.kind === "security" ? (
                           <>
