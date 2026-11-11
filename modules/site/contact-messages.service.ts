@@ -6,6 +6,8 @@ export type CreateContactMessagePayload = {
   phone: string | null;
   subject: string;
   message: string;
+  /** Consentimiento explícito para recibir SMS. */
+  smsConsent?: boolean;
   /** Marcado interno para bots/spam (honeypot, patrones, etc.). */
   isSpam?: boolean;
   spamReason?: string | null;
@@ -24,6 +26,7 @@ export async function createContactMessage(
     phone: payload.phone?.trim() ? payload.phone.trim() : null,
     subject: payload.subject.trim(),
     message: payload.message.trim(),
+    sms_consent: Boolean(payload.smsConsent),
     is_spam: Boolean(payload.isSpam),
     spam_reason: payload.spamReason?.trim() || null,
   });

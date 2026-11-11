@@ -12,6 +12,7 @@ type ContactMessageRow = {
   phone: string | null;
   subject: string;
   message: string;
+  sms_consent: boolean;
   is_read: boolean;
   read_at: string | null;
   created_at: string;
@@ -33,6 +34,7 @@ function mapRow(row: ContactMessageRow): ContactMessageAdmin {
     phone: row.phone,
     subject: row.subject,
     message: row.message,
+    smsConsent: Boolean(row.sms_consent),
     isRead: Boolean(row.is_read),
     readAt: row.read_at,
     createdAt: row.created_at,
@@ -52,7 +54,7 @@ function mapNotificationRow(
 }
 
 const SELECT_COLUMNS =
-  "id, name, email, phone, subject, message, is_read, read_at, created_at";
+  "id, name, email, phone, subject, message, sms_consent, is_read, read_at, created_at";
 
 const NOTIFICATION_SELECT = "id, name, email, subject, created_at";
 

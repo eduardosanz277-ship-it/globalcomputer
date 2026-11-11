@@ -5,6 +5,7 @@ export type ContactMessageAdmin = {
   phone: string | null;
   subject: string;
   message: string;
+  smsConsent: boolean;
   isRead: boolean;
   readAt: string | null;
   createdAt: string;
