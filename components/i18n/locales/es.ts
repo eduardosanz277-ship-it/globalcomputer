@@ -247,8 +247,8 @@ export const es = {
     tiktokAria: "TikTok de Global Computers USA",
     rightsReserved: "Todos los derechos reservados.",
     createdBy: "Creado por Veltrix Digital.",
-    privacy: "Privacidad",
-    terms: "Términos",
+    privacy: "Política de privacidad",
+    terms: "Términos y condiciones",
   },
   orderLookup: {
     metaTitle: "Consultar pedido | Global Computers USA",
