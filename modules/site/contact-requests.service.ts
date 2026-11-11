@@ -11,9 +11,10 @@ export async function createContactRequest(
   await createContactMessage({
     name: data.name,
     email: data.email,
-    phone: data.phone,
+    phone: data.phone ?? null,
     subject: data.subject,
     message: data.message,
+    smsConsent: data.sms_consent ?? false,
     isSpam: options?.isSpam ?? false,
     spamReason: options?.spamReason ?? null,
   });

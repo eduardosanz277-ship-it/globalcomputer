@@ -161,6 +161,7 @@ export function createContactRequestFormSchema(
       .refine((s) => s.length >= 10, messages.messageMin)
       .refine((s) => !/[<>]/.test(s), messages.messageChars ?? messages.messageMax)
       .refine((s) => countUrlSchemes(s) <= MAX_MESSAGE_URLS, messages.messageLinks),
+    sms_consent: z.boolean().optional().default(false),
     [CONTACT_HONEYPOT_FIELD]: z.string().max(200).optional().default(""),
   });
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { useForm } from "react-hook-form";
+import { useController, useForm } from "react-hook-form";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatClientError } from "@/lib/errors/format-client-error";
 import { toast } from "react-toastify";
@@ -55,6 +56,54 @@ type Props = {
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
+function SmsConsentCheckbox({
+  control,
+  label,
+  privacyLabel,
+  termsLabel,
+  disabled,
+}: {
+  control: ReturnType<typeof useForm<ContactRequestFormValues>>["control"];
+  label: string;
+  privacyLabel: string;
+  termsLabel: string;
+  disabled?: boolean;
+}) {
+  const { field } = useController({ control, name: "sms_consent" });
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border/70 bg-muted/30 p-4 transition hover:bg-muted/50",
+        disabled && "opacity-60",
+      )}
+    >
+      <label className={cn("flex cursor-pointer items-start gap-3", disabled && "cursor-not-allowed")}>
+        <input
+          type="checkbox"
+          checked={field.value ?? false}
+          onChange={field.onChange}
+          onBlur={field.onBlur}
+          disabled={disabled}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+          aria-label={label}
+        />
+        <span className="text-xs leading-relaxed text-muted-foreground">
+          {label}
+        </span>
+      </label>
+      <div className="mt-2 flex items-center gap-2 pl-7 text-xs text-muted-foreground/70">
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground transition-colors">
+          {privacyLabel}
+        </Link>
+        <span aria-hidden>|</span>
+        <Link href="/terms" className="underline underline-offset-2 hover:text-foreground transition-colors">
+          {termsLabel}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function ContactPageClient({ contact, initialSubject = "" }: Props) {
   const { t, locale } = useI18n();
   const turnstileRef = useRef<TurnstileInstance>(null);
@@ -91,6 +140,7 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
       phone: "",
       subject: initialSubject,
       message: "",
+      sms_consent: false,
       [CONTACT_HONEYPOT_FIELD]: "",
     },
     mode: "onSubmit",
@@ -350,6 +400,14 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
                 </p>
               ) : null}
             </div>
+
+            <SmsConsentCheckbox
+              control={form.control}
+              label={t("contactPage.smsConsentLabel")}
+              privacyLabel={t("footer.privacy")}
+              termsLabel={t("footer.terms")}
+              disabled={isSubmitting}
+            />
 
             <TurnstileFit
               ref={turnstileRef}
