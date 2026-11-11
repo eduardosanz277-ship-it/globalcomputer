@@ -2188,6 +2188,7 @@ export const es = {
         contactSortAsc: "Ordenado de la A a la Z. Clic para invertir",
         contactSortDesc: "Ordenado de la Z a la A. Clic para quitar orden",
         phone: "Teléfono",
+        smsConsent: "SMS",
         subject: "Asunto",
         subjectSortIdle: "Ordenar por asunto",
         subjectSortAsc: "Ordenado de la A a la Z. Clic para invertir",
@@ -2209,6 +2210,9 @@ export const es = {
         ariaLabel: "Detalle del mensaje de contacto",
         contact: "Contacto",
         metadata: "Metadatos",
+        smsConsent: "Consentimiento SMS",
+        smsConsentYes: "Sí, acepta SMS",
+        smsConsentNo: "No acepta SMS",
       },
       toast: {
         markReadError: "No se pudo marcar el mensaje como leído.",

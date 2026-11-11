@@ -48,6 +48,8 @@ const CONTACT_COLUMN_CLASS =
   "w-[14rem] min-w-[14rem] max-w-[14rem] overflow-hidden xl:w-[16rem] xl:min-w-[16rem] xl:max-w-[16rem]";
 const PHONE_COLUMN_CLASS =
   "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem] overflow-hidden";
+const SMS_COLUMN_CLASS =
+  "w-[5rem] min-w-[5rem] max-w-[5rem] overflow-hidden";
 const SUBJECT_COLUMN_CLASS =
   "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden lg:w-[12rem] lg:min-w-[12rem] lg:max-w-[12rem]";
 const MESSAGE_COLUMN_CLASS =
@@ -57,7 +59,7 @@ const STATUS_COLUMN_CLASS =
 const CREATED_AT_COLUMN_CLASS =
   "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden xl:w-[12.75rem] xl:min-w-[12.75rem] xl:max-w-[12.75rem]";
 /** Suma mínima de columnas fijas para evitar solapamiento con `table-fixed`. */
-const CONTACTS_TABLE_MIN_WIDTH_CLASS = "min-w-[68rem] xl:min-w-[74rem]";
+const CONTACTS_TABLE_MIN_WIDTH_CLASS = "min-w-[73rem] xl:min-w-[79rem]";
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
 const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
 
@@ -346,6 +348,20 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
             </span>
           );
         },
+      },
+      {
+        id: "smsConsent",
+        accessorKey: "smsConsent",
+        header: t("admin.contacts.table.smsConsent"),
+        meta: { cellClassName: SMS_COLUMN_CLASS },
+        cell: ({ row }) =>
+          row.original.smsConsent ? (
+            <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              ✓
+            </span>
+          ) : (
+            <AdminTableEmptyEmDash />
+          ),
       },
       {
         id: "subject",

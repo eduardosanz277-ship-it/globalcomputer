@@ -2175,6 +2175,7 @@ export const en = {
         contactSortAsc: "Sorted A to Z. Click to reverse",
         contactSortDesc: "Sorted Z to A. Click to clear sort",
         phone: "Phone",
+        smsConsent: "SMS",
         subject: "Subject",
         subjectSortIdle: "Sort by subject",
         subjectSortAsc: "Sorted A to Z. Click to reverse",
@@ -2196,6 +2197,9 @@ export const en = {
         ariaLabel: "Contact message detail",
         contact: "Contact",
         metadata: "Metadata",
+        smsConsent: "SMS Consent",
+        smsConsentYes: "Yes, consents to SMS",
+        smsConsentNo: "No SMS consent",
       },
       toast: {
         markReadError: "Could not mark the message as read.",

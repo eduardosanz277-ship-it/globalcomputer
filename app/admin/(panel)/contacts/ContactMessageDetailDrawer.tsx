@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Mail, Phone } from "lucide-react";
+import { Clock3, Mail, MessageSquare, Phone } from "lucide-react";
 import { SlideOver } from "@/components/ui/slide-over";
 import { AdminDetailPanelItem } from "@/components/admin/admin-detail-panel-item";
 import { AdminTableEmptyEmDash } from "@/components/admin/admin-table-empty";
@@ -73,6 +73,27 @@ export function ContactMessageDetailDrawer({ message, onClose }: Props) {
                     </div>
                   </div>
                 </div>
+              }
+            />
+
+            <AdminDetailPanelItem
+              label={t("admin.contacts.drawer.smsConsent")}
+              labelClassName="inline-flex items-center gap-2 text-sm font-medium text-foreground"
+              value={
+                <p className="inline-flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" aria-hidden />
+                  <span
+                    className={
+                      message.smsConsent
+                        ? "font-medium text-emerald-700"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {message.smsConsent
+                      ? t("admin.contacts.drawer.smsConsentYes")
+                      : t("admin.contacts.drawer.smsConsentNo")}
+                  </span>
+                </p>
               }
             />
 
