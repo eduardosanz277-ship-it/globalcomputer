@@ -19,7 +19,6 @@ export type ContactRequestFormMessages = {
   emailRequired: string;
   emailInvalid: string;
   emailMax: string;
-  phoneRequired: string;
   phoneChars: string;
   phoneInvalid: string;
   phoneMax: string;
@@ -43,7 +42,6 @@ const DEFAULT_MESSAGES: ContactRequestFormMessages = {
   emailRequired: "El correo es obligatorio",
   emailInvalid: "Introduce un correo válido",
   emailMax: "Máximo 160 caracteres",
-  phoneRequired: "El teléfono es obligatorio",
   phoneChars:
     "El teléfono solo puede incluir dígitos, espacios, paréntesis, signo + y guiones.",
   phoneInvalid: "El teléfono de Estados Unidos debe tener 10 dígitos",
@@ -137,15 +135,24 @@ export function createContactRequestFormSchema(
         messages.emailInvalid,
       ),
     phone: z
-      .string()
-      .max(40, messages.phoneMax)
-      .refine(
-        (raw) => /^[\d()+\s-]*$/.test(raw.replace(CONTROL_CHARS, "")),
-        messages.phoneChars,
-      )
-      .transform(cleanPhone)
-      .refine((s) => s.length > 0, messages.phoneRequired)
-      .refine((s) => isValidUsPhoneNumber(s), messages.phoneInvalid),
+      // Acepta string o null (el form envía null cuando el campo queda vacío tras el transform)
+      .preprocess(
+        (v) => (v === null || v === undefined ? "" : String(v)),
+        z
+          .string()
+          .max(40, messages.phoneMax)
+          .refine(
+            (raw) => /^[\d()+\s-]*$/.test(raw.replace(CONTROL_CHARS, "")),
+            messages.phoneChars,
+          )
+          .transform(cleanPhone)
+          // Solo valida formato si se proporcionó un valor
+          .refine(
+            (s) => s.length === 0 || isValidUsPhoneNumber(s),
+            messages.phoneInvalid,
+          )
+          .transform((s) => (s.length === 0 ? null : s)),
+      ),
     subject: textField({
       required: messages.subjectRequired,
       min: messages.subjectMin,

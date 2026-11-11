@@ -310,8 +310,10 @@ export const en = {
     namePlaceholder: "Your full name",
     emailLabel: "Email",
     emailPlaceholder: "email@example.com",
-    phoneLabel: "Phone",
+    phoneLabel: "Phone (optional)",
     phonePlaceholder: "786-395-1076",
+    smsConsentLabel:
+      "I consent to receive text messages from GLOBAL COMPUTERS USA CORP at the phone number provided to respond to my inquiries, follow up on requested quotes, coordinate appointments and installations, and provide customer support. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is optional and is not a condition of purchase or receiving services.",
     subjectLabel: "Subject",
     subjectPlaceholder: "How can we help you?",
     messageLabel: "Message",
@@ -328,7 +330,6 @@ export const en = {
       emailRequired: "Email is required",
       emailInvalid: "Enter a valid email",
       emailMax: "Maximum 160 characters",
-      phoneRequired: "Phone is required",
       phoneChars:
         "Phone can only include digits, spaces, parentheses, plus sign (+) and hyphens.",
       phoneInvalid: "US phone numbers must have 10 digits",

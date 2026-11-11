@@ -119,7 +119,6 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
           emailRequired: t("contactPage.errors.emailRequired"),
           emailInvalid: t("contactPage.errors.emailInvalid"),
           emailMax: t("contactPage.errors.emailMax"),
-          phoneRequired: t("contactPage.errors.phoneRequired"),
           phoneChars: t("contactPage.errors.phoneChars"),
           phoneInvalid: t("contactPage.errors.phoneInvalid"),
           phoneMax: t("contactPage.errors.phoneMax"),
@@ -347,7 +346,6 @@ export function ContactPageClient({ contact, initialSubject = "" }: Props) {
                 label={t("contactPage.phoneLabel")}
                 type="tel"
                 inputMode="tel"
-                required
                 disabled={isSubmitting}
                 error={errors.phone?.message}
                 autoComplete="tel"

@@ -314,8 +314,10 @@ export const es = {
     namePlaceholder: "Tu nombre completo",
     emailLabel: "Correo electrónico",
     emailPlaceholder: "correo@ejemplo.com",
-    phoneLabel: "Teléfono",
+    phoneLabel: "Teléfono (opcional)",
     phonePlaceholder: "786-395-1076",
+    smsConsentLabel:
+      "Acepto recibir mensajes de texto de GLOBAL COMPUTERS USA CORP en el número proporcionado para responder mis consultas, dar seguimiento a cotizaciones solicitadas, coordinar citas e instalaciones y brindar soporte. La frecuencia de mensajes puede variar. Pueden aplicarse cargos por mensajes y datos. Responde STOP para cancelar o HELP para obtener ayuda. Este consentimiento es opcional y no es una condición de compra ni de contratación.",
     subjectLabel: "Asunto",
     subjectPlaceholder: "¿En qué podemos ayudarte?",
     messageLabel: "Mensaje",
@@ -332,7 +334,6 @@ export const es = {
       emailRequired: "El correo es obligatorio",
       emailInvalid: "Introduce un correo válido",
       emailMax: "Máximo 160 caracteres",
-      phoneRequired: "El teléfono es obligatorio",
       phoneChars:
         "El teléfono solo puede incluir dígitos, espacios, paréntesis, signo + y guiones.",
       phoneInvalid: "El teléfono de Estados Unidos debe tener 10 dígitos",
