@@ -5,6 +5,7 @@ import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import { rethrowTaggingNetworkError } from "@/lib/errors/rsc-network-error";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { repoGetSessionUser } from "@/modules/auth/auth.repository";
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -17,6 +18,15 @@ function throwIfSupabaseError(error: unknown): void {
 async function getAuthenticatedUserId() {
   const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
+  // En local no se consulta Auth: el mismo getUser() del panel ya agotó el límite.
+  if (process.env.NODE_ENV !== "production") {
+    const session = await repoGetSessionUser({ throwOnNetworkError: true });
+    if (!session) {
+      throw new Error(translate(locale, "profile.errorSessionRequired"));
+    }
+    return { supabase, userId: session.id };
+  }
+
   let user: Awaited<
     ReturnType<typeof supabase.auth.getUser>
   >["data"]["user"] | null = null;
