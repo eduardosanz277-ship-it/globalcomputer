@@ -97,21 +97,32 @@ function mapVerifyOtpError(error: unknown, locale: Locale): Error {
  */
 export async function syncProfileAfterLoginService(): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return;
+  // En local, getUser() aquí se suma a la ráfaga del panel y puede invalidar
+  // la sesión recién creada. La cookie ya quedó escrita por el login.
+  const sessionUser =
+    process.env.NODE_ENV === "production" ? null : await repoGetSessionUser();
+  let userId = sessionUser?.id ?? null;
+  let metaName = sessionUser?.fullName ?? null;
 
-  const metaName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : null;
+  if (process.env.NODE_ENV === "production") {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user) return;
+    userId = user.id;
+    metaName =
+      typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null;
+  }
+
+  if (!userId) return;
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
 
   const existing = profile?.full_name?.trim();
@@ -123,7 +134,7 @@ export async function syncProfileAfterLoginService(): Promise<void> {
       full_name: resolvedFullName,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", user.id);
+    .eq("id", userId);
 
   if (upErr) {
     console.error("syncProfileAfterLoginService:", upErr.message);
