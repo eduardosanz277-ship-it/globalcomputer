@@ -1,5 +1,6 @@
 import type { Locale } from "@/components/i18n/translations";
 import { sendLoginOtpEmail } from "@/lib/email/sendLoginOtpEmail";
+import { cookies } from "next/headers";
 import { getPublicSiteContact } from "@/lib/site-contact.server";
 import { translate } from "@/lib/i18n/get-translation";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
@@ -421,6 +422,109 @@ function normalizeRole(
 ): SessionUser["role"] | null {
   if (raw === "ADMIN" || raw === "BUSINESS" || raw === "CLIENT") return raw;
   return null;
+}
+
+type CookieAuthUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+};
+
+const AUTH_COOKIE_CHUNK = /^(sb-.+-auth-token)(?:\.(\d+))?$/;
+
+function decodeBase64Url(value: string): string {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    "=",
+  );
+  return Buffer.from(padded, "base64").toString("utf8");
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const part = token.split(".")[1];
+  if (!part) return null;
+  try {
+    const parsed = JSON.parse(decodeBase64Url(part)) as unknown;
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sesión ya guardada por el login. Solo desarrollo: no llama a Auth.
+ * Producción sigue usando `getUser()`.
+ */
+async function readDevAuthUserFromCookies(): Promise<CookieAuthUser | null> {
+  const jar = await cookies();
+  const parts = jar
+    .getAll()
+    .map((cookie) => {
+      const match = cookie.name.match(AUTH_COOKIE_CHUNK);
+      if (!match) return null;
+      return {
+        base: match[1],
+        index: match[2] == null ? null : Number(match[2]),
+        value: cookie.value,
+      };
+    })
+    .filter((part): part is NonNullable<typeof part> => part != null);
+
+  if (parts.length === 0) return null;
+
+  const base = parts[0]?.base;
+  const group = parts.filter((part) => part.base === base);
+  const whole = group.find((part) => part.index == null);
+  const raw = whole
+    ? whole.value
+    : group
+        .filter((part) => part.index != null)
+        .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+        .map((part) => part.value)
+        .join("");
+
+  if (!raw) return null;
+
+  let decoded = raw;
+  if (decoded.startsWith("base64-")) {
+    try {
+      decoded = decodeBase64Url(decoded.slice("base64-".length));
+    } catch {
+      return null;
+    }
+  }
+
+  let session: Record<string, unknown>;
+  try {
+    const parsed = JSON.parse(decoded) as unknown;
+    if (!parsed || typeof parsed !== "object") return null;
+    session = parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+
+  const embedded = session.user;
+  if (embedded && typeof embedded === "object") {
+    const user = embedded as CookieAuthUser;
+    if (typeof user.id === "string" && user.id) return user;
+  }
+
+  const accessToken = session.access_token;
+  if (typeof accessToken !== "string") return null;
+  const payload = decodeJwtPayload(accessToken);
+  const id = payload?.sub;
+  if (typeof id !== "string" || !id) return null;
+  const metadata =
+    payload.user_metadata && typeof payload.user_metadata === "object"
+      ? (payload.user_metadata as Record<string, unknown>)
+      : null;
+  return {
+    id,
+    email: typeof payload.email === "string" ? payload.email : null,
+    user_metadata: metadata,
+  };
 }
 
 /**
