@@ -82,6 +82,12 @@ function readBadgeClass(isRead: boolean): string {
   return "border border-emerald-200/90 bg-emerald-50 text-emerald-900 dark:text-emerald-200";
 }
 
+function smsConsentBadgeClass(consented: boolean): string {
+  return consented
+    ? "border border-emerald-200/90 bg-emerald-50 text-emerald-800"
+    : "border border-slate-200/90 bg-slate-100 text-slate-700";
+}
+
 const readStatusBadgeBaseClass =
   "inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium";
 
@@ -363,20 +369,6 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
         },
       },
       {
-        id: "smsConsent",
-        accessorKey: "smsConsent",
-        header: t("admin.contacts.table.smsConsent"),
-        meta: { cellClassName: SMS_COLUMN_CLASS },
-        cell: ({ row }) =>
-          row.original.smsConsent ? (
-            <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-              ✓
-            </span>
-          ) : (
-            <AdminTableEmptyEmDash />
-          ),
-      },
-      {
         id: "subject",
         accessorKey: "subject",
         enableSorting: true,
@@ -414,6 +406,24 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
           <p className="truncate text-sm text-foreground">
             {truncateWithDots(row.original.message)}
           </p>
+        ),
+      },
+      {
+        id: "smsConsent",
+        accessorKey: "smsConsent",
+        header: t("admin.contacts.table.smsConsent"),
+        meta: { cellClassName: SMS_COLUMN_CLASS },
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              readStatusBadgeBaseClass,
+              smsConsentBadgeClass(row.original.smsConsent),
+            )}
+          >
+            {row.original.smsConsent
+              ? t("admin.contacts.status.smsYes")
+              : t("admin.contacts.status.smsNo")}
+          </span>
         ),
       },
       {
