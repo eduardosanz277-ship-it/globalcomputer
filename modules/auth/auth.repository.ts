@@ -432,9 +432,65 @@ export async function repoGetSessionUser(options?: {
   throwOnNetworkError?: boolean;
 }): Promise<SessionUser | null> {
   const throwOnNetworkError = options?.throwOnNetworkError ?? false;
+
+  // ─── DESARROLLO ──────────────────────────────────────────────────────────────
+  // En dev cada server action y API crea un createSupabaseServerClient() que,
+  // al ejecutar cualquier query, llama auth.getSession() internamente y puede
+  // disparar un refresh. Con decenas de llamadas concurrentes el proyecto de
+  // Supabase (compartido con producción) devuelve 429 e invalida la sesión.
+  //
+  // Solución: leer el userId de la cookie (sin llamar a Auth) y usar el
+  // cliente admin (service_role) para la query de perfiles, que no requiere JWT.
+  if (process.env.NODE_ENV !== "production") {
+    let cookieUser: CookieAuthUser | null = null;
+    try {
+      cookieUser = await readDevAuthUserFromCookies();
+    } catch (e) {
+      if (throwOnNetworkError) rethrowTaggingNetworkError(e);
+      throw e;
+    }
+    if (!cookieUser) return null;
+
+    const admin = createSupabaseAdminClient();
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .select("full_name, role, business_registration_status")
+      .eq("id", cookieUser.id)
+      .maybeSingle();
+
+    if (profileError && throwOnNetworkError && isNetworkActionError(profileError)) {
+      rethrowTaggingNetworkError(profileError);
+    }
+
+    const fromProfile = normalizeRole(profile?.role ?? null);
+    const fromMeta = normalizeRole(
+      typeof cookieUser.user_metadata?.role === "string"
+        ? cookieUser.user_metadata.role
+        : null,
+    );
+    const role: SessionUser["role"] = fromProfile ?? fromMeta ?? "CLIENT";
+    const brs = profile?.business_registration_status;
+
+    return {
+      id: cookieUser.id,
+      email: cookieUser.email ?? "",
+      role,
+      fullName:
+        profile?.full_name ??
+        (typeof cookieUser.user_metadata?.full_name === "string"
+          ? cookieUser.user_metadata.full_name
+          : null),
+      businessRegistrationStatus:
+        brs === "pending" || brs === "approved" || brs === "rejected"
+          ? brs
+          : null,
+    };
+  }
+
+  // ─── PRODUCCIÓN ──────────────────────────────────────────────────────────────
   const supabase = await createSupabaseServerClient();
 
-  // getUser() valida el JWT en el servidor; getSession() puede estar desfasado en RSC.
+  // getUser() valida el JWT en el servidor; getSession() puede estar desfasado.
   let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] | null = null;
   let error: Error | null = null;
   try {
