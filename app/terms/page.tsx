@@ -170,21 +170,31 @@ export default function TerminosPage() {
             <div className="text-foreground/75 space-y-3 leading-relaxed">
               <LocalizedContent
                 es={
-                  <p>
-                    Debes proporcionar información de contacto correcta y
-                    utilizar el sitio de manera lícita. No está permitido
-                    enviar contenido fraudulento, intentar acceder sin
-                    autorización a nuestros sistemas o interferir con el
-                    funcionamiento del sitio.
-                  </p>
+                  <>
+                    <p>
+                      Debes proporcionar información de contacto correcta y
+                      utilizar el sitio de manera lícita. No está permitido
+                      enviar contenido fraudulento, intentar acceder sin
+                      autorización a nuestros sistemas o interferir con el
+                      funcionamiento del sitio.
+                    </p>
+                    <p className="mt-3">
+                      Debes tener 18 años de edad o más para usar este SMS.
+                    </p>
+                  </>
                 }
                 en={
-                  <p>
-                    You must provide accurate contact information and use the
-                    site lawfully. It is not permitted to submit fraudulent
-                    content, attempt unauthorized access to our systems, or
-                    interfere with the site's operation.
-                  </p>
+                  <>
+                    <p>
+                      You must provide accurate contact information and use the
+                      site lawfully. It is not permitted to submit fraudulent
+                      content, attempt unauthorized access to our systems, or
+                      interfere with the site's operation.
+                    </p>
+                    <p className="mt-3">
+                      You must be 18 years of age or older to use this SMS.
+                    </p>
+                  </>
                 }
               />
             </div>
