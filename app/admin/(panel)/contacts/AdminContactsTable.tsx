@@ -43,13 +43,14 @@ type Props = {
 };
 
 type ReadFilter = "all" | "unread" | "read";
+type SmsFilter = "all" | "yes" | "no";
 
 const CONTACT_COLUMN_CLASS =
   "w-[14rem] min-w-[14rem] max-w-[14rem] overflow-hidden xl:w-[16rem] xl:min-w-[16rem] xl:max-w-[16rem]";
 const PHONE_COLUMN_CLASS =
   "w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem] overflow-hidden";
 const SMS_COLUMN_CLASS =
-  "w-[5rem] min-w-[5rem] max-w-[5rem] overflow-hidden";
+  "w-[7.75rem] min-w-[7.75rem] max-w-[7.75rem] overflow-hidden";
 const SUBJECT_COLUMN_CLASS =
   "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden lg:w-[12rem] lg:min-w-[12rem] lg:max-w-[12rem]";
 const MESSAGE_COLUMN_CLASS =
@@ -102,6 +103,7 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
     Record<string, true>
   >({});
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
+  const [smsFilter, setSmsFilter] = useState<SmsFilter>("all");
   const openedQueryMessageIdRef = useRef<string | null>(null);
 
   const { executeAsync: executeMarkRead } = useServerAction(
@@ -161,17 +163,49 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
     [t],
   );
 
+  const smsFilterOptions = useMemo(
+    () =>
+      [
+        {
+          value: "all" as const,
+          label: t("admin.contacts.filters.allSms"),
+        },
+        {
+          value: "yes" as const,
+          label: t("admin.contacts.status.smsYes"),
+        },
+        {
+          value: "no" as const,
+          label: t("admin.contacts.status.smsNo"),
+        },
+      ] as const,
+    [t],
+  );
+
   const filteredMessages = useMemo(() => {
-    if (readFilter === "all") return displayMessages;
+    let next = displayMessages;
     if (readFilter === "unread") {
-      return displayMessages.filter((m) => !m.isRead);
+      next = next.filter((m) => !m.isRead);
+    } else if (readFilter === "read") {
+      next = next.filter((m) => m.isRead);
     }
-    return displayMessages.filter((m) => m.isRead);
-  }, [displayMessages, readFilter]);
+    if (smsFilter === "yes") {
+      next = next.filter((m) => m.smsConsent);
+    } else if (smsFilter === "no") {
+      next = next.filter((m) => !m.smsConsent);
+    }
+    return next;
+  }, [displayMessages, readFilter, smsFilter]);
 
   const filterValue =
     readFilterOptions.find((o) => o.value === readFilter) ??
     readFilterOptions[0];
+
+  const smsFilterValue =
+    smsFilterOptions.find((o) => o.value === smsFilter) ??
+    smsFilterOptions[0];
+
+  const hasActiveFilters = readFilter !== "all" || smsFilter !== "all";
 
   const openMessage = useCallback(
     (item: ContactMessageAdmin) => {
