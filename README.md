@@ -404,7 +404,7 @@ Para aplicar el esquema a un proyecto Supabase vinculado:
 
 ```bash
 supabase link --project-ref <TU_REF>
-supabase db push
+supabase db push --yes --remote
 ```
 
 Si una base de datos ya tenía migraciones antiguas aplicadas, eliminarlas del repositorio no elimina automáticamente su historial de:
