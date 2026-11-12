@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LocalizedText } from "@/components/i18n/LocalizedText";
 import { LocalizedContent } from "@/components/i18n/LocalizedContent";
-import { inter } from "@/lib/fonts/inter";
 
 export const metadata: Metadata = {
   title: "Política de privacidad | Global Computers USA",
@@ -47,9 +46,7 @@ function ContactInfo({ lang }: { lang: "es" | "en" }) {
 
 export default function PrivacidadPage() {
   return (
-    <main
-      className={`${inter.className} min-h-[60vh] bg-gradient-to-b from-muted/30 via-background to-background`}
-    >
+    <main className="min-h-[60vh] bg-gradient-to-b from-muted/30 via-background to-background">
       {/* Header */}
       <div className="border-b border-border/60 bg-card/40">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
