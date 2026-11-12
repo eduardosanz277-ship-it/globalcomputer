@@ -47,7 +47,9 @@ export default function AdminLoginPage() {
     onSuccess: () => {
       markLoginSuccessToast();
       router.push("/admin/home");
-      router.refresh();
+      if (process.env.NODE_ENV === "production") {
+        router.refresh();
+      }
     },
   });
 

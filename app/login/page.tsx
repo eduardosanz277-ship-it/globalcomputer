@@ -265,7 +265,12 @@ function LoginPageContent() {
       onSuccess: () => {
         markLoginSuccessToast();
         router.push("/");
-        router.refresh();
+        // En producción hace falta refrescar el árbol RSC para que el layout
+        // vea la cookie nueva. En local ese segundo fetch, sumado al proxy,
+        // dispara el rate limit de Auth justo después del OTP.
+        if (process.env.NODE_ENV === "production") {
+          router.refresh();
+        }
       },
     },
   );
