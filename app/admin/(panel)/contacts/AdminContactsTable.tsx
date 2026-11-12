@@ -251,16 +251,28 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
                 <p className="line-clamp-2 text-sm text-muted-foreground">
                   {truncateWithDots(item.message, 180)}
                 </p>
-                <span
-                  className={cn(
-                    readStatusBadgeBaseClass,
-                    readBadgeClass(item.isRead),
-                  )}
-                >
-                  {unread
-                    ? t("admin.contacts.status.unread")
-                    : t("admin.contacts.status.read")}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={cn(
+                      readStatusBadgeBaseClass,
+                      readBadgeClass(item.isRead),
+                    )}
+                  >
+                    {unread
+                      ? t("admin.contacts.status.unread")
+                      : t("admin.contacts.status.read")}
+                  </span>
+                  <span
+                    className={cn(
+                      readStatusBadgeBaseClass,
+                      smsConsentBadgeClass(item.smsConsent),
+                    )}
+                  >
+                    {item.smsConsent
+                      ? t("admin.contacts.status.smsYes")
+                      : t("admin.contacts.status.smsNo")}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-1 border-t border-border/60 pt-4">
