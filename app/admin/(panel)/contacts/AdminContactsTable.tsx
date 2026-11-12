@@ -59,9 +59,10 @@ const STATUS_COLUMN_CLASS =
 const CREATED_AT_COLUMN_CLASS =
   "w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden xl:w-[12.75rem] xl:min-w-[12.75rem] xl:max-w-[12.75rem]";
 /** Suma mínima de columnas fijas para evitar solapamiento con `table-fixed`. */
-const CONTACTS_TABLE_MIN_WIDTH_CLASS = "min-w-[73rem] xl:min-w-[79rem]";
+const CONTACTS_TABLE_MIN_WIDTH_CLASS = "min-w-[75.75rem] xl:min-w-[81.75rem]";
 /** Ancho fijo ≥1440px: texto de la opción inicial + margen para padding e indicador (`ch`). */
 const STATUS_FILTER_WIDE_CH = "Todos los estados".length + 7;
+const SMS_FILTER_WIDE_CH = "Todos los SMS".length + 7;
 
 function createdAtSortMs(row: ContactMessageAdmin): number {
   const t = new Date(row.createdAt).getTime();
@@ -505,10 +506,10 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
 
   const toolbarFilters = useMemo(
     () => (
-      <div className="flex w-full min-w-0 items-center gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-center">
         <div
           className={cn(
-            "min-w-0 flex-1",
+            "w-full min-w-0 md:flex-1",
             "min-[1440px]:box-border min-[1440px]:w-[var(--contacts-status-filter-w)] min-[1440px]:min-w-[var(--contacts-status-filter-w)] min-[1440px]:max-w-[var(--contacts-status-filter-w)] min-[1440px]:flex-none min-[1440px]:shrink-0",
           )}
           style={
@@ -532,21 +533,59 @@ export function AdminContactsTable({ messages, isLoading = false }: Props) {
             className="w-full min-w-0"
           />
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
-          disabled={readFilter === "all"}
-          onClick={() => setReadFilter("all")}
-          title={t("admin.contacts.filters.clear")}
-          aria-label={t("admin.contacts.filters.clearAria")}
-        >
-          <FilterX className="h-4 w-4" aria-hidden />
-        </Button>
+        <div className="flex w-full min-w-0 items-center gap-2 md:contents">
+          <div
+            className={cn(
+              "min-w-0 flex-1",
+              "min-[1440px]:box-border min-[1440px]:w-[var(--contacts-sms-filter-w)] min-[1440px]:min-w-[var(--contacts-sms-filter-w)] min-[1440px]:max-w-[var(--contacts-sms-filter-w)] min-[1440px]:flex-none min-[1440px]:shrink-0",
+            )}
+            style={
+              {
+                ["--contacts-sms-filter-w" as string]: `${SMS_FILTER_WIDE_CH}ch`,
+              } as CSSProperties
+            }
+          >
+            <Select<(typeof smsFilterOptions)[number], false>
+              instanceId="contacts-sms-filter"
+              inputId="contacts-sms-filter-input"
+              aria-label={t("admin.contacts.filters.smsAria")}
+              isSearchable={false}
+              isClearable={false}
+              options={[...smsFilterOptions]}
+              value={smsFilterValue}
+              onChange={(opt) => {
+                if (opt) setSmsFilter(opt.value);
+              }}
+              styles={appToolbarSelectStyles}
+              className="w-full min-w-0"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground"
+            disabled={!hasActiveFilters}
+            onClick={() => {
+              setReadFilter("all");
+              setSmsFilter("all");
+            }}
+            title={t("admin.contacts.filters.clear")}
+            aria-label={t("admin.contacts.filters.clearAria")}
+          >
+            <FilterX className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
       </div>
     ),
-    [filterValue, readFilter, readFilterOptions, t],
+    [
+      filterValue,
+      hasActiveFilters,
+      readFilterOptions,
+      smsFilterOptions,
+      smsFilterValue,
+      t,
+    ],
   );
 
   return (
