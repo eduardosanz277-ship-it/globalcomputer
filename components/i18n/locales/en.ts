@@ -2162,13 +2162,17 @@ export const en = {
       status: {
         unread: "Unread",
         read: "Read",
+        smsYes: "SMS",
+        smsNo: "No SMS",
       },
       filters: {
         searchPlaceholder: "Search by name, email, subject, or message…",
         all: "All statuses",
+        allSms: "All SMS",
         statusAria: "Filter by read status",
-        clear: "Clear filter",
-        clearAria: "Clear read status filter",
+        smsAria: "Filter by SMS consent",
+        clear: "Clear filters",
+        clearAria: "Clear status and SMS filters",
       },
       table: {
         contact: "Contact",

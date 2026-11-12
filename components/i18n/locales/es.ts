@@ -2175,13 +2175,17 @@ export const es = {
       status: {
         unread: "No leído",
         read: "Leído",
+        smsYes: "SMS",
+        smsNo: "Sin SMS",
       },
       filters: {
         searchPlaceholder: "Buscar por nombre, correo, asunto o mensaje…",
         all: "Todos los estados",
+        allSms: "Todos los SMS",
         statusAria: "Filtrar por estado de lectura",
-        clear: "Limpiar filtro",
-        clearAria: "Limpiar filtro de estado de lectura",
+        smsAria: "Filtrar por consentimiento SMS",
+        clear: "Limpiar filtros",
+        clearAria: "Limpiar filtros de estado y SMS",
       },
       table: {
         contact: "Contacto",
