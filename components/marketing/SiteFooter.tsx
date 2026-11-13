@@ -103,9 +103,12 @@ export function SiteFooter({ contact }: { contact: PublicSiteContact }) {
                 </Link>
               </li>
               <li>
-                <span className="text-zinc-500">
+                <Link
+                  href="/shipping-returns"
+                  className="text-zinc-400 transition hover:text-white"
+                >
                   {t("footer.shippingReturns")}
-                </span>
+                </Link>
               </li>
               <li>
                 <span className="text-zinc-500">{t("footer.warranty")}</span>
