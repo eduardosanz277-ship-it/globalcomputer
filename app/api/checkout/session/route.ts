@@ -3,6 +3,8 @@ import { z } from "zod";
 import { formatServerErrorMessage } from "@/lib/errors/format-server-error";
 import { isNetworkActionError } from "@/lib/errors/network-action-error";
 import type { GcCartItem } from "@/lib/store-cart";
+import { getCheckoutProvider } from "@/lib/shopify/config";
+import { createShopifyCheckoutSession } from "@/modules/commerce/shopify-checkout.service";
 import {
   CheckoutSessionError,
   createHostedCheckoutSession,
@@ -46,7 +48,17 @@ export async function POST(req: Request) {
 
   try {
     console.info("[checkout/session] locale recibido del cliente", { locale });
-    const { url } = await createHostedCheckoutSession(items, locale);
+    /**
+     * Interruptor de proveedor: por defecto Stripe (comportamiento histórico).
+     * Con CHECKOUT_PROVIDER=shopify, la sesión la crea Shopify y la respuesta
+     * conserva la misma forma `{ url }` para el cliente.
+     */
+    const provider = getCheckoutProvider();
+    console.info("[checkout/session] proveedor de checkout", { provider });
+    const { url } =
+      provider === "shopify"
+        ? await createShopifyCheckoutSession(items, locale)
+        : await createHostedCheckoutSession(items, locale);
     return NextResponse.json({ url });
   } catch (e) {
     if (e instanceof CheckoutSessionError) {
