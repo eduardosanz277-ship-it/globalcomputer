@@ -521,6 +521,10 @@ export const en = {
       specialShippingTitle: "Special shipping",
       specialShippingDescription:
         "This product requires an independent shipping quote.",
+      trustShipping: "Shipping across the U.S.",
+      trustWarranty: "1-year warranty",
+      trustSupport: "Expert support",
+      googleRatingLabel: "{rating} on Google · {count} customer reviews",
       priceByProfile:
         "Price based on your profile ({tier}). Includes any applicable discount.",
       priceTierBusiness: "business",

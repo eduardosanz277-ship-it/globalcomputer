@@ -528,6 +528,10 @@ export const es = {
       specialShippingTitle: "Envío especial",
       specialShippingDescription:
         "Este producto requiere una cotización de envío independiente.",
+      trustShipping: "Envíos a todo EE. UU.",
+      trustWarranty: "Garantía de 1 año",
+      trustSupport: "Soporte experto",
+      googleRatingLabel: "{rating} en Google · {count} reseñas de clientes",
       priceByProfile: "Precio según tu perfil ({tier}). Incluye descuento aplicable si corresponde.",
       priceTierBusiness: "empresa",
       priceTierClient: "cliente / invitado",

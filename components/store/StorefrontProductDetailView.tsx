@@ -33,6 +33,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { StoreQuantityStepper } from "@/components/store/StoreQuantityStepper";
+import { ProductTrustBar } from "@/components/store/ProductTrustBar";
+import { ProductStickyBuyBar } from "@/components/store/ProductStickyBuyBar";
 import {
   PRODUCT_REVIEW_FORM_ID,
   ProductReviewForm,
@@ -1177,6 +1179,8 @@ export function StorefrontProductDetailView({
             </div>
           </div>
 
+          <ProductTrustBar />
+
           {product.shipping_type === "non_standard" ? (
             <div
               role="status"
@@ -1359,6 +1363,13 @@ export function StorefrontProductDetailView({
           onPendingChange={setReviewFormPending}
         />
       </SlideOver>
+      <ProductStickyBuyBar
+        productId={product.id}
+        productName={displayName}
+        priceLabel={formatUsd(sale)}
+        imageUrl={images[0]?.url ?? null}
+        canBuy={canBuy}
+      />
     </div>
   );
 }
