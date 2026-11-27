@@ -19,7 +19,7 @@
 
 import type { GcCartItem } from "@/lib/store-cart";
 import { ShopifyConfigError } from "@/lib/shopify/config";
-import { resolveShopifyVariantBySku } from "@/lib/shopify/resolve-variant";
+import { resolveShopifyVariantBySkuLive } from "@/lib/shopify/resolve-variant";
 import { createShopifyCart } from "@/lib/shopify/cart";
 import { ShopifyStorefrontError } from "@/lib/shopify/storefront-client";
 import { getStorefrontProductsByIds } from "@/modules/catalog/storefront-products.service";
@@ -55,7 +55,7 @@ export async function createShopifyCheckoutSession(
       throw new CheckoutSessionError("Cantidad no válida en una línea del pedido.");
     }
 
-    const mapping = resolveShopifyVariantBySku(product.sku);
+    const mapping = await resolveShopifyVariantBySkuLive(product.sku);
     if (!mapping) {
       unmappedNames.push(product.name);
       continue;
