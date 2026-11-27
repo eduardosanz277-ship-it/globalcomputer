@@ -1,31 +1,77 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 import { trimLeadingEmptyDescriptionBlocks } from "@/lib/normalizeProductDescriptionHtml";
 
 /**
- * Opciones de DOMPurify para descripciones de producto enriquecidas:
- * listas, tablas, imágenes con src/alt, enlaces con rel seguro.
- * `isomorphic-dompurify` permite ejecutar el mismo saneado en servidor (RSC/SSR)
- * y en el navegador.
+ * Saneado de descripciones de producto enriquecidas: listas, tablas,
+ * imágenes con src/alt, enlaces con rel seguro.
+ *
+ * Se usa `sanitize-html` (htmlparser2, sin jsdom) porque el saneador
+ * anterior basado en jsdom rompía en el runtime serverless de Vercel
+ * (ERR_REQUIRE_ESM al cargar @exodus/bytes) y devolvía 500 en las
+ * fichas de producto renderizadas en servidor.
  */
-const PURIFY_CONFIG: NonNullable<
-  Parameters<typeof DOMPurify.sanitize>[1]
-> = {
-  ADD_TAGS: [
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    "a",
+    "abbr",
+    "b",
     "blockquote",
-    "details",
-    "summary",
-    "table",
-    "thead",
-    "tbody",
-    "tfoot",
-    "tr",
-    "th",
-    "td",
-    "colgroup",
+    "br",
+    "caption",
+    "code",
     "col",
+    "colgroup",
+    "details",
+    "div",
+    "em",
+    "figcaption",
+    "figure",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "i",
+    "img",
+    "li",
+    "mark",
+    "ol",
+    "p",
+    "pre",
+    "s",
+    "section",
+    "small",
+    "span",
+    "strong",
+    "sub",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+    "u",
+    "ul",
   ],
-  ADD_ATTR: ["target", "rel", "class", "style", "open"],
-  ALLOW_DATA_ATTR: false,
+  allowedAttributes: {
+    "*": ["class", "style", "id"],
+    a: ["href", "target", "rel", "name"],
+    img: ["src", "alt", "width", "height", "title"],
+    td: ["colspan", "rowspan"],
+    th: ["colspan", "rowspan"],
+    col: ["span"],
+    details: ["open"],
+  },
+  allowedSchemes: ["http", "https", "mailto", "tel"],
+  allowedSchemesByTag: {
+    img: ["http", "https", "data"],
+  },
+  allowProtocolRelative: false,
 };
 
 /**
@@ -33,6 +79,6 @@ const PURIFY_CONFIG: NonNullable<
  * Siempre usar antes de `dangerouslySetInnerHTML`.
  */
 export function sanitizeProductDescriptionHtml(dirty: string): string {
-  const sanitized = DOMPurify.sanitize(dirty ?? "", PURIFY_CONFIG);
+  const sanitized = sanitizeHtml(dirty ?? "", SANITIZE_OPTIONS);
   return trimLeadingEmptyDescriptionBlocks(sanitized);
 }
