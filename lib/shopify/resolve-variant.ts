@@ -42,13 +42,14 @@ export function hasShopifyVariantMapping(sku: string | null | undefined): boolea
   return resolveShopifyVariantBySku(sku) !== null;
 }
 
-const LIVE_VARIANT_QUERY = `
-  query($q: String!) {
-    products(first: 10, query: $q) {
+const LIVE_CATALOG_QUERY = `
+  query($cursor: String) {
+    products(first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
       nodes {
         id
         title
-        variants(first: 25) {
+        variants(first: 10) {
           nodes {
             id
             sku
@@ -61,8 +62,9 @@ const LIVE_VARIANT_QUERY = `
   }
 `;
 
-type LiveVariantData = {
+type LiveCatalogData = {
   products: {
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
     nodes: {
       id: string;
       title: string;
@@ -78,15 +80,58 @@ type LiveVariantData = {
   };
 };
 
-/** Caché en memoria del proceso: un SKU resuelto en vivo no se vuelve a buscar. */
-const liveCache = new Map<string, ShopifyVariantMapping | null>();
+/**
+ * Mapa vivo completo SKU → variante, cargado una sola vez por proceso.
+ * Se construye paginando todo el catálogo de la Storefront API: es la
+ * única vía determinista, porque la búsqueda por texto de Shopify es
+ * parcial (un SKU con tokens comunes devuelve otros modelos).
+ */
+let liveCatalogPromise: Promise<Map<string, ShopifyVariantMapping>> | null =
+  null;
+
+function loadLiveCatalog(): Promise<Map<string, ShopifyVariantMapping>> {
+  if (!liveCatalogPromise) {
+    liveCatalogPromise = (async () => {
+      const catalog = new Map<string, ShopifyVariantMapping>();
+      let cursor: string | null = null;
+      for (let page = 0; page < 20; page++) {
+        const data: LiveCatalogData = await storefrontFetch<LiveCatalogData>(
+          LIVE_CATALOG_QUERY,
+          { cursor },
+        );
+        for (const product of data.products.nodes) {
+          for (const variant of product.variants.nodes) {
+            const key = variant.sku?.trim().toLowerCase();
+            if (key && variant.availableForSale && !catalog.has(key)) {
+              catalog.set(key, {
+                product_gid: product.id,
+                variant_gid: variant.id,
+                title: product.title,
+                price: variant.price.amount,
+                status: "ACTIVE",
+              });
+            }
+          }
+        }
+        if (!data.products.pageInfo.hasNextPage) break;
+        cursor = data.products.pageInfo.endCursor;
+      }
+      return catalog;
+    })();
+    // Si la carga falla, no dejar la promesa rechazada en caché.
+    liveCatalogPromise.catch(() => {
+      liveCatalogPromise = null;
+    });
+  }
+  return liveCatalogPromise;
+}
 
 /**
  * Resolución con respaldo en vivo: si el SKU no está en el mapa versionado
  * (producto creado en Shopify después de la última regeneración del mapa),
- * lo busca en la Storefront API y filtra por coincidencia EXACTA de SKU,
- * porque la búsqueda de Shopify es parcial y puede devolver otros modelos.
- * Sin coincidencia exacta devuelve null, igual que el mapa.
+ * lo busca en el catálogo vivo completo de la Storefront API, con
+ * coincidencia EXACTA de SKU. Sin coincidencia devuelve null, igual que
+ * el mapa.
  */
 export async function resolveShopifyVariantBySkuLive(
   sku: string | null | undefined,
@@ -96,33 +141,11 @@ export async function resolveShopifyVariantBySkuLive(
 
   const clean = sku?.trim();
   if (!clean) return null;
-  const cacheKey = clean.toLowerCase();
-  if (liveCache.has(cacheKey)) return liveCache.get(cacheKey) ?? null;
 
-  let resolved: ShopifyVariantMapping | null = null;
   try {
-    const data = await storefrontFetch<LiveVariantData>(LIVE_VARIANT_QUERY, {
-      q: `sku:${clean}`,
-    });
-    for (const product of data.products.nodes) {
-      for (const variant of product.variants.nodes) {
-        if (variant.sku?.trim().toLowerCase() === cacheKey && variant.availableForSale) {
-          resolved = {
-            product_gid: product.id,
-            variant_gid: variant.id,
-            title: product.title,
-            price: variant.price.amount,
-            status: "ACTIVE",
-          };
-          break;
-        }
-      }
-      if (resolved) break;
-    }
+    const catalog = await loadLiveCatalog();
+    return catalog.get(clean.toLowerCase()) ?? null;
   } catch {
-    resolved = null;
+    return null;
   }
-
-  liveCache.set(cacheKey, resolved);
-  return resolved;
 }
