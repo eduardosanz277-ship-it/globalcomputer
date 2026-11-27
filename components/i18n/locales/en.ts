@@ -443,6 +443,13 @@ export const en = {
       addToCart: "Add to cart",
       outOfStock: "Out of stock",
     },
+    businessQuote: {
+      label: "Business pricing: request a quote",
+      shortLabel: "Quote",
+      ctaLabel: "Get a quote on WhatsApp",
+      whatsAppMessage:
+        "Hello, I have a business account and I'd like a quote for this product: {product}.",
+    },
     grid: {
       emptySection: "No products are available in this section yet.",
     },

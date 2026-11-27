@@ -40,10 +40,12 @@ import {
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
+  isBusinessQuoteOnly,
   resolveStorefrontBasePrice,
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
+import { BusinessQuoteLink } from "@/components/store/BusinessQuoteLink";
 import {
   hasPublishedRichHtml,
   resolveLocalizedRichHtml,
@@ -714,12 +716,14 @@ export function StorefrontProductDetailView({
   const images = product.images;
   const hasImages = images.length > 0;
 
-  const pct = activeDiscountPercent(product, priceTier);
+  /** Solo público (sin precio de compañía): la cuenta BUSINESS no compra, cotiza. */
+  const quoteOnly = isBusinessQuoteOnly(product, priceTier);
+  const pct = quoteOnly ? 0 : activeDiscountPercent(product, priceTier);
   const listPrice = resolveStorefrontBasePrice(product, priceTier);
   const sale = resolveStorefrontUnitPrice(product, priceTier);
   const showCompare = pct > 0 && sale < listPrice;
   const stockUi = stockBadgeClass(product.stock, locale);
-  const canBuy = product.stock > 0;
+  const canBuy = product.stock > 0 && !quoteOnly;
   const maxCartQty = Math.max(1, product.stock);
   const isNew = isNewFromCreatedAt(product.created_at);
   const descriptionForLocale = resolveLocalizedRichHtml(
@@ -1082,7 +1086,23 @@ export function StorefrontProductDetailView({
           </div>
 
           <div className="rounded-xl border border-border/70 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur-sm">
-            {showCompare ? (
+            {quoteOnly ? (
+              <div className="flex flex-col gap-2">
+                <BusinessQuoteLink
+                  productName={displayName}
+                  variant="inline"
+                  className="text-base sm:text-lg"
+                />
+                <span
+                  className={cn(
+                    "inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-0.5 text-left text-[12px] font-medium leading-snug sm:text-[13px]",
+                    stockUi.cardLabelClassName,
+                  )}
+                >
+                  {stockUi.label}
+                </span>
+              </div>
+            ) : showCompare ? (
               <div className="flex w-full flex-col gap-2">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                   <span className="text-2xl font-bold tabular-nums leading-none text-primary">
@@ -1116,6 +1136,7 @@ export function StorefrontProductDetailView({
                 </span>
               </div>
             )}
+            {quoteOnly ? null : (
             <p className="mt-2 text-xs text-muted-foreground">
               {t("storefront.productDetail.priceByProfile").replace(
                 "{tier}",
@@ -1124,7 +1145,16 @@ export function StorefrontProductDetailView({
                   : t("storefront.productDetail.priceTierClient"),
               )}
             </p>
+            )}
 
+            {quoteOnly ? (
+              <div className="mt-6 flex">
+                <BusinessQuoteLink
+                  productName={displayName}
+                  variant="cta"
+                />
+              </div>
+            ) : (
             <div
               className={cn(
                 "mt-6 flex flex-col gap-3",
@@ -1175,6 +1205,7 @@ export function StorefrontProductDetailView({
                   : t("storefront.card.outOfStock")}
               </ButtonPending>
             </div>
+            )}
           </div>
 
           {product.shipping_type === "non_standard" ? (

@@ -4,10 +4,12 @@ import { ButtonPending } from "@/components/ui/button-pending";
 import { gcCartAddProduct } from "@/lib/store-cart";
 import {
   activeDiscountPercent,
+  isBusinessQuoteOnly,
   resolveStorefrontBasePrice,
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
+import { BusinessQuoteLink } from "@/components/store/BusinessQuoteLink";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import {
   isStorefrontProductNew,
@@ -122,12 +124,14 @@ export function StorefrontProductCard({
   };
 
   const img = storefrontPrimaryImageUrl(p);
-  const pct = activeDiscountPercent(p, priceTier);
+  /** Solo público (sin precio de compañía): la cuenta BUSINESS no compra, cotiza. */
+  const quoteOnly = isBusinessQuoteOnly(p, priceTier);
+  const pct = quoteOnly ? 0 : activeDiscountPercent(p, priceTier);
   const listPrice = resolveStorefrontBasePrice(p, priceTier);
   const sale = resolveStorefrontUnitPrice(p, priceTier);
   const showCompare = pct > 0 && sale < listPrice;
   const stockUi = stockBadgeClass(p.stock, locale);
-  const canBuy = p.stock > 0;
+  const canBuy = p.stock > 0 && !quoteOnly;
   const isNew = isStorefrontProductNew(p);
 
   return (
@@ -236,6 +240,13 @@ export function StorefrontProductCard({
             "lg:group-hover/card:translate-y-0 lg:group-hover/card:opacity-100",
           )}
         >
+          {quoteOnly ? (
+            <BusinessQuoteLink
+              productName={displayName}
+              variant="pill"
+              className={cn("pointer-events-auto", interClassName)}
+            />
+          ) : (
           <span
             className={cn(
               "pointer-events-auto inline-flex max-w-full",
@@ -304,6 +315,7 @@ export function StorefrontProductCard({
               )}
             </ButtonPending>
           </span>
+          )}
         </div>
       </div>
 
@@ -353,6 +365,13 @@ export function StorefrontProductCard({
           </p>
         ) : null}
 
+        {quoteOnly ? (
+          <BusinessQuoteLink
+            productName={displayName}
+            variant="inline"
+            className={interClassName}
+          />
+        ) : (
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           {showCompare ? (
             <>
@@ -384,6 +403,7 @@ export function StorefrontProductCard({
             </span>
           )}
         </div>
+        )}
 
         <span
           className={cn(

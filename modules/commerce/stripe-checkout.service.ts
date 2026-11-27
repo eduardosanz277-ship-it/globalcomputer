@@ -3,6 +3,7 @@ import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import { getPublicSiteOffer } from "@/lib/site-offer.server";
 import type { GcCartItem } from "@/lib/store-cart";
 import {
+  isBusinessQuoteOnly,
   resolveStorefrontPriceTier,
   resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
@@ -249,6 +250,11 @@ export async function createHostedCheckoutSession(
     }
 
     const unitUsd = unitPriceUsd(product, tier);
+    if (isBusinessQuoteOnly(product, tier) || (tier === "business" && unitUsd <= 0)) {
+      throw new CheckoutSessionError(
+        `El producto «${product.name}» no tiene precio para compañías: se vende solo al público y para empresas se cotiza por WhatsApp. Quítalo del carrito para continuar.`,
+      );
+    }
     const unitCentsUnscaled = dollarsToCents(unitUsd);
     if (unitCentsUnscaled < 1) {
       throw new CheckoutSessionError(

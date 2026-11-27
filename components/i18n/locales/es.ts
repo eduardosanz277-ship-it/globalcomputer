@@ -448,6 +448,13 @@ export const es = {
       addToCart: "Añadir al carrito",
       outOfStock: "Agotado",
     },
+    businessQuote: {
+      label: "Precio para compañías: cotizar",
+      shortLabel: "Cotizar",
+      ctaLabel: "Cotizar por WhatsApp",
+      whatsAppMessage:
+        "Hola, tengo una cuenta de compañía y quiero cotizar este producto: {product}.",
+    },
     grid: {
       emptySection:
         "No hay productos disponibles en esta sección por ahora.",

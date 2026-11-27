@@ -13,6 +13,7 @@ import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { computeSiteOfferOnSubtotal } from "@/lib/site-offer-discount";
 import { getPublicSiteOffer } from "@/lib/site-offer.server";
 import {
+  isBusinessQuoteOnly,
   resolveStorefrontPriceTier,
   resolveStorefrontUnitPrice,
 } from "@/lib/storefront-pricing";
@@ -546,8 +547,20 @@ export async function createSiteOrder(
     if (item.qty < 1) {
       throw new SiteOrderError("La cantidad debe ser al menos 1.", 400);
     }
+    if (isBusinessQuoteOnly(product, tier)) {
+      throw new SiteOrderError(
+        `El producto «${product.name}» no tiene precio para compañías: se vende solo al público y para empresas se cotiza por WhatsApp. Quítalo del carrito para continuar.`,
+        400,
+      );
+    }
 
     const unitPrice = resolveStorefrontUnitPrice(product, tier);
+    if (tier === "business" && unitPrice <= 0) {
+      throw new SiteOrderError(
+        `El producto «${product.name}» no tiene precio para compañías: se vende solo al público y para empresas se cotiza por WhatsApp. Quítalo del carrito para continuar.`,
+        400,
+      );
+    }
     const linePrice = unitPrice * item.qty;
     totalAmount += linePrice;
     shippingLines.push({
@@ -788,7 +801,19 @@ export async function createManualQuoteOrder(
     if (qty < 1) {
       throw new SiteOrderError("La cantidad debe ser al menos 1.", 400);
     }
+    if (isBusinessQuoteOnly(product, tier)) {
+      throw new SiteOrderError(
+        `El producto «${product.name}» no tiene precio para compañías: se vende solo al público y para empresas se cotiza por WhatsApp. Quítalo del carrito para continuar.`,
+        400,
+      );
+    }
     const unitPrice = resolveStorefrontUnitPrice(product, tier);
+    if (tier === "business" && unitPrice <= 0) {
+      throw new SiteOrderError(
+        `El producto «${product.name}» no tiene precio para compañías: se vende solo al público y para empresas se cotiza por WhatsApp. Quítalo del carrito para continuar.`,
+        400,
+      );
+    }
     const linePrice = unitPrice * qty;
     subtotal += linePrice;
     shippingLines.push({

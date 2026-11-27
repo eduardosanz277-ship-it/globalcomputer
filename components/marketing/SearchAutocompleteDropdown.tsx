@@ -3,6 +3,7 @@
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { stockBadgeClass } from "@/lib/storefront-stock";
 import {
+  isBusinessQuoteOnly,
   resolveStorefrontUnitPrice,
   type StorefrontPriceTier,
 } from "@/lib/storefront-pricing";
@@ -46,6 +47,21 @@ function productSalePrice(
   priceTier: StorefrontPriceTier,
 ) {
   return resolveStorefrontUnitPrice(
+    {
+      price_client: product.price,
+      price_business: product.priceBusiness,
+      discount_client_pct: product.discountClientPct,
+      discount_business_pct: product.discountBusinessPct,
+    },
+    priceTier,
+  );
+}
+
+function productQuoteOnly(
+  product: SearchSuggestionProduct,
+  priceTier: StorefrontPriceTier,
+) {
+  return isBusinessQuoteOnly(
     {
       price_client: product.price,
       price_business: product.priceBusiness,
@@ -304,6 +320,7 @@ export function SearchAutocompleteDropdown({
   const renderProduct = (product: SearchSuggestionProduct, index: number) => {
     const img = product.imageUrl;
     const sale = productSalePrice(product, priceTier);
+    const quoteOnly = productQuoteOnly(product, priceTier);
     const stockUi = stockBadgeClass(product.stock, locale);
     const inStockUi = stockBadgeClass(6, locale);
     const stockLabel = product.stock > 0 ? "In stock" : "Out of stock";
@@ -340,7 +357,9 @@ export function SearchAutocompleteDropdown({
           <ProductMetaLine brand={product.brand} sku={product.sku} />
           <span className="mt-1 flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-primary">
-              {formatUsd(sale)}
+              {quoteOnly
+                ? t("storefront.businessQuote.shortLabel")
+                : formatUsd(sale)}
             </span>
             <span
               className={cn(

@@ -58,3 +58,16 @@ export function resolveStorefrontUnitPrice(
     activeDiscountPercent(product, tier),
   );
 }
+
+/**
+ * Producto «solo público»: sin precio de compañía de tabla
+ * (`price_business <= 0`) no se vende a cuentas BUSINESS; para ese perfil
+ * solo se ofrece cotización (WhatsApp). El tier cliente no se ve afectado.
+ */
+export function isBusinessQuoteOnly(
+  product: StorefrontPricingProduct,
+  tier: StorefrontPriceTier,
+): boolean {
+  if (tier !== "business") return false;
+  return resolveStorefrontBasePrice(product, tier) <= 0;
+}
