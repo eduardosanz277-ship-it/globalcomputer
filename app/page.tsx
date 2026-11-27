@@ -3,7 +3,6 @@ import { FeaturedProductsEmptyState } from "@/components/marketing/FeaturedProdu
 import { HomeSectionHeading } from "@/components/marketing/HomeSectionHeading";
 import { HomeReviewsSection } from "@/components/marketing/HomeReviewsSection";
 import { landingSectionPaddingYClass } from "@/components/marketing/landing-section-classes";
-import { OffersEmptyState } from "@/components/marketing/OffersEmptyState";
 import {
   ServicesSection,
   type ServiceWithI18n,
@@ -211,8 +210,8 @@ export default async function HomePage() {
               }
               description={
                 <LocalizedText
-                  es="Los favoritos de quienes ya instalaron con nosotros. Conecta tu catálogo real cuando quieras."
-                  en="Favorites from customers who already installed with us."
+                  es="Los favoritos de quienes ya instalaron con nosotros. Precios claros, envío a todo EE. UU. y garantía real."
+                  en="Favorites from customers who already installed with us. Clear prices, U.S. shipping and a real warranty."
                 />
               }
               className="sm:max-w-xl"
@@ -396,7 +395,8 @@ export default async function HomePage() {
         </div>
       </section> */}
 
-      {/* Ofertas */}
+      {/* Ofertas: la sección solo se muestra cuando hay productos con descuento real */}
+      {offerProducts.length > 0 ? (
       <section
         id="ofertas"
         className={cn(
@@ -478,18 +478,15 @@ export default async function HomePage() {
           </div>
           */}
           <div className="mt-6 lg:mt-8">
-            {offerProducts.length > 0 ? (
-              <StorefrontProductGrid
-                products={offerProducts}
-                priceTier={priceTier}
-                gridClassName="lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4"
-              />
-            ) : (
-              <OffersEmptyState />
-            )}
+            <StorefrontProductGrid
+              products={offerProducts}
+              priceTier={priceTier}
+              gridClassName="lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4"
+            />
           </div>
         </div>
       </section>
+      ) : null}
 
       {/* CTA */}
       {/* <section className="bg-background py-20 sm:py-24">

@@ -10,7 +10,7 @@ import type {
   ProductReviewListItem,
   SiteReviewListItem,
 } from "@/modules/site/leave-review-data.service";
-import { CheckCircle2, MessageCircle, Star, UserRound } from "lucide-react";
+import { CheckCircle2, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 
 const reviewStoryCardClassName =
@@ -86,13 +86,26 @@ export function HomeReviewsSection({
                   className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/[0.06] text-primary shadow-sm ring-1 ring-primary/5"
                   aria-hidden
                 >
-                  <MessageCircle className="h-8 w-8" strokeWidth={1.35} />
+                  <Star className="h-8 w-8 fill-current" strokeWidth={1.35} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="max-w-lg text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  <div className="flex items-center justify-center gap-2 sm:justify-start">
+                    <div
+                      className="flex items-center gap-0.5 text-amber-500"
+                      aria-hidden
+                    >
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-5 w-5 fill-current" />
+                      ))}
+                    </div>
+                    <span className="font-display text-xl font-bold text-foreground">
+                      4.8
+                    </span>
+                  </div>
+                  <p className="mt-2 max-w-lg text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
                     <LocalizedText
-                      es="Aún no hay reseñas publicadas. Sé la primera persona en contar tu experiencia con nosotros."
-                      en="There are no reviews published yet. Be the first to share your experience with us."
+                      es="Nuestros clientes nos califican con 4.8 de 5 en Google, basado en 70 reseñas reales. Cuéntanos también tu experiencia."
+                      en="Our customers rate us 4.8 out of 5 on Google, based on 70 real reviews. Share your experience too."
                     />
                   </p>
                 </div>
