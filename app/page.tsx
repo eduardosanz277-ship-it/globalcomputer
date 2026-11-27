@@ -39,7 +39,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Global Computers USA | Cámaras de Seguridad, Software y Tecnología",
+  title: "Global Computers USA | Cámaras de Seguridad, Alarmas y Control de Acceso",
   description:
     "Tienda online de seguridad, cámaras IP, grabadoras y kits. Envíos, garantía y soporte.",
 };
